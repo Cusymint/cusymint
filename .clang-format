@@ -1,3 +1,6 @@
 ColumnLimit: 100
 IndentWidth: 4
-BreakBeforeBraces: BS_Attach
+BreakBeforeBraces: Attach
+AlignEscapedNewlines: Left
+NamespaceIndentation: All
+PointerAlignment: Left
