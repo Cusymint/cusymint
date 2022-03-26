@@ -1,3 +1,6 @@
+#include <cstdlib>
+#include <cstring>
+
 #include <iostream>
 #include <vector>
 
@@ -7,7 +10,8 @@ namespace Sym {
         // Basic types
         Unknown,
         Variable,
-        Constant,
+        KnownConstant,
+        UnknownConstant,
         // Arithmetic
         Addition,
         Negative,
@@ -40,7 +44,7 @@ namespace Sym {
 
 #define TWO_ARGUMENT_OP_SYMBOL \
     size_t total_size;         \
-    size_t second_arg;
+    size_t second_arg_offset;
 
     DECLARE_SYMBOL(Unknown)
     END_DECLARE_SYMBOL(Unknown)
@@ -48,9 +52,13 @@ namespace Sym {
     DECLARE_SYMBOL(Variable)
     END_DECLARE_SYMBOL(Variable)
 
-    DECLARE_SYMBOL(Constant)
+    DECLARE_SYMBOL(KnownConstant)
     double value;
-    END_DECLARE_SYMBOL(Constant)
+    END_DECLARE_SYMBOL(KnownConstant)
+
+    DECLARE_SYMBOL(UnknownConstant)
+    double value;
+    END_DECLARE_SYMBOL(UnknownConstant)
 
     DECLARE_SYMBOL(Addition)
     TWO_ARGUMENT_OP_SYMBOL
@@ -65,7 +73,7 @@ namespace Sym {
     END_DECLARE_SYMBOL(Product)
 
     DECLARE_SYMBOL(Reciprocal)
-    TWO_ARGUMENT_OP_SYMBOL
+    ONE_ARGUMENT_OP_SYMBOL
     END_DECLARE_SYMBOL(Reciprocal)
 
     DECLARE_SYMBOL(Power)
@@ -91,7 +99,8 @@ namespace Sym {
     union Symbol {
         Unknown unknown;
         Variable variable;
-        Constant constant;
+        KnownConstant known_constant;
+        UnknownConstant unknown_constant;
         Addition addition;
         Negative negative;
         Product product;
@@ -102,25 +111,36 @@ namespace Sym {
         Tangent tangent;
         Cotangent cotangent;
 
-        __device__ inline Type type() { return unknown.type; }
-
-        __device__ inline bool is(Type type) { return unknown.type == type; }
+        __host__ __device__ inline Type type() const { return unknown.type; }
+        __host__ __device__ inline bool is(Type type) const { return unknown.type == type; }
     };
 
-    __device__ bool is_simple_variable_exponent(Symbol* symbol) {
+    __host__ __device__ bool is_simple_variable_exponent(const Symbol* symbol) {
         return symbol[0].is(Type::Power) && symbol[1].is(Type::Variable) &&
-               symbol[2].is(Type::Constant) && symbol[2].constant.value != 0.0;
+               symbol[2].is(Type::KnownConstant) && symbol[2].known_constant.value != 0.0;
     }
 
-    __device__ bool is_variable_reciprocal(Symbol* symbol) {
-        return symbol[0].is(Type::Reciprocal) &&
-               symbol[1].is(Type::Constant) && symbol[2].is(Type::Variable);
+    __host__ __device__ bool is_variable_reciprocal(const Symbol* symbol) {
+        return symbol[0].is(Type::Reciprocal) && symbol[1].is(Type::KnownConstant) &&
+               symbol[2].is(Type::Variable);
+    }
+
+    bool is_double_reciprocal(const Symbol* symbol) {
+        return symbol[0].is(Type::Reciprocal) && symbol[0].is(Type::Reciprocal);
+    }
+
+    bool is_equiargument_division(const Symbol* symbol) {
+        if (!symbol[0].is(Type::Product)) {
+            return false;
+        }
+
+        // TODO: check the product both ways, assume simplified form, so no double reciprocals
+        // as arguments
+        return false;
     }
 
     typedef std::vector<Symbol> Integral;
 
 } // namespace Sym
 
-int main() {
-    return 0;
-}
+int main() { return 0; }
