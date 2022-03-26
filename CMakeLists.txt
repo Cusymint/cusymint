@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 project(cusymint LANGUAGES CXX CUDA)
 
 add_executable(cusymint src/main.cu)
