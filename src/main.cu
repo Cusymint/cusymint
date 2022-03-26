@@ -2,10 +2,8 @@
 #include <cstring>
 
 #include <iostream>
-#include <vector>
 
 namespace Sym {
-
     enum class Type {
         // Basic types
         Unknown,
@@ -38,7 +36,7 @@ namespace Sym {
 #define END_DECLARE_SYMBOL(_name) \
     }                             \
     ;                             \
-    static_assert(std::is_pod<_name>::value, "Type _name has to be POD, but is not!");
+    static_assert(std::is_pod<_name>::value, "Type '" #_name "' has to be POD, but is not!");
 
 #define ONE_ARGUMENT_OP_SYMBOL size_t total_size;
 
@@ -138,9 +136,6 @@ namespace Sym {
         // as arguments
         return false;
     }
-
-    typedef std::vector<Symbol> Integral;
-
 } // namespace Sym
 
 int main() { return 0; }
