@@ -8,6 +8,8 @@
 namespace Sym {
     DECLARE_SYMBOL(Power, false)
     TWO_ARGUMENT_OP_SYMBOL
+
+    std::string to_string();
     END_DECLARE_SYMBOL(Power)
 
     std::vector<Symbol> operator^(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);

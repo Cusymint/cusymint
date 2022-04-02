@@ -4,6 +4,18 @@
 #include "symbol.cuh"
 
 namespace Sym {
+    std::string Addition::to_string() {
+        Symbol* sym = Symbol::from(this);
+        if (sym[second_arg_offset].is(Type::Negative)) {
+            return "(" + sym[1].to_string() + "-" + sym[second_arg_offset + 1].to_string() + ")";
+        }
+        else {
+            return "(" + sym[1].to_string() + "+" + sym[second_arg_offset].to_string() + ")";
+        }
+    }
+
+    std::string Negative::to_string() { return "-" + Symbol::from(this)[1].to_string(); }
+
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);
         res[0].addition = Addition::create();

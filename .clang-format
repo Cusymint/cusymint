@@ -1,6 +1,13 @@
 ColumnLimit: 100
 IndentWidth: 4
-BreakBeforeBraces: Attach
+BreakBeforeBraces: Custom
+BraceWrapping:
+  IndentBraces: false
+  AfterControlStatement: false
+  AfterFunction: false
+  AfterNamespace: false
+  BeforeElse: true
+  AfterClass: false
 AlignEscapedNewlines: Left
 NamespaceIndentation: All
 PointerAlignment: Left

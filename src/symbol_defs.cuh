@@ -35,7 +35,7 @@ namespace Sym {
         static _name create() {           \
             return {                      \
                 .type = Sym::Type::_name, \
-                .simplified = false,      \
+                .simplified = _simple,    \
             };                            \
         }
 

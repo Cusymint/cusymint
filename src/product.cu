@@ -3,6 +3,21 @@
 #include "symbol.cuh"
 
 namespace Sym {
+    std::string Product::to_string() {
+        Symbol* sym = Symbol::from(this);
+        if (sym[1].is(Type::Reciprocal)) {
+            return "(" + sym[second_arg_offset].to_string() + "/" + sym[2].to_string() + ")";
+        }
+        else if (sym[second_arg_offset].is(Type::Reciprocal)) {
+            return "(" + sym[1].to_string() + "/" + sym[second_arg_offset + 1].to_string() + ")";
+        }
+        else {
+            return "(" + sym[1].to_string() + "*" + sym[second_arg_offset].to_string() + ")";
+        }
+    }
+
+    std::string Reciprocal::to_string() { return "(1/" + Symbol::from(this)[1].to_string() + ")"; }
+
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);
         res[0].product = Product::create();
@@ -26,4 +41,4 @@ namespace Sym {
 
         return res;
     }
-}
+} // namespace Sym
