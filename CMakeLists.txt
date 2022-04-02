@@ -4,7 +4,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(cusymint LANGUAGES CXX CUDA)
 
-add_executable(cusymint src/main.cu)
+add_executable(
+  cusymint
+  src/main.cu
+  src/symbol.cu
+  src/constants.cu
+  src/variable.cu
+  src/addition.cu
+  src/product.cu
+  src/power.cu
+  src/trigonometric.cu)
 
 target_compile_features(cusymint PUBLIC cxx_std_14)
 set_target_properties(cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
