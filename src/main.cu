@@ -335,7 +335,7 @@ namespace Sym {
         return v;
     }
 
-    std::vector<Symbol> cnst(char name[UnknownConstant::NAME_LEN]) {
+    std::vector<Symbol> cnst(const char name[UnknownConstant::NAME_LEN]) {
         std::vector<Symbol> v(1);
         v[0].unknown_constant = UnknownConstant::create();
         std::copy(name, name + UnknownConstant::NAME_LEN, v[0].unknown_constant.name);
