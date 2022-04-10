@@ -13,7 +13,8 @@ add_executable(
   src/addition.cu
   src/product.cu
   src/power.cu
-  src/trigonometric.cu)
+  src/trigonometric.cu
+  src/integrate.cu)
 
 target_compile_features(cusymint PUBLIC cxx_std_14)
 set_target_properties(cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
