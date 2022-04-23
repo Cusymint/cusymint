@@ -54,7 +54,7 @@ int main() {
 
     std::cout << "Checking heuristics" << std::endl;
 
-    Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_expressions, d_applicability,
+    Sym::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_expressions, d_applicability,
                                                                      d_expression_count);
 
     std::cout << "Calculating partial sum of applicability" << std::endl;
@@ -64,7 +64,7 @@ int main() {
 
     std::cout << "Applying heuristics" << std::endl;
 
-    Sym::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_expressions, d_expressions_swap,
+    Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_expressions, d_expressions_swap,
                                                        d_applicability, d_expression_count);
     std::swap(d_expressions, d_expressions_swap);
     cudaMemcpy(d_expression_count, d_applicability + Sym::APPLICABILITY_ARRAY_SIZE - 1,
