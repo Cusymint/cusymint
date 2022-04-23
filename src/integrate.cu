@@ -80,7 +80,7 @@ namespace Sym {
     }
 
     __global__ void check_heuristics_applicability(Symbol* expressions, size_t* applicability,
-                                                   size_t expression_count) {
+                                                   size_t* expression_count) {
         size_t thread_count = gridDim.x * blockDim.x;
         size_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -88,7 +88,7 @@ namespace Sym {
 
         for (size_t hrstc_idx = thread_idx / HEURISITC_GROUP_SIZE;
              hrstc_idx < HEURISTIC_CHECK_COUNT; hrstc_idx += hrstc_step) {
-            for (size_t expr_idx = thread_idx % HEURISITC_GROUP_SIZE; expr_idx < expression_count;
+            for (size_t expr_idx = thread_idx % HEURISITC_GROUP_SIZE; expr_idx < *expression_count;
                  expr_idx += HEURISITC_GROUP_SIZE) {
                 Symbol* expression_pointer = expressions + expr_idx * EXPRESSION_MAX_SYMBOL_COUNT;
                 size_t applicability_index = MAX_EXPRESSION_COUNT * hrstc_idx + expr_idx;
@@ -99,7 +99,7 @@ namespace Sym {
     }
 
     __global__ void apply_heuristics(Symbol* expressions, Symbol* destination,
-                                     size_t* applicability, size_t expression_count) {
+                                     size_t* applicability, size_t* expression_count) {
         size_t thread_count = gridDim.x * blockDim.x;
         size_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -107,7 +107,7 @@ namespace Sym {
 
         for (size_t hrstc_idx = thread_idx / HEURISITC_GROUP_SIZE;
              hrstc_idx < HEURISTIC_CHECK_COUNT; hrstc_idx += hrstc_step) {
-            for (size_t expr_idx = thread_idx % HEURISITC_GROUP_SIZE; expr_idx < expression_count;
+            for (size_t expr_idx = thread_idx % HEURISITC_GROUP_SIZE; expr_idx < *expression_count;
                  expr_idx += HEURISITC_GROUP_SIZE) {
                 Symbol* expression_pointer = expressions + expr_idx * EXPRESSION_MAX_SYMBOL_COUNT;
                 size_t applicability_index = MAX_EXPRESSION_COUNT * hrstc_idx + expr_idx;

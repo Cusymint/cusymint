@@ -30,9 +30,9 @@ namespace Sym {
     constexpr size_t EXPRESSION_ARRAY_SIZE = MAX_EXPRESSION_COUNT * EXPRESSION_MAX_SYMBOL_COUNT;
 
     __global__ void check_heuristics_applicability(Symbol* expressions, size_t* applicability,
-                                                   size_t expression_count);
+                                                   size_t* expression_count);
     __global__ void apply_heuristics(Symbol* expressions, Symbol* destination,
-                                     size_t* applicability, size_t expression_count);
+                                     size_t* applicability, size_t* expression_count);
 }
 
 #endif
