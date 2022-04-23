@@ -9,6 +9,11 @@ namespace Sym {
         if (sym[second_arg_offset].is(Type::Negative)) {
             return "(" + sym[1].to_string() + "-" + sym[second_arg_offset + 1].to_string() + ")";
         }
+        else if (sym[second_arg_offset].is(Type::NumericConstant) &&
+                 sym[second_arg_offset].numeric_constant.value < 0.0) {
+            return "(" + sym[1].to_string() + "-" +
+                   std::to_string(-sym[second_arg_offset].numeric_constant.value) + ")";
+        }
         else {
             return "(" + sym[1].to_string() + "+" + sym[second_arg_offset].to_string() + ")";
         }

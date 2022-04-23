@@ -9,7 +9,7 @@ namespace Sym {
 
     enum class Type {
         // Basic types
-        Unknown,
+        Unknown = 0,
         Variable,
         NumericConstant, // rational constants with given numeric value, e.g. 5, 1.345, 12.44
         KnownConstant,   // well known real constants, e.g. pi, e (Euler's number)
@@ -27,16 +27,16 @@ namespace Sym {
         Cotangent
     };
 
-#define DECLARE_SYMBOL(_name, _simple)    \
-    struct _name {                        \
-        Sym::Type type;                   \
-        bool simplified;                  \
-                                          \
-        static _name create() {           \
-            return {                      \
-                .type = Sym::Type::_name, \
-                .simplified = _simple,    \
-            };                            \
+#define DECLARE_SYMBOL(_name, _simple)              \
+    struct _name {                                  \
+        Sym::Type type;                             \
+        bool simplified;                            \
+                                                    \
+        __host__ __device__ static _name create() { \
+            return {                                \
+                .type = Sym::Type::_name,           \
+                .simplified = _simple,              \
+            };                                      \
         }
 
 // A struct is POD iff it is standard-layout and trivial.
