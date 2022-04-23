@@ -34,6 +34,6 @@ namespace Sym {
     std::vector<Symbol> cos(const std::vector<Symbol>& arg);
     std::vector<Symbol> tan(const std::vector<Symbol>& arg);
     std::vector<Symbol> cot(const std::vector<Symbol>& arg);
-} // namespace Sym
+}
 
 #endif

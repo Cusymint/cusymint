@@ -30,4 +30,4 @@ namespace Sym {
     }
 
     __host__ __device__ void simplify_in_place() {}
-}; // namespace Sym
+};

@@ -84,6 +84,6 @@ namespace Sym {
             return (_instance).unknown._member_function(__VA_ARGS__);          \
         }                                                                      \
     })())
-} // namespace Sym
+}
 
 #endif

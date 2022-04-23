@@ -21,6 +21,6 @@ namespace Sym {
 
     __global__ void check_heuristics_applicability(Symbol* expressions, size_t* applicability,
                                                    size_t expression_count);
-} // namespace Sym
+}
 
 #endif

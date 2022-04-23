@@ -57,6 +57,6 @@ namespace Sym {
 #define DEFINE_TO_STRING(_str) \
     std::string to_string() { return _str; }
 
-}; // namespace Sym
+};
 
 #endif

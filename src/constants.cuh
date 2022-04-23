@@ -30,6 +30,6 @@ namespace Sym {
     std::vector<Symbol> pi();
     std::vector<Symbol> cnst(const char name[UnknownConstant::NAME_LEN]);
     std::vector<Symbol> num(double value);
-} // namespace Sym
+}
 
 #endif

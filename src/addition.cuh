@@ -21,6 +21,6 @@ namespace Sym {
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);
     std::vector<Symbol> operator-(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);
     std::vector<Symbol> operator-(const std::vector<Symbol>& arg);
-} // namespace Sym
+}
 
 #endif

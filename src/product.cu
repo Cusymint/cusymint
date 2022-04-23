@@ -41,4 +41,4 @@ namespace Sym {
 
         return res;
     }
-} // namespace Sym
+}

@@ -11,3 +11,4 @@ BraceWrapping:
 AlignEscapedNewlines: Left
 NamespaceIndentation: All
 PointerAlignment: Left
+FixNamespaceComments: false

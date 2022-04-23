@@ -39,4 +39,4 @@ namespace Sym {
         v[0].numeric_constant.value = value;
         return v;
     }
-} // namespace Sym
+}

@@ -8,4 +8,4 @@ namespace Sym {
         v[0].variable = Variable::create();
         return v;
     }
-} // namespace
+}

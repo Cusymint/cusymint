@@ -11,6 +11,6 @@ namespace Sym {
     END_DECLARE_SYMBOL(Variable)
 
     std::vector<Symbol> var();
-} // namespace Sym
+}
 
 #endif

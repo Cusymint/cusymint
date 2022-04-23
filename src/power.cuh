@@ -13,6 +13,6 @@ namespace Sym {
     END_DECLARE_SYMBOL(Power)
 
     std::vector<Symbol> operator^(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);
-} // namespace Sym
+}
 
 #endif
