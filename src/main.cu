@@ -4,6 +4,9 @@
 #include <iostream>
 #include <vector>
 
+#include <thrust/execution_policy.h>
+#include <thrust/scan.h>
+
 #include "integrate.cuh"
 #include "symbol.cuh"
 
@@ -55,6 +58,12 @@ int main() {
                                                       expressions.size());
 
     std::cout << "Checked heuristics" << std::endl;
+    std::cout << "Calculating partial sum of applicability" << std::endl;
+
+    thrust::inclusive_scan(thrust::device, d_applicability,
+                           d_applicability + Sym::APPLICABILITY_SIZE, d_applicability);
+
+    std::cout << "Calculated partial sum of applicability" << std::endl;
     std::cout << "Copying results to host memory" << std::endl;
 
     std::vector<size_t> h_applicability(expressions.size());
