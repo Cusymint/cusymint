@@ -1,5 +1,7 @@
 #include "integrate.cuh"
 
+#include "cuda_utils.cuh"
+
 namespace Sym {
     __device__ ApplicabilityCheck known_integral_checks[] = {
         is_simple_variable_power, is_variable_exponent, is_simple_sine, is_simple_cosine};
@@ -96,8 +98,8 @@ namespace Sym {
     __device__ void check_applicability(Symbol* expressions, size_t* applicability,
                                         size_t* expression_count, ApplicabilityCheck* checks,
                                         size_t check_count) {
-        size_t thread_count = gridDim.x * blockDim.x;
-        size_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x;
+        size_t thread_count = Util::thread_count();
+        size_t thread_idx = Util::thread_idx();
 
         size_t check_step = thread_count / TRANSFORM_GROUP_SIZE;
 
@@ -116,8 +118,8 @@ namespace Sym {
     __device__ void apply_transforms(Symbol* expressions, Symbol* destinations,
                                      size_t* applicability, size_t* expression_count,
                                      ExpressionTransform* transforms, size_t transform_count) {
-        size_t thread_count = gridDim.x * blockDim.x;
-        size_t thread_idx = threadIdx.x + blockDim.x * blockIdx.x;
+        size_t thread_count = Util::thread_count();
+        size_t thread_idx = Util::thread_idx();
 
         size_t trans_step = thread_count / TRANSFORM_GROUP_SIZE;
 
