@@ -1,5 +1,7 @@
 #include "constants.cuh"
 
+#include <stdexcept>
+
 #include "symbol.cuh"
 
 namespace Sym {
@@ -13,6 +15,16 @@ namespace Sym {
         default:
             return "<Undefined known constant>";
         }
+    }
+
+    UnknownConstant UnknownConstant::create(const char* const name) {
+        UnknownConstant unknown_constant = UnknownConstant::create();
+        if (strlen(name) + 1 > NAME_LEN) {
+            throw std::invalid_argument("UnknownConstant created with name longer than NAME_LEN");
+        }
+
+        strcpy(unknown_constant.name, name);
+        return unknown_constant;
     }
 
     std::vector<Symbol> known_constant(KnownConstantValue value) {

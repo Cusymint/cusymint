@@ -31,11 +31,13 @@ namespace Sym {
     struct _name {                                  \
         Sym::Type type;                             \
         bool simplified;                            \
+        size_t total_size;                          \
                                                     \
         __host__ __device__ static _name create() { \
             return {                                \
                 .type = Sym::Type::_name,           \
                 .simplified = _simple,              \
+                .total_size = 1,                    \
             };                                      \
         }
 
@@ -48,11 +50,9 @@ namespace Sym {
     ;                             \
     static_assert(std::is_pod<_name>::value, "Type '" #_name "' has to be POD, but is not!");
 
-#define ONE_ARGUMENT_OP_SYMBOL size_t total_size;
+#define ONE_ARGUMENT_OP_SYMBOL
 
-#define TWO_ARGUMENT_OP_SYMBOL \
-    size_t total_size;         \
-    size_t second_arg_offset;
+#define TWO_ARGUMENT_OP_SYMBOL size_t second_arg_offset;
 
 #define DEFINE_TO_STRING(_str) \
     std::string to_string() { return _str; }

@@ -22,6 +22,7 @@ namespace Sym {
     DECLARE_SYMBOL(UnknownConstant, true)
     static constexpr size_t NAME_LEN = 8;
     char name[NAME_LEN];
+    static UnknownConstant create(const char* const name);
     DEFINE_TO_STRING(name)
     END_DECLARE_SYMBOL(UnknownConstant)
 

@@ -25,9 +25,15 @@ namespace Sym {
         return this[0].is(Type::Negative) && this[1].is(Type::NumericConstant);
     }
 
-    std::string Symbol::to_string() {
-        return VIRTUAL_CALL(*this, to_string);
+    void Symbol::substitute_variable_with(Symbol symbol) {
+        for (size_t i = 0; i < unknown.total_size; ++i) {
+            if (this[i].is(Type::Variable)) {
+                this[i] = symbol;
+            }
+        }
     }
+
+    std::string Symbol::to_string() { return VIRTUAL_CALL(*this, to_string); }
 
     __host__ __device__ void simplify_in_place() {}
 };

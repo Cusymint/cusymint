@@ -47,6 +47,8 @@ namespace Sym {
         __host__ __device__ bool is_numeric_constant_negation() const;
         __host__ __device__ void simplify_in_place();
 
+        void substitute_variable_with(Symbol symbol);
+
         __host__ std::string to_string();
     };
 
