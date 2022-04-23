@@ -22,7 +22,6 @@ int main() {
                                                          Sym::var() ^ Sym::pi(),
                                                          Sym::var() ^ Sym::var(),
                                                          Sym::pi()};
-    std::cout << "Expression created" << std::endl;
 
     for (size_t i = 0; i < expressions.size(); ++i) {
         std::cout << expressions[i][0].to_string() << std::endl;
@@ -41,7 +40,6 @@ int main() {
     cudaMalloc(&d_applicability, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
     cudaMemset(d_applicability, 0, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
 
-    std::cout << "Allocated GPU memory" << std::endl;
     std::cout << "Copying to GPU memory" << std::endl;
 
     for (size_t i = 0; i < expressions.size(); ++i) {
@@ -49,25 +47,21 @@ int main() {
                    expressions[i].size() * sizeof(Sym::Symbol), cudaMemcpyHostToDevice);
     }
 
-    std::cout << "Copied to GPU memory" << std::endl;
     std::cout << "Checking heuristics" << std::endl;
 
     Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_expressions, d_applicability,
                                                                      expressions.size());
 
-    std::cout << "Checked heuristics" << std::endl;
     std::cout << "Calculating partial sum of applicability" << std::endl;
 
     thrust::inclusive_scan(thrust::device, d_applicability,
                            d_applicability + Sym::APPLICABILITY_ARRAY_SIZE, d_applicability);
 
-    std::cout << "Calculated partial sum of applicability" << std::endl;
     std::cout << "Applying heuristics" << std::endl;
 
     Sym::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_expressions, d_expressions_swap,
                                                        d_applicability, expressions.size());
 
-    std::cout << "Heuristics applied" << std::endl;
     std::cout << "Copying results to host memory" << std::endl;
 
     std::vector<size_t> h_applicability(Sym::APPLICABILITY_ARRAY_SIZE);
@@ -77,8 +71,6 @@ int main() {
     std::vector<Sym::Symbol> h_results(Sym::EXPRESSION_ARRAY_SIZE);
     cudaMemcpy(h_results.data(), d_expressions_swap,
                Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol), cudaMemcpyDeviceToHost);
-
-    std::cout << "Copied results to host memory" << std::endl;
 
     std::cout << "Applicability:" << std::endl;
     for (size_t i = 0; i < h_applicability.size(); ++i) {
@@ -100,5 +92,4 @@ int main() {
     cudaFree(d_applicability);
     cudaFree(d_expressions_swap);
     cudaFree(d_expressions);
-    std::cout << "Freed GPU memory" << std::endl;
 }
