@@ -6,8 +6,10 @@
 
 #include "addition.cuh"
 #include "constants.cuh"
+#include "integral.cuh"
 #include "power.cuh"
 #include "product.cuh"
+#include "substitution.cuh"
 #include "trigonometric.cuh"
 #include "unknown.cuh"
 #include "variable.cuh"
@@ -19,6 +21,8 @@ namespace Sym {
         NumericConstant numeric_constant;
         KnownConstant known_constant;
         UnknownConstant unknown_constant;
+        Integral integral;
+        Substitution substitution;
         Addition addition;
         Negative negative;
         Product product;
@@ -47,6 +51,10 @@ namespace Sym {
         __host__ __device__ bool is_numeric_constant_negation() const;
         __host__ __device__ void simplify_in_place();
 
+        /* @brief Substitute all occurences of variable with `symbol`
+         *
+         * @param symbol Symbol to substitute variables with, cannot have any children
+         */
         void substitute_variable_with(Symbol symbol);
 
         __host__ std::string to_string();
@@ -63,6 +71,10 @@ namespace Sym {
             return (_instance).known_constant._member_function(__VA_ARGS__);   \
         case Type::UnknownConstant:                                            \
             return (_instance).unknown_constant._member_function(__VA_ARGS__); \
+        case Type::Integral:                                                   \
+            return (_instance).integral._member_function(__VA_ARGS__);         \
+        case Type::Substitution:                                               \
+            return (_instance).substitution._member_function(__VA_ARGS__);     \
         case Type::Addition:                                                   \
             return (_instance).addition._member_function(__VA_ARGS__);         \
         case Type::Negative:                                                   \

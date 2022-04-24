@@ -7,7 +7,7 @@
 #include <thrust/execution_policy.h>
 #include <thrust/scan.h>
 
-#include "integral_expression.cuh"
+#include "integral.cuh"
 #include "integrate.cuh"
 #include "symbol.cuh"
 
@@ -15,19 +15,14 @@ static constexpr size_t BLOCK_SIZE = 1024;
 static constexpr size_t BLOCK_COUNT = 32;
 
 int main() {
-    Sym::IntegralExpression ixpr =
-        Sym::IntegralExpression::from_symbols(Sym::cos(Sym::var()) + Sym::cos(Sym::var()));
-    std::cout << "ixpr1: " << ixpr.to_string() << std::endl;
+    std::vector<Sym::Symbol> ixpr = Sym::integral(Sym::var() ^ Sym::num(2));
+    std::cout << "ixpr1: " << ixpr[0].to_string() << std::endl;
 
-    std::vector<Sym::Symbol> sub1 = Sym::var() ^ Sym::num(2.0);
-    ixpr.substitution_count = 1;
-    memcpy(ixpr.substitutions[0], sub1.data(), sub1.size() * sizeof(Sym::Symbol));
-    std::cout << "ixpr2: " << ixpr.to_string() << std::endl;
+    std::vector<Sym::Symbol> ixpr2 = Sym::substitute(ixpr, Sym::cos(Sym::var()));
+    std::cout << "ixpr2: " << ixpr2[0].to_string() << std::endl;
 
-    std::vector<Sym::Symbol> sub2 = Sym::tan(Sym::var() + Sym::e());
-    ixpr.substitution_count = 2;
-    memcpy(ixpr.substitutions[1], sub2.data(), sub2.size() * sizeof(Sym::Symbol));
-    std::cout << "ixpr3: " << ixpr.to_string() << std::endl;
+    std::vector<Sym::Symbol> ixpr3 = Sym::substitute(ixpr2, Sym::e() ^ Sym::var());
+    std::cout << "ixpr3: " << ixpr3[0].to_string() << std::endl;
 
     std::cout << "Creating an expression" << std::endl;
     std::vector<std::vector<Sym::Symbol>> expressions = {Sym::cos(Sym::var()),

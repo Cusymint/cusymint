@@ -14,6 +14,9 @@ namespace Sym {
         NumericConstant, // rational constants with given numeric value, e.g. 5, 1.345, 12.44
         KnownConstant,   // well known real constants, e.g. pi, e (Euler's number)
         UnknownConstant, // constants marked with letters, e.g. a, phi, delta
+        // Meta info
+        Integral,
+        Substitution,
         // Arithmetic
         Addition,
         Negative,
