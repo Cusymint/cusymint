@@ -24,7 +24,8 @@ namespace Sym {
     // other translation units as well
     constexpr size_t KNOWN_INTEGRAL_COUNT = 4;
     constexpr size_t HEURISTIC_CHECK_COUNT = 1;
-    constexpr size_t MAX_CHECK_COUNT = std::max(KNOWN_INTEGRAL_COUNT, HEURISTIC_CHECK_COUNT);
+    constexpr size_t MAX_CHECK_COUNT =
+        KNOWN_INTEGRAL_COUNT > HEURISTIC_CHECK_COUNT ? KNOWN_INTEGRAL_COUNT : HEURISTIC_CHECK_COUNT;
     constexpr size_t TRANSFORM_GROUP_SIZE = 32;
     constexpr size_t MAX_EXPRESSION_COUNT = 32;
     constexpr size_t EXPRESSION_MAX_SYMBOL_COUNT = 1024;
@@ -36,9 +37,9 @@ namespace Sym {
     __global__ void apply_known_integrals(Symbol* expressions, Symbol* destinations,
                                           size_t* applicability, size_t* expression_count);
     __global__ void check_heuristics_applicability(Symbol* expressions, size_t* applicability,
-                                              size_t* expression_count);
+                                                   size_t* expression_count);
     __global__ void apply_heuristics(Symbol* expressions, Symbol* destinations,
-                                          size_t* applicability, size_t* expression_count);
+                                     size_t* applicability, size_t* expression_count);
 }
 
 #endif

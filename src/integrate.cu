@@ -51,25 +51,35 @@ namespace Sym {
 
     __device__ void integrate_simple_variable_power(Symbol* expression, Symbol* destination) {
         destination[0].product = Product::create();
-        destination[0].product.second_arg_offset = 2;
-        destination[0].product.total_size = 7;
+        destination[0].product.second_arg_offset = 5;
+        destination[0].product.total_size = 10;
 
-        destination[1] = expression[2]; // copy exponent
+        destination[1].reciprocal = Reciprocal::create();
+        destination[1].reciprocal.total_size = 4;
 
-        destination[2].power = Power::create();
-        destination[2].power.second_arg_offset = 2;
-        destination[2].power.total_size = 5;
+        destination[2].addition = Addition::create();
+        destination[2].addition.total_size = 3;
+        destination[2].addition.second_arg_offset = 2;
 
-        destination[3] = expression[1]; // copy variable
+        destination[3] = expression[2]; // copy exponent
 
-        destination[4].addition = Addition::create();
-        destination[4].addition.second_arg_offset = 2;
-        destination[4].addition.total_size = 3;
+        destination[4].numeric_constant = NumericConstant::create();
+        destination[4].numeric_constant.value = 1.0;
 
-        destination[5] = expression[2]; // copy exponent
+        destination[5].power = Power::create();
+        destination[5].power.second_arg_offset = 2;
+        destination[5].power.total_size = 5;
 
-        destination[6].numeric_constant = NumericConstant::create();
-        destination[6].numeric_constant.value = -1.0;
+        destination[6] = expression[1]; // copy variable
+
+        destination[7].addition = Addition::create();
+        destination[7].addition.second_arg_offset = 2;
+        destination[7].addition.total_size = 3;
+
+        destination[8] = expression[2]; // copy exponent
+
+        destination[9].numeric_constant = NumericConstant::create();
+        destination[9].numeric_constant.value = 1.0;
     }
 
     __device__ void integrate_variable_exponent(Symbol* expression, Symbol* destination) {

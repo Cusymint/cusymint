@@ -8,7 +8,8 @@
 
 namespace Sym {
     const char* const Substitution::SUBSTITUTION_NAMES[] = {"u", "v", "w", "t"};
-    const size_t Substitution::SUBSTITUTION_NAME_COUNT = sizeof(Substitution::SUBSTITUTION_NAMES);
+    const size_t Substitution::SUBSTITUTION_NAME_COUNT =
+        sizeof(Substitution::SUBSTITUTION_NAMES) / sizeof(Substitution::SUBSTITUTION_NAMES[0]);
 
     std::string Substitution::nth_substitution_name(const size_t n) {
         if (n < SUBSTITUTION_NAME_COUNT) {
