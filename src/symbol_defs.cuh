@@ -7,7 +7,7 @@
 namespace Sym {
     union Symbol;
 
-    enum class Type {
+    enum class Type : size_t {
         // Basic types
         Unknown = 0,
         Variable,
@@ -33,14 +33,14 @@ namespace Sym {
 #define DECLARE_SYMBOL(_name, _simple)              \
     struct _name {                                  \
         Sym::Type type;                             \
-        bool simplified;                            \
         size_t total_size;                          \
+        bool simplified;                            \
                                                     \
         __host__ __device__ static _name create() { \
             return {                                \
                 .type = Sym::Type::_name,           \
-                .simplified = _simple,              \
                 .total_size = 1,                    \
+                .simplified = _simple,              \
             };                                      \
         }
 

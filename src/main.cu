@@ -11,7 +11,7 @@
 #include "integrate.cuh"
 #include "symbol.cuh"
 
-static constexpr size_t BLOCK_SIZE = 1024;
+static constexpr size_t BLOCK_SIZE = 128;
 static constexpr size_t BLOCK_COUNT = 32;
 
 int main() {
@@ -39,20 +39,28 @@ int main() {
 
     std::cout << "Allocating and zeroing GPU memory" << std::endl;
 
+    size_t mem_total = 0;
+
     Sym::Symbol* d_expressions;
     cudaMalloc(&d_expressions, Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol));
     cudaMemset(d_expressions, 0, Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol));
+    mem_total += Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol);
 
     Sym::Symbol* d_expressions_swap;
     cudaMalloc(&d_expressions_swap, Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol));
+    mem_total += Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol);
 
     size_t* d_applicability;
     cudaMalloc(&d_applicability, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
     cudaMemset(d_applicability, 0, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
+    mem_total += Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t);
 
     size_t h_expression_count = expressions.size();
     size_t* d_expression_count;
     cudaMalloc(&d_expression_count, sizeof(size_t));
+    mem_total += sizeof(size_t);
+
+    std::cout << "Allocated " << mem_total << " bytes (" << mem_total / 1024 / 1024 << "MiB)" << std::endl;
 
     std::cout << "Copying to GPU memory" << std::endl;
 

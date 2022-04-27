@@ -49,37 +49,46 @@ namespace Sym {
         return expression[0].is(Type::Cosine) && expression[1].is(Type::Variable);
     }
 
+    // TODO: Sometimes results in "too many resources requested for launch" error when block size is 1024?
     __device__ void integrate_simple_variable_power(Symbol* expression, Symbol* destination) {
+        size_t exponent_size = expression[2].unknown.total_size;
+
         destination[0].product = Product::create();
         destination[0].product.second_arg_offset = 5;
-        destination[0].product.total_size = 10;
+        destination[0].product.total_size = 8 + 2 * exponent_size;
 
         destination[1].reciprocal = Reciprocal::create();
-        destination[1].reciprocal.total_size = 4;
+        destination[1].reciprocal.total_size = 3 + exponent_size;
 
         destination[2].addition = Addition::create();
-        destination[2].addition.total_size = 3;
+        destination[2].addition.total_size = 2 + exponent_size;
         destination[2].addition.second_arg_offset = 2;
 
-        destination[3] = expression[2]; // copy exponent
+        // copy exponent
+        for (size_t i = 0; i < exponent_size; ++i) {
+            destination[3 + i] = expression[2 + i];
+        }
 
-        destination[4].numeric_constant = NumericConstant::create();
-        destination[4].numeric_constant.value = 1.0;
+        destination[3 + exponent_size].numeric_constant = NumericConstant::create();
+        destination[3 + exponent_size].numeric_constant.value = 1.0;
 
-        destination[5].power = Power::create();
-        destination[5].power.second_arg_offset = 2;
-        destination[5].power.total_size = 5;
+        destination[4 + exponent_size].power = Power::create();
+        destination[4 + exponent_size].power.second_arg_offset = 2;
+        destination[4 + exponent_size].power.total_size = 4 + exponent_size;
 
-        destination[6] = expression[1]; // copy variable
+        destination[5 + exponent_size] = expression[1]; // copy variable
 
-        destination[7].addition = Addition::create();
-        destination[7].addition.second_arg_offset = 2;
-        destination[7].addition.total_size = 3;
+        destination[6 + exponent_size].addition = Addition::create();
+        destination[6 + exponent_size].addition.second_arg_offset = 2;
+        destination[6 + exponent_size].addition.total_size = 2 + exponent_size;
 
-        destination[8] = expression[2]; // copy exponent
+        // copy exponent
+        for (size_t i = 0; i < exponent_size; ++i) {
+            destination[7 + exponent_size + i] = expression[2 + i];
+        }
 
-        destination[9].numeric_constant = NumericConstant::create();
-        destination[9].numeric_constant.value = 1.0;
+        destination[7 + exponent_size * 2].numeric_constant = NumericConstant::create();
+        destination[7 + exponent_size * 2].numeric_constant.value = 1.0;
     }
 
     __device__ void integrate_variable_exponent(Symbol* expression, Symbol* destination) {
