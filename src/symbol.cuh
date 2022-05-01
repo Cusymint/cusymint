@@ -46,6 +46,8 @@ namespace Sym {
             return reinterpret_cast<Symbol*>(sym);
         }
 
+        __host__ __device__ bool is_constant();
+
         /*
          * @brief Returns integrand pointer if `this` is an integral. Undefined behavior otherwise.
          *

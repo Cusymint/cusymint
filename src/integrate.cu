@@ -33,10 +33,15 @@ namespace Sym {
 
     __device__ size_t is_simple_variable_power(Symbol* integral) {
         Symbol* integrand = integral->integrand();
-        return integrand[0].is(Type::Power) && integrand[1].is(Type::Variable) &&
-               (integrand[2].is(Type::NumericConstant) &&
-                    integrand[2].numeric_constant.value != 0.0 ||
-                integrand[2].is(Type::KnownConstant) || integrand[2].is(Type::UnknownConstant));
+        if (!integrand[0].is(Type::Power) || !integrand[1].is(Type::Variable)) {
+            return false;
+        }
+
+        if (integrand[2].is(Type::NumericConstant) && integrand[2].numeric_constant.value == -1.0) {
+            return false;
+        }
+
+        return integrand[2].is_constant();
     }
     __device__ size_t is_variable_exponent(Symbol* integral) {
         Symbol* integrand = integral->integrand();
@@ -56,8 +61,7 @@ namespace Sym {
 
     __device__ size_t is_constant(Symbol* integral) {
         Symbol* integrand = integral->integrand();
-        return integrand[0].is(Type::NumericConstant) || integrand[0].is(Type::KnownConstant) ||
-               integrand[0].is(Type::UnknownConstant);
+        return integrand->is_constant();
     }
 
     // TODO: Sometimes results in "too many resources requested for launch" error when block size is
@@ -69,7 +73,7 @@ namespace Sym {
         Symbol* symbols_dst = prepare_solution(integral, destination, 8 + 2 * exponent_size);
 
         symbols_dst[0].product = Product::create();
-        symbols_dst[0].product.second_arg_offset = 5;
+        symbols_dst[0].product.second_arg_offset = 4 + exponent_size;
         symbols_dst[0].product.total_size = 8 + 2 * exponent_size;
 
         symbols_dst[1].reciprocal = Reciprocal::create();
@@ -77,7 +81,7 @@ namespace Sym {
 
         symbols_dst[2].addition = Addition::create();
         symbols_dst[2].addition.total_size = 2 + exponent_size;
-        symbols_dst[2].addition.second_arg_offset = 2;
+        symbols_dst[2].addition.second_arg_offset = 1 + exponent_size;
 
         // copy exponent
         for (size_t i = 0; i < exponent_size; ++i) {
@@ -94,7 +98,7 @@ namespace Sym {
         symbols_dst[5 + exponent_size] = integrand[1]; // copy variable
 
         symbols_dst[6 + exponent_size].addition = Addition::create();
-        symbols_dst[6 + exponent_size].addition.second_arg_offset = 2;
+        symbols_dst[6 + exponent_size].addition.second_arg_offset = 1 + exponent_size;
         symbols_dst[6 + exponent_size].addition.total_size = 2 + exponent_size;
 
         // copy exponent
@@ -137,13 +141,20 @@ namespace Sym {
     }
 
     __device__ void integrate_constant(Symbol* integral, Symbol* destination) {
-        Symbol* symbols_dst = prepare_solution(integral, destination, 3);
         Symbol* integrand = integral->integrand();
+
+        Symbol* symbols_dst =
+            prepare_solution(integral, destination, 2 + integrand->unknown.total_size);
+
         symbols_dst[0].product = Product::create();
-        symbols_dst[0].product.total_size = 3;
+        symbols_dst[0].product.total_size = 2 + integrand->unknown.total_size;
         symbols_dst[0].product.second_arg_offset = 2;
         symbols_dst[1].variable = Variable::create();
-        symbols_dst[2] = integrand[0]; // copy constant
+
+        // copy constant
+        for (size_t i = 0; i < integrand->unknown.total_size; ++i) {
+            symbols_dst[2 + i] = integrand[i];
+        }
     }
 
     __device__ Symbol* prepare_solution(Symbol* integral, Symbol* destination,

@@ -33,9 +33,9 @@ int main() {
         Sym::integral(Sym::sin(Sym::cos(Sym::var()))),
         Sym::integral(Sym::e() ^ Sym::var()),
         Sym::integral(Sym::var() ^ Sym::num(5)),
-        Sym::integral(Sym::var() ^ Sym::pi()),
+        Sym::integral(Sym::var() ^ (Sym::pi() + Sym::num(1))),
         Sym::integral(Sym::var() ^ Sym::var()),
-        Sym::integral(Sym::pi())};
+        Sym::integral(Sym::pi() + Sym::e() * Sym::num(10))};
 
     for (size_t i = 0; i < integrals.size(); ++i) {
         std::cout << integrals[i][0].to_string() << std::endl;
