@@ -3,21 +3,13 @@
 #include "symbol.cuh"
 
 namespace Sym {
-    std::string Sine::to_string() {
-        return "sin(" + Symbol::from(this)[1].to_string() + ")";
-    }
+    std::string Sine::to_string() { return "sin(" + Symbol::from(this)[1].to_string() + ")"; }
 
-    std::string Cosine::to_string() {
-        return "cos(" + Symbol::from(this)[1].to_string() + ")";
-    }
+    std::string Cosine::to_string() { return "cos(" + Symbol::from(this)[1].to_string() + ")"; }
 
-    std::string Tangent::to_string() {
-        return "tan(" + Symbol::from(this)[1].to_string() + ")";
-    }
+    std::string Tangent::to_string() { return "tan(" + Symbol::from(this)[1].to_string() + ")"; }
 
-    std::string Cotangent::to_string() {
-        return "cot(" + Symbol::from(this)[1].to_string() + ")";
-    }
+    std::string Cotangent::to_string() { return "cot(" + Symbol::from(this)[1].to_string() + ")"; }
 
     std::vector<Symbol> sin(const std::vector<Symbol>& arg) {
         std::vector<Symbol> res(arg.size() + 1);
