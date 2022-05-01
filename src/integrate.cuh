@@ -19,9 +19,24 @@ namespace Sym {
     __device__ void integrate_simple_cosine(Symbol* integral, Symbol* destination);
     __device__ void integrate_constant(Symbol* integral, Symbol* destination);
 
-    // HEURISTIC_CHECK_COUNT cannot be defined as sizeof(heurisic_checks) because `heurisic_checks`
-    // is defined in translation unit associated with integrate.cu, but its size has to be known in
-    // other translation units as well
+    __device__ size_t dummy_heuristic_check(Symbol*);
+
+    __device__ void dummy_heuristic_transform(Symbol*, Symbol*);
+
+    /*
+     * @brief Creates a `Solution` symbol at `destination[0]` and all substitutions from `integral`
+     *
+     * @param integral Integral to copy substitutions from
+     * @param destination Solution destination
+     *
+     * @return Pointer to one symbol after last substitution (destination of solution symbols)
+     */
+    __device__ Symbol* prepare_solution(Symbol* integral, Symbol* destination,
+                                        size_t solution_size);
+
+    // HEURISTIC_CHECK_COUNT cannot be defined as sizeof(heurisic_checks) because
+    // `heurisic_checks` is defined in translation unit associated with integrate.cu, but its
+    // size has to be known in other translation units as well
     constexpr size_t KNOWN_INTEGRAL_COUNT = 5;
     constexpr size_t HEURISTIC_CHECK_COUNT = 1;
     constexpr size_t MAX_CHECK_COUNT =

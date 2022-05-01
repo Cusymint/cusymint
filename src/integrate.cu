@@ -18,9 +18,6 @@ namespace Sym {
                       sizeof(ApplicabilityCheck) * KNOWN_INTEGRAL_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
-    __device__ size_t dummy_heuristic_check(Symbol*) { return 0; }
-    __device__ void dummy_heuristic_transform(Symbol*, Symbol*) {}
-
     __device__ ApplicabilityCheck heuristic_checks[] = {dummy_heuristic_check};
 
     __device__ IntegralTransform heuristic_applications[] = {dummy_heuristic_transform};
@@ -30,6 +27,9 @@ namespace Sym {
 
     static_assert(sizeof(heuristic_checks) == sizeof(ApplicabilityCheck) * HEURISTIC_CHECK_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
+
+    __device__ size_t dummy_heuristic_check(Symbol*) { return 0; }
+    __device__ void dummy_heuristic_transform(Symbol*, Symbol*) {}
 
     __device__ size_t is_simple_variable_power(Symbol* integral) {
         Symbol* integrand = integral->integrand();
@@ -66,77 +66,98 @@ namespace Sym {
         Symbol* integrand = integral->integrand();
         size_t exponent_size = integrand[2].unknown.total_size;
 
-        destination[0].product = Product::create();
-        destination[0].product.second_arg_offset = 5;
-        destination[0].product.total_size = 8 + 2 * exponent_size;
+        Symbol* symbols_dst = prepare_solution(integral, destination, 8 + 2 * exponent_size);
 
-        destination[1].reciprocal = Reciprocal::create();
-        destination[1].reciprocal.total_size = 3 + exponent_size;
+        symbols_dst[0].product = Product::create();
+        symbols_dst[0].product.second_arg_offset = 5;
+        symbols_dst[0].product.total_size = 8 + 2 * exponent_size;
 
-        destination[2].addition = Addition::create();
-        destination[2].addition.total_size = 2 + exponent_size;
-        destination[2].addition.second_arg_offset = 2;
+        symbols_dst[1].reciprocal = Reciprocal::create();
+        symbols_dst[1].reciprocal.total_size = 3 + exponent_size;
 
-        // copy exponent
-        for (size_t i = 0; i < exponent_size; ++i) {
-            destination[3 + i] = integrand[2 + i];
-        }
-
-        destination[3 + exponent_size].numeric_constant = NumericConstant::create();
-        destination[3 + exponent_size].numeric_constant.value = 1.0;
-
-        destination[4 + exponent_size].power = Power::create();
-        destination[4 + exponent_size].power.second_arg_offset = 2;
-        destination[4 + exponent_size].power.total_size = 4 + exponent_size;
-
-        destination[5 + exponent_size] = integrand[1]; // copy variable
-
-        destination[6 + exponent_size].addition = Addition::create();
-        destination[6 + exponent_size].addition.second_arg_offset = 2;
-        destination[6 + exponent_size].addition.total_size = 2 + exponent_size;
+        symbols_dst[2].addition = Addition::create();
+        symbols_dst[2].addition.total_size = 2 + exponent_size;
+        symbols_dst[2].addition.second_arg_offset = 2;
 
         // copy exponent
         for (size_t i = 0; i < exponent_size; ++i) {
-            destination[7 + exponent_size + i] = integrand[2 + i];
+            symbols_dst[3 + i] = integrand[2 + i];
         }
 
-        destination[7 + exponent_size * 2].numeric_constant = NumericConstant::create();
-        destination[7 + exponent_size * 2].numeric_constant.value = 1.0;
+        symbols_dst[3 + exponent_size].numeric_constant = NumericConstant::create();
+        symbols_dst[3 + exponent_size].numeric_constant.value = 1.0;
+
+        symbols_dst[4 + exponent_size].power = Power::create();
+        symbols_dst[4 + exponent_size].power.second_arg_offset = 2;
+        symbols_dst[4 + exponent_size].power.total_size = 4 + exponent_size;
+
+        symbols_dst[5 + exponent_size] = integrand[1]; // copy variable
+
+        symbols_dst[6 + exponent_size].addition = Addition::create();
+        symbols_dst[6 + exponent_size].addition.second_arg_offset = 2;
+        symbols_dst[6 + exponent_size].addition.total_size = 2 + exponent_size;
+
+        // copy exponent
+        for (size_t i = 0; i < exponent_size; ++i) {
+            symbols_dst[7 + exponent_size + i] = integrand[2 + i];
+        }
+
+        symbols_dst[7 + exponent_size * 2].numeric_constant = NumericConstant::create();
+        symbols_dst[7 + exponent_size * 2].numeric_constant.value = 1.0;
     }
 
     __device__ void integrate_variable_exponent(Symbol* integral, Symbol* destination) {
+        Symbol* symbols_dst = prepare_solution(integral, destination, 3);
         Symbol* integrand = integral->integrand();
-        destination[0] = integrand[0]; // power
-        destination[1] = integrand[1]; // e constant
-        destination[2] = integrand[2]; // variable
+        symbols_dst[0] = integrand[0]; // power
+        symbols_dst[1] = integrand[1]; // e constant
+        symbols_dst[2] = integrand[2]; // variable
     }
 
     __device__ void integrate_simple_sine(Symbol* integral, Symbol* destination) {
+        Symbol* symbols_dst = prepare_solution(integral, destination, 3);
         Symbol* integrand = integral->integrand();
-        destination[0].negative = Negative::create();
-        destination[0].negative.total_size = 3;
+        symbols_dst[0].negative = Negative::create();
+        symbols_dst[0].negative.total_size = 3;
 
-        destination[1].cosine = Cosine::create();
-        destination[1].cosine.total_size = 2;
+        symbols_dst[1].cosine = Cosine::create();
+        symbols_dst[1].cosine.total_size = 2;
 
-        destination[2] = integrand[1]; // copy variable
+        symbols_dst[2] = integrand[1]; // copy variable
     }
 
     __device__ void integrate_simple_cosine(Symbol* integral, Symbol* destination) {
+        Symbol* symbols_dst = prepare_solution(integral, destination, 2);
         Symbol* integrand = integral->integrand();
-        destination[0].sine = Sine::create();
-        destination[0].sine.total_size = 2;
 
-        destination[1] = integrand[1]; // copy variable
+        symbols_dst[0].sine = Sine::create();
+        symbols_dst[0].sine.total_size = 2;
+
+        symbols_dst[1] = integrand[1]; // copy variable
     }
 
     __device__ void integrate_constant(Symbol* integral, Symbol* destination) {
+        Symbol* symbols_dst = prepare_solution(integral, destination, 3);
         Symbol* integrand = integral->integrand();
-        destination[0].product = Product::create();
-        destination[0].product.total_size = 3;
-        destination[0].product.second_arg_offset = 2;
-        destination[1].variable = Variable::create();
-        destination[2] = integrand[0]; // copy constant
+        symbols_dst[0].product = Product::create();
+        symbols_dst[0].product.total_size = 3;
+        symbols_dst[0].product.second_arg_offset = 2;
+        symbols_dst[1].variable = Variable::create();
+        symbols_dst[2] = integrand[0]; // copy constant
+    }
+
+    __device__ Symbol* prepare_solution(Symbol* integral, Symbol* destination,
+                                        size_t solution_size) {
+        destination[0].solution = Solution::create();
+        destination[0].solution.total_size = integral->integral.integrand_offset + solution_size;
+        destination[0].solution.symbols_offset = integral->integral.integrand_offset;
+        destination[0].solution.substitution_count = integral->integral.substitution_count;
+
+        for (size_t i = 1; i < integral->integral.integrand_offset; ++i) {
+            destination[i] = integral[i];
+        }
+
+        return destination + integral->integral.integrand_offset;
     }
 
     __device__ void check_applicability(Symbol* integrals, size_t* applicability,

@@ -9,6 +9,7 @@
 #include "integral.cuh"
 #include "power.cuh"
 #include "product.cuh"
+#include "solution.cuh"
 #include "substitution.cuh"
 #include "trigonometric.cuh"
 #include "unknown.cuh"
@@ -22,6 +23,7 @@ namespace Sym {
         KnownConstant known_constant;
         UnknownConstant unknown_constant;
         Integral integral;
+        Solution solution;
         Substitution substitution;
         Addition addition;
         Negative negative;
@@ -74,6 +76,8 @@ namespace Sym {
             return (_instance).unknown_constant._member_function(__VA_ARGS__); \
         case Type::Integral:                                                   \
             return (_instance).integral._member_function(__VA_ARGS__);         \
+        case Type::Solution:                                                   \
+            return (_instance).solution._member_function(__VA_ARGS__);         \
         case Type::Substitution:                                               \
             return (_instance).substitution._member_function(__VA_ARGS__);     \
         case Type::Addition:                                                   \

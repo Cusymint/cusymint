@@ -42,14 +42,16 @@ namespace Sym {
         std::string sub_substitutions;
 
         if (sub_substitution_count != 0) {
-            Symbol* this_symbol = Symbol::from(this);
-            Symbol* next_substitution = this_symbol + 1 + this_symbol[1].unknown.total_size;
-
-            sub_substitutions = next_substitution->to_string() + ", ";
+            sub_substitutions = next_substitution()->to_string() + ", ";
         }
 
         return sub_substitutions + nth_substitution_name(substitution_idx) + " = " +
                subst_symbols.data()->to_string();
+    }
+
+    __host__ __device__ Symbol* Substitution::next_substitution() {
+        Symbol* this_symbol = Symbol::from(this);
+        return this_symbol + 1 + this_symbol[1].unknown.total_size;
     }
 
     std::vector<Symbol> substitute(const std::vector<Symbol>& integral,
@@ -71,12 +73,12 @@ namespace Sym {
         for (size_t i = 0; i < integral[0].integral.substitution_count; ++i) {
             current_substitution->substitution.sub_substitution_count += 1;
             current_substitution->substitution.total_size += 1 + substitution_expr.size();
-            current_substitution += 1 + current_substitution[1].unknown.total_size;
+            current_substitution = current_substitution->substitution.next_substitution();
         }
 
         current_substitution->substitution = Substitution::create();
         current_substitution->substitution.total_size =
-            substitution_expr.size() + integral[0].unknown.total_size;
+            1 + substitution_expr.size() + integral[0].unknown.total_size;
         current_substitution->substitution.substitution_idx =
             integral[0].integral.substitution_count;
         current_substitution->substitution.sub_substitution_count = 0;

@@ -4,19 +4,22 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(cusymint LANGUAGES CXX CUDA)
 
+set(SRC_DIR "src")
+
 add_executable(
   cusymint
-  src/main.cu
-  src/symbol.cu
-  src/constants.cu
-  src/variable.cu
-  src/addition.cu
-  src/product.cu
-  src/power.cu
-  src/trigonometric.cu
-  src/integrate.cu
-  src/integral.cu
-  src/substitution.cu)
+  ${SRC_DIR}/main.cu
+  ${SRC_DIR}/symbol.cu
+  ${SRC_DIR}/constants.cu
+  ${SRC_DIR}/variable.cu
+  ${SRC_DIR}/addition.cu
+  ${SRC_DIR}/product.cu
+  ${SRC_DIR}/power.cu
+  ${SRC_DIR}/trigonometric.cu
+  ${SRC_DIR}/integrate.cu
+  ${SRC_DIR}/integral.cu
+  ${SRC_DIR}/substitution.cu
+  ${SRC_DIR}/solution.cu)
 
 target_compile_features(cusymint PUBLIC cxx_std_14)
 set_target_properties(cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON

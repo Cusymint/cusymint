@@ -13,6 +13,7 @@ namespace Sym {
     size_t substitution_idx;
     size_t sub_substitution_count;
     std::string to_string();
+    __host__ __device__ Symbol* next_substitution();
     END_DECLARE_SYMBOL(Substitution)
 
     std::vector<Symbol> substitute(const std::vector<Symbol>& integral,
