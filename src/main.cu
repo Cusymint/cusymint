@@ -11,20 +11,23 @@
 #include "integrate.cuh"
 #include "symbol.cuh"
 
-static constexpr size_t BLOCK_SIZE = 128;
+static constexpr size_t BLOCK_SIZE = 512;
 static constexpr size_t BLOCK_COUNT = 32;
 
 int main() {
+    std::cout << "Testing manual substitutions" << std::endl;
     std::vector<Sym::Symbol> ixpr = Sym::integral(Sym::var() ^ Sym::num(2));
     std::cout << "ixpr1: " << ixpr[0].to_string() << std::endl;
 
     std::vector<Sym::Symbol> ixpr2 = Sym::substitute(ixpr, Sym::cos(Sym::var()));
     std::cout << "ixpr2: " << ixpr2[0].to_string() << std::endl;
 
-    std::vector<Sym::Symbol> ixpr3 = Sym::substitute(ixpr2, Sym::e() ^ Sym::var());
+    std::vector<Sym::Symbol> ixpr3 = Sym::substitute(ixpr2, Sym::var() * (Sym::e() ^ Sym::var()));
     std::cout << "ixpr3: " << ixpr3[0].to_string() << std::endl;
 
+    std::cout << std::endl;
     std::cout << "Creating an expression" << std::endl;
+
     std::vector<std::vector<Sym::Symbol>> expressions = {Sym::cos(Sym::var()),
                                                          Sym::sin(Sym::cos(Sym::var())),
                                                          Sym::e() ^ Sym::var(),
@@ -37,6 +40,7 @@ int main() {
         std::cout << expressions[i][0].to_string() << std::endl;
     }
 
+    std::cout << std::endl;
     std::cout << "Allocating and zeroing GPU memory" << std::endl;
 
     size_t mem_total = 0;
@@ -60,7 +64,8 @@ int main() {
     cudaMalloc(&d_expression_count, sizeof(size_t));
     mem_total += sizeof(size_t);
 
-    std::cout << "Allocated " << mem_total << " bytes (" << mem_total / 1024 / 1024 << "MiB)" << std::endl;
+    std::cout << "Allocated " << mem_total << " bytes (" << mem_total / 1024 / 1024 << "MiB)"
+              << std::endl;
 
     std::cout << "Copying to GPU memory" << std::endl;
 
@@ -70,6 +75,7 @@ int main() {
                    expressions[i].size() * sizeof(Sym::Symbol), cudaMemcpyHostToDevice);
     }
 
+    std::cout << std::endl;
     std::cout << "Checking heuristics" << std::endl;
 
     Sym::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_expressions, d_applicability,
@@ -88,6 +94,7 @@ int main() {
     cudaMemcpy(d_expression_count, d_applicability + Sym::APPLICABILITY_ARRAY_SIZE - 1,
                sizeof(size_t), cudaMemcpyDeviceToDevice);
 
+    std::cout << std::endl;
     std::cout << "Copying results to host memory" << std::endl;
 
     std::vector<size_t> h_applicability(Sym::APPLICABILITY_ARRAY_SIZE);
