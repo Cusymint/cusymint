@@ -44,20 +44,21 @@ namespace Sym {
             return reinterpret_cast<Symbol*>(sym);
         }
 
-        __host__ __device__ bool is_simple_variable_polynomial() const;
-        __host__ __device__ bool is_variable_reciprocal() const;
-        __host__ __device__ bool is_numeric_constant_addition() const;
-        __host__ __device__ bool is_numeric_constant_product() const;
-        __host__ __device__ bool is_numeric_constant_negation() const;
-        __host__ __device__ void simplify_in_place();
+        /*
+         * @brief Returns integrand pointer if `this` is an integral. Undefined behavior otherwise.
+         *
+         * @return Pointer to integrand
+         */
+        __host__ __device__ inline Symbol* integrand() { return integral.integrand(); }
 
-        /* @brief Substitute all occurences of variable with `symbol`
+        /*
+         * @brief Substitute all occurences of variable with `symbol`
          *
          * @param symbol Symbol to substitute variables with, cannot have any children
          */
         void substitute_variable_with(Symbol symbol);
 
-        __host__ std::string to_string();
+        std::string to_string();
     };
 
 #define VIRTUAL_CALL(_instance, _member_function, ...)                         \

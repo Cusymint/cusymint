@@ -28,13 +28,14 @@ int main() {
     std::cout << std::endl;
     std::cout << "Creating integrals" << std::endl;
 
-    std::vector<std::vector<Sym::Symbol>> integrals = {Sym::cos(Sym::var()),
-                                                       Sym::sin(Sym::cos(Sym::var())),
-                                                       Sym::e() ^ Sym::var(),
-                                                       Sym::var() ^ Sym::num(5),
-                                                       Sym::var() ^ Sym::pi(),
-                                                       Sym::var() ^ Sym::var(),
-                                                       Sym::pi()};
+    std::vector<std::vector<Sym::Symbol>> integrals = {
+        Sym::integral(Sym::cos(Sym::var())),
+        Sym::integral(Sym::sin(Sym::cos(Sym::var()))),
+        Sym::integral(Sym::e() ^ Sym::var()),
+        Sym::integral(Sym::var() ^ Sym::num(5)),
+        Sym::integral(Sym::var() ^ Sym::pi()),
+        Sym::integral(Sym::var() ^ Sym::var()),
+        Sym::integral(Sym::pi())};
 
     for (size_t i = 0; i < integrals.size(); ++i) {
         std::cout << integrals[i][0].to_string() << std::endl;

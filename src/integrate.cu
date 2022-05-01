@@ -32,33 +32,39 @@ namespace Sym {
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
     __device__ size_t is_simple_variable_power(Symbol* integral) {
-        return integral[0].is(Type::Power) && integral[1].is(Type::Variable) &&
-               (integral[2].is(Type::NumericConstant) &&
-                    integral[2].numeric_constant.value != 0.0 ||
-                integral[2].is(Type::KnownConstant) || integral[2].is(Type::UnknownConstant));
+        Symbol* integrand = integral->integrand();
+        return integrand[0].is(Type::Power) && integrand[1].is(Type::Variable) &&
+               (integrand[2].is(Type::NumericConstant) &&
+                    integrand[2].numeric_constant.value != 0.0 ||
+                integrand[2].is(Type::KnownConstant) || integrand[2].is(Type::UnknownConstant));
     }
     __device__ size_t is_variable_exponent(Symbol* integral) {
-        return integral[0].is(Type::Power) && integral[1].is(Type::KnownConstant) &&
-               integral[1].known_constant.value == KnownConstantValue::E &&
-               integral[2].is(Type::Variable);
+        Symbol* integrand = integral->integrand();
+        return integrand[0].is(Type::Power) && integrand[1].is(Type::KnownConstant) &&
+               integrand[1].known_constant.value == KnownConstantValue::E &&
+               integrand[2].is(Type::Variable);
     }
     __device__ size_t is_simple_sine(Symbol* integral) {
-        return integral[0].is(Type::Sine) && integral[1].is(Type::Variable);
+        Symbol* integrand = integral->integrand();
+        return integrand[0].is(Type::Sine) && integrand[1].is(Type::Variable);
     }
 
     __device__ size_t is_simple_cosine(Symbol* integral) {
-        return integral[0].is(Type::Cosine) && integral[1].is(Type::Variable);
+        Symbol* integrand = integral->integrand();
+        return integrand[0].is(Type::Cosine) && integrand[1].is(Type::Variable);
     }
 
     __device__ size_t is_constant(Symbol* integral) {
-        return integral[0].is(Type::NumericConstant) || integral[0].is(Type::KnownConstant) ||
-               integral[0].is(Type::UnknownConstant);
+        Symbol* integrand = integral->integrand();
+        return integrand[0].is(Type::NumericConstant) || integrand[0].is(Type::KnownConstant) ||
+               integrand[0].is(Type::UnknownConstant);
     }
 
     // TODO: Sometimes results in "too many resources requested for launch" error when block size is
     // 1024?
     __device__ void integrate_simple_variable_power(Symbol* integral, Symbol* destination) {
-        size_t exponent_size = integral[2].unknown.total_size;
+        Symbol* integrand = integral->integrand();
+        size_t exponent_size = integrand[2].unknown.total_size;
 
         destination[0].product = Product::create();
         destination[0].product.second_arg_offset = 5;
@@ -73,7 +79,7 @@ namespace Sym {
 
         // copy exponent
         for (size_t i = 0; i < exponent_size; ++i) {
-            destination[3 + i] = integral[2 + i];
+            destination[3 + i] = integrand[2 + i];
         }
 
         destination[3 + exponent_size].numeric_constant = NumericConstant::create();
@@ -83,7 +89,7 @@ namespace Sym {
         destination[4 + exponent_size].power.second_arg_offset = 2;
         destination[4 + exponent_size].power.total_size = 4 + exponent_size;
 
-        destination[5 + exponent_size] = integral[1]; // copy variable
+        destination[5 + exponent_size] = integrand[1]; // copy variable
 
         destination[6 + exponent_size].addition = Addition::create();
         destination[6 + exponent_size].addition.second_arg_offset = 2;
@@ -91,7 +97,7 @@ namespace Sym {
 
         // copy exponent
         for (size_t i = 0; i < exponent_size; ++i) {
-            destination[7 + exponent_size + i] = integral[2 + i];
+            destination[7 + exponent_size + i] = integrand[2 + i];
         }
 
         destination[7 + exponent_size * 2].numeric_constant = NumericConstant::create();
@@ -99,34 +105,38 @@ namespace Sym {
     }
 
     __device__ void integrate_variable_exponent(Symbol* integral, Symbol* destination) {
-        destination[0] = integral[0]; // power
-        destination[1] = integral[1]; // e constant
-        destination[2] = integral[2]; // variable
+        Symbol* integrand = integral->integrand();
+        destination[0] = integrand[0]; // power
+        destination[1] = integrand[1]; // e constant
+        destination[2] = integrand[2]; // variable
     }
 
     __device__ void integrate_simple_sine(Symbol* integral, Symbol* destination) {
+        Symbol* integrand = integral->integrand();
         destination[0].negative = Negative::create();
         destination[0].negative.total_size = 3;
 
         destination[1].cosine = Cosine::create();
         destination[1].cosine.total_size = 2;
 
-        destination[2] = integral[1]; // copy variable
+        destination[2] = integrand[1]; // copy variable
     }
 
     __device__ void integrate_simple_cosine(Symbol* integral, Symbol* destination) {
+        Symbol* integrand = integral->integrand();
         destination[0].sine = Sine::create();
         destination[0].sine.total_size = 2;
 
-        destination[1] = integral[1]; // copy variable
+        destination[1] = integrand[1]; // copy variable
     }
 
     __device__ void integrate_constant(Symbol* integral, Symbol* destination) {
+        Symbol* integrand = integral->integrand();
         destination[0].product = Product::create();
         destination[0].product.total_size = 3;
         destination[0].product.second_arg_offset = 2;
         destination[1].variable = Variable::create();
-        destination[2] = integral[0]; // copy constant
+        destination[2] = integrand[0]; // copy constant
     }
 
     __device__ void check_applicability(Symbol* integrals, size_t* applicability,
@@ -149,9 +159,9 @@ namespace Sym {
         }
     }
 
-    __device__ void apply_transforms(Symbol* integrals, Symbol* destinations,
-                                     size_t* applicability, size_t* integral_count,
-                                     IntegralTransform* transforms, size_t transform_count) {
+    __device__ void apply_transforms(Symbol* integrals, Symbol* destinations, size_t* applicability,
+                                     size_t* integral_count, IntegralTransform* transforms,
+                                     size_t transform_count) {
         size_t thread_count = Util::thread_count();
         size_t thread_idx = Util::thread_idx();
 
@@ -195,8 +205,8 @@ namespace Sym {
                             HEURISTIC_CHECK_COUNT);
     }
 
-    __global__ void apply_heuristics(Symbol* integrals, Symbol* destinations,
-                                     size_t* applicability, size_t* integral_count) {
+    __global__ void apply_heuristics(Symbol* integrals, Symbol* destinations, size_t* applicability,
+                                     size_t* integral_count) {
         apply_transforms(integrals, destinations, applicability, integral_count,
                          heuristic_applications, HEURISTIC_CHECK_COUNT);
     }
