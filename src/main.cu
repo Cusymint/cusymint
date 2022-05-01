@@ -26,18 +26,18 @@ int main() {
     std::cout << "ixpr3: " << ixpr3[0].to_string() << std::endl;
 
     std::cout << std::endl;
-    std::cout << "Creating an expression" << std::endl;
+    std::cout << "Creating integrals" << std::endl;
 
-    std::vector<std::vector<Sym::Symbol>> expressions = {Sym::cos(Sym::var()),
-                                                         Sym::sin(Sym::cos(Sym::var())),
-                                                         Sym::e() ^ Sym::var(),
-                                                         Sym::var() ^ Sym::num(5),
-                                                         Sym::var() ^ Sym::pi(),
-                                                         Sym::var() ^ Sym::var(),
-                                                         Sym::pi()};
+    std::vector<std::vector<Sym::Symbol>> integrals = {Sym::cos(Sym::var()),
+                                                       Sym::sin(Sym::cos(Sym::var())),
+                                                       Sym::e() ^ Sym::var(),
+                                                       Sym::var() ^ Sym::num(5),
+                                                       Sym::var() ^ Sym::pi(),
+                                                       Sym::var() ^ Sym::var(),
+                                                       Sym::pi()};
 
-    for (size_t i = 0; i < expressions.size(); ++i) {
-        std::cout << expressions[i][0].to_string() << std::endl;
+    for (size_t i = 0; i < integrals.size(); ++i) {
+        std::cout << integrals[i][0].to_string() << std::endl;
     }
 
     std::cout << std::endl;
@@ -45,23 +45,23 @@ int main() {
 
     size_t mem_total = 0;
 
-    Sym::Symbol* d_expressions;
-    cudaMalloc(&d_expressions, Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol));
-    cudaMemset(d_expressions, 0, Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol));
-    mem_total += Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol);
+    Sym::Symbol* d_integrals;
+    cudaMalloc(&d_integrals, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
+    cudaMemset(d_integrals, 0, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
+    mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
 
-    Sym::Symbol* d_expressions_swap;
-    cudaMalloc(&d_expressions_swap, Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol));
-    mem_total += Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol);
+    Sym::Symbol* d_integrals_swap;
+    cudaMalloc(&d_integrals_swap, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
+    mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
 
     size_t* d_applicability;
     cudaMalloc(&d_applicability, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
     cudaMemset(d_applicability, 0, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
     mem_total += Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t);
 
-    size_t h_expression_count = expressions.size();
-    size_t* d_expression_count;
-    cudaMalloc(&d_expression_count, sizeof(size_t));
+    size_t h_integral_count = integrals.size();
+    size_t* d_integral_count;
+    cudaMalloc(&d_integral_count, sizeof(size_t));
     mem_total += sizeof(size_t);
 
     std::cout << "Allocated " << mem_total << " bytes (" << mem_total / 1024 / 1024 << "MiB)"
@@ -69,17 +69,17 @@ int main() {
 
     std::cout << "Copying to GPU memory" << std::endl;
 
-    cudaMemcpy(d_expression_count, &h_expression_count, sizeof(size_t), cudaMemcpyHostToDevice);
-    for (size_t i = 0; i < expressions.size(); ++i) {
-        cudaMemcpy(d_expressions + Sym::EXPRESSION_MAX_SYMBOL_COUNT * i, expressions[i].data(),
-                   expressions[i].size() * sizeof(Sym::Symbol), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_integral_count, &h_integral_count, sizeof(size_t), cudaMemcpyHostToDevice);
+    for (size_t i = 0; i < integrals.size(); ++i) {
+        cudaMemcpy(d_integrals + Sym::INTEGRAL_MAX_SYMBOL_COUNT * i, integrals[i].data(),
+                   integrals[i].size() * sizeof(Sym::Symbol), cudaMemcpyHostToDevice);
     }
 
     std::cout << std::endl;
     std::cout << "Checking heuristics" << std::endl;
 
-    Sym::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_expressions, d_applicability,
-                                                                d_expression_count);
+    Sym::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_applicability,
+                                                                d_integral_count);
 
     std::cout << "Calculating partial sum of applicability" << std::endl;
 
@@ -88,10 +88,10 @@ int main() {
 
     std::cout << "Applying heuristics" << std::endl;
 
-    Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_expressions, d_expressions_swap,
-                                                            d_applicability, d_expression_count);
-    std::swap(d_expressions, d_expressions_swap);
-    cudaMemcpy(d_expression_count, d_applicability + Sym::APPLICABILITY_ARRAY_SIZE - 1,
+    Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_integrals_swap,
+                                                            d_applicability, d_integral_count);
+    std::swap(d_integrals, d_integrals_swap);
+    cudaMemcpy(d_integral_count, d_applicability + Sym::APPLICABILITY_ARRAY_SIZE - 1,
                sizeof(size_t), cudaMemcpyDeviceToDevice);
 
     std::cout << std::endl;
@@ -101,14 +101,14 @@ int main() {
     cudaMemcpy(h_applicability.data(), d_applicability,
                Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t), cudaMemcpyDeviceToHost);
 
-    std::vector<Sym::Symbol> h_results(Sym::EXPRESSION_ARRAY_SIZE);
-    cudaMemcpy(h_results.data(), d_expressions, Sym::EXPRESSION_ARRAY_SIZE * sizeof(Sym::Symbol),
+    std::vector<Sym::Symbol> h_results(Sym::INTEGRAL_ARRAY_SIZE);
+    cudaMemcpy(h_results.data(), d_integrals, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol),
                cudaMemcpyDeviceToHost);
-    cudaMemcpy(&h_expression_count, d_expression_count, sizeof(size_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&h_integral_count, d_integral_count, sizeof(size_t), cudaMemcpyDeviceToHost);
 
     std::cout << "Applicability:" << std::endl;
     for (size_t i = 0; i < h_applicability.size(); ++i) {
-        if (i % Sym::MAX_EXPRESSION_COUNT == 0 && i != 0) {
+        if (i % Sym::MAX_INTEGRAL_COUNT == 0 && i != 0) {
             std::cout << std::endl;
         }
 
@@ -117,12 +117,12 @@ int main() {
     std::cout << std::endl;
 
     std::cout << "Results: " << std::endl;
-    for (size_t i = 0; i < h_expression_count; ++i) {
-        std::cout << h_results[i * Sym::EXPRESSION_MAX_SYMBOL_COUNT].to_string() << std::endl;
+    for (size_t i = 0; i < h_integral_count; ++i) {
+        std::cout << h_results[i * Sym::INTEGRAL_MAX_SYMBOL_COUNT].to_string() << std::endl;
     }
 
     std::cout << "Freeing GPU memory" << std::endl;
     cudaFree(d_applicability);
-    cudaFree(d_expressions_swap);
-    cudaFree(d_expressions);
+    cudaFree(d_integrals_swap);
+    cudaFree(d_integrals);
 }

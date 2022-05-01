@@ -60,12 +60,11 @@ namespace Sym {
 
         std::vector<Symbol> subst_integral(integral.size() + substitution_expr.size() + 1);
 
-        size_t integral_symbols_offest = integral[0].integral.symbols_offset;
-        std::copy(integral.begin(), integral.begin() + integral_symbols_offest,
-                  subst_integral.begin());
+        size_t integrand_offset = integral[0].integral.integrand_offset;
+        std::copy(integral.begin(), integral.begin() + integrand_offset, subst_integral.begin());
 
         subst_integral[0].integral.substitution_count += 1;
-        subst_integral[0].integral.symbols_offset += 1 + substitution_expr.size();
+        subst_integral[0].integral.integrand_offset += 1 + substitution_expr.size();
         subst_integral[0].integral.total_size += 1 + substitution_expr.size();
 
         Symbol* current_substitution = subst_integral.data() + 1;
@@ -77,16 +76,16 @@ namespace Sym {
 
         current_substitution->substitution = Substitution::create();
         current_substitution->substitution.total_size =
-            substitution_expr.size() + integral[integral_symbols_offest].unknown.total_size;
+            substitution_expr.size() + integral[0].unknown.total_size;
         current_substitution->substitution.substitution_idx =
             integral[0].integral.substitution_count;
         current_substitution->substitution.sub_substitution_count = 0;
 
         std::copy(substitution_expr.begin(), substitution_expr.end(), current_substitution + 1);
 
-        std::copy(integral.begin() + integral[0].integral.symbols_offset,
+        std::copy(integral.begin() + integral[0].integral.integrand_offset,
                   integral.begin() + integral[0].integral.total_size,
-                  subst_integral.begin() + subst_integral[0].integral.symbols_offset);
+                  subst_integral.begin() + subst_integral[0].integral.integrand_offset);
 
         return subst_integral;
     }
