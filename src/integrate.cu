@@ -206,6 +206,7 @@ namespace Sym {
                 Symbol* integral_pointer = integrals + expr_idx * INTEGRAL_MAX_SYMBOL_COUNT;
                 size_t applicability_index = MAX_INTEGRAL_COUNT * trans_idx + expr_idx;
 
+                // TODO: Wartownik zamiast specjalny przypadek dla applicability_index == 0
                 if (applicability_index == 0 && applicability[applicability_index] != 0 ||
                     applicability_index != 0 && applicability[applicability_index - 1] !=
                                                     applicability[applicability_index]) {
