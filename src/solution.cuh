@@ -9,7 +9,7 @@ namespace Sym {
     DECLARE_SYMBOL(Solution, false)
     size_t substitution_count;
     size_t symbols_offset;
-    std::string to_string();
+    std::string to_string() const;
     END_DECLARE_SYMBOL(Solution)
 
     std::vector<Symbol> solution(const std::vector<Symbol>& arg);

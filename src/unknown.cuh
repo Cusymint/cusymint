@@ -5,7 +5,7 @@
 
 namespace Sym {
     DECLARE_SYMBOL(Unknown, true)
-    std::string to_string() { return "Unknown"; }
+    DEFINE_TO_STRING("Unknown")
     END_DECLARE_SYMBOL(Unknown)
 }
 

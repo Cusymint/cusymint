@@ -15,8 +15,7 @@ namespace Sym {
 
     DECLARE_SYMBOL(KnownConstant, true)
     KnownConstantValue value;
-
-    std::string to_string();
+    std::string to_string() const;
     END_DECLARE_SYMBOL(KnownConstant)
 
     DECLARE_SYMBOL(UnknownConstant, true)

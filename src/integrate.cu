@@ -18,9 +18,9 @@ namespace Sym {
                       sizeof(ApplicabilityCheck) * KNOWN_INTEGRAL_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
-    __device__ ApplicabilityCheck heuristic_checks[] = {dummy_heuristic_check};
+    __device__ ApplicabilityCheck heuristic_checks[] = {is_function_of_ex};
 
-    __device__ IntegralTransform heuristic_applications[] = {dummy_heuristic_transform};
+    __device__ IntegralTransform heuristic_applications[] = {transform_function_of_ex};
 
     static_assert(sizeof(heuristic_checks) == sizeof(heuristic_applications),
                   "Different number of heuristics and applications defined");
@@ -28,8 +28,35 @@ namespace Sym {
     static_assert(sizeof(heuristic_checks) == sizeof(ApplicabilityCheck) * HEURISTIC_CHECK_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
-    __device__ size_t dummy_heuristic_check(Symbol*) { return 0; }
-    __device__ void dummy_heuristic_transform(Symbol*, Symbol*) {}
+    __device__ Symbol ex_function[3];
+    __device__ void init_ex_function() {
+        ex_function[0].power = Power::create();
+        ex_function[0].power.total_size = 3;
+        ex_function[0].power.second_arg_offset = 2;
+        ex_function[1].known_constant = KnownConstant::create();
+        ex_function[1].known_constant.value = KnownConstantValue::E;
+        ex_function[2].variable = Variable::create();
+    }
+
+    __device__ size_t is_function_of_ex(Symbol* integral) {
+        // TODO: Move somewhere so that it's initialized only once and not every time this function
+        // is called
+        init_ex_function();
+
+        return integral->integrand()->is_function_of(ex_function);
+    }
+
+    __device__ void transform_function_of_ex(Symbol* integral, Symbol* destination,
+                                             Symbol* swap_space) {
+        // TODO: Move somewhere so that it's initialized only once and not every time this function
+        // is called
+        init_ex_function();
+        Symbol variable;
+        variable.variable = Variable::create();
+
+        integral->integral.integrate_by_substitution_with_derivative(ex_function, &variable,
+                                                                     destination, swap_space);
+    }
 
     __device__ size_t is_simple_variable_power(Symbol* integral) {
         Symbol* integrand = integral->integrand();
@@ -66,9 +93,10 @@ namespace Sym {
 
     // TODO: Sometimes results in "too many resources requested for launch" error when block size is
     // 1024?
-    __device__ void integrate_simple_variable_power(Symbol* integral, Symbol* destination) {
+    __device__ void integrate_simple_variable_power(Symbol* integral, Symbol* destination,
+                                                    Symbol* swap_space) {
         Symbol* integrand = integral->integrand();
-        size_t exponent_size = integrand[2].unknown.total_size;
+        size_t exponent_size = integrand[2].total_size();
 
         Symbol* symbols_dst = prepare_solution(integral, destination, 8 + 2 * exponent_size);
 
@@ -110,7 +138,8 @@ namespace Sym {
         symbols_dst[7 + exponent_size * 2].numeric_constant.value = 1.0;
     }
 
-    __device__ void integrate_variable_exponent(Symbol* integral, Symbol* destination) {
+    __device__ void integrate_variable_exponent(Symbol* integral, Symbol* destination,
+                                                Symbol* swap_space) {
         Symbol* symbols_dst = prepare_solution(integral, destination, 3);
         Symbol* integrand = integral->integrand();
         symbols_dst[0] = integrand[0]; // power
@@ -118,7 +147,8 @@ namespace Sym {
         symbols_dst[2] = integrand[2]; // variable
     }
 
-    __device__ void integrate_simple_sine(Symbol* integral, Symbol* destination) {
+    __device__ void integrate_simple_sine(Symbol* integral, Symbol* destination,
+                                          Symbol* swap_space) {
         Symbol* symbols_dst = prepare_solution(integral, destination, 3);
         Symbol* integrand = integral->integrand();
         symbols_dst[0].negative = Negative::create();
@@ -130,7 +160,8 @@ namespace Sym {
         symbols_dst[2] = integrand[1]; // copy variable
     }
 
-    __device__ void integrate_simple_cosine(Symbol* integral, Symbol* destination) {
+    __device__ void integrate_simple_cosine(Symbol* integral, Symbol* destination,
+                                            Symbol* swap_space) {
         Symbol* symbols_dst = prepare_solution(integral, destination, 2);
         Symbol* integrand = integral->integrand();
 
@@ -140,19 +171,18 @@ namespace Sym {
         symbols_dst[1] = integrand[1]; // copy variable
     }
 
-    __device__ void integrate_constant(Symbol* integral, Symbol* destination) {
+    __device__ void integrate_constant(Symbol* integral, Symbol* destination, Symbol* swap_space) {
         Symbol* integrand = integral->integrand();
 
-        Symbol* symbols_dst =
-            prepare_solution(integral, destination, 2 + integrand->unknown.total_size);
+        Symbol* symbols_dst = prepare_solution(integral, destination, 2 + integrand->total_size());
 
         symbols_dst[0].product = Product::create();
-        symbols_dst[0].product.total_size = 2 + integrand->unknown.total_size;
+        symbols_dst[0].product.total_size = 2 + integrand->total_size();
         symbols_dst[0].product.second_arg_offset = 2;
         symbols_dst[1].variable = Variable::create();
 
         // copy constant
-        for (size_t i = 0; i < integrand->unknown.total_size; ++i) {
+        for (size_t i = 0; i < integrand->total_size(); ++i) {
             symbols_dst[2 + i] = integrand[i];
         }
     }
@@ -191,9 +221,9 @@ namespace Sym {
         }
     }
 
-    __device__ void apply_transforms(Symbol* integrals, Symbol* destinations, size_t* applicability,
-                                     size_t* integral_count, IntegralTransform* transforms,
-                                     size_t transform_count) {
+    __device__ void apply_transforms(Symbol* integrals, Symbol* destinations, Symbol* swap_spaces,
+                                     size_t* applicability, size_t* integral_count,
+                                     IntegralTransform* transforms, size_t transform_count) {
         size_t thread_count = Util::thread_count();
         size_t thread_idx = Util::thread_idx();
 
@@ -206,15 +236,16 @@ namespace Sym {
                 Symbol* integral_pointer = integrals + expr_idx * INTEGRAL_MAX_SYMBOL_COUNT;
                 size_t applicability_index = MAX_INTEGRAL_COUNT * trans_idx + expr_idx;
 
-                // TODO: Wartownik zamiast specjalny przypadek dla applicability_index == 0
+                // TODO: Wartownik zamiast specjalnego przypadek dla applicability_index == 0
                 if (applicability_index == 0 && applicability[applicability_index] != 0 ||
                     applicability_index != 0 && applicability[applicability_index - 1] !=
                                                     applicability[applicability_index]) {
                     size_t destination_offset =
                         INTEGRAL_MAX_SYMBOL_COUNT * (applicability[applicability_index] - 1);
                     Symbol* destination = destinations + destination_offset;
+                    Symbol* swap_space = swap_spaces + destination_offset;
 
-                    transforms[trans_idx](integral_pointer, destination);
+                    transforms[trans_idx](integral_pointer, destination, swap_space);
                 }
             }
         }
@@ -227,8 +258,9 @@ namespace Sym {
     }
 
     __global__ void apply_known_integrals(Symbol* integrals, Symbol* destinations,
-                                          size_t* applicability, size_t* integral_count) {
-        apply_transforms(integrals, destinations, applicability, integral_count,
+                                          Symbol* swap_spaces, size_t* applicability,
+                                          size_t* integral_count) {
+        apply_transforms(integrals, destinations, swap_spaces, applicability, integral_count,
                          known_integral_applications, KNOWN_INTEGRAL_COUNT);
     }
 
@@ -238,9 +270,9 @@ namespace Sym {
                             HEURISTIC_CHECK_COUNT);
     }
 
-    __global__ void apply_heuristics(Symbol* integrals, Symbol* destinations, size_t* applicability,
-                                     size_t* integral_count) {
-        apply_transforms(integrals, destinations, applicability, integral_count,
+    __global__ void apply_heuristics(Symbol* integrals, Symbol* destinations, Symbol* swap_spaces,
+                                     size_t* applicability, size_t* integral_count) {
+        apply_transforms(integrals, destinations, swap_spaces, applicability, integral_count,
                          heuristic_applications, HEURISTIC_CHECK_COUNT);
     }
 }

@@ -32,10 +32,12 @@ int main() {
         Sym::integral(Sym::cos(Sym::var())),
         Sym::integral(Sym::sin(Sym::cos(Sym::var()))),
         Sym::integral(Sym::e() ^ Sym::var()),
+        Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ Sym::var())),
         Sym::integral(Sym::var() ^ Sym::num(5)),
         Sym::integral(Sym::var() ^ (Sym::pi() + Sym::num(1))),
         Sym::integral(Sym::var() ^ Sym::var()),
-        Sym::integral(Sym::pi() + Sym::e() * Sym::num(10))};
+        Sym::integral(Sym::pi() + Sym::e() * Sym::num(10))
+    };
 
     for (size_t i = 0; i < integrals.size(); ++i) {
         std::cout << integrals[i][0].to_string() << std::endl;
@@ -53,6 +55,10 @@ int main() {
 
     Sym::Symbol* d_integrals_swap;
     cudaMalloc(&d_integrals_swap, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
+    mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
+
+    Sym::Symbol* d_swap_spaces;
+    cudaMalloc(&d_swap_spaces, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
     mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
 
     size_t* d_applicability;
@@ -79,8 +85,8 @@ int main() {
     std::cout << std::endl;
     std::cout << "Checking heuristics" << std::endl;
 
-    Sym::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_applicability,
-                                                                d_integral_count);
+    Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_applicability,
+                                                                     d_integral_count);
 
     std::cout << "Calculating partial sum of applicability" << std::endl;
 
@@ -89,8 +95,8 @@ int main() {
 
     std::cout << "Applying heuristics" << std::endl;
 
-    Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_integrals_swap,
-                                                            d_applicability, d_integral_count);
+    Sym::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_integrals_swap, d_swap_spaces,
+                                                       d_applicability, d_integral_count);
     std::swap(d_integrals, d_integrals_swap);
     cudaMemcpy(d_integral_count, d_applicability + Sym::APPLICABILITY_ARRAY_SIZE - 1,
                sizeof(size_t), cudaMemcpyDeviceToDevice);

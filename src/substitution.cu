@@ -7,6 +7,14 @@
 #include "symbol.cuh"
 
 namespace Sym {
+    DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(Substitution)
+
+    DEFINE_COMPARE(Substitution) {
+        return BASE_COMPARE(Substitution) &&
+               symbol->substitution.substitution_idx == substitution_idx &&
+               symbol->substitution.sub_substitution_count == sub_substitution_count;
+    }
+
     const char* const Substitution::SUBSTITUTION_NAMES[] = {"u", "v", "w", "t"};
     const size_t Substitution::SUBSTITUTION_NAME_COUNT =
         sizeof(Substitution::SUBSTITUTION_NAMES) / sizeof(Substitution::SUBSTITUTION_NAMES[0]);
@@ -26,10 +34,10 @@ namespace Sym {
         return name;
     }
 
-    std::string Substitution::to_string() {
-        Symbol* symbols = Symbol::from(this) + 1;
-        std::vector<Symbol> subst_symbols(symbols->unknown.total_size);
-        std::copy(symbols, symbols + symbols->unknown.total_size, subst_symbols.data());
+    std::string Substitution::to_string() const {
+        const Symbol* const symbols = Symbol::from(this) + 1;
+        std::vector<Symbol> subst_symbols(symbols->total_size());
+        std::copy(symbols, symbols + symbols->total_size(), subst_symbols.data());
 
         if (substitution_idx > 0) {
             Symbol substitute;
@@ -50,8 +58,13 @@ namespace Sym {
     }
 
     __host__ __device__ Symbol* Substitution::next_substitution() {
-        Symbol* this_symbol = Symbol::from(this);
-        return this_symbol + 1 + this_symbol[1].unknown.total_size;
+        Symbol* const this_symbol = Symbol::from(this);
+        return this_symbol + 1 + this_symbol[1].total_size();
+    }
+
+    __host__ __device__ const Symbol* Substitution::next_substitution() const {
+        const Symbol* const this_symbol = Symbol::from(this);
+        return this_symbol + 1 + this_symbol[1].total_size();
     }
 
     std::vector<Symbol> substitute(const std::vector<Symbol>& integral,
@@ -78,7 +91,7 @@ namespace Sym {
 
         current_substitution->substitution = Substitution::create();
         current_substitution->substitution.total_size =
-            1 + substitution_expr.size() + integral[0].unknown.total_size;
+            1 + substitution_expr.size() + integral[0].total_size();
         current_substitution->substitution.substitution_idx =
             integral[0].integral.substitution_count;
         current_substitution->substitution.sub_substitution_count = 0;

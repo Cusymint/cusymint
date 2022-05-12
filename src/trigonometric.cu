@@ -3,13 +3,31 @@
 #include "symbol.cuh"
 
 namespace Sym {
-    std::string Sine::to_string() { return "sin(" + Symbol::from(this)[1].to_string() + ")"; }
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Sine)
+    DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Sine)
 
-    std::string Cosine::to_string() { return "cos(" + Symbol::from(this)[1].to_string() + ")"; }
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Cosine)
+    DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Cosine)
 
-    std::string Tangent::to_string() { return "tan(" + Symbol::from(this)[1].to_string() + ")"; }
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Tangent)
+    DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Tangent)
 
-    std::string Cotangent::to_string() { return "cot(" + Symbol::from(this)[1].to_string() + ")"; }
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Cotangent)
+    DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Cotangent)
+
+    std::string Sine::to_string() const { return "sin(" + Symbol::from(this)[1].to_string() + ")"; }
+
+    std::string Cosine::to_string() const {
+        return "cos(" + Symbol::from(this)[1].to_string() + ")";
+    }
+
+    std::string Tangent::to_string() const {
+        return "tan(" + Symbol::from(this)[1].to_string() + ")";
+    }
+
+    std::string Cotangent::to_string() const {
+        return "cot(" + Symbol::from(this)[1].to_string() + ")";
+    }
 
     std::vector<Symbol> sin(const std::vector<Symbol>& arg) {
         std::vector<Symbol> res(arg.size() + 1);

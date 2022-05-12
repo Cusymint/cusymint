@@ -2,10 +2,28 @@
 
 #include <stdexcept>
 
+#include "cuda_utils.cuh"
 #include "symbol.cuh"
 
 namespace Sym {
-    std::string KnownConstant::to_string() {
+    DEFINE_SIMPLE_COMPRESS_REVERSE_TO(NumericConstant);
+    DEFINE_SIMPLE_COMPRESS_REVERSE_TO(KnownConstant);
+    DEFINE_SIMPLE_COMPRESS_REVERSE_TO(UnknownConstant);
+
+    DEFINE_COMPARE(NumericConstant) {
+        return BASE_COMPARE(NumericConstant) && symbol->numeric_constant.value == value;
+    }
+
+    DEFINE_COMPARE(UnknownConstant) {
+        return BASE_COMPARE(UnknownConstant) &&
+               Util::compare_mem(symbol->unknown_constant.name, name, NAME_LEN);
+    }
+
+    DEFINE_COMPARE(KnownConstant) {
+        return BASE_COMPARE(KnownConstant) && symbol->known_constant.value == value;
+    }
+
+    std::string KnownConstant::to_string() const {
         switch (value) {
         case KnownConstantValue::E:
             return "e";

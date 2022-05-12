@@ -3,8 +3,14 @@
 #include "symbol.cuh"
 
 namespace Sym {
-    std::string Product::to_string() {
-        Symbol* sym = Symbol::from(this);
+    DEFINE_SIMPLE_TWO_ARGUMENT_OP_COMPARE(Product)
+    DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Product)
+
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Reciprocal)
+    DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
+
+    std::string Product::to_string() const {
+        const Symbol* const sym = Symbol::from(this);
         if (sym[1].is(Type::Reciprocal)) {
             return "(" + sym[second_arg_offset].to_string() + "/" + sym[2].to_string() + ")";
         }
@@ -16,7 +22,9 @@ namespace Sym {
         }
     }
 
-    std::string Reciprocal::to_string() { return "(1/" + Symbol::from(this)[1].to_string() + ")"; }
+    std::string Reciprocal::to_string() const {
+        return "(1/" + Symbol::from(this)[1].to_string() + ")";
+    }
 
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);

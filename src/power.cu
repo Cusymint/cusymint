@@ -3,8 +3,11 @@
 #include "symbol.cuh"
 
 namespace Sym {
-    std::string Power::to_string() {
-        Symbol* sym = Symbol::from(this);
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Power)
+    DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Power)
+
+    std::string Power::to_string() const {
+        const Symbol* const sym = Symbol::from(this);
         return "(" + sym[1].to_string() + "^" + sym[second_arg_offset].to_string() + ")";
     }
 

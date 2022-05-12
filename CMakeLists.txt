@@ -9,7 +9,9 @@ set(SRC_DIR "src")
 add_executable(
   cusymint
   ${SRC_DIR}/main.cu
+  ${SRC_DIR}/cuda_utils.cu
   ${SRC_DIR}/symbol.cu
+  ${SRC_DIR}/unknown.cu
   ${SRC_DIR}/constants.cu
   ${SRC_DIR}/variable.cu
   ${SRC_DIR}/addition.cu
