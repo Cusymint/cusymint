@@ -42,8 +42,7 @@ namespace Sym {
         // TODO: Move somewhere so that it's initialized only once and not every time this function
         // is called
         init_ex_function();
-
-        return integral->integrand()->is_function_of(ex_function);
+        return integral->integrand()->is_function_of(ex_function) ? 1 : 0;
     }
 
     __device__ void transform_function_of_ex(Symbol* integral, Symbol* destination,

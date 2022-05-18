@@ -51,6 +51,7 @@ namespace Sym {
         Symbol::copy_symbol_sequence(destination, Symbol::from(this), integrand_offset);
         destination[0].integral.substitution_count += 1;
         destination[0].integral.integrand_offset += 1 + substitution->total_size();
+        destination[0].integral.total_size += 1 + substitution->total_size();
 
         Symbol* current_substitution = destination->child();
         for (size_t i = 0; i < substitution_count; ++i) {
@@ -62,7 +63,8 @@ namespace Sym {
         current_substitution->substitution = Substitution::create();
         current_substitution->substitution.sub_substitution_count = 0;
         current_substitution->substitution.substitution_idx = substitution_count;
-        current_substitution->substitution.total_size = total_size - integrand_offset;
+        current_substitution->substitution.total_size =
+            destination->total_size() - integrand_offset;
         substitution->copy_to(current_substitution + 1);
     }
 
