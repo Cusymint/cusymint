@@ -9,12 +9,35 @@ namespace Sym {
     DECLARE_SYMBOL(Substitution, false)
     static const size_t SUBSTITUTION_NAME_COUNT;
     static const char* const SUBSTITUTION_NAMES[];
-    static std::string nth_substitution_name(const size_t n);
+
     size_t substitution_idx;
-    size_t sub_substitution_count;
+
+    __host__ __device__ static void create(const Symbol* const expression,
+                                           Symbol* const destination,
+                                           const size_t substitution_idx);
+    static std::string nth_substitution_name(const size_t n);
+
+    __host__ __device__ Symbol* expression();
+    __host__ __device__ const Symbol* expression() const;
+    __host__ __device__ Substitution* next_substitution();
+    __host__ __device__ const Substitution* next_substitution() const;
+    __host__ __device__ bool is_last_substitution() const;
+
+    /*
+     * @brief Zamienia wszystkie wystąpienia zmiennej w wyrażeniu na nazwę z `SUBSTITUTION_NAMES`
+     * zależnie od wartości `substitution_idx`
+     *
+     * @return Wyrażenie z zamienioną zmienną
+     */
+    std::vector<Symbol> expression_with_constant() const;
+
+    /*
+     * @brief Zwraca podstawienie jako string, ale bez uwzględniania kolejnych podstawień.
+     *
+     * @return String przedstawiający podstawienie
+     */
+    std::string to_string_this() const;
     std::string to_string() const;
-    __host__ __device__ Symbol* next_substitution();
-    __host__ __device__ const Symbol* next_substitution() const;
     END_DECLARE_SYMBOL(Substitution)
 
     std::vector<Symbol> substitute(const std::vector<Symbol>& integral,

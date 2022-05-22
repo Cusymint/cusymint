@@ -8,11 +8,11 @@
 
 namespace Sym {
     DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(Substitution)
+    DEFINE_INTO_DESTINATION_OPERATOR(Substitution)
 
     DEFINE_COMPARE(Substitution) {
         return BASE_COMPARE(Substitution) &&
-               symbol->substitution.substitution_idx == substitution_idx &&
-               symbol->substitution.sub_substitution_count == sub_substitution_count;
+               symbol->substitution.substitution_idx == substitution_idx;
     }
 
     const char* const Substitution::SUBSTITUTION_NAMES[] = {"u", "v", "w", "t"};
@@ -28,44 +28,67 @@ namespace Sym {
                            std::to_string(n - SUBSTITUTION_NAME_COUNT);
 
         if (name.size() + 1 > UnknownConstant::NAME_LEN) {
-            throw std::length_error("Substitution variable name is too long");
+            name = "u_?";
         }
 
         return name;
     }
 
-    std::string Substitution::to_string() const {
-        const Symbol* const symbols = Symbol::from(this) + 1;
-        std::vector<Symbol> subst_symbols(symbols->total_size());
-        std::copy(symbols, symbols + symbols->total_size(), subst_symbols.data());
+    __host__ __device__ void Substitution::create(const Symbol* const expression,
+                                                  Symbol* const destination,
+                                                  const size_t substitution_idx) {
+        Substitution* const substitution = destination << Substitution::builder();
+        expression->copy_to(substitution->expression());
+        substitution->substitution_idx = substitution_idx;
+        substitution->seal();
+    }
+
+    std::vector<Symbol> Substitution::expression_with_constant() const {
+        std::vector<Symbol> expr_with_const(expression()->size());
+        expression()->copy_to(expr_with_const.data());
 
         if (substitution_idx > 0) {
-            Symbol substitute;
-            substitute.unknown_constant =
-                UnknownConstant::create(nth_substitution_name(substitution_idx - 1).c_str());
-
-            subst_symbols.data()->substitute_variable_with(substitute);
+            expr_with_const.data()->substitute_variable_with_nth_substitution_name(
+                substitution_idx - 1);
         }
 
-        std::string sub_substitutions;
+        return expr_with_const;
+    }
 
-        if (sub_substitution_count != 0) {
+    std::string Substitution::to_string_this() const {
+        std::vector<Symbol> expr_with_const = expression_with_constant();
+        return nth_substitution_name(substitution_idx) + " = " +
+               expr_with_const.data()->to_string();
+    }
+
+    std::string Substitution::to_string() const {
+        std::string sub_substitutions;
+        if (!is_last_substitution()) {
             sub_substitutions = next_substitution()->to_string() + ", ";
         }
 
-        return sub_substitutions + nth_substitution_name(substitution_idx) + " = " +
-               subst_symbols.data()->to_string();
+        return sub_substitutions + to_string_this();
     }
 
-    __host__ __device__ Symbol* Substitution::next_substitution() {
-        Symbol* const this_symbol = Symbol::from(this);
-        return this_symbol + 1 + this_symbol[1].total_size();
+    __host__ __device__ Symbol* Substitution::expression() { return Symbol::from(this)->child(); }
+
+    __host__ __device__ const Symbol* Substitution::expression() const {
+        return Symbol::from(this)->child();
     }
 
-    __host__ __device__ const Symbol* Substitution::next_substitution() const {
-        const Symbol* const this_symbol = Symbol::from(this);
-        return this_symbol + 1 + this_symbol[1].total_size();
+    __host__ __device__ Substitution* Substitution::next_substitution() {
+        return &(expression() + expression()->size())->substitution;
     }
+
+    __host__ __device__ const Substitution* Substitution::next_substitution() const {
+        return &(expression() + expression()->size())->substitution;
+    }
+
+    __host__ __device__ bool Substitution::is_last_substitution() const {
+        return !(expression() + expression()->size())->is(Type::Substitution);
+    }
+
+    __host__ __device__ void Substitution::seal() { size = 1 + expression()->size(); }
 
     std::vector<Symbol> substitute(const std::vector<Symbol>& integral,
                                    const std::vector<Symbol>& substitution_expr) {
@@ -73,35 +96,20 @@ namespace Sym {
             throw std::invalid_argument("Explicit substitutions are only allowed in integrals");
         }
 
-        std::vector<Symbol> subst_integral(integral.size() + substitution_expr.size() + 1);
+        std::vector<Symbol> new_integral(integral.size() + substitution_expr.size() + 1);
 
-        size_t integrand_offset = integral[0].integral.integrand_offset;
-        std::copy(integral.begin(), integral.begin() + integrand_offset, subst_integral.begin());
+        const size_t integrand_offset = integral.data()->integral.integrand_offset;
+        std::copy(integral.begin(), integral.begin() + integrand_offset, new_integral.begin());
 
-        subst_integral[0].integral.substitution_count += 1;
-        subst_integral[0].integral.integrand_offset += 1 + substitution_expr.size();
-        subst_integral[0].integral.total_size += 1 + substitution_expr.size();
+        Substitution::create(substitution_expr.data(), new_integral.data() + integrand_offset,
+                             integral.data()->integral.substitution_count);
 
-        Symbol* current_substitution = subst_integral.data() + 1;
-        for (size_t i = 0; i < integral[0].integral.substitution_count; ++i) {
-            current_substitution->substitution.sub_substitution_count += 1;
-            current_substitution->substitution.total_size += 1 + substitution_expr.size();
-            current_substitution = current_substitution->substitution.next_substitution();
-        }
+        new_integral.data()->integral.substitution_count += 1;
+        new_integral.data()->integral.integrand_offset += 1 + substitution_expr.size();
+        new_integral.data()->integral.size += 1 + substitution_expr.size();
 
-        current_substitution->substitution = Substitution::create();
-        current_substitution->substitution.total_size =
-            1 + substitution_expr.size() + integral[0].total_size();
-        current_substitution->substitution.substitution_idx =
-            integral[0].integral.substitution_count;
-        current_substitution->substitution.sub_substitution_count = 0;
+        integral.data()->integrand()->copy_to(new_integral.data()->integrand());
 
-        std::copy(substitution_expr.begin(), substitution_expr.end(), current_substitution + 1);
-
-        std::copy(integral.begin() + integral[0].integral.integrand_offset,
-                  integral.begin() + integral[0].integral.total_size,
-                  subst_integral.begin() + subst_integral[0].integral.integrand_offset);
-
-        return subst_integral;
+        return new_integral;
     }
 }

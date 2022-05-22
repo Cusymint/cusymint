@@ -23,6 +23,18 @@ namespace Sym {
         return BASE_COMPARE(KnownConstant) && symbol->known_constant.value == value;
     }
 
+    __host__ __device__ NumericConstant NumericConstant::with_value(double value) {
+        NumericConstant constant = NumericConstant::create();
+        constant.value = value;
+        return constant;
+    }
+
+    __host__ __device__ KnownConstant KnownConstant::with_value(KnownConstantValue value) {
+        KnownConstant constant = KnownConstant::create();
+        constant.value = value;
+        return constant;
+    }
+
     std::string KnownConstant::to_string() const {
         switch (value) {
         case KnownConstantValue::E:

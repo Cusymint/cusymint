@@ -40,11 +40,11 @@ namespace Sym {
     }
 
     __host__ __device__ void Symbol::copy_to(Symbol* const dst) const {
-        Util::copy_mem(dst, this, total_size() * sizeof(Symbol));
+        Util::copy_mem(dst, this, size() * sizeof(Symbol));
     }
 
     __host__ __device__ bool Symbol::is_constant() const {
-        for (size_t i = 0; i < total_size(); ++i) {
+        for (size_t i = 0; i < size(); ++i) {
             if (this[i].is(Type::Variable)) {
                 return false;
             }
@@ -54,7 +54,7 @@ namespace Sym {
     }
 
     __host__ __device__ ssize_t Symbol::first_var_occurence() const {
-        for (size_t i = 0; i < total_size(); ++i) {
+        for (size_t i = 0; i < size(); ++i) {
             if (this[i].is(Type::Variable)) {
                 return i;
             }
@@ -64,27 +64,27 @@ namespace Sym {
     }
 
     __host__ __device__ bool Symbol::is_function_of(Symbol* expression) const {
-        if(is_constant()) {
+        if (is_constant()) {
             return false;
         }
 
         ssize_t first_var_offset = expression->first_var_occurence();
 
-        for (size_t i = 0; i < total_size(); ++i) {
+        for (size_t i = 0; i < size(); ++i) {
             if (this[i].is(Type::Variable)) {
                 // First variable in `this` appears earlier than first variable in `expression` or
                 // `this` is not long enough to contain another occurence of `expression`
                 if (i < first_var_offset ||
-                    total_size() - i < expression->total_size() - first_var_offset) {
+                    size() - i < expression->size() - first_var_offset) {
                     return false;
                 }
 
                 if (!are_symbol_sequences_same(this + i - first_var_offset, expression,
-                                               expression->total_size())) {
+                                               expression->size())) {
                     return false;
                 }
 
-                i += expression->total_size() - first_var_offset - 1;
+                i += expression->size() - first_var_offset - 1;
             }
         }
 
@@ -97,10 +97,10 @@ namespace Sym {
         ssize_t first_var_offset = expression->first_var_occurence();
         copy_to(destination);
 
-        for (size_t i = 0; i < total_size(); ++i) {
+        for (size_t i = 0; i < size(); ++i) {
             if (destination[i].is(Type::Variable)) {
                 destination[i - first_var_offset].variable = Variable::create();
-                i += expression->total_size() - first_var_offset - 1;
+                i += expression->size() - first_var_offset - 1;
             }
         }
     }
@@ -110,11 +110,19 @@ namespace Sym {
     }
 
     void Symbol::substitute_variable_with(const Symbol symbol) {
-        for (size_t i = 0; i < total_size(); ++i) {
+        for (size_t i = 0; i < size(); ++i) {
             if (this[i].is(Type::Variable)) {
                 this[i] = symbol;
             }
         }
+    }
+
+    void Symbol::substitute_variable_with_nth_substitution_name(const size_t n) {
+        std::string substitution_name = Substitution::nth_substitution_name(n);
+
+        Symbol substitute;
+        substitute.unknown_constant = UnknownConstant::create(substitution_name.c_str());
+        substitute_variable_with(substitute);
     }
 
     std::string Symbol::to_string() const { return VIRTUAL_CALL(*this, to_string); }

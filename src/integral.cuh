@@ -10,22 +10,25 @@ namespace Sym {
     DECLARE_SYMBOL(Integral, false)
     size_t substitution_count;
     size_t integrand_offset;
-    std::string to_string() const;
+
+    __host__ __device__ void seal_no_substitutions();
+    __host__ __device__ void seal_single_substitution();
+    __host__ __device__ void seal_substitutions(const size_t count, const size_t size);
 
     __host__ __device__ Symbol* integrand();
     __host__ __device__ const Symbol* integrand() const;
 
     /*
      * @brief Copies `*this`, and all its substitutions into dst, and adds expression from
-     * `substitution` as a new substitution at the end. Updates substitution_cont, integrand_offset
-     * all `sub_substitution_count`s. Does not update `total_size`s, neither in the integral, nor in
-     * substitutions. Assigns correct substitution_idx in the last substitution.
+     * `substitution` as a new substitution at the end. Updates substitution_cont, integrand_offset.
+     * Does not update `size`s, neither in the integral, nor in substitutions.
+     * Assigns correct substitution_idx in the last substitution.
      *
      * @param substitution Expression to be used as substitution (without `Substitution` symbol)
      * @param destination Destination to copy everything to
      */
     __host__ __device__ void
-    copy_substitutions_with_an_additional_one(const Symbol* const substitution,
+    copy_substitutions_with_an_additional_one(const Symbol* const substitution_expr,
                                               Symbol* const destination) const;
 
     /*
@@ -42,7 +45,12 @@ namespace Sym {
         const Symbol* const substitution, const Symbol* const derivative, Symbol* const destination,
         Symbol* const swap_space) const;
 
+    __host__ __device__ const Substitution* first_substitution() const;
     __host__ __device__ Substitution* first_substitution();
+
+    __host__ __device__ size_t substitutions_size() const;
+
+    std::string to_string() const;
     END_DECLARE_SYMBOL(Integral)
 
     std::vector<Symbol> integral(const std::vector<Symbol>& arg);

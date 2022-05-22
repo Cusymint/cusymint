@@ -8,7 +8,6 @@
 namespace Sym {
     DECLARE_SYMBOL(Product, false)
     TWO_ARGUMENT_OP_SYMBOL
-
     std::string to_string() const;
     END_DECLARE_SYMBOL(Product)
 

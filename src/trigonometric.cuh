@@ -1,5 +1,5 @@
-#ifndef NEGATIVE_CUH
-#define NEGATIVE_CUH
+#ifndef TRIGONOMETRIC_CUH
+#define TRIGONOMETRIC_CUH
 
 #include <vector>
 

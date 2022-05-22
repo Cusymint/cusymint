@@ -4,29 +4,33 @@
 #include "symbol.cuh"
 
 namespace Sym {
-    typedef size_t (*ApplicabilityCheck)(Symbol* integral);
-    typedef void (*IntegralTransform)(Symbol* integral, Symbol* destination, Symbol* swap_space);
+    typedef size_t (*ApplicabilityCheck)(const Integral* const integral);
+    typedef void (*IntegralTransform)(const Integral* const integral, Symbol* const destination,
+                                      Symbol* const swap_space);
 
-    __device__ size_t is_simple_variable_power(Symbol* integral);
-    __device__ size_t is_variable_exponent(Symbol* integral);
-    __device__ size_t is_simple_sine(Symbol* integral);
-    __device__ size_t is_simple_cosine(Symbol* integral);
-    __device__ size_t is_constant(Symbol* integral);
+    __device__ size_t is_simple_variable_power(const Integral* const integral);
+    __device__ size_t is_variable_exponent(const Integral* const integral);
+    __device__ size_t is_simple_sine(const Integral* const integral);
+    __device__ size_t is_simple_cosine(const Integral* const integral);
+    __device__ size_t is_constant(const Integral* const integral);
 
-    __device__ void integrate_simple_variable_power(Symbol* integral, Symbol* destination,
-                                                    Symbol* swap_space);
-    __device__ void integrate_variable_exponent(Symbol* integral, Symbol* destination,
-                                                Symbol* swap_space);
-    __device__ void integrate_simple_sine(Symbol* integral, Symbol* destination,
-                                          Symbol* swap_space);
-    __device__ void integrate_simple_cosine(Symbol* integral, Symbol* destination,
-                                            Symbol* swap_space);
-    __device__ void integrate_constant(Symbol* integral, Symbol* destination, Symbol* swap_space);
+    __device__ void integrate_simple_variable_power(const Integral* const integral,
+                                                    Symbol* const destination,
+                                                    Symbol* const swap_space);
+    __device__ void integrate_variable_exponent(const Integral* const integral,
+                                                Symbol* const destination,
+                                                Symbol* const swap_space);
+    __device__ void integrate_simple_sine(const Integral* const integral, Symbol* const destination,
+                                          Symbol* const swap_space);
+    __device__ void integrate_simple_cosine(const Integral* const integral, Symbol* const destination,
+                                            Symbol* const swap_space);
+    __device__ void integrate_constant(const Integral* const integral, Symbol* const destination,
+                                       Symbol* const swap_space);
 
-    __device__ size_t is_function_of_ex(Symbol* integral);
+    __device__ size_t is_function_of_ex(const Integral* const integral);
 
-    __device__ void transform_function_of_ex(Symbol* integral, Symbol* destination,
-                                             Symbol* swap_space);
+    __device__ void transform_function_of_ex(const Integral* const integral,
+                                             Symbol* const destination, Symbol* const swap_space);
 
     /*
      * @brief Creates a `Solution` symbol at `destination[0]` and all substitutions from `integral`
@@ -36,8 +40,7 @@ namespace Sym {
      *
      * @return Pointer to one symbol after last substitution (destination of solution symbols)
      */
-    __device__ Symbol* prepare_solution(Symbol* integral, Symbol* destination,
-                                        size_t solution_size);
+    __device__ Symbol* prepare_solution(const Integral* const integral, Symbol* const destination);
 
     // HEURISTIC_CHECK_COUNT cannot be defined as sizeof(heurisic_checks) because
     // `heurisic_checks` is defined in translation unit associated with integrate.cu, but its
@@ -52,16 +55,20 @@ namespace Sym {
     constexpr size_t APPLICABILITY_ARRAY_SIZE = MAX_CHECK_COUNT * MAX_INTEGRAL_COUNT;
     constexpr size_t INTEGRAL_ARRAY_SIZE = MAX_INTEGRAL_COUNT * INTEGRAL_MAX_SYMBOL_COUNT;
 
-    __global__ void check_for_known_integrals(Symbol* integrals, size_t* applicability,
-                                              size_t* integral_count);
-    __global__ void apply_known_integrals(Symbol* integrals, Symbol* destinations,
-                                          Symbol* swap_spaces, size_t* applicability,
-                                          size_t* integral_count);
+    __global__ void check_for_known_integrals(const Symbol* const integrals,
+                                              size_t* const applicability,
+                                              const size_t* const integral_count);
+    __global__ void apply_known_integrals(const Symbol* const integrals, Symbol* const destinations,
+                                          Symbol* const swap_spaces,
+                                          const size_t* const applicability,
+                                          const size_t* const integral_count);
 
-    __global__ void check_heuristics_applicability(Symbol* integrals, size_t* applicability,
-                                                   size_t* integral_count);
-    __global__ void apply_heuristics(Symbol* integrals, Symbol* destinations, Symbol* swap_spaces,
-                                     size_t* applicability, size_t* integral_count);
+    __global__ void check_heuristics_applicability(const Symbol* const integrals,
+                                                   size_t* const applicability,
+                                                   const size_t* const integral_count);
+    __global__ void apply_heuristics(const Symbol* const integrals, Symbol* const destinations,
+                                     Symbol* const swap_spaces, const size_t* const applicability,
+                                     const size_t* const integral_count);
 }
 
 #endif

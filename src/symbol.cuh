@@ -26,7 +26,7 @@ namespace Sym {
         Solution solution;
         Substitution substitution;
         Addition addition;
-        Negative negative;
+        Negation negation;
         Product product;
         Reciprocal reciprocal;
         Power power;
@@ -36,8 +36,9 @@ namespace Sym {
         Cotangent cotangent;
 
         __host__ __device__ inline Type type() const { return unknown.type; }
-        __host__ __device__ inline bool is(Type type) const { return unknown.type == type; }
-        __host__ __device__ inline size_t total_size() const { return unknown.total_size; }
+        __host__ __device__ inline bool is(const Type type) const { return unknown.type == type; }
+        __host__ __device__ inline size_t& size() { return unknown.size; }
+        __host__ __device__ inline size_t size() const { return unknown.size; }
 
         template <class T> __host__ __device__ inline T& as() {
             return *reinterpret_cast<T*>(this);
@@ -55,7 +56,14 @@ namespace Sym {
             return reinterpret_cast<const Symbol*>(sym);
         }
 
+        /*
+         * @brief Zwraca symbol bezpośrednio za `this`
+         */
         __host__ __device__ inline const Symbol* child() const { return this + 1; }
+
+        /*
+         * @brief Zwraca symbol bezpośrednio za `this`
+         */
         __host__ __device__ inline Symbol* child() { return this + 1; }
 
         /*
@@ -174,11 +182,26 @@ namespace Sym {
         __host__ __device__ inline Symbol* integrand() { return integral.integrand(); }
 
         /*
+         * @brief Returns integrand const pointer if `this` is an integral. Undefined behavior
+         * otherwise.
+         *
+         * @return Const pointer to integrand
+         */
+        __host__ __device__ inline const Symbol* integrand() const { return integral.integrand(); }
+
+        /*
          * @brief Substitutes all occurences of variable with `symbol`
          *
          * @param symbol Symbol to substitute variables with, cannot have any children
          */
         void substitute_variable_with(const Symbol symbol);
+
+        /*
+         * @brief Wrapper do `substitute_variable_with` ułatwiający tworzenie stringów z podstawieniami
+         *
+         * @param n Numer podstawienia z którego wziąta będzie nazwa
+         */
+        void substitute_variable_with_nth_substitution_name(const size_t n);
 
         std::string to_string() const;
     };
@@ -205,8 +228,8 @@ namespace Sym {
             return (_instance).substitution._member_function(__VA_ARGS__);     \
         case Type::Addition:                                                   \
             return (_instance).addition._member_function(__VA_ARGS__);         \
-        case Type::Negative:                                                   \
-            return (_instance).negative._member_function(__VA_ARGS__);         \
+        case Type::Negation:                                                   \
+            return (_instance).negation._member_function(__VA_ARGS__);         \
         case Type::Product:                                                    \
             return (_instance).product._member_function(__VA_ARGS__);          \
         case Type::Reciprocal:                                                 \

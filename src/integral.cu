@@ -5,6 +5,7 @@
 
 namespace Sym {
     DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(Integral)
+    DEFINE_INTO_DESTINATION_OPERATOR(Integral)
 
     DEFINE_COMPARE(Integral) {
         return BASE_COMPARE(Integral) &&
@@ -12,29 +13,19 @@ namespace Sym {
                symbol->integral.integrand_offset == integrand_offset;
     }
 
-    std::string Integral::to_string() const {
-        std::string last_substitution_name;
-        std::string substitutions_str;
+    __host__ __device__ void Integral::seal_no_substitutions() { seal_substitutions(0, 0); }
 
-        const Symbol* const integrand = Integral::integrand();
-        std::vector<Symbol> subst_symbols(integrand->total_size());
-        std::copy(integrand, integrand + integrand->total_size(), subst_symbols.data());
+    __host__ __device__ void Integral::seal_single_substitution() {
+        seal_substitutions(1, (Symbol::from(this) + integrand_offset)->size());
+    }
 
-        if (substitution_count == 0) {
-            last_substitution_name = "x";
-        }
-        else {
-            last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
-            const Symbol* const first_substitution = Symbol::from(this) + 1;
-            substitutions_str = ", " + first_substitution->to_string();
+    __host__ __device__ void Integral::seal_substitutions(const size_t count, const size_t size) {
+        integrand_offset = 1 + size;
+        substitution_count = count;
+    }
 
-            Symbol substitute;
-            substitute.unknown_constant = UnknownConstant::create(last_substitution_name.c_str());
-            subst_symbols[0].substitute_variable_with(substitute);
-        }
-
-        return "∫" + subst_symbols[0].to_string() + "d" + last_substitution_name +
-               substitutions_str;
+    __host__ __device__ void Integral::seal() {
+        size = integrand_offset + integrand()->size();
     }
 
     __host__ __device__ Symbol* Integral::integrand() {
@@ -46,70 +37,85 @@ namespace Sym {
     }
 
     __host__ __device__ void
-    Integral::copy_substitutions_with_an_additional_one(const Symbol* const substitution,
+    Integral::copy_substitutions_with_an_additional_one(const Symbol* const substitution_expr,
                                                         Symbol* const destination) const {
         Symbol::copy_symbol_sequence(destination, Symbol::from(this), integrand_offset);
-        destination[0].integral.substitution_count += 1;
-        destination[0].integral.integrand_offset += 1 + substitution->total_size();
-        destination[0].integral.total_size += 1 + substitution->total_size();
 
-        Symbol* current_substitution = destination->child();
-        for (size_t i = 0; i < substitution_count; ++i) {
-            current_substitution->substitution.sub_substitution_count += 1;
-            current_substitution->substitution.total_size += 1 + substitution->total_size();
-            current_substitution = current_substitution->substitution.next_substitution();
-        }
+        Symbol* const new_substitution = destination + integrand_offset;
+        Substitution::create(substitution_expr, new_substitution, substitution_count);
 
-        current_substitution->substitution = Substitution::create();
-        current_substitution->substitution.sub_substitution_count = 0;
-        current_substitution->substitution.substitution_idx = substitution_count;
-        current_substitution->substitution.total_size =
-            destination->total_size() - integrand_offset;
-        substitution->copy_to(current_substitution + 1);
+        destination->integral.substitution_count += 1;
+        destination->integral.integrand_offset += new_substitution->size();
+        destination->integral.size += new_substitution->size();
     }
 
     __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
         const Symbol* const substitution, const Symbol* const derivative, Symbol* const destination,
         Symbol* const swap_space) const {
         integrand()->substitute_with_var_with_holes(destination, substitution);
-        size_t new_incomplete_integrand_size =
-            Symbol::from(destination)->compress_reverse_to(swap_space);
+        size_t new_incomplete_integrand_size = destination->compress_reverse_to(swap_space);
         Symbol::reverse_symbol_sequence(swap_space, new_incomplete_integrand_size);
 
-        size_t old_integrand_size = total_size - integrand_offset;
-        size_t new_integrand_size = new_incomplete_integrand_size + 2 + derivative->total_size();
+        // Teraz w `swap_space` jest docelowa funkcja podcałkowa, ale jeszcze bez mnożenia przez
+        // pochodną. W `destination` są już niepotrzebne dane.
+
+        size_t old_integrand_size = integrand()->size();
+        size_t new_integrand_size = new_incomplete_integrand_size + 2 + derivative->size();
         ssize_t size_diff = new_integrand_size - old_integrand_size;
 
         copy_substitutions_with_an_additional_one(substitution, destination);
 
-        destination[0].integral.total_size += size_diff;
-        Symbol* current_substitution = destination->child();
-        for (size_t i = 0; i < destination->integral.substitution_count; ++i) {
-            current_substitution->substitution.total_size += size_diff;
-            current_substitution = current_substitution->substitution.next_substitution();
-        }
+        destination->size() += size_diff;
 
-        destination->integrand()[0].product = Product::create();
-        destination->integrand()[0].product.total_size = new_integrand_size;
-        destination->integrand()[0].product.second_arg_offset = 2 + derivative->total_size();
-        destination->integrand()[1].reciprocal = Reciprocal::create();
-        destination->integrand()[1].reciprocal.total_size = 1 + derivative->total_size();
-        derivative->copy_to(destination->integrand() + 2);
-        swap_space->copy_to(destination->integrand() + 2 + derivative->total_size());
+        Product* const product = destination->integrand() << Product::builder();
+        Reciprocal* const reciprocal = product->arg1() << Reciprocal::builder();
+        derivative->copy_to(&reciprocal->arg());
+        reciprocal->seal();
+        product->seal_arg1();
+        swap_space->copy_to(&product->arg2());
+        product->seal();
+    }
+
+    __host__ __device__ const Substitution* Integral::first_substitution() const {
+        return &Symbol::from(this)->child()->substitution;
     }
 
     __host__ __device__ Substitution* Integral::first_substitution() {
-        return &Symbol::from(this)[1].substitution;
+        return &Symbol::from(this)->child()->substitution;
+    }
+
+    __host__ __device__ size_t Integral::substitutions_size() const {
+        return size - 1 - integrand()->size();
+    };
+
+    std::string Integral::to_string() const {
+        std::vector<Symbol> integrand_copy(integrand()->size());
+        integrand()->copy_to(integrand_copy.data());
+
+        std::string last_substitution_name;
+        std::string substitutions_str;
+        if (substitution_count == 0) {
+            last_substitution_name = "x";
+        }
+        else {
+            substitutions_str = ", " + first_substitution()->to_string();
+            last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
+            integrand_copy.data()->substitute_variable_with_nth_substitution_name(
+                substitution_count - 1);
+        }
+
+        return "∫" + integrand_copy.data()->to_string() + "d" + last_substitution_name +
+               substitutions_str;
     }
 
     std::vector<Symbol> integral(const std::vector<Symbol>& arg) {
-        std::vector<Symbol> integral(arg.size() + 1);
-        integral[0].integral = Integral::create();
-        integral[0].integral.total_size = 1 + arg[0].total_size();
-        integral[0].integral.substitution_count = 0;
-        integral[0].integral.integrand_offset = 1;
-        std::copy(arg.begin(), arg.end(), integral.begin() + 1);
+        std::vector<Symbol> res(arg.size() + 1);
 
-        return integral;
+        Integral* const integral = res.data() << Integral::builder();
+        integral->seal_no_substitutions();
+        arg.data()->copy_to(integral->integrand());
+        integral->seal();
+
+        return res;
     }
 }

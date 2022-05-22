@@ -30,35 +30,34 @@ namespace Sym {
 
     __device__ Symbol ex_function[3];
     __device__ void init_ex_function() {
-        ex_function[0].power = Power::create();
-        ex_function[0].power.total_size = 3;
-        ex_function[0].power.second_arg_offset = 2;
-        ex_function[1].known_constant = KnownConstant::create();
-        ex_function[1].known_constant.value = KnownConstantValue::E;
-        ex_function[2].variable = Variable::create();
+        Power* const power = ex_function << Power::builder();
+        power->arg1().known_constant = KnownConstant::with_value(KnownConstantValue::E);
+        power->seal_arg1();
+        power->arg2().variable = Variable::create();
+        power->seal();
     }
 
-    __device__ size_t is_function_of_ex(Symbol* integral) {
+    __device__ size_t is_function_of_ex(const Integral* const integral) {
         // TODO: Move somewhere so that it's initialized only once and not every time this function
         // is called
         init_ex_function();
         return integral->integrand()->is_function_of(ex_function) ? 1 : 0;
     }
 
-    __device__ void transform_function_of_ex(Symbol* integral, Symbol* destination,
-                                             Symbol* swap_space) {
+    __device__ void transform_function_of_ex(const Integral* const integral,
+                                             Symbol* const destination, Symbol* const swap_space) {
         // TODO: Move somewhere so that it's initialized only once and not every time this function
         // is called
         init_ex_function();
         Symbol variable;
         variable.variable = Variable::create();
 
-        integral->integral.integrate_by_substitution_with_derivative(ex_function, &variable,
-                                                                     destination, swap_space);
+        integral->integrate_by_substitution_with_derivative(ex_function, &variable, destination,
+                                                            swap_space);
     }
 
-    __device__ size_t is_simple_variable_power(Symbol* integral) {
-        Symbol* integrand = integral->integrand();
+    __device__ size_t is_simple_variable_power(const Integral* const integral) {
+        const Symbol* const integrand = integral->integrand();
         if (!integrand[0].is(Type::Power) || !integrand[1].is(Type::Variable)) {
             return false;
         }
@@ -69,150 +68,142 @@ namespace Sym {
 
         return integrand[2].is_constant();
     }
-    __device__ size_t is_variable_exponent(Symbol* integral) {
-        Symbol* integrand = integral->integrand();
+    __device__ size_t is_variable_exponent(const Integral* const integral) {
+        const Symbol* const integrand = integral->integrand();
         return integrand[0].is(Type::Power) && integrand[1].is(Type::KnownConstant) &&
                integrand[1].known_constant.value == KnownConstantValue::E &&
                integrand[2].is(Type::Variable);
     }
-    __device__ size_t is_simple_sine(Symbol* integral) {
-        Symbol* integrand = integral->integrand();
+    __device__ size_t is_simple_sine(const Integral* const integral) {
+        const Symbol* const integrand = integral->integrand();
         return integrand[0].is(Type::Sine) && integrand[1].is(Type::Variable);
     }
 
-    __device__ size_t is_simple_cosine(Symbol* integral) {
-        Symbol* integrand = integral->integrand();
+    __device__ size_t is_simple_cosine(const Integral* const integral) {
+        const Symbol* const integrand = integral->integrand();
         return integrand[0].is(Type::Cosine) && integrand[1].is(Type::Variable);
     }
 
-    __device__ size_t is_constant(Symbol* integral) {
-        Symbol* integrand = integral->integrand();
+    __device__ size_t is_constant(const Integral* const integral) {
+        const Symbol* const integrand = integral->integrand();
         return integrand->is_constant();
     }
 
-    // TODO: Sometimes results in "too many resources requested for launch" error when block size is
-    // 1024?
-    __device__ void integrate_simple_variable_power(Symbol* integral, Symbol* destination,
-                                                    Symbol* swap_space) {
-        Symbol* integrand = integral->integrand();
-        size_t exponent_size = integrand[2].total_size();
+    __device__ void integrate_simple_variable_power(const Integral* const integral,
+                                                    Symbol* const destination,
+                                                    Symbol* const swap_space) {
+        const Symbol* const integrand = integral->integrand();
 
-        Symbol* symbols_dst = prepare_solution(integral, destination, 8 + 2 * exponent_size);
+        Symbol* const solution_expr = prepare_solution(integral, destination);
+        const Symbol* const exponent = &integral->integrand()->power.arg2();
 
-        symbols_dst[0].product = Product::create();
-        symbols_dst[0].product.second_arg_offset = 4 + exponent_size;
-        symbols_dst[0].product.total_size = 8 + 2 * exponent_size;
+        // 1/(c+1) * x^(c+1), c może być całym drzewem
+        Product* const product = solution_expr << Product::builder();
 
-        symbols_dst[1].reciprocal = Reciprocal::create();
-        symbols_dst[1].reciprocal.total_size = 3 + exponent_size;
+        Reciprocal* const reciprocal = product->arg1() << Reciprocal::builder();
+        Addition* const multiplier_addition = reciprocal->arg() << Addition::builder();
+        exponent->copy_to(&multiplier_addition->arg1());
+        multiplier_addition->seal_arg1();
+        multiplier_addition->arg2().numeric_constant = NumericConstant::with_value(1.0);
+        multiplier_addition->seal();
+        reciprocal->seal();
+        product->seal_arg1();
 
-        symbols_dst[2].addition = Addition::create();
-        symbols_dst[2].addition.total_size = 2 + exponent_size;
-        symbols_dst[2].addition.second_arg_offset = 1 + exponent_size;
+        Power* const power = product->arg2() << Power::builder();
+        power->arg1().variable = Variable::create();
+        power->seal_arg1();
+        Addition* const exponent_addition = power->arg2() << Addition::builder();
+        exponent->copy_to(&exponent_addition->arg1());
+        exponent_addition->seal_arg1();
+        exponent_addition->arg2().numeric_constant = NumericConstant::with_value(1.0);
+        exponent_addition->seal();
+        power->seal();
+        product->seal();
 
-        // copy exponent
-        for (size_t i = 0; i < exponent_size; ++i) {
-            symbols_dst[3 + i] = integrand[2 + i];
-        }
-
-        symbols_dst[3 + exponent_size].numeric_constant = NumericConstant::create();
-        symbols_dst[3 + exponent_size].numeric_constant.value = 1.0;
-
-        symbols_dst[4 + exponent_size].power = Power::create();
-        symbols_dst[4 + exponent_size].power.second_arg_offset = 2;
-        symbols_dst[4 + exponent_size].power.total_size = 4 + exponent_size;
-
-        symbols_dst[5 + exponent_size] = integrand[1]; // copy variable
-
-        symbols_dst[6 + exponent_size].addition = Addition::create();
-        symbols_dst[6 + exponent_size].addition.second_arg_offset = 1 + exponent_size;
-        symbols_dst[6 + exponent_size].addition.total_size = 2 + exponent_size;
-
-        // copy exponent
-        for (size_t i = 0; i < exponent_size; ++i) {
-            symbols_dst[7 + exponent_size + i] = integrand[2 + i];
-        }
-
-        symbols_dst[7 + exponent_size * 2].numeric_constant = NumericConstant::create();
-        symbols_dst[7 + exponent_size * 2].numeric_constant.value = 1.0;
+        destination->solution.seal();
     }
 
-    __device__ void integrate_variable_exponent(Symbol* integral, Symbol* destination,
-                                                Symbol* swap_space) {
-        Symbol* symbols_dst = prepare_solution(integral, destination, 3);
-        Symbol* integrand = integral->integrand();
-        symbols_dst[0] = integrand[0]; // power
-        symbols_dst[1] = integrand[1]; // e constant
-        symbols_dst[2] = integrand[2]; // variable
+    __device__ void integrate_variable_exponent(const Integral* const integral,
+                                                Symbol* const destination,
+                                                Symbol* const swap_space) {
+        Symbol* const solution_expr = prepare_solution(integral, destination);
+        const Symbol* const integrand = integral->integrand();
+
+        Power* const power = solution_expr << Power::builder();
+        power->arg1().known_constant = KnownConstant::with_value(KnownConstantValue::E);
+        power->seal_arg1();
+        power->arg2().variable = Variable::create();
+        power->seal();
+
+        destination->solution.seal();
     }
 
-    __device__ void integrate_simple_sine(Symbol* integral, Symbol* destination,
-                                          Symbol* swap_space) {
-        Symbol* symbols_dst = prepare_solution(integral, destination, 3);
-        Symbol* integrand = integral->integrand();
-        symbols_dst[0].negative = Negative::create();
-        symbols_dst[0].negative.total_size = 3;
+    __device__ void integrate_simple_sine(const Integral* const integral, Symbol* const destination,
+                                          Symbol* const swap_space) {
+        Symbol* const solution_expr = prepare_solution(integral, destination);
+        const Symbol* const integrand = integral->integrand();
 
-        symbols_dst[1].cosine = Cosine::create();
-        symbols_dst[1].cosine.total_size = 2;
+        Negation* const minus = solution_expr << Negation::builder();
+        Cosine* const cos = minus->arg() << Cosine::builder();
+        cos->arg().variable = Variable::create();
+        cos->seal();
+        minus->seal();
 
-        symbols_dst[2] = integrand[1]; // copy variable
+        destination->solution.seal();
     }
 
-    __device__ void integrate_simple_cosine(Symbol* integral, Symbol* destination,
-                                            Symbol* swap_space) {
-        Symbol* symbols_dst = prepare_solution(integral, destination, 2);
-        Symbol* integrand = integral->integrand();
+    __device__ void integrate_simple_cosine(const Integral* const integral,
+                                            Symbol* const destination, Symbol* const swap_space) {
+        Symbol* const solution_expr = prepare_solution(integral, destination);
+        const Symbol* const integrand = integral->integrand();
 
-        symbols_dst[0].sine = Sine::create();
-        symbols_dst[0].sine.total_size = 2;
+        Sine* const sine = solution_expr << Sine::builder();
+        sine->arg().variable = Variable::create();
+        sine->seal();
 
-        symbols_dst[1] = integrand[1]; // copy variable
+        destination->solution.seal();
     }
 
-    __device__ void integrate_constant(Symbol* integral, Symbol* destination, Symbol* swap_space) {
-        Symbol* integrand = integral->integrand();
+    __device__ void integrate_constant(const Integral* const integral, Symbol* const destination,
+                                       Symbol* const swap_space) {
+        const Symbol* const integrand = integral->integrand();
+        Symbol* const solution_expr = prepare_solution(integral, destination);
 
-        Symbol* symbols_dst = prepare_solution(integral, destination, 2 + integrand->total_size());
+        Product* const product = solution_expr << Product::builder();
+        product->arg1().variable = Variable::create();
+        product->seal_arg1();
+        integrand->copy_to(&product->arg2());
+        product->seal();
 
-        symbols_dst[0].product = Product::create();
-        symbols_dst[0].product.total_size = 2 + integrand->total_size();
-        symbols_dst[0].product.second_arg_offset = 2;
-        symbols_dst[1].variable = Variable::create();
-
-        // copy constant
-        for (size_t i = 0; i < integrand->total_size(); ++i) {
-            symbols_dst[2 + i] = integrand[i];
-        }
+        destination->solution.seal();
     }
 
-    __device__ Symbol* prepare_solution(Symbol* integral, Symbol* destination,
-                                        size_t solution_size) {
-        destination[0].solution = Solution::create();
-        destination[0].solution.total_size = integral->integral.integrand_offset + solution_size;
-        destination[0].solution.symbols_offset = integral->integral.integrand_offset;
-        destination[0].solution.substitution_count = integral->integral.substitution_count;
+    __device__ Symbol* prepare_solution(const Integral* const integral, Symbol* const destination) {
+        Solution* const solution = destination << Solution::builder();
+        Symbol::copy_symbol_sequence(Symbol::from(solution->first_substitution()),
+                                     Symbol::from(integral->first_substitution()),
+                                     integral->substitutions_size());
+        solution->seal_substitutions(integral->substitution_count,
+                                     integral->substitutions_size());
 
-        for (size_t i = 1; i < integral->integral.integrand_offset; ++i) {
-            destination[i] = integral[i];
-        }
-
-        return destination + integral->integral.integrand_offset;
+        return solution->expression();
     }
 
-    __device__ void check_applicability(Symbol* integrals, size_t* applicability,
-                                        size_t* integral_count, ApplicabilityCheck* checks,
-                                        size_t check_count) {
-        size_t thread_count = Util::thread_count();
-        size_t thread_idx = Util::thread_idx();
+    __device__ void check_applicability(const Symbol* const integrals, size_t* const applicability,
+                                        const size_t* const integral_count,
+                                        const ApplicabilityCheck* const checks,
+                                        const size_t check_count) {
+        const size_t thread_count = Util::thread_count();
+        const size_t thread_idx = Util::thread_idx();
 
-        size_t check_step = thread_count / TRANSFORM_GROUP_SIZE;
+        const size_t check_step = thread_count / TRANSFORM_GROUP_SIZE;
 
         for (size_t check_idx = thread_idx / TRANSFORM_GROUP_SIZE; check_idx < check_count;
              check_idx += check_step) {
             for (size_t expr_idx = thread_idx % TRANSFORM_GROUP_SIZE; expr_idx < *integral_count;
                  expr_idx += TRANSFORM_GROUP_SIZE) {
-                Symbol* integral_pointer = integrals + expr_idx * INTEGRAL_MAX_SYMBOL_COUNT;
+                const Integral* const integral_pointer =
+                    &(integrals + expr_idx * INTEGRAL_MAX_SYMBOL_COUNT)->integral;
                 size_t applicability_index = MAX_INTEGRAL_COUNT * check_idx + expr_idx;
 
                 applicability[applicability_index] = checks[check_idx](integral_pointer);
@@ -220,29 +211,32 @@ namespace Sym {
         }
     }
 
-    __device__ void apply_transforms(Symbol* integrals, Symbol* destinations, Symbol* swap_spaces,
-                                     size_t* applicability, size_t* integral_count,
-                                     IntegralTransform* transforms, size_t transform_count) {
-        size_t thread_count = Util::thread_count();
-        size_t thread_idx = Util::thread_idx();
+    __device__ void apply_transforms(const Symbol* const integrals, Symbol* const destinations,
+                                     Symbol* const swap_spaces, const size_t* const applicability,
+                                     const size_t* const integral_count,
+                                     const IntegralTransform* const transforms,
+                                     const size_t transform_count) {
+        const size_t thread_count = Util::thread_count();
+        const size_t thread_idx = Util::thread_idx();
 
-        size_t trans_step = thread_count / TRANSFORM_GROUP_SIZE;
+        const size_t trans_step = thread_count / TRANSFORM_GROUP_SIZE;
 
         for (size_t trans_idx = thread_idx / TRANSFORM_GROUP_SIZE; trans_idx < transform_count;
              trans_idx += trans_step) {
             for (size_t expr_idx = thread_idx % TRANSFORM_GROUP_SIZE; expr_idx < *integral_count;
                  expr_idx += TRANSFORM_GROUP_SIZE) {
-                Symbol* integral_pointer = integrals + expr_idx * INTEGRAL_MAX_SYMBOL_COUNT;
-                size_t applicability_index = MAX_INTEGRAL_COUNT * trans_idx + expr_idx;
+                const Integral* const integral_pointer =
+                    &(integrals + expr_idx * INTEGRAL_MAX_SYMBOL_COUNT)->integral;
+                const size_t applicability_index = MAX_INTEGRAL_COUNT * trans_idx + expr_idx;
 
-                // TODO: Wartownik zamiast specjalnego przypadek dla applicability_index == 0
+                // TODO: Wartownik zamiast specjalnego przypadeku dla applicability_index == 0
                 if (applicability_index == 0 && applicability[applicability_index] != 0 ||
                     applicability_index != 0 && applicability[applicability_index - 1] !=
                                                     applicability[applicability_index]) {
-                    size_t destination_offset =
+                    const size_t destination_offset =
                         INTEGRAL_MAX_SYMBOL_COUNT * (applicability[applicability_index] - 1);
-                    Symbol* destination = destinations + destination_offset;
-                    Symbol* swap_space = swap_spaces + destination_offset;
+                    Symbol* const destination = destinations + destination_offset;
+                    Symbol* const swap_space = swap_spaces + destination_offset;
 
                     transforms[trans_idx](integral_pointer, destination, swap_space);
                 }
@@ -250,27 +244,31 @@ namespace Sym {
         }
     }
 
-    __global__ void check_for_known_integrals(Symbol* integrals, size_t* applicability,
-                                              size_t* integral_count) {
+    __global__ void check_for_known_integrals(const Symbol* const integrals,
+                                              size_t* const applicability,
+                                              const size_t* const integral_count) {
         check_applicability(integrals, applicability, integral_count, known_integral_checks,
                             KNOWN_INTEGRAL_COUNT);
     }
 
-    __global__ void apply_known_integrals(Symbol* integrals, Symbol* destinations,
-                                          Symbol* swap_spaces, size_t* applicability,
-                                          size_t* integral_count) {
+    __global__ void apply_known_integrals(const Symbol* const integrals, Symbol* const destinations,
+                                          Symbol* const swap_spaces,
+                                          const size_t* const applicability,
+                                          const size_t* const integral_count) {
         apply_transforms(integrals, destinations, swap_spaces, applicability, integral_count,
                          known_integral_applications, KNOWN_INTEGRAL_COUNT);
     }
 
-    __global__ void check_heuristics_applicability(Symbol* integrals, size_t* applicability,
-                                                   size_t* integral_count) {
+    __global__ void check_heuristics_applicability(const Symbol* const integrals,
+                                                   size_t* const applicability,
+                                                   const size_t* const integral_count) {
         check_applicability(integrals, applicability, integral_count, heuristic_checks,
                             HEURISTIC_CHECK_COUNT);
     }
 
-    __global__ void apply_heuristics(Symbol* integrals, Symbol* destinations, Symbol* swap_spaces,
-                                     size_t* applicability, size_t* integral_count) {
+    __global__ void apply_heuristics(const Symbol* const integrals, Symbol* const destinations,
+                                     Symbol* const swap_spaces, const size_t* const applicability,
+                                     const size_t* const integral_count) {
         apply_transforms(integrals, destinations, swap_spaces, applicability, integral_count,
                          heuristic_applications, HEURISTIC_CHECK_COUNT);
     }
