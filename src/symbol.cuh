@@ -7,6 +7,7 @@
 #include "addition.cuh"
 #include "constants.cuh"
 #include "integral.cuh"
+#include "inverse_trigonometric.cuh"
 #include "power.cuh"
 #include "product.cuh"
 #include "solution.cuh"
@@ -34,6 +35,10 @@ namespace Sym {
         Cosine cosine;
         Tangent tangent;
         Cotangent cotangent;
+        Arcsine arcsine;
+        Arccosine arccosine;
+        Arctangent arctangent;
+        Arccotangent arccotangent;
 
         __host__ __device__ inline Type type() const { return unknown.type; }
         __host__ __device__ inline bool is(const Type type) const { return unknown.type == type; }
@@ -244,6 +249,14 @@ namespace Sym {
             return (_instance).tangent._member_function(__VA_ARGS__);          \
         case Type::Cotangent:                                                  \
             return (_instance).cotangent._member_function(__VA_ARGS__);        \
+        case Type::Arcsine:                                                    \
+            return (_instance).arcsine._member_function(__VA_ARGS__);          \
+        case Type::Arccosine:                                                  \
+            return (_instance).arccosine._member_function(__VA_ARGS__);        \
+        case Type::Arctangent:                                                 \
+            return (_instance).arctangent._member_function(__VA_ARGS__);       \
+        case Type::Arccotangent:                                               \
+            return (_instance).arccotangent._member_function(__VA_ARGS__);     \
         case Type::Unknown:                                                    \
         default:                                                               \
             return (_instance).unknown._member_function(__VA_ARGS__);          \

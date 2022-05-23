@@ -21,7 +21,8 @@ add_executable(
   ${SRC_DIR}/integrate.cu
   ${SRC_DIR}/integral.cu
   ${SRC_DIR}/substitution.cu
-  ${SRC_DIR}/solution.cu)
+  ${SRC_DIR}/solution.cu
+  ${SRC_DIR}/inverse_trigonometric.cu)
 
 target_compile_features(cusymint PUBLIC cxx_std_14)
 set_target_properties(cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON

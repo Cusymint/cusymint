@@ -32,7 +32,12 @@ namespace Sym {
         Sine,
         Cosine,
         Tangent,
-        Cotangent
+        Cotangent,
+        // Inverse trigonometric functions
+        Arcsine,
+        Arccosine,
+        Arctangent,
+        Arccotangent
     };
 
 #define COMPRESS_REVERSE_TO_HEADER(_compress_reverse_to) \
