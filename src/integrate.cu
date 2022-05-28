@@ -45,7 +45,7 @@ namespace Sym {
     }
 
     __device__ void transform_function_of_ex(const Integral* const integral,
-                                             Symbol* const destination, Symbol* const swap_space) {
+                                             Symbol* const destination, Symbol* const help_space) {
         // TODO: Move somewhere so that it's initialized only once and not every time this function
         // is called
         init_ex_function();
@@ -53,7 +53,7 @@ namespace Sym {
         variable.variable = Variable::create();
 
         integral->integrate_by_substitution_with_derivative(ex_function, &variable, destination,
-                                                            swap_space);
+                                                            help_space);
     }
 
     __device__ size_t is_simple_variable_power(const Integral* const integral) {
@@ -91,7 +91,7 @@ namespace Sym {
 
     __device__ void integrate_simple_variable_power(const Integral* const integral,
                                                     Symbol* const destination,
-                                                    Symbol* const swap_space) {
+                                                    Symbol* const help_space) {
         const Symbol* const integrand = integral->integrand();
 
         Symbol* const solution_expr = prepare_solution(integral, destination);
@@ -125,7 +125,7 @@ namespace Sym {
 
     __device__ void integrate_variable_exponent(const Integral* const integral,
                                                 Symbol* const destination,
-                                                Symbol* const swap_space) {
+                                                Symbol* const help_space) {
         Symbol* const solution_expr = prepare_solution(integral, destination);
         const Symbol* const integrand = integral->integrand();
 
@@ -139,7 +139,7 @@ namespace Sym {
     }
 
     __device__ void integrate_simple_sine(const Integral* const integral, Symbol* const destination,
-                                          Symbol* const swap_space) {
+                                          Symbol* const help_space) {
         Symbol* const solution_expr = prepare_solution(integral, destination);
         const Symbol* const integrand = integral->integrand();
 
@@ -153,7 +153,7 @@ namespace Sym {
     }
 
     __device__ void integrate_simple_cosine(const Integral* const integral,
-                                            Symbol* const destination, Symbol* const swap_space) {
+                                            Symbol* const destination, Symbol* const help_space) {
         Symbol* const solution_expr = prepare_solution(integral, destination);
         const Symbol* const integrand = integral->integrand();
 
@@ -165,7 +165,7 @@ namespace Sym {
     }
 
     __device__ void integrate_constant(const Integral* const integral, Symbol* const destination,
-                                       Symbol* const swap_space) {
+                                       Symbol* const help_space) {
         const Symbol* const integrand = integral->integrand();
         Symbol* const solution_expr = prepare_solution(integral, destination);
 
@@ -183,8 +183,7 @@ namespace Sym {
         Symbol::copy_symbol_sequence(Symbol::from(solution->first_substitution()),
                                      Symbol::from(integral->first_substitution()),
                                      integral->substitutions_size());
-        solution->seal_substitutions(integral->substitution_count,
-                                     integral->substitutions_size());
+        solution->seal_substitutions(integral->substitution_count, integral->substitutions_size());
 
         return solution->expression();
     }
@@ -212,7 +211,7 @@ namespace Sym {
     }
 
     __device__ void apply_transforms(const Symbol* const integrals, Symbol* const destinations,
-                                     Symbol* const swap_spaces, const size_t* const applicability,
+                                     Symbol* const help_spaces, const size_t* const applicability,
                                      const size_t* const integral_count,
                                      const IntegralTransform* const transforms,
                                      const size_t transform_count) {
@@ -236,9 +235,9 @@ namespace Sym {
                     const size_t destination_offset =
                         INTEGRAL_MAX_SYMBOL_COUNT * (applicability[applicability_index] - 1);
                     Symbol* const destination = destinations + destination_offset;
-                    Symbol* const swap_space = swap_spaces + destination_offset;
+                    Symbol* const help_space = help_spaces + destination_offset;
 
-                    transforms[trans_idx](integral_pointer, destination, swap_space);
+                    transforms[trans_idx](integral_pointer, destination, help_space);
                 }
             }
         }
@@ -252,10 +251,10 @@ namespace Sym {
     }
 
     __global__ void apply_known_integrals(const Symbol* const integrals, Symbol* const destinations,
-                                          Symbol* const swap_spaces,
+                                          Symbol* const help_spaces,
                                           const size_t* const applicability,
                                           const size_t* const integral_count) {
-        apply_transforms(integrals, destinations, swap_spaces, applicability, integral_count,
+        apply_transforms(integrals, destinations, help_spaces, applicability, integral_count,
                          known_integral_applications, KNOWN_INTEGRAL_COUNT);
     }
 
@@ -267,9 +266,21 @@ namespace Sym {
     }
 
     __global__ void apply_heuristics(const Symbol* const integrals, Symbol* const destinations,
-                                     Symbol* const swap_spaces, const size_t* const applicability,
+                                     Symbol* const help_spaces, const size_t* const applicability,
                                      const size_t* const integral_count) {
-        apply_transforms(integrals, destinations, swap_spaces, applicability, integral_count,
+        apply_transforms(integrals, destinations, help_spaces, applicability, integral_count,
                          heuristic_applications, HEURISTIC_CHECK_COUNT);
     }
+
+    __global__ void simplify(Sym::Symbol* const expressions, Sym::Symbol* const help_spaces,
+                             const size_t* const expression_count) {
+        const size_t thread_count = Util::thread_count();
+        const size_t thread_idx = Util::thread_idx();
+
+        for (size_t expr_idx = thread_idx; expr_idx < *expression_count; expr_idx += thread_count) {
+            const size_t offset = expr_idx * INTEGRAL_MAX_SYMBOL_COUNT;
+            expressions[offset].simplify(help_spaces + offset);
+        }
+    }
+
 }

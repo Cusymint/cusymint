@@ -1,6 +1,8 @@
 #ifndef CUDA_UTILS_CUH
 #define CUDA_UTILS_CUH
 
+#include <cassert>
+
 namespace Util {
     __device__ inline size_t thread_count() { return gridDim.x * blockDim.x; }
     __device__ inline size_t thread_idx() { return threadIdx.x + blockDim.x * blockIdx.x; }
@@ -34,6 +36,11 @@ namespace Util {
      * @param n Number of bytes to swap
      */
     __host__ __device__ void swap_mem(void* const p1, void* const p2, const size_t n);
+
+    /*
+     * @brief Crashuje program w przypadku nieodwracalny błędów
+     */
+    __host__ __device__ void crash();
 }
 
 #endif

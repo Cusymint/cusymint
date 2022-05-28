@@ -7,8 +7,13 @@
 
 namespace Sym {
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(NumericConstant);
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(NumericConstant);
+
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(KnownConstant);
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(KnownConstant);
+
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(UnknownConstant);
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(UnknownConstant);
 
     DEFINE_COMPARE(NumericConstant) {
         return BASE_COMPARE(NumericConstant) && symbol->numeric_constant.value == value;

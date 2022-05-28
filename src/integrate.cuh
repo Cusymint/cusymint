@@ -6,7 +6,7 @@
 namespace Sym {
     typedef size_t (*ApplicabilityCheck)(const Integral* const integral);
     typedef void (*IntegralTransform)(const Integral* const integral, Symbol* const destination,
-                                      Symbol* const swap_space);
+                                      Symbol* const help_space);
 
     __device__ size_t is_simple_variable_power(const Integral* const integral);
     __device__ size_t is_variable_exponent(const Integral* const integral);
@@ -16,21 +16,21 @@ namespace Sym {
 
     __device__ void integrate_simple_variable_power(const Integral* const integral,
                                                     Symbol* const destination,
-                                                    Symbol* const swap_space);
+                                                    Symbol* const help_space);
     __device__ void integrate_variable_exponent(const Integral* const integral,
                                                 Symbol* const destination,
-                                                Symbol* const swap_space);
+                                                Symbol* const help_space);
     __device__ void integrate_simple_sine(const Integral* const integral, Symbol* const destination,
-                                          Symbol* const swap_space);
-    __device__ void integrate_simple_cosine(const Integral* const integral, Symbol* const destination,
-                                            Symbol* const swap_space);
+                                          Symbol* const help_space);
+    __device__ void integrate_simple_cosine(const Integral* const integral,
+                                            Symbol* const destination, Symbol* const help_space);
     __device__ void integrate_constant(const Integral* const integral, Symbol* const destination,
-                                       Symbol* const swap_space);
+                                       Symbol* const help_space);
 
     __device__ size_t is_function_of_ex(const Integral* const integral);
 
     __device__ void transform_function_of_ex(const Integral* const integral,
-                                             Symbol* const destination, Symbol* const swap_space);
+                                             Symbol* const destination, Symbol* const help_space);
 
     /*
      * @brief Creates a `Solution` symbol at `destination[0]` and all substitutions from `integral`
@@ -59,7 +59,7 @@ namespace Sym {
                                               size_t* const applicability,
                                               const size_t* const integral_count);
     __global__ void apply_known_integrals(const Symbol* const integrals, Symbol* const destinations,
-                                          Symbol* const swap_spaces,
+                                          Symbol* const help_spaces,
                                           const size_t* const applicability,
                                           const size_t* const integral_count);
 
@@ -67,8 +67,11 @@ namespace Sym {
                                                    size_t* const applicability,
                                                    const size_t* const integral_count);
     __global__ void apply_heuristics(const Symbol* const integrals, Symbol* const destinations,
-                                     Symbol* const swap_spaces, const size_t* const applicability,
+                                     Symbol* const help_spaces, const size_t* const applicability,
                                      const size_t* const integral_count);
+
+    __global__ void simplify(Sym::Symbol* const expressions, Sym::Symbol* const help_spaces,
+                             const size_t* const expression_count);
 }
 
 #endif

@@ -26,17 +26,27 @@ void test_substitutions() {
     std::cout << "ixpr3: " << ixpr3[0].to_string() << std::endl;
 }
 
+void simplify(Sym::Symbol* const d_integrals, Sym::Symbol* const d_help_spaces,
+              size_t* const d_integral_count) {
+    std::cout << "Simplifying" << std::endl;
+
+    Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_help_spaces, d_integral_count);
+}
+
 std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
     std::cout << "Creating integrals" << std::endl;
     std::vector<std::vector<Sym::Symbol>> integrals{
         Sym::substitute(Sym::integral(Sym::cos(Sym::var())), Sym::pi() * Sym::var()),
+        Sym::integral((Sym::var() ^ Sym::num(2.0)) ^ Sym::e()),
+        Sym::integral(Sym::num(2.0) ^ Sym::num(3.0)),
+        Sym::integral(Sym::cos(Sym::var()) ^ Sym::num(0.0)),
         Sym::integral(Sym::cos(Sym::sin(Sym::var()))),
         Sym::integral(Sym::e() ^ Sym::var()),
         Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ Sym::var())),
-        Sym::integral(Sym::var() ^ (-Sym::num(5))),
+        Sym::integral(Sym::var() ^ (-Sym::num(5.0))),
         Sym::integral(Sym::var() ^ (Sym::pi() - Sym::num(1.0))),
         Sym::integral(Sym::var() ^ Sym::var()),
-        Sym::integral(Sym::pi() + Sym::e() * Sym::num(10)),
+        Sym::integral(Sym::pi() + Sym::e() * Sym::num(10.0)),
         Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var())))};
 
     for (size_t i = 0; i < integrals.size(); ++i) {
@@ -48,7 +58,7 @@ std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
 }
 
 void check_and_apply_heuristics(Sym::Symbol*& d_integrals, Sym::Symbol*& d_integrals_swap,
-                                Sym::Symbol* d_swap_spaces, size_t* const d_integral_count,
+                                Sym::Symbol* const d_help_spaces, size_t* const d_integral_count,
                                 size_t* const d_applicability) {
     std::cout << "Checking heuristics" << std::endl;
 
@@ -66,7 +76,7 @@ void check_and_apply_heuristics(Sym::Symbol*& d_integrals, Sym::Symbol*& d_integ
 
     cudaDeviceSynchronize();
     Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(
-        d_integrals, d_integrals_swap, d_swap_spaces, d_applicability, d_integral_count);
+        d_integrals, d_integrals_swap, d_help_spaces, d_applicability, d_integral_count);
 
     std::swap(d_integrals, d_integrals_swap);
     cudaMemcpy(d_integral_count, d_applicability + Sym::APPLICABILITY_ARRAY_SIZE - 1,
@@ -111,7 +121,10 @@ void print_current_results(const size_t* const d_applicability,
     size_t h_integral_count;
     cudaMemcpy(&h_integral_count, d_integral_count, sizeof(size_t), cudaMemcpyDeviceToHost);
 
-    print_applicability(d_applicability, h_integral_count);
+    if (d_applicability != nullptr) {
+        print_applicability(d_applicability, h_integral_count);
+    }
+
     print_results(d_integrals, h_integral_count);
 }
 
@@ -133,8 +146,8 @@ int main() {
     cudaMalloc(&d_integrals_swap, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
     mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
 
-    Sym::Symbol* d_swap_spaces;
-    cudaMalloc(&d_swap_spaces, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
+    Sym::Symbol* d_help_spaces;
+    cudaMalloc(&d_help_spaces, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
     mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
 
     size_t* d_applicability;
@@ -160,13 +173,16 @@ int main() {
 
     std::cout << std::endl;
 
-    check_and_apply_heuristics(d_integrals, d_integrals_swap, d_swap_spaces, d_integral_count,
+    simplify(d_integrals, d_help_spaces, d_integral_count);
+    print_current_results(nullptr, d_integrals, d_integral_count);
+
+    check_and_apply_heuristics(d_integrals, d_integrals_swap, d_help_spaces, d_integral_count,
                                d_applicability);
     print_current_results(d_applicability, d_integrals, d_integral_count);
 
     // cudaMemset(d_applicability, 0, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
 
-    // check_and_apply_heuristics(d_integrals, d_integrals_swap, d_swap_spaces, d_integral_count,
+    // check_and_apply_heuristics(d_integrals, d_integrals_swap, d_help_spaces, d_integral_count,
     //                            d_applicability);
     // print_current_results(d_applicability, d_integrals, d_integral_count);
 

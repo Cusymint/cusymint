@@ -43,7 +43,7 @@ namespace Sym {
      */
     __host__ __device__ void integrate_by_substitution_with_derivative(
         const Symbol* const substitution, const Symbol* const derivative, Symbol* const destination,
-        Symbol* const swap_space) const;
+        Symbol* const help_space) const;
 
     __host__ __device__ const Substitution* first_substitution() const;
     __host__ __device__ Substitution* first_substitution();
