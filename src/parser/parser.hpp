@@ -2,7 +2,7 @@
 #define PARSER_H
 
 #include "scanner.hpp"
-#include "symbol.cuh"
+#include "../symbol.cuh"
 #include <string>
 
 typedef std::vector<Sym::Symbol> (*SymbolicFunction)(const std::vector<Sym::Symbol>&); 
