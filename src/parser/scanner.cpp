@@ -68,6 +68,24 @@ Token Scanner::scan(std::string &read_text)
 			case 'x':
 				read_text += 'x';
 				state = Token::Variable;
+                break;
+            case 'e':
+                read_text += 'e';
+                state = Token::E;
+                break;
+            case 'p':
+                read_text += 'p';
+                if (text.substr(pos+1,1)=="i")
+                {
+                    read_text += 'i';
+                    ++pos;
+                    state = Token::Pi;
+                }
+                else
+                {
+                    state = Token::SymbolicConstant;
+                }
+                break;
 			case 'a':
 				read_text += 'a';
 				if (text.substr(pos + 1, 5) == "rcsin")
@@ -248,6 +266,20 @@ Token Scanner::scan(std::string &read_text)
 			}
 			--pos;
 			return Token::Variable;
+        case Token::E:
+            if (pos == text.size() - 1 || !isLetter(text[pos+1])) return Token::E;
+            else
+            {
+                read_text += text[++pos];
+                return Token::Error;
+            }
+        case Token::Pi:
+            if (pos == text.size() - 1 || !isLetter(text[pos+1])) return Token::Pi;
+            else
+            {
+                read_text += text[++pos];
+                return Token::Error;
+            }
 		case Token::SymbolicConstant:
 			if (pos == text.size() - 1) return Token::SymbolicConstant;
 			if (isLetter(text[++pos]))

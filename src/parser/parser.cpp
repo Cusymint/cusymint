@@ -94,6 +94,12 @@ std::vector<Sym::Symbol> Parser::power_arg()
 	case Token::Variable:
 		next_token();
 		return Sym::var();
+	case Token::E:
+		next_token();
+		return Sym::e();
+	case Token::Pi:
+		next_token();
+		return Sym::pi();
 	case Token::OpenBrace:
 		next_token(); // (
 		e = expr();

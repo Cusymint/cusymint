@@ -9,6 +9,7 @@ enum class Token
 	Plus, Minus, Dot, Dash, Caret, // ok
 	Integer, Double, SymbolicConstant, Variable, // ok
 	OpenBrace, CloseBrace, Underscore, // ok
+    E, Pi,
 	Asin, Acos, Atan, Acot, // ok
 	Cos, Cot, Cosh, Coth, // ok
 	Ln, Log, // ok
