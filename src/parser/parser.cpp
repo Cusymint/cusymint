@@ -82,15 +82,18 @@ std::vector<Sym::Symbol> Parser::factor()
 std::vector<Sym::Symbol> Parser::power_arg()
 {
 	std::vector<Sym::Symbol> e;
+	std::string prev_text;
 	switch (tok)
 	{
 	case Token::Integer:
 	case Token::Double:
+		prev_text = read_text;
 		next_token();
-		return Sym::num(atof(read_text.c_str()));
+		return Sym::num(atof(prev_text.c_str()));
 	case Token::SymbolicConstant:
+		prev_text = read_text;
 		next_token();
-		return Sym::cnst(read_text.c_str());
+		return Sym::cnst(prev_text.c_str());
 	case Token::Variable:
 		next_token();
 		return Sym::var();
