@@ -7,9 +7,18 @@ namespace Sym {
     DEFINE_SIMPLE_TWO_ARGUMENT_OP_COMPARE(Product)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Product)
 
+    DEFINE_SIMPLIFY_IN_PLACE(Product) {
+        arg1().simplify_in_place(help_space);
+        arg2().simplify_in_place(help_space);
+    }
+
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Reciprocal)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
+
+    DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) {
+        arg().simplify_in_place(help_space);
+    }
 
     std::string Product::to_string() const {
         if (arg1().is(Type::Reciprocal)) {

@@ -180,19 +180,29 @@ namespace Sym {
         __host__ __device__ size_t compress_reverse_to(Symbol* const destination) const;
 
         /*
-         * @brief Returns integrand pointer if `this` is an integral. Undefined behavior otherwise.
+         * @brief Zwraca funkcję podcałkową jeśli `this` jest całką. Undefined behavior w przeciwnym
+         * wypadku.
          *
-         * @return Pointer to integrand
+         * @return Wskaźnik do funkcji podcałkowej
          */
         __host__ __device__ inline Symbol* integrand() { return integral.integrand(); }
+        __host__ __device__ inline const Symbol* integrand() const { return integral.integrand(); }
 
         /*
-         * @brief Returns integrand const pointer if `this` is an integral. Undefined behavior
-         * otherwise.
+         * @brief Wykonuje uproszcznie wyrażenia
+         * Wykorzystuje założenie, że wyrażenie uproszczone jest krótsze od pierwotnego.
          *
-         * @return Const pointer to integrand
+         * @param help_space Pamięć pomocnicza
          */
-        __host__ __device__ inline const Symbol* integrand() const { return integral.integrand(); }
+        __host__ __device__ void simplify(Symbol* const help_space);
+
+        /*
+         * @brief Wykonuje uproszcznie wyrażenia, potencjalnie zostawiając dziury w wyrażeniu
+         * Wykorzystuje założenie, że wyrażenie uproszczone jest krótsze od pierwotnego.
+         *
+         * @param help_space Pamięć pomocnicza
+         */
+        __host__ __device__ void simplify_in_place(Symbol* const help_space);
 
         /*
          * @brief Substitutes all occurences of variable with `symbol`
@@ -202,18 +212,40 @@ namespace Sym {
         void substitute_variable_with(const Symbol symbol);
 
         /*
-         * @brief Wrapper do `substitute_variable_with` ułatwiający tworzenie stringów z podstawieniami
+         * @brief Wrapper do `substitute_variable_with` ułatwiający tworzenie stringów z
+         * podstawieniami
          *
          * @param n Numer podstawienia z którego wziąta będzie nazwa
          */
         void substitute_variable_with_nth_substitution_name(const size_t n);
 
+        /*
+         * @brief Zwraca przyjazny użytkownikowi `std::string` reprezentujący wyrażenie.
+         */
         std::string to_string() const;
     };
 
+    /*
+     * @brief porównanie pojedynczego symbolu (bez porównywania drzew)
+     *
+     * @param sym1 pierwszy symbol
+     * @param sym2 drugi symbol
+     *
+     * @return `true` jeśli symbole są równe, `false` jeśli nie
+     */
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2);
+
+    /*
+     * @brief porównanie pojedynczych symbolu (bez porównywania drzew)
+     *
+     * @param sym1 pierwszy symbol
+     * @param sym2 drugi symbol
+     *
+     * @return `true` jeśli symbole nie są równe, `false` jeśli są
+     */
     __host__ __device__ bool operator!=(const Symbol& sym1, const Symbol& sym2);
 
+// Co ciekawe, działa też kiedy `_member_function` zwraca `void`
 #define VIRTUAL_CALL(_instance, _member_function, ...)                         \
     (([&]() {                                                                  \
         switch ((_instance).unknown.type) {                                    \

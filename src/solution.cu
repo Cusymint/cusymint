@@ -14,6 +14,10 @@ namespace Sym {
                symbol->solution.expression_offset == expression_offset;
     }
 
+    DEFINE_SIMPLIFY_IN_PLACE(Solution) {
+        expression()->simplify_in_place(help_space);
+    }
+
     __host__ __device__ void Solution::seal_no_substitutions() { seal_substitutions(0, 0); }
 
     __host__ __device__ void Solution::seal_single_substitution() {
@@ -25,9 +29,7 @@ namespace Sym {
         substitution_count = count;
     }
 
-    __host__ __device__ void Solution::seal() {
-        size = expression_offset + expression()->size();
-    }
+    __host__ __device__ void Solution::seal() { size = expression_offset + expression()->size(); }
 
     __host__ __device__ Symbol* Solution::expression() {
         return Symbol::from(this) + expression_offset;

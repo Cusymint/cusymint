@@ -74,8 +74,7 @@ namespace Sym {
             if (this[i].is(Type::Variable)) {
                 // First variable in `this` appears earlier than first variable in `expression` or
                 // `this` is not long enough to contain another occurence of `expression`
-                if (i < first_var_offset ||
-                    size() - i < expression->size() - first_var_offset) {
+                if (i < first_var_offset || size() - i < expression->size() - first_var_offset) {
                     return false;
                 }
 
@@ -107,6 +106,17 @@ namespace Sym {
 
     __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) const {
         return VIRTUAL_CALL(*this, compress_reverse_to, destination);
+    }
+
+    __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
+        simplify_in_place(help_space);
+        const size_t new_size = compress_reverse_to(help_space);
+        reverse_symbol_sequence(help_space, new_size);
+        help_space->copy_to(this);
+    }
+
+    __host__ __device__ void Symbol::simplify_in_place(Symbol* const help_space) {
+        VIRTUAL_CALL(*this, simplify_in_place, help_space);
     }
 
     void Symbol::substitute_variable_with(const Symbol symbol) {

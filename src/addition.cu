@@ -9,9 +9,16 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Addition)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Addition)
 
+    DEFINE_SIMPLIFY_IN_PLACE(Addition) {
+        arg1().simplify_in_place(help_space);
+        arg2().simplify_in_place(help_space);
+    }
+
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Negation)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Negation)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Negation)
+
+    DEFINE_SIMPLIFY_IN_PLACE(Negation) { arg().simplify_in_place(help_space); }
 
     std::string Addition::to_string() const {
         const Symbol* const sym = Symbol::from(this);

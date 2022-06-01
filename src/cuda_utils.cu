@@ -66,4 +66,12 @@ namespace Util {
             p2_8[i] = temp;
         }
     }
+
+    __host__ __device__ void crash() {
+#ifdef CUDA_ARCH
+        assert(false);
+#else
+        exit(EXIT_FAILURE);
+#endif
+    }
 }

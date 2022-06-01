@@ -4,14 +4,30 @@
 #include "symbol.cuh"
 
 namespace Sym {
-    DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(Integral)
     DEFINE_INTO_DESTINATION_OPERATOR(Integral)
+
+    DEFINE_COMPRESS_REVERSE_TO(Integral) {
+        size_t new_integrand_size = integrand()->compress_reverse_to(destination);
+
+        size_t new_substitutions_size = first_substitution()->compress_reverse_substitutions_to(
+            destination + new_integrand_size);
+
+        size_t integral_offset = new_integrand_size + new_substitutions_size;
+
+        copy_single_to(destination + integral_offset);
+        destination[integral_offset].integral.size = integral_offset + 1;
+        destination[integral_offset].integral.integrand_offset = new_substitutions_size + 1;
+
+        return integral_offset + 1;
+    }
 
     DEFINE_COMPARE(Integral) {
         return BASE_COMPARE(Integral) &&
                symbol->integral.substitution_count == substitution_count &&
                symbol->integral.integrand_offset == integrand_offset;
     }
+
+    DEFINE_SIMPLIFY_IN_PLACE(Integral) { integrand()->simplify_in_place(help_space); }
 
     __host__ __device__ void Integral::seal_no_substitutions() { seal_substitutions(0, 0); }
 
@@ -24,9 +40,7 @@ namespace Sym {
         substitution_count = count;
     }
 
-    __host__ __device__ void Integral::seal() {
-        size = integrand_offset + integrand()->size();
-    }
+    __host__ __device__ void Integral::seal() { size = integrand_offset + integrand()->size(); }
 
     __host__ __device__ Symbol* Integral::integrand() {
         return Symbol::from(this) + integrand_offset;
@@ -51,12 +65,12 @@ namespace Sym {
 
     __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
         const Symbol* const substitution, const Symbol* const derivative, Symbol* const destination,
-        Symbol* const swap_space) const {
+        Symbol* const help_space) const {
         integrand()->substitute_with_var_with_holes(destination, substitution);
-        size_t new_incomplete_integrand_size = destination->compress_reverse_to(swap_space);
-        Symbol::reverse_symbol_sequence(swap_space, new_incomplete_integrand_size);
+        size_t new_incomplete_integrand_size = destination->compress_reverse_to(help_space);
+        Symbol::reverse_symbol_sequence(help_space, new_incomplete_integrand_size);
 
-        // Teraz w `swap_space` jest docelowa funkcja podcałkowa, ale jeszcze bez mnożenia przez
+        // Teraz w `help_space` jest docelowa funkcja podcałkowa, ale jeszcze bez mnożenia przez
         // pochodną. W `destination` są już niepotrzebne dane.
 
         size_t old_integrand_size = integrand()->size();
@@ -72,7 +86,7 @@ namespace Sym {
         derivative->copy_to(&reciprocal->arg());
         reciprocal->seal();
         product->seal_arg1();
-        swap_space->copy_to(&product->arg2());
+        help_space->copy_to(&product->arg2());
         product->seal();
     }
 
