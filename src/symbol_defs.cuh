@@ -32,7 +32,12 @@ namespace Sym {
         Sine,
         Cosine,
         Tangent,
-        Cotangent
+        Cotangent,
+        // Inverse trigonometric functions
+        Arcsine,
+        Arccosine,
+        Arctangent,
+        Arccotangent
     };
 
 #define COMPRESS_REVERSE_TO_HEADER(_compress_reverse_to) \
@@ -50,10 +55,10 @@ namespace Sym {
         bool simplified;                                                   \
                                                                            \
         __host__ __device__ static _name builder() {                       \
-            return {                                                       \
-                .type = Sym::Type::_name,                                  \
-                .simplified = _simple,                                     \
-            };                                                             \
+            _name symbol;                                                  \
+            symbol.type = Sym::Type::_name;                                \
+            symbol.simplified = _simple;                                   \
+            return symbol;                                                 \
         }                                                                  \
                                                                            \
         __host__ __device__ void seal();                                   \
@@ -124,26 +129,26 @@ namespace Sym {
         return size;                             \
     }
 
-#define DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)             \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                               \
+#define DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                   \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                     \
         const size_t new_arg_size = arg().compress_reverse_to(destination); \
-        copy_single_to(destination + new_arg_size);                   \
-        destination[new_arg_size].unknown.size = new_arg_size + 1;    \
-        return new_arg_size + 1;                                      \
+        copy_single_to(destination + new_arg_size);                         \
+        destination[new_arg_size].unknown.size = new_arg_size + 1;          \
+        return new_arg_size + 1;                                            \
     }
 
-#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                               \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                 \
+#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                     \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                       \
         const size_t new_arg2_size = arg2().compress_reverse_to(destination);                 \
         const size_t new_arg1_size = arg1().compress_reverse_to(destination + new_arg2_size); \
-                                                                                        \
-        copy_single_to(destination + new_arg1_size + new_arg2_size);                    \
-        destination[new_arg1_size + new_arg2_size].unknown.size =                       \
-            new_arg1_size + new_arg2_size + 1;                                          \
-        (destination + new_arg1_size + new_arg2_size)->as<_name>().second_arg_offset =  \
-            new_arg1_size + 1;                                                          \
-                                                                                        \
-        return new_arg1_size + new_arg2_size + 1;                                       \
+                                                                                              \
+        copy_single_to(destination + new_arg1_size + new_arg2_size);                          \
+        destination[new_arg1_size + new_arg2_size].unknown.size =                             \
+            new_arg1_size + new_arg2_size + 1;                                                \
+        (destination + new_arg1_size + new_arg2_size)->as<_name>().second_arg_offset =        \
+            new_arg1_size + 1;                                                                \
+                                                                                              \
+        return new_arg1_size + new_arg2_size + 1;                                             \
     }
 
 #define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                    \

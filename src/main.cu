@@ -47,7 +47,11 @@ std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
         Sym::integral(Sym::var() ^ (Sym::pi() - Sym::num(1.0))),
         Sym::integral(Sym::var() ^ Sym::var()),
         Sym::integral(Sym::pi() + Sym::e() * Sym::num(10.0)),
-        Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var())))};
+        Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))),
+        Sym::integral(Sym::arccot(Sym::var())),
+        Sym::integral(Sym::num(1.0) / ((Sym::var() ^ Sym::num(2.0)) + Sym::num(1.0))),
+        Sym::integral(Sym::num(1.0) / (Sym::num(1.0) + (Sym::var() ^ Sym::num(2.0))))
+        };
 
     for (size_t i = 0; i < integrals.size(); ++i) {
         std::cout << integrals[i][0].to_string() << std::endl;
