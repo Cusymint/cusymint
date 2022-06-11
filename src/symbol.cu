@@ -111,8 +111,7 @@ namespace Sym {
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
         simplify_in_place(help_space);
         const size_t new_size = compress_reverse_to(help_space);
-        reverse_symbol_sequence(help_space, new_size);
-        help_space->copy_to(this);
+        copy_and_reverse_symbol_sequence(this, help_space, new_size);
     }
 
     __host__ __device__ void Symbol::simplify_in_place(Symbol* const help_space) {

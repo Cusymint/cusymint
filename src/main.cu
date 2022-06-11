@@ -37,6 +37,8 @@ std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
     std::cout << "Creating integrals" << std::endl;
     std::vector<std::vector<Sym::Symbol>> integrals{
         Sym::substitute(Sym::integral(Sym::cos(Sym::var())), Sym::pi() * Sym::var()),
+        Sym::integral((Sym::var() + Sym::num(1.0)) +
+                      (Sym::pi() + (Sym::e() + Sym::cos(Sym::var())))),
         Sym::integral((Sym::var() ^ Sym::num(2.0)) ^ Sym::e()),
         Sym::integral(Sym::num(2.0) ^ Sym::num(3.0)),
         Sym::integral(Sym::cos(Sym::var()) ^ Sym::num(0.0)),
@@ -50,8 +52,7 @@ std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
         Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))),
         Sym::integral(Sym::arccot(Sym::var())),
         Sym::integral(Sym::num(1.0) / ((Sym::var() ^ Sym::num(2.0)) + Sym::num(1.0))),
-        Sym::integral(Sym::num(1.0) / (Sym::num(1.0) + (Sym::var() ^ Sym::num(2.0))))
-        };
+        Sym::integral(Sym::num(1.0) / (Sym::num(1.0) + (Sym::var() ^ Sym::num(2.0))))};
 
     for (size_t i = 0; i < integrals.size(); ++i) {
         std::cout << integrals[i][0].to_string() << std::endl;

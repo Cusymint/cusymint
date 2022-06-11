@@ -18,6 +18,8 @@ namespace Sym {
         NumericConstant, // rational constants with given numeric value, e.g. 5, 1.345, 12.44
         KnownConstant,   // well known real constants, e.g. pi, e (Euler's number)
         UnknownConstant, // constants marked with letters, e.g. a, phi, delta
+        // Placeholders
+        ExpanderPlaceholder,
         // Meta structures
         Integral,
         Solution,
@@ -73,6 +75,13 @@ namespace Sym {
                                                                            \
         __host__ __device__ void copy_single_to(Symbol* const dst) const { \
             Util::copy_mem(dst, this, sizeof(_name));                      \
+        }                                                                  \
+        __host__ __device__ inline const Symbol* this_symbol() const {     \
+            return reinterpret_cast<const Symbol*>(this);                  \
+        }                                                                  \
+                                                                           \
+        __host__ __device__ inline Symbol* this_symbol() {                 \
+            return reinterpret_cast<Symbol*>(this);                        \
         }                                                                  \
                                                                            \
         COMPARE_HEADER(compare);                                           \
@@ -200,6 +209,7 @@ namespace Sym {
     __host__ __device__ const Symbol& arg2() const;                                            \
     __host__ __device__ Symbol& arg2();                                                        \
     __host__ __device__ void seal_arg1();                                                      \
+    __host__ __device__ void swap_args(Symbol* const help_space);                              \
     __host__ __device__ static void create(const Symbol* const arg1, const Symbol* const arg2, \
                                            Symbol* const destination);
 
@@ -219,6 +229,14 @@ namespace Sym {
     __host__ __device__ void _name::seal_arg1() { second_arg_offset = 1 + arg1().size(); }       \
                                                                                                  \
     __host__ __device__ void _name::seal() { size = 1 + arg1().size() + arg2().size(); }         \
+                                                                                                 \
+    __host__ __device__ void _name::swap_args(Symbol* const help_space) {                        \
+        arg1().copy_to(help_space);                                                              \
+        arg2().copy_to(&arg1());                                                                 \
+        seal_arg1();                                                                             \
+        help_space->copy_to(&arg2());                                                            \
+        seal();                                                                                  \
+    }                                                                                            \
                                                                                                  \
     __host__ __device__ void _name::create(const Symbol* const arg1, const Symbol* const arg2,   \
                                            Symbol* const destination) {                          \
