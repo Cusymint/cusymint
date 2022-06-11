@@ -11,6 +11,7 @@ add_executable(
   ${SRC_DIR}/main.cu
   ${SRC_DIR}/cuda_utils.cu
   ${SRC_DIR}/symbol.cu
+  ${SRC_DIR}/expander_placeholder.cu
   ${SRC_DIR}/unknown.cu
   ${SRC_DIR}/constants.cu
   ${SRC_DIR}/variable.cu
