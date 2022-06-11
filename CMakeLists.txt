@@ -25,6 +25,12 @@ add_executable(
   ${SRC_DIR}/solution.cu
   ${SRC_DIR}/inverse_trigonometric.cu)
 
+string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+
+if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
+  target_compile_options(cusymint PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -g -G>)
+endif()
+
 target_compile_features(cusymint PUBLIC cxx_std_14)
 set_target_properties(cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
                                           CUDA_ARCHITECTURES OFF)
