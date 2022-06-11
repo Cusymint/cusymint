@@ -79,11 +79,11 @@ namespace Sym {
                                      expr1->power.arg2().is(Type::NumericConstant) &&
                                      expr1->power.arg2().numeric_constant.value == 2.0;
 
-        bool is_expr2_cosine_squared = expr1->is(Type::Power) &&
-                                       expr1->power.arg1().is(Type::Sine) &&
-                                       expr1->power.arg1().sine.arg().is(Type::Variable) &&
-                                       expr1->power.arg2().is(Type::NumericConstant) &&
-                                       expr1->power.arg2().numeric_constant.value == 2.0;
+        bool is_expr2_cosine_squared = expr2->is(Type::Power) &&
+                                       expr2->power.arg1().is(Type::Cosine) &&
+                                       expr2->power.arg1().cosine.arg().is(Type::Variable) &&
+                                       expr2->power.arg2().is(Type::NumericConstant) &&
+                                       expr2->power.arg2().numeric_constant.value == 2.0;
 
         return is_expr1_sine_squared && is_expr2_cosine_squared;
     }
@@ -107,14 +107,17 @@ namespace Sym {
         if (are_equal_of_opposite_sign(expr1, expr2)) {
             expr1->numeric_constant = NumericConstant::with_value(0.0);
             expr2->numeric_constant = NumericConstant::with_value(0.0);
+            return true;
         }
 
         // TODO: Jakieś inne tożsamości trygonometryczne
         if (is_sine_cosine_squared_sum(expr1, expr2) || is_sine_cosine_squared_sum(expr2, expr1)) {
             expr1->numeric_constant = NumericConstant::with_value(1.0);
             expr2->numeric_constant = NumericConstant::with_value(0.0);
+            return true;
         }
 
+        // TODO: Dodawanie gdy to samo jest tylko przemnożone przez stałą
         // TODO: Jedynka hiperboliczna gdy funkcje hiperboliczne będą już zaimplementowane
 
         return false;
