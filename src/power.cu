@@ -8,6 +8,9 @@ namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Power)
 
     DEFINE_SIMPLIFY_IN_PLACE(Power) {
+        arg1().simplify_in_place(help_space);
+        arg2().simplify_in_place(help_space);
+
         if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value == 0.0) {
             Symbol::from(this)->numeric_constant = NumericConstant::with_value(1.0);
             return;

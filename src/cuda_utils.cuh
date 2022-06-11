@@ -38,9 +38,11 @@ namespace Util {
     __host__ __device__ void swap_mem(void* const p1, void* const p2, const size_t n);
 
     /*
-     * @brief Crashuje program w przypadku nieodwracalny błędów
+     * @brief Crashuje program w przypadku nieodwracalny błędów.
+     *
+     * @param message Wiadomość wypisywania na stdout.
      */
-    __host__ __device__ void crash();
+    __host__ __device__ void crash(const char* const message);
 }
 
 #endif

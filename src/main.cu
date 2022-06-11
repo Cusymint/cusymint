@@ -35,7 +35,7 @@ void simplify(Sym::Symbol* const d_integrals, Sym::Symbol* const d_help_spaces,
 
 std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
     std::cout << "Creating integrals" << std::endl;
-    std::vector<std::vector<Sym::Symbol>> integrals{
+    std::vector<std::vector<Sym::Symbol>> integrals {
         Sym::substitute(Sym::integral(Sym::cos(Sym::var())), Sym::pi() * Sym::var()),
         Sym::integral((Sym::var() + Sym::num(1.0)) +
                       (Sym::pi() + (Sym::e() + Sym::cos(Sym::var())))),
@@ -184,6 +184,9 @@ int main() {
     check_and_apply_heuristics(d_integrals, d_integrals_swap, d_help_spaces, d_integral_count,
                                d_applicability);
     print_current_results(d_applicability, d_integrals, d_integral_count);
+
+    simplify(d_integrals, d_help_spaces, d_integral_count);
+    print_current_results(nullptr, d_integrals, d_integral_count);
 
     // cudaMemset(d_applicability, 0, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
 

@@ -2,12 +2,15 @@
 
 #include <cstdint>
 
+#include <iostream>
 #include <memory>
 
 namespace Util {
+    // TODO: Sprawdzać alignment w funkcjach operujących na pamięci
+
     __host__ __device__ bool compare_mem(const void* const p1, const void* const p2,
                                          const size_t n) {
-        // Compare blocks of 8 bytes, then compare remaining memory byte by byte
+        // Porównanie bloków po 8 bajtów, potem porównanie pozostałych bajt po bajcie
         const uint64_t* const p1_64 = reinterpret_cast<const uint64_t*>(p1);
         const uint64_t* const p2_64 = reinterpret_cast<const uint64_t*>(p2);
 
@@ -30,7 +33,7 @@ namespace Util {
     }
 
     __host__ __device__ void copy_mem(void* const dst, const void* const src, const size_t n) {
-        // Copy blocks of 8 bytes, then copy remaining memory byte by byte
+        // Kopiowanie bloków po 8 bajtów, potem kopiowanie pozostałych bajt po bajcie.
         uint64_t* const dst_64 = reinterpret_cast<uint64_t*>(dst);
         const uint64_t* const src_64 = reinterpret_cast<const uint64_t*>(src);
 
@@ -47,7 +50,7 @@ namespace Util {
     }
 
     __host__ __device__ void swap_mem(void* const p1, void* const p2, const size_t n) {
-        // Swap blocks of 8 bytes, then swap remaining memory byte by byte
+        // Swap bloków po 8 bajtów, potem swap pozostałych bajt po bajcie
         uint64_t* const p1_64 = reinterpret_cast<uint64_t*>(p1);
         uint64_t* const p2_64 = reinterpret_cast<uint64_t*>(p2);
 
@@ -67,11 +70,9 @@ namespace Util {
         }
     }
 
-    __host__ __device__ void crash() {
-#ifdef CUDA_ARCH
+    __host__ __device__ void crash(const char* const message) {
+        printf("\n");
+        printf("%s\n", message);
         assert(false);
-#else
-        exit(EXIT_FAILURE);
-#endif
     }
 }

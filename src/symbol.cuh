@@ -101,7 +101,7 @@ namespace Sym {
          *
          * @return `true` if they are the same, `false` otherwise
          */
-        __host__ __device__ static bool are_symbol_sequences_same(const Symbol* seq1,
+        __host__ __device__ static bool compare_symbol_sequences(const Symbol* seq1,
                                                                   const Symbol* seq2, size_t n);
 
         /*
@@ -220,6 +220,17 @@ namespace Sym {
          * @param n Numer podstawienia z którego wziąta będzie nazwa
          */
         void substitute_variable_with_nth_substitution_name(const size_t n);
+
+        /*
+         * @brief Porównuje dwa drzewa wyrażeń, oba muszą być uproszczone.
+         *
+         * @param expr1 Pierwsze wyrażenie
+         * @param expr2 Drugie wyrażenie
+         *
+         * @return `true` jeśli drzewa wyrażeń mają tę samą strukturę, `false` w przeciwnym wypadku
+         */
+        __host__ __device__ static bool compare_trees(const Symbol* const expr1,
+                                                      const Symbol* const expr2);
 
         /*
          * @brief Zwraca przyjazny użytkownikowi `std::string` reprezentujący wyrażenie.

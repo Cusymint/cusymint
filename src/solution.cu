@@ -5,8 +5,22 @@
 #include "symbol.cuh"
 
 namespace Sym {
-    DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(Solution)
     DEFINE_INTO_DESTINATION_OPERATOR(Solution)
+
+    DEFINE_COMPRESS_REVERSE_TO(Solution) {
+        size_t new_expression_size = expression()->compress_reverse_to(destination);
+
+        size_t new_substitutions_size = first_substitution()->compress_reverse_substitutions_to(
+            destination + new_expression_size);
+
+        size_t integral_offset = new_expression_size + new_substitutions_size;
+
+        copy_single_to(destination + integral_offset);
+        destination[integral_offset].integral.size = integral_offset + 1;
+        destination[integral_offset].integral.integrand_offset = new_substitutions_size + 1;
+
+        return integral_offset + 1;
+    }
 
     DEFINE_COMPARE(Solution) {
         return BASE_COMPARE(Solution) &&
