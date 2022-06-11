@@ -57,6 +57,28 @@ namespace Sym {
         return const_cast<Addition*>(const_cast<const Addition*>(this)->last_in_tree());
     }
 
+    __host__ __device__ AdditionIterator::AdditionIterator(Addition* addition)
+        : current_addition(addition), current_symbol(&addition->arg2()) {}
+
+    __host__ __device__ bool AdditionIterator::advance() {
+        if (current_addition->arg1().is(Type::Addition)) {
+            current_addition = &current_addition->arg1().addition;
+            current_symbol = &current_addition->arg2();
+            return true;
+        }
+
+        if (current_symbol == &current_addition->arg2()) {
+            current_symbol = &current_addition->arg1();
+            return true;
+        }
+
+        current_symbol = nullptr;
+        current_addition = nullptr;
+        return false;
+    }
+
+    __host__ __device__ Symbol* AdditionIterator::current() { return current_symbol; }
+
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Negation)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Negation)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Negation)
