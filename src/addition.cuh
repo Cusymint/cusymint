@@ -7,33 +7,10 @@
 
 namespace Sym {
     DECLARE_SYMBOL(Addition, false)
-    TWO_ARGUMENT_OP_SYMBOL
+    TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(Addition)
     std::string to_string() const;
 
   private:
-    /*
-     * @brief Uproszczenie struktury dodawania do drzewa w postaci:
-     *                 +
-     *                / \
-     *               +   e
-     *              / \
-     *             +   d
-     *            / \
-     *           +   c
-     *          / \
-     *         a   b
-     *
-     * Zakładamy, że oba argumenty są w uproszczonej postaci
-     *
-     * @param help_space Pamięć pomocnicza
-     */
-    __host__ __device__ void simplify_structure(Symbol* const help_space);
-
-    /*
-     * @brief W drzewie o uproszczonej strukturze wyszukuje par upraszczalnych wyrażeń.
-     */
-    __host__ __device__ void simplify_pairs();
-
     /*
      * @brief Sprawdza, czy `expr1 == sin^2(x)` i `expr2 == cos^2(x)`
      *
@@ -43,14 +20,15 @@ namespace Sym {
                                                                const Symbol* const expr2);
 
     /*
-     * @brief Sprawdza, czy dwa drzewa można uprościć dodawaniem. Jeśli tak, to to robi
+     * @brief Sprawdza, czy `expr1` i `expr2` są tym samym wyrażeniem, ale o przeciwnym znaku.
      *
-     * @param expr1 Pierwszy składnik sumy
-     * @param expr2 Drugi składnik sumy
+     * @param expr1 Pierwsze wyrażenie
+     * @param expr2 Drugie wyrażenie
      *
-     * @return `true` jeśli wykonano uproszczenie, `false` w przeciwnym wypadku
+     * @return `true` jeśli `expr1 == -expr2`, `false` w przeciwnym wypadku
      */
-    __host__ __device__ static bool try_add_symbols(Symbol* const expr1, Symbol* const expr2);
+    __host__ __device__ static bool are_equal_of_opposite_sign(const Symbol* const expr1,
+                                                               const Symbol* const expr2);
 
     /*
      * @brief W drzewie dodawań usuwa dodawania, których jednym z argumentów jest 0.0. Dodawanie
@@ -61,22 +39,6 @@ namespace Sym {
      * po wywołaniu tej funkcji wywoływać już żadnych innych funkcji składowych z Addition!
      */
     __host__ __device__ void eliminate_zeros();
-
-    /*
-     * @brief W uproszczonym drzewie dodawań zwraca dodawanie najniżej w drzewie
-     *
-     * @return Wskaźnik do ostatniego dodawania. Jeśli `arg1()` nie jest dodawaniem, to zwraca
-     * `this`
-     */
-    __host__ __device__ const Addition* last_in_tree() const;
-
-    /*
-     * @brief W uproszczonym drzewie dodawań zwraca dodawanie najniżej w drzewie
-     *
-     * @return Wskaźnik do ostatniego dodawania. Jeśli `arg1()` nie jest dodawaniem, to zwraca
-     * `this`
-     */
-    __host__ __device__ Addition* last_in_tree();
     END_DECLARE_SYMBOL(Addition)
 
     DECLARE_SYMBOL(Negation, false)

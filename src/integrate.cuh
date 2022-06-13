@@ -8,6 +8,7 @@ namespace Sym {
     typedef void (*IntegralTransform)(const Integral* const integral, Symbol* const destination,
                                       Symbol* const help_space);
 
+    __device__ size_t is_single_variable(const Integral* const integral);
     __device__ size_t is_simple_variable_power(const Integral* const integral);
     __device__ size_t is_variable_exponent(const Integral* const integral);
     __device__ size_t is_simple_sine(const Integral* const integral);
@@ -15,6 +16,8 @@ namespace Sym {
     __device__ size_t is_constant(const Integral* const integral);
     __device__ size_t is_known_arctan(const Integral* const integral);
 
+    __device__ void integrate_single_variable(const Integral* const integral,
+                                              Symbol* const destination, Symbol* const help_space);
     __device__ void integrate_simple_variable_power(const Integral* const integral,
                                                     Symbol* const destination,
                                                     Symbol* const help_space);
@@ -27,8 +30,8 @@ namespace Sym {
                                             Symbol* const destination, Symbol* const help_space);
     __device__ void integrate_constant(const Integral* const integral, Symbol* const destination,
                                        Symbol* const help_space);
-    __device__ void integrate_known_arctan(const Integral* const integral, Symbol* const destination,
-                                            Symbol* const help_space);
+    __device__ void integrate_arctan(const Integral* const integral, Symbol* const destination,
+                                     Symbol* const help_space);
 
     __device__ size_t is_function_of_ex(const Integral* const integral);
 
@@ -48,7 +51,7 @@ namespace Sym {
     // HEURISTIC_CHECK_COUNT cannot be defined as sizeof(heurisic_checks) because
     // `heurisic_checks` is defined in translation unit associated with integrate.cu, but its
     // size has to be known in other translation units as well
-    constexpr size_t KNOWN_INTEGRAL_COUNT = 6;
+    constexpr size_t KNOWN_INTEGRAL_COUNT = 7;
     constexpr size_t HEURISTIC_CHECK_COUNT = 1;
     constexpr size_t MAX_CHECK_COUNT =
         KNOWN_INTEGRAL_COUNT > HEURISTIC_CHECK_COUNT ? KNOWN_INTEGRAL_COUNT : HEURISTIC_CHECK_COUNT;

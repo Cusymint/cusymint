@@ -28,7 +28,9 @@ add_executable(
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
 if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
-  add_compile_options(-g -G)
+  target_compile_options(cusymint PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -g -G >)
+else()
+  target_compile_options(cusymint PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:>)
 endif()
 
 target_compile_features(cusymint PUBLIC cxx_std_14)
