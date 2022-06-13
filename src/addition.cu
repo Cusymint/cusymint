@@ -1,10 +1,13 @@
 
 #include "addition.cuh"
 
+#include "TreeIterator.cuh"
 #include "cuda_utils.cuh"
 #include "symbol.cuh"
 
 namespace Sym {
+    using AdditionIterator = TreeIterator<Addition, Type::Addition>;
+
     DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(Addition)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Addition)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Addition)
@@ -111,6 +114,7 @@ namespace Sym {
         }
 
         // TODO: Jakieś inne tożsamości trygonometryczne
+        // TODO: Rozszerzyć na kombinacje liniowe, np x*sin^2(x) + x*cos^2(x) = x
         if (is_sine_cosine_squared_sum(expr1, expr2) || is_sine_cosine_squared_sum(expr2, expr1)) {
             expr1->numeric_constant = NumericConstant::with_value(1.0);
             expr2->numeric_constant = NumericConstant::with_value(0.0);
@@ -149,30 +153,6 @@ namespace Sym {
     __host__ __device__ Addition* Addition::last_in_tree() {
         return const_cast<Addition*>(const_cast<const Addition*>(this)->last_in_tree());
     }
-
-    __host__ __device__ AdditionIterator::AdditionIterator(Addition* addition)
-        : current_addition(addition), current_symbol(&addition->arg2()) {}
-
-    __host__ __device__ bool AdditionIterator::advance() {
-        if (current_addition->arg1().is(Type::Addition)) {
-            current_addition = &current_addition->arg1().addition;
-            current_symbol = &current_addition->arg2();
-            return true;
-        }
-
-        if (current_symbol == &current_addition->arg2()) {
-            current_symbol = &current_addition->arg1();
-            return true;
-        }
-
-        current_symbol = nullptr;
-        current_addition = nullptr;
-        return false;
-    }
-
-    __host__ __device__ bool AdditionIterator::is_valid() { return current_symbol != nullptr; }
-
-    __host__ __device__ Symbol* AdditionIterator::current() { return current_symbol; }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Negation)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Negation)
