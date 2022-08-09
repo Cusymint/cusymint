@@ -5,25 +5,30 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(cusymint LANGUAGES CXX CUDA)
 
 set(SRC_DIR "src")
+set(UTILS_DIR "${SRC_DIR}/Utils")
+set(SYMBOL_DIR "${SRC_DIR}/Symbol")
+set(EVALUATION_DIR "${SRC_DIR}/Evaluation")
 
 add_executable(
   cusymint
   ${SRC_DIR}/main.cu
-  ${SRC_DIR}/cuda_utils.cu
-  ${SRC_DIR}/symbol.cu
-  ${SRC_DIR}/expander_placeholder.cu
-  ${SRC_DIR}/unknown.cu
-  ${SRC_DIR}/constants.cu
-  ${SRC_DIR}/variable.cu
-  ${SRC_DIR}/addition.cu
-  ${SRC_DIR}/product.cu
-  ${SRC_DIR}/power.cu
-  ${SRC_DIR}/trigonometric.cu
-  ${SRC_DIR}/integrate.cu
-  ${SRC_DIR}/integral.cu
-  ${SRC_DIR}/substitution.cu
-  ${SRC_DIR}/solution.cu
-  ${SRC_DIR}/inverse_trigonometric.cu)
+  ${UTILS_DIR}/Cuda.cu
+  ${SYMBOL_DIR}/Symbol.cu
+  ${SYMBOL_DIR}/ExpanderPlaceholder.cu
+  ${SYMBOL_DIR}/Unknown.cu
+  ${SYMBOL_DIR}/Constants.cu
+  ${SYMBOL_DIR}/Variable.cu
+  ${SYMBOL_DIR}/Addition.cu
+  ${SYMBOL_DIR}/Product.cu
+  ${SYMBOL_DIR}/Power.cu
+  ${SYMBOL_DIR}/Trigonometric.cu
+  ${SYMBOL_DIR}/Integral.cu
+  ${SYMBOL_DIR}/Substitution.cu
+  ${SYMBOL_DIR}/Solution.cu
+  ${SYMBOL_DIR}/InverseTrigonometric.cu
+  ${EVALUATION_DIR}/Integrate.cu)
+
+target_include_directories(cusymint PRIVATE ${SRC_DIR})
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
