@@ -1,8 +1,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "scanner.hpp"
-#include "../symbol.cuh"
+#include "Scanner.hpp"
+#include "../Symbol/Symbol.cuh"
 #include <string>
 
 typedef std::vector<Sym::Symbol> (*SymbolicFunction)(const std::vector<Sym::Symbol>&); 

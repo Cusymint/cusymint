@@ -2,7 +2,6 @@ build
 compile_commands.json
 .cache
 .vscode/**/*
-.vscode
 .vs
 CMakeFiles
 cusymint.dir

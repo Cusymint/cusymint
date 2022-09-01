@@ -1,4 +1,4 @@
-#include "parser.hpp"
+#include "Parser.hpp"
 
 bool isFunction(Token tok)
 {
@@ -131,7 +131,7 @@ std::vector<Sym::Symbol> Parser::power_arg()
 SymbolicFunction Parser::function()
 {
 	const SymbolicFunction empty = [](const std::vector<Sym::Symbol> &s) { return s; };
-	const SymbolicFunction functions[] = {/*arcsin*/empty,/*arccos*/empty,/*arctg*/empty,/*arcctg*/empty,Sym::cos,/*cosh*/empty,/*ctgh*/empty,/*ln*/empty,/*log*/empty,Sym::sin, /*sinh*/empty,/*sqrt*/empty, Sym::tan,/*tanh*/empty};
+	const SymbolicFunction functions[] = {Sym::arcsin,Sym::arccos,Sym::arctan,Sym::arccot,Sym::cos,/*cosh*/empty,/*ctgh*/empty,/*ln*/empty,/*log*/empty,Sym::sin, /*sinh*/empty,/*sqrt*/empty, Sym::tan,/*tanh*/empty};
 	Token prev = tok;
 	next_token();
 	return functions[(int)prev - (int)Token::Asin];
