@@ -10,6 +10,13 @@ typedef std::vector<Sym::Symbol> (*SymbolicOperator)(const std::vector<Sym::Symb
 
 bool isFunction(Token tok);
 
+// Produkcje:
+//
+// expr -> term { addop term }					³¹czny lewostronnie
+// term -> factor { mulop factor }				³¹czny lewostronnie
+// factor -> power_arg | power_arg ^ factor		³¹czny prawostronnie
+// power_arg -> num | const | var | ( expr ) | function ( expr )
+//
 class Parser
 {
 private:

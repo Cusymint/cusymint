@@ -2,3 +2,14 @@ build
 compile_commands.json
 .cache
 .vscode
+.vs
+CMakeFiles
+cusymint.dir
+Debug
+Release
+x64
+x86
+CMakeCache.txt
+*vcxproj*
+*.sln
+cmake_install.cmake

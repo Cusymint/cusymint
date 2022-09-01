@@ -71,10 +71,10 @@ std::vector<Sym::Symbol> Parser::term()
 std::vector<Sym::Symbol> Parser::factor()
 {
 	std::vector<Sym::Symbol> fact = power_arg();
-	while (tok == Token::Caret)
+	if (tok == Token::Caret)
 	{
 		next_token();
-		fact = fact ^ power_arg(); // popraw!
+		fact = fact ^ factor();
 	}
 	return fact;
 }
