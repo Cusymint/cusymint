@@ -4,16 +4,19 @@
 #include <string>
 #include <vector>
 
-#include "addition.cuh"
-#include "constants.cuh"
-#include "integral.cuh"
-#include "power.cuh"
-#include "product.cuh"
-#include "solution.cuh"
-#include "substitution.cuh"
-#include "trigonometric.cuh"
-#include "unknown.cuh"
-#include "variable.cuh"
+#include "Symbol/Addition.cuh"
+#include "Symbol/Constants.cuh"
+#include "Symbol/ExpanderPlaceholder.cuh"
+#include "Symbol/Integral.cuh"
+#include "Symbol/InverseTrigonometric.cuh"
+#include "Symbol/Power.cuh"
+#include "Symbol/Product.cuh"
+#include "Symbol/Solution.cuh"
+#include "Symbol/Substitution.cuh"
+#include "Symbol/SymbolType.cuh"
+#include "Symbol/Trigonometric.cuh"
+#include "Symbol/Unknown.cuh"
+#include "Symbol/Variable.cuh"
 
 namespace Sym {
     union Symbol {
@@ -22,6 +25,7 @@ namespace Sym {
         NumericConstant numeric_constant;
         KnownConstant known_constant;
         UnknownConstant unknown_constant;
+        ExpanderPlaceholder expander_placeholder;
         Integral integral;
         Solution solution;
         Substitution substitution;
@@ -34,6 +38,10 @@ namespace Sym {
         Cosine cosine;
         Tangent tangent;
         Cotangent cotangent;
+        Arcsine arcsine;
+        Arccosine arccosine;
+        Arctangent arctangent;
+        Arccotangent arccotangent;
 
         __host__ __device__ inline Type type() const { return unknown.type; }
         __host__ __device__ inline bool is(const Type type) const { return unknown.type == type; }
@@ -94,8 +102,8 @@ namespace Sym {
          *
          * @return `true` if they are the same, `false` otherwise
          */
-        __host__ __device__ static bool are_symbol_sequences_same(const Symbol* seq1,
-                                                                  const Symbol* seq2, size_t n);
+        __host__ __device__ static bool compare_symbol_sequences(const Symbol* seq1,
+                                                                 const Symbol* seq2, size_t n);
 
         /*
          * @brief Swap contents of two symbols
@@ -215,6 +223,17 @@ namespace Sym {
         void substitute_variable_with_nth_substitution_name(const size_t n);
 
         /*
+         * @brief Porównuje dwa drzewa wyrażeń, oba muszą być uproszczone.
+         *
+         * @param expr1 Pierwsze wyrażenie
+         * @param expr2 Drugie wyrażenie
+         *
+         * @return `true` jeśli drzewa wyrażeń mają tę samą strukturę, `false` w przeciwnym wypadku
+         */
+        __host__ __device__ static bool compare_trees(const Symbol* const expr1,
+                                                      const Symbol* const expr2);
+
+        /*
          * @brief Zwraca przyjazny użytkownikowi `std::string` reprezentujący wyrażenie.
          */
         std::string to_string() const;
@@ -241,45 +260,55 @@ namespace Sym {
     __host__ __device__ bool operator!=(const Symbol& sym1, const Symbol& sym2);
 
 // Co ciekawe, działa też kiedy `_member_function` zwraca `void`
-#define VIRTUAL_CALL(_instance, _member_function, ...)                         \
-    (([&]() {                                                                  \
-        switch ((_instance).unknown.type) {                                    \
-        case Type::Variable:                                                   \
-            return (_instance).variable._member_function(__VA_ARGS__);         \
-        case Type::NumericConstant:                                            \
-            return (_instance).numeric_constant._member_function(__VA_ARGS__); \
-        case Type::KnownConstant:                                              \
-            return (_instance).known_constant._member_function(__VA_ARGS__);   \
-        case Type::UnknownConstant:                                            \
-            return (_instance).unknown_constant._member_function(__VA_ARGS__); \
-        case Type::Integral:                                                   \
-            return (_instance).integral._member_function(__VA_ARGS__);         \
-        case Type::Solution:                                                   \
-            return (_instance).solution._member_function(__VA_ARGS__);         \
-        case Type::Substitution:                                               \
-            return (_instance).substitution._member_function(__VA_ARGS__);     \
-        case Type::Addition:                                                   \
-            return (_instance).addition._member_function(__VA_ARGS__);         \
-        case Type::Negation:                                                   \
-            return (_instance).negation._member_function(__VA_ARGS__);         \
-        case Type::Product:                                                    \
-            return (_instance).product._member_function(__VA_ARGS__);          \
-        case Type::Reciprocal:                                                 \
-            return (_instance).reciprocal._member_function(__VA_ARGS__);       \
-        case Type::Power:                                                      \
-            return (_instance).power._member_function(__VA_ARGS__);            \
-        case Type::Sine:                                                       \
-            return (_instance).sine._member_function(__VA_ARGS__);             \
-        case Type::Cosine:                                                     \
-            return (_instance).cosine._member_function(__VA_ARGS__);           \
-        case Type::Tangent:                                                    \
-            return (_instance).tangent._member_function(__VA_ARGS__);          \
-        case Type::Cotangent:                                                  \
-            return (_instance).cotangent._member_function(__VA_ARGS__);        \
-        case Type::Unknown:                                                    \
-        default:                                                               \
-            return (_instance).unknown._member_function(__VA_ARGS__);          \
-        }                                                                      \
+#define VIRTUAL_CALL(_instance, _member_function, ...)                             \
+    (([&]() {                                                                      \
+        switch ((_instance).unknown.type) {                                        \
+        case Type::Variable:                                                       \
+            return (_instance).variable._member_function(__VA_ARGS__);             \
+        case Type::NumericConstant:                                                \
+            return (_instance).numeric_constant._member_function(__VA_ARGS__);     \
+        case Type::KnownConstant:                                                  \
+            return (_instance).known_constant._member_function(__VA_ARGS__);       \
+        case Type::UnknownConstant:                                                \
+            return (_instance).unknown_constant._member_function(__VA_ARGS__);     \
+        case Type::ExpanderPlaceholder:                                            \
+            return (_instance).expander_placeholder._member_function(__VA_ARGS__); \
+        case Type::Integral:                                                       \
+            return (_instance).integral._member_function(__VA_ARGS__);             \
+        case Type::Solution:                                                       \
+            return (_instance).solution._member_function(__VA_ARGS__);             \
+        case Type::Substitution:                                                   \
+            return (_instance).substitution._member_function(__VA_ARGS__);         \
+        case Type::Addition:                                                       \
+            return (_instance).addition._member_function(__VA_ARGS__);             \
+        case Type::Negation:                                                       \
+            return (_instance).negation._member_function(__VA_ARGS__);             \
+        case Type::Product:                                                        \
+            return (_instance).product._member_function(__VA_ARGS__);              \
+        case Type::Reciprocal:                                                     \
+            return (_instance).reciprocal._member_function(__VA_ARGS__);           \
+        case Type::Power:                                                          \
+            return (_instance).power._member_function(__VA_ARGS__);                \
+        case Type::Sine:                                                           \
+            return (_instance).sine._member_function(__VA_ARGS__);                 \
+        case Type::Cosine:                                                         \
+            return (_instance).cosine._member_function(__VA_ARGS__);               \
+        case Type::Tangent:                                                        \
+            return (_instance).tangent._member_function(__VA_ARGS__);              \
+        case Type::Cotangent:                                                      \
+            return (_instance).cotangent._member_function(__VA_ARGS__);            \
+        case Type::Arcsine:                                                        \
+            return (_instance).arcsine._member_function(__VA_ARGS__);              \
+        case Type::Arccosine:                                                      \
+            return (_instance).arccosine._member_function(__VA_ARGS__);            \
+        case Type::Arctangent:                                                     \
+            return (_instance).arctangent._member_function(__VA_ARGS__);           \
+        case Type::Arccotangent:                                                   \
+            return (_instance).arccotangent._member_function(__VA_ARGS__);         \
+        case Type::Unknown:                                                        \
+        default:                                                                   \
+            return (_instance).unknown._member_function(__VA_ARGS__);              \
+        }                                                                          \
     })())
 }
 

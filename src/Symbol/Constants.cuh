@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "symbol_defs.cuh"
+#include "Macros.cuh"
 
 namespace Sym {
     enum class KnownConstantValue { Unknown, Pi, E };

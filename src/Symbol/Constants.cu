@@ -1,9 +1,9 @@
-#include "constants.cuh"
+#include "Constants.cuh"
 
 #include <stdexcept>
 
-#include "cuda_utils.cuh"
-#include "symbol.cuh"
+#include "Utils/Cuda.cuh"
+#include "Symbol.cuh"
 
 namespace Sym {
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(NumericConstant);

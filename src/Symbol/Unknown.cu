@@ -1,6 +1,6 @@
-#include "unknown.cuh"
+#include "Symbol/Unknown.cuh"
 
-#include "symbol.cuh"
+#include "Symbol/Symbol.cuh"
 
 namespace Sym {
     DEFINE_SIMPLE_COMPARE(Unknown);

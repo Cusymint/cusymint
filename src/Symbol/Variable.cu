@@ -1,6 +1,6 @@
-#include "variable.cuh"
+#include "Variable.cuh"
 
-#include "symbol.cuh"
+#include "Symbol.cuh"
 
 namespace Sym {
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(Variable)

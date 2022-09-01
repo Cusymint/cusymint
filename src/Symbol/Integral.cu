@@ -1,16 +1,19 @@
-#include "integral.cuh"
+#include "Integral.cuh"
 
-#include "substitution.cuh"
-#include "symbol.cuh"
+#include "Substitution.cuh"
+#include "Symbol.cuh"
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Integral)
 
     DEFINE_COMPRESS_REVERSE_TO(Integral) {
         size_t new_integrand_size = integrand()->compress_reverse_to(destination);
+        size_t new_substitutions_size = 0;
 
-        size_t new_substitutions_size = first_substitution()->compress_reverse_substitutions_to(
-            destination + new_integrand_size);
+        if (substitution_count > 0) {
+            new_substitutions_size = first_substitution()->compress_reverse_substitutions_to(
+                destination + new_integrand_size);
+        }
 
         size_t integral_offset = new_integrand_size + new_substitutions_size;
 
@@ -18,7 +21,7 @@ namespace Sym {
         destination[integral_offset].integral.size = integral_offset + 1;
         destination[integral_offset].integral.integrand_offset = new_substitutions_size + 1;
 
-        return integral_offset + 1;
+        return destination[integral_offset].integral.size;
     }
 
     DEFINE_COMPARE(Integral) {
@@ -53,7 +56,7 @@ namespace Sym {
     __host__ __device__ void
     Integral::copy_substitutions_with_an_additional_one(const Symbol* const substitution_expr,
                                                         Symbol* const destination) const {
-        Symbol::copy_symbol_sequence(destination, Symbol::from(this), integrand_offset);
+        Symbol::copy_symbol_sequence(destination, this_symbol(), integrand_offset);
 
         Symbol* const new_substitution = destination + integrand_offset;
         Substitution::create(substitution_expr, new_substitution, substitution_count);
@@ -71,7 +74,7 @@ namespace Sym {
         Symbol::reverse_symbol_sequence(help_space, new_incomplete_integrand_size);
 
         // Teraz w `help_space` jest docelowa funkcja podcałkowa, ale jeszcze bez mnożenia przez
-        // pochodną. W `destination` są już niepotrzebne dane.
+        // pochodną. W `destination` są niepotrzebne dane.
 
         size_t old_integrand_size = integrand()->size();
         size_t new_integrand_size = new_incomplete_integrand_size + 2 + derivative->size();

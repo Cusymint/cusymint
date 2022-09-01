@@ -1,7 +1,7 @@
 #ifndef UNKNOWN_CUH
 #define UNKNOWN_CUH
 
-#include "symbol_defs.cuh"
+#include "Macros.cuh"
 
 namespace Sym {
     DECLARE_SYMBOL(Unknown, true)

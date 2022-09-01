@@ -1,4 +1,6 @@
-#include "symbol.cuh"
+#include "Symbol.cuh"
+
+#include "Utils/Cuda.cuh"
 
 namespace Sym {
     __host__ __device__ void Symbol::copy_symbol_sequence(Symbol* const dst,
@@ -13,8 +15,8 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ bool Symbol::are_symbol_sequences_same(const Symbol* seq1,
-                                                               const Symbol* seq2, size_t n) {
+    __host__ __device__ bool Symbol::compare_symbol_sequences(const Symbol* seq1,
+                                                              const Symbol* seq2, size_t n) {
         // Cannot simply use Util::compare_mem because padding can differ
         for (size_t i = 0; i < n; ++i) {
             if (seq1[i] != seq2[i]) {
@@ -78,8 +80,8 @@ namespace Sym {
                     return false;
                 }
 
-                if (!are_symbol_sequences_same(this + i - first_var_offset, expression,
-                                               expression->size())) {
+                if (!compare_symbol_sequences(this + i - first_var_offset, expression,
+                                              expression->size())) {
                     return false;
                 }
 
@@ -111,8 +113,7 @@ namespace Sym {
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
         simplify_in_place(help_space);
         const size_t new_size = compress_reverse_to(help_space);
-        reverse_symbol_sequence(help_space, new_size);
-        help_space->copy_to(this);
+        copy_and_reverse_symbol_sequence(this, help_space, new_size);
     }
 
     __host__ __device__ void Symbol::simplify_in_place(Symbol* const help_space) {
@@ -133,6 +134,15 @@ namespace Sym {
         Symbol substitute;
         substitute.unknown_constant = UnknownConstant::create(substitution_name.c_str());
         substitute_variable_with(substitute);
+    }
+
+    __host__ __device__ bool Symbol::compare_trees(const Symbol* const expr1,
+                                                   const Symbol* const expr2) {
+        if (expr1->size() != expr2->size()) {
+            return false;
+        }
+
+        return compare_symbol_sequences(expr1, expr2, expr1->size());
     }
 
     std::string Symbol::to_string() const { return VIRTUAL_CALL(*this, to_string); }

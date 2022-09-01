@@ -1,10 +1,10 @@
-#include "substitution.cuh"
+#include "Substitution.cuh"
 
 #include <stdexcept>
 #include <vector>
 
-#include "constants.cuh"
-#include "symbol.cuh"
+#include "Constants.cuh"
+#include "Symbol.cuh"
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Substitution)
