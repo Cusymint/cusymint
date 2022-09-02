@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "cusymint_app",
+            "cwd": "front/cusymint_app",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "cusymint_app (profile mode)",
+            "cwd": "front/cusymint_app",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "cusymint_app (release mode)",
+            "cwd": "front/cusymint_app",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
