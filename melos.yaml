@@ -1,0 +1,12 @@
+name: Cusymint
+repository: https://github.com/szymon-zygula/cusymint
+
+packages:
+  - front/**
+
+ide:
+  intellij: false
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
