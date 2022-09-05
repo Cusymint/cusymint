@@ -36,13 +36,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.16.0"
-  cupertino_icons:
+  cusymint_ui:
     dependency: "direct main"
     description:
-      name: cupertino_icons
+      path: "../cusymint_ui"
+      relative: true
+    source: path
+    version: "0.0.0"
+  device_frame:
+    dependency: transitive
+    description:
+      name: device_frame
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.5"
+    version: "1.1.0"
   fake_async:
     dependency: transitive
     description:
@@ -67,6 +74,20 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  freezed_annotation:
+    dependency: transitive
+    description:
+      name: freezed_annotation
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.1.0"
+  json_annotation:
+    dependency: transitive
+    description:
+      name: json_annotation
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.6.0"
   lints:
     dependency: transitive
     description:
@@ -95,6 +116,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.8.0"
+  nested:
+    dependency: transitive
+    description:
+      name: nested
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
   path:
     dependency: transitive
     description:
@@ -102,6 +130,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.8.2"
+  provider:
+    dependency: transitive
+    description:
+      name: provider
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "6.0.3"
+  recase:
+    dependency: transitive
+    description:
+      name: recase
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.0.0"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -121,6 +163,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.10.0"
+  storybook_flutter:
+    dependency: "direct main"
+    description:
+      name: storybook_flutter
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.11.1"
   stream_channel:
     dependency: transitive
     description:
@@ -158,3 +207,4 @@ packages:
     version: "2.1.2"
 sdks:
   dart: ">=2.18.0 <3.0.0"
+  flutter: ">=1.16.0"

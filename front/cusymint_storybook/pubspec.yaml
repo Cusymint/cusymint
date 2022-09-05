@@ -10,6 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  storybook_flutter: ^0.11.1
+
+  cusymint_ui:
+    path: "../cusymint_ui"
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
