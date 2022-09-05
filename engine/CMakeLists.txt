@@ -8,6 +8,7 @@ set(SRC_DIR "src")
 set(UTILS_DIR "${SRC_DIR}/Utils")
 set(SYMBOL_DIR "${SRC_DIR}/Symbol")
 set(EVALUATION_DIR "${SRC_DIR}/Evaluation")
+set(PARSER_DIR "${SRC_DIR}/Parser")
 
 add_executable(
   cusymint
@@ -26,7 +27,9 @@ add_executable(
   ${SYMBOL_DIR}/Substitution.cu
   ${SYMBOL_DIR}/Solution.cu
   ${SYMBOL_DIR}/InverseTrigonometric.cu
-  ${EVALUATION_DIR}/Integrate.cu)
+  ${EVALUATION_DIR}/Integrate.cu
+  ${PARSER_DIR}/Scanner.cpp
+  ${PARSER_DIR}/Parser.cpp)
 
 target_include_directories(cusymint PRIVATE ${SRC_DIR})
 
