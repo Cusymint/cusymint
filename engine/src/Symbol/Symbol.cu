@@ -27,8 +27,8 @@ namespace Sym {
         return true;
     }
 
-    __host__ __device__ void Symbol::swap_symbols(Symbol* const s1, Symbol* const s2) {
-        Util::swap_mem(s1, s2, sizeof(Symbol));
+    __host__ __device__ void Symbol::swap_symbols(Symbol* const symbol1, Symbol* const symbol2) {
+        Util::swap_mem(symbol1, symbol2, sizeof(Symbol));
     }
 
     __host__ __device__ void Symbol::reverse_symbol_sequence(Symbol* const seq, size_t n) {
@@ -56,7 +56,7 @@ namespace Sym {
     }
 
     __host__ __device__ ssize_t Symbol::first_var_occurence() const {
-        for (size_t i = 0; i < size(); ++i) {
+        for (ssize_t i = 0; i < size(); ++i) {
             if (this[i].is(Type::Variable)) {
                 return i;
             }
@@ -131,7 +131,7 @@ namespace Sym {
     void Symbol::substitute_variable_with_nth_substitution_name(const size_t n) {
         std::string substitution_name = Substitution::nth_substitution_name(n);
 
-        Symbol substitute;
+        Symbol substitute{};
         substitute.unknown_constant = UnknownConstant::create(substitution_name.c_str());
         substitute_variable_with(substitute);
     }

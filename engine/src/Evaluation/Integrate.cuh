@@ -4,9 +4,8 @@
 #include "Symbol/Symbol.cuh"
 
 namespace Sym {
-    typedef size_t (*ApplicabilityCheck)(const Integral* const integral);
-    typedef void (*IntegralTransform)(const Integral* const integral, Symbol* const destination,
-                                      Symbol* const help_space);
+    using ApplicabilityCheck = size_t (*)(const Integral* const);
+    using IntegralTransform = void (*)(const Integral* const, Symbol* const, Symbol* const);
 
     __device__ size_t is_single_variable(const Integral* const integral);
     __device__ size_t is_simple_variable_power(const Integral* const integral);

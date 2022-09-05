@@ -76,9 +76,10 @@ namespace Sym {
         // Teraz w `help_space` jest docelowa funkcja podcałkowa, ale jeszcze bez mnożenia przez
         // pochodną. W `destination` są niepotrzebne dane.
 
-        size_t old_integrand_size = integrand()->size();
-        size_t new_integrand_size = new_incomplete_integrand_size + 2 + derivative->size();
-        ssize_t size_diff = new_integrand_size - old_integrand_size;
+        const auto old_integrand_size = static_cast<ssize_t>(integrand()->size());
+        const auto new_integrand_size =
+            static_cast<ssize_t>(new_incomplete_integrand_size + 2 + derivative->size());
+        const ssize_t size_diff = new_integrand_size - old_integrand_size;
 
         copy_substitutions_with_an_additional_one(substitution, destination);
 
