@@ -3,12 +3,12 @@
 #include "Utils/Cuda.cuh"
 
 namespace Sym {
-    __device__ ApplicabilityCheck known_integral_checks[] = {
+    __device__ const ApplicabilityCheck known_integral_checks[] = {
         is_single_variable, is_simple_variable_power, is_variable_exponent,
         is_simple_sine,     is_simple_cosine,         is_constant,
         is_known_arctan};
 
-    __device__ IntegralTransform known_integral_applications[] = {
+    __device__ const IntegralTransform known_integral_applications[] = {
         integrate_single_variable, integrate_simple_variable_power, integrate_variable_exponent,
         integrate_simple_sine,     integrate_simple_cosine,         integrate_constant,
         integrate_arctan};
@@ -20,9 +20,9 @@ namespace Sym {
                       sizeof(ApplicabilityCheck) * KNOWN_INTEGRAL_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
-    __device__ ApplicabilityCheck heuristic_checks[] = {is_function_of_ex};
+    __device__ const ApplicabilityCheck heuristic_checks[] = {is_function_of_ex};
 
-    __device__ IntegralTransform heuristic_applications[] = {transform_function_of_ex};
+    __device__ const IntegralTransform heuristic_applications[] = {transform_function_of_ex};
 
     static_assert(sizeof(heuristic_checks) == sizeof(heuristic_applications),
                   "Different number of heuristics and applications defined");
@@ -51,7 +51,7 @@ namespace Sym {
         // TODO: Move somewhere so that it's initialized only once and not every time this function
         // is called
         init_ex_function();
-        Symbol variable;
+        Symbol variable{};
         variable.variable = Variable::create();
 
         integral->integrate_by_substitution_with_derivative(ex_function, &variable, destination,
@@ -59,61 +59,67 @@ namespace Sym {
     }
 
     __device__ size_t is_single_variable(const Integral* const integral) {
-        return integral->integrand()->is(Type::Variable);
+        return integral->integrand()->is(Type::Variable) ? 1 : 0;
     }
 
     __device__ size_t is_simple_variable_power(const Integral* const integral) {
         const Symbol* const integrand = integral->integrand();
         if (!integrand[0].is(Type::Power) || !integrand[1].is(Type::Variable)) {
-            return false;
+            return 0;
         }
 
         if (integrand[2].is(Type::NumericConstant) && integrand[2].numeric_constant.value == -1.0) {
-            return false;
+            return 0;
         }
 
-        return integrand[2].is_constant();
+        return integrand[2].is_constant() ? 0 : 1;
     }
     __device__ size_t is_variable_exponent(const Integral* const integral) {
         const Symbol* const integrand = integral->integrand();
         return integrand[0].is(Type::Power) && integrand[1].is(Type::KnownConstant) &&
-               integrand[1].known_constant.value == KnownConstantValue::E &&
-               integrand[2].is(Type::Variable);
+                       integrand[1].known_constant.value == KnownConstantValue::E &&
+                       integrand[2].is(Type::Variable)
+                   ? 1
+                   : 0;
     }
     __device__ size_t is_simple_sine(const Integral* const integral) {
         const Symbol* const integrand = integral->integrand();
-        return integrand[0].is(Type::Sine) && integrand[1].is(Type::Variable);
+        return integrand[0].is(Type::Sine) && integrand[1].is(Type::Variable) ? 1 : 0;
     }
 
     __device__ size_t is_simple_cosine(const Integral* const integral) {
         const Symbol* const integrand = integral->integrand();
-        return integrand[0].is(Type::Cosine) && integrand[1].is(Type::Variable);
+        return integrand[0].is(Type::Cosine) && integrand[1].is(Type::Variable) ? 1 : 0;
     }
 
     __device__ size_t is_constant(const Integral* const integral) {
         const Symbol* const integrand = integral->integrand();
-        return integrand->is_constant();
+        return integrand->is_constant() ? 1 : 0;
     }
 
     __device__ size_t is_known_arctan(const Integral* const integral) {
         const Symbol* const integrand = integral->integrand();
         // 1/(x^2+1) or 1/(1+x^2)
         return integrand[0].is(Type::Product) && integrand[1].is(Type::NumericConstant) &&
-               integrand[1].numeric_constant.value == 1.0 && integrand[2].is(Type::Reciprocal) &&
-               integrand[3].is(Type::Addition) &&
-               ((integrand[4].is(Type::Power) && integrand[5].is(Type::Variable) &&
-                 integrand[6].is(Type::NumericConstant) &&
-                 integrand[6].numeric_constant.value == 2.0 &&
-                 integrand[7].is(Type::NumericConstant) &&
-                 integrand[7].numeric_constant.value == 1.0) ||
-                (integrand[4].is(Type::NumericConstant) &&
-                 integrand[4].numeric_constant.value == 1.0 && integrand[5].is(Type::Power) &&
-                 integrand[6].is(Type::Variable) && integrand[7].is(Type::NumericConstant) &&
-                 integrand[7].numeric_constant.value == 2.0));
+                       integrand[1].numeric_constant.value == 1.0 &&
+                       integrand[2].is(Type::Reciprocal) && integrand[3].is(Type::Addition) &&
+                       ((integrand[4].is(Type::Power) && integrand[5].is(Type::Variable) &&
+                         integrand[6].is(Type::NumericConstant) &&
+                         integrand[6].numeric_constant.value == 2.0 &&
+                         integrand[7].is(Type::NumericConstant) &&
+                         integrand[7].numeric_constant.value == 1.0) ||
+                        (integrand[4].is(Type::NumericConstant) &&
+                         integrand[4].numeric_constant.value == 1.0 &&
+                         integrand[5].is(Type::Power) && integrand[6].is(Type::Variable) &&
+                         integrand[7].is(Type::NumericConstant) &&
+                         integrand[7].numeric_constant.value == 2.0))
+                   ? 1
+                   : 0;
     }
 
     __device__ void integrate_single_variable(const Integral* const integral,
-                                              Symbol* const destination, Symbol* const help_space) {
+                                              Symbol* const destination,
+                                              Symbol* const /*help_space*/) {
 
         Symbol* const solution_expr = prepare_solution(integral, destination);
 
@@ -133,7 +139,7 @@ namespace Sym {
 
     __device__ void integrate_simple_variable_power(const Integral* const integral,
                                                     Symbol* const destination,
-                                                    Symbol* const help_space) {
+                                                    Symbol* const /*help_space*/) {
         const Symbol* const integrand = integral->integrand();
 
         Symbol* const solution_expr = prepare_solution(integral, destination);
@@ -167,7 +173,7 @@ namespace Sym {
 
     __device__ void integrate_variable_exponent(const Integral* const integral,
                                                 Symbol* const destination,
-                                                Symbol* const help_space) {
+                                                Symbol* const /*help_space*/) {
         Symbol* const solution_expr = prepare_solution(integral, destination);
         const Symbol* const integrand = integral->integrand();
 
@@ -181,7 +187,7 @@ namespace Sym {
     }
 
     __device__ void integrate_simple_sine(const Integral* const integral, Symbol* const destination,
-                                          Symbol* const help_space) {
+                                          Symbol* const /*help_space*/) {
         Symbol* const solution_expr = prepare_solution(integral, destination);
         const Symbol* const integrand = integral->integrand();
 
@@ -195,7 +201,8 @@ namespace Sym {
     }
 
     __device__ void integrate_simple_cosine(const Integral* const integral,
-                                            Symbol* const destination, Symbol* const help_space) {
+                                            Symbol* const destination,
+                                            Symbol* const /*help_space*/) {
         Symbol* const solution_expr = prepare_solution(integral, destination);
         const Symbol* const integrand = integral->integrand();
 
@@ -207,7 +214,7 @@ namespace Sym {
     }
 
     __device__ void integrate_constant(const Integral* const integral, Symbol* const destination,
-                                       Symbol* const help_space) {
+                                       Symbol* const /*help_space*/) {
         const Symbol* const integrand = integral->integrand();
         Symbol* const solution_expr = prepare_solution(integral, destination);
 
@@ -221,7 +228,7 @@ namespace Sym {
     }
 
     __device__ void integrate_arctan(const Integral* const integral, Symbol* const destination,
-                                     Symbol* const help_space) {
+                                     Symbol* const /*help_space*/) {
         const Symbol* const integrand = integral->integrand();
         Symbol* const solution_expr = prepare_solution(integral, destination);
 
@@ -336,5 +343,4 @@ namespace Sym {
             expressions[offset].simplify(help_spaces + offset);
         }
     }
-
 }

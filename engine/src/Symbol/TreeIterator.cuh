@@ -13,12 +13,12 @@ namespace Sym {
 
       public:
         /*
-         * @brief Tworzy iterator dla `operator`
+         * @brief Tworzy iterator dla drzewa wyrażenia
          *
          * @param op Symbol po którego dzieciach miejsce będzie mieć iteracja
          */
-        __host__ __device__ TreeIterator(T* const op)
-            : current_op(op), current_symbol(&op->arg2()) {}
+        __host__ __device__ explicit TreeIterator(T* const tree)
+            : current_op(tree), current_symbol(&tree->arg2()) {}
 
         /*
          * @brief Przesuwa iterator do przodu.

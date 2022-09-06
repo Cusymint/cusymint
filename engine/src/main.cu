@@ -56,8 +56,8 @@ std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
         Sym::integral(Sym::num(1.0) / ((Sym::var() ^ Sym::num(2.0)) + Sym::num(1.0))),
         Sym::integral(Sym::num(1.0) / (Sym::num(1.0) + (Sym::var() ^ Sym::num(2.0))))};
 
-    for (size_t i = 0; i < integrals.size(); ++i) {
-        std::cout << integrals[i][0].to_string() << std::endl;
+    for (const auto& integral : integrals) {
+        std::cout << integral[0].to_string() << std::endl;
     }
     std::cout << std::endl;
 
@@ -88,7 +88,7 @@ void check_and_apply_heuristics(Sym::Symbol*& d_integrals, Sym::Symbol*& d_integ
     std::cout << std::endl;
 }
 
-void print_applicability(const size_t* const d_applicability, const size_t integral_count) {
+void print_applicability(const size_t* const d_applicability) {
     std::vector<size_t> h_applicability(Sym::APPLICABILITY_ARRAY_SIZE);
     cudaMemcpy(h_applicability.data(), d_applicability,
                Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t), cudaMemcpyDeviceToHost);
@@ -156,26 +156,26 @@ int main() {
 
     size_t mem_total = 0;
 
-    Sym::Symbol* d_integrals;
+    Sym::Symbol* d_integrals = nullptr;
     cudaMalloc(&d_integrals, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
     cudaMemset(d_integrals, 0, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
     mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
 
-    Sym::Symbol* d_integrals_swap;
+    Sym::Symbol* d_integrals_swap = nullptr;
     cudaMalloc(&d_integrals_swap, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
     mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
 
-    Sym::Symbol* d_help_spaces;
+    Sym::Symbol* d_help_spaces = nullptr;
     cudaMalloc(&d_help_spaces, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
     mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
 
-    size_t* d_applicability;
+    size_t* d_applicability = nullptr;
     cudaMalloc(&d_applicability, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
     cudaMemset(d_applicability, 0, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
     mem_total += Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t);
 
     size_t h_integral_count = integrals.size();
-    size_t* d_integral_count;
+    size_t* d_integral_count = nullptr;
     cudaMalloc(&d_integral_count, sizeof(size_t));
     mem_total += sizeof(size_t);
 

@@ -2,8 +2,8 @@
 
 #include <stdexcept>
 
-#include "Utils/Cuda.cuh"
 #include "Symbol.cuh"
+#include "Utils/Cuda.cuh"
 
 namespace Sym {
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(NumericConstant);
@@ -63,10 +63,10 @@ namespace Sym {
     }
 
     std::vector<Symbol> known_constant(KnownConstantValue value) {
-        std::vector<Symbol> v(1);
-        v[0].known_constant = KnownConstant::create();
-        v[0].known_constant.value = value;
-        return v;
+        std::vector<Symbol> symbol_vec(1);
+        symbol_vec[0].known_constant = KnownConstant::create();
+        symbol_vec[0].known_constant.value = value;
+        return symbol_vec;
     }
 
     std::vector<Symbol> e() { return known_constant(KnownConstantValue::E); }
@@ -74,16 +74,16 @@ namespace Sym {
     std::vector<Symbol> pi() { return known_constant(KnownConstantValue::Pi); }
 
     std::vector<Symbol> cnst(const char name[UnknownConstant::NAME_LEN]) {
-        std::vector<Symbol> v(1);
-        v[0].unknown_constant = UnknownConstant::create();
-        std::copy(name, name + UnknownConstant::NAME_LEN, v[0].unknown_constant.name);
-        return v;
+        std::vector<Symbol> symbol_vec(1);
+        symbol_vec[0].unknown_constant = UnknownConstant::create();
+        std::copy(name, name + UnknownConstant::NAME_LEN, symbol_vec[0].unknown_constant.name);
+        return symbol_vec;
     }
 
     std::vector<Symbol> num(double value) {
-        std::vector<Symbol> v(1);
-        v[0].numeric_constant = NumericConstant::create();
-        v[0].numeric_constant.value = value;
-        return v;
+        std::vector<Symbol> symbol_vec(1);
+        symbol_vec[0].numeric_constant = NumericConstant::create();
+        symbol_vec[0].numeric_constant.value = value;
+        return symbol_vec;
     }
 }

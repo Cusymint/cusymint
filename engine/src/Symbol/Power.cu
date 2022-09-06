@@ -17,9 +17,9 @@ namespace Sym {
         }
 
         if (arg1().is(Type::NumericConstant) && arg2().is(Type::NumericConstant)) {
-            double v1 = arg1().numeric_constant.value;
-            double v2 = arg2().numeric_constant.value;
-            Symbol::from(this)->numeric_constant = NumericConstant::with_value(pow(v1, v2));
+            double value1 = arg1().numeric_constant.value;
+            double value2 = arg2().numeric_constant.value;
+            Symbol::from(this)->numeric_constant = NumericConstant::with_value(pow(value1, value2));
             return;
         }
 
