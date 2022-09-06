@@ -20,6 +20,26 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "cusymint_storybook",
+            "cwd": "front/cusymint_storybook",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "cusymint_storybook (profile mode)",
+            "cwd": "front/cusymint_storybook",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "cusymint_storybook (release mode)",
+            "cwd": "front/cusymint_storybook",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
         }
     ]
 }
