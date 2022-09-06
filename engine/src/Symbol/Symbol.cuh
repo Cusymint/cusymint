@@ -17,6 +17,7 @@
 #include "Symbol/Trigonometric.cuh"
 #include "Symbol/Unknown.cuh"
 #include "Symbol/Variable.cuh"
+#include "Symbol/Hyperbolic.cuh"
 
 namespace Sym {
     union Symbol {
@@ -42,6 +43,10 @@ namespace Sym {
         Arccosine arccosine;
         Arctangent arctangent;
         Arccotangent arccotangent;
+        SineHyperbolic sinehyperbolic;
+        CosineHyperbolic cosinehyperbolic;
+        TangentHyperbolic tangenthyperbolic;
+        CotangentHyperbolic cotangenthyperbolic;
 
         __host__ __device__ inline Type type() const { return unknown.type; }
         __host__ __device__ inline bool is(const Type type) const { return unknown.type == type; }
@@ -305,6 +310,14 @@ namespace Sym {
             return (_instance).arctangent._member_function(__VA_ARGS__);           \
         case Type::Arccotangent:                                                   \
             return (_instance).arccotangent._member_function(__VA_ARGS__);         \
+        case Type::SineHyperbolic:                                                 \
+            return (_instance).sinehyperbolic._member_function(__VA_ARGS__);       \
+        case Type::CosineHyperbolic:                                               \
+            return (_instance).cossinehyperbolic._member_function(__VA_ARGS__);    \
+        case Type::TangentHyperbolic:                                              \
+            return (_instance).tangenthyperbolic._member_function(__VA_ARGS__);    \
+        case Type::CotangentHyperbolic:                                            \
+            return (_instance).cotangenthyperbolic._member_function(__VA_ARGS__);  \
         case Type::Unknown:                                                        \
         default:                                                                   \
             return (_instance).unknown._member_function(__VA_ARGS__);              \
