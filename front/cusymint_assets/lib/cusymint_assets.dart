@@ -1,0 +1,1 @@
+library cusymint_assets;
