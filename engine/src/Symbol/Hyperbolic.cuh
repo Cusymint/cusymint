@@ -2,7 +2,7 @@
 #define HYPERBOLIC_H
 
 #include <vector>
-#include "Macros.h"
+#include "Macros.cuh"
 
 namespace Sym {
     DECLARE_SYMBOL(SineHyperbolic, false)

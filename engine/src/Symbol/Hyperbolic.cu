@@ -1,4 +1,5 @@
-#include "Hyperbolic.h"
+#include "Hyperbolic.cuh"
+#include "Symbol.cuh"
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(SineHyperbolic)

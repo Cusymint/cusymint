@@ -313,7 +313,7 @@ namespace Sym {
         case Type::SineHyperbolic:                                                 \
             return (_instance).sinehyperbolic._member_function(__VA_ARGS__);       \
         case Type::CosineHyperbolic:                                               \
-            return (_instance).cossinehyperbolic._member_function(__VA_ARGS__);    \
+            return (_instance).cosinehyperbolic._member_function(__VA_ARGS__);     \
         case Type::TangentHyperbolic:                                              \
             return (_instance).tangenthyperbolic._member_function(__VA_ARGS__);    \
         case Type::CotangentHyperbolic:                                            \
