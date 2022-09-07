@@ -6,6 +6,6 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // TODO: implement home page
-    return Scaffold();
+    return const Scaffold();
   }
 }

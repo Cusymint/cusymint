@@ -9,6 +9,22 @@ class CommonAtoms extends StorybookPart {
   @override
   List<Story> get stories => [
         Story(
+          name: 'Atoms/Card',
+          builder: (context) => const SizedBox(
+            width: 150,
+            height: 100,
+            child: CuCard(
+              child: Center(
+                child: CuText('Hello world!'),
+              ),
+            ),
+          ),
+        ),
+        Story(
+          name: 'Atoms/Logo',
+          builder: (context) => const CuLogo(),
+        ),
+        Story(
           name: 'Atoms/TextField',
           builder: (context) => SizedBox(
             width: 350,
@@ -23,18 +39,6 @@ class CommonAtoms extends StorybookPart {
                 initial: const Icon(
                   Icons.close,
                 ),
-              ),
-            ),
-          ),
-        ),
-        Story(
-          name: 'Atoms/Card',
-          builder: (context) => const SizedBox(
-            width: 150,
-            height: 100,
-            child: CuCard(
-              child: Center(
-                child: CuText('Hello world!'),
               ),
             ),
           ),

@@ -10,6 +10,7 @@ class CuText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // TODO: add textstyles
     return Text(data);
   }
 }
