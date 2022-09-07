@@ -22,7 +22,16 @@ class CommonAtoms extends StorybookPart {
         ),
         Story(
           name: 'Atoms/Logo',
-          builder: (context) => const CuLogo(),
+          builder: (context) => CuLogo(
+            color: context.knobs.options(
+              label: 'Color',
+              initial: Colors.black,
+              options: [
+                const Option(label: 'Black', value: Colors.black),
+                const Option(label: 'White', value: Colors.white),
+              ],
+            ),
+          ),
         ),
         Story(
           name: 'Atoms/TextField',
