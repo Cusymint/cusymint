@@ -1,4 +1,4 @@
-#include "Parser.hpp"
+#include "Parser.cuh"
 
 bool isFunction(Token tok)
 {
@@ -126,6 +126,7 @@ std::vector<Sym::Symbol> Parser::power_arg()
 		}
 		break;
 	}
+	return {};
 }
 
 SymbolicFunction Parser::function()

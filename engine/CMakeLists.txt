@@ -28,8 +28,8 @@ add_executable(
   ${SYMBOL_DIR}/Solution.cu
   ${SYMBOL_DIR}/InverseTrigonometric.cu
   ${EVALUATION_DIR}/Integrate.cu
-  ${PARSER_DIR}/Scanner.cpp
-  ${PARSER_DIR}/Parser.cpp)
+  ${PARSER_DIR}/Scanner.cu
+  ${PARSER_DIR}/Parser.cu)
 
 target_include_directories(cusymint PRIVATE ${SRC_DIR})
 

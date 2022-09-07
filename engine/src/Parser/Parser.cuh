@@ -1,7 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "Scanner.hpp"
+#include "Scanner.cuh"
 #include "../Symbol/Symbol.cuh"
 #include <string>
 
@@ -12,9 +12,9 @@ bool isFunction(Token tok);
 
 // Produkcje:
 //
-// expr -> term { addop term }					³¹czny lewostronnie
-// term -> factor { mulop factor }				³¹czny lewostronnie
-// factor -> power_arg | power_arg ^ factor		³¹czny prawostronnie
+// expr -> term { addop term }					ï¿½ï¿½czny lewostronnie
+// term -> factor { mulop factor }				ï¿½ï¿½czny lewostronnie
+// factor -> power_arg | power_arg ^ factor		ï¿½ï¿½czny prawostronnie
 // power_arg -> num | const | var | ( expr ) | function ( expr )
 //
 class Parser

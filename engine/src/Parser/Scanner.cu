@@ -1,4 +1,4 @@
-#include "Scanner.hpp"
+#include "Scanner.cuh"
 
 bool isLetter(char c)
 {
