@@ -9,6 +9,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  cusymint_assets:
+    path: "../cusymint_assets"
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

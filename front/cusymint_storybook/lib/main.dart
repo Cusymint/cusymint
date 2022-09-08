@@ -1,3 +1,4 @@
+import 'package:cusymint_storybook/stories/common_molecules.dart';
 import 'package:cusymint_storybook/stories/stories.dart';
 import 'package:flutter/material.dart';
 import 'package:storybook_flutter/storybook_flutter.dart';
@@ -20,6 +21,7 @@ class CusymintStorybook extends StatelessWidget {
       plugins: _plugins,
       stories: [
         ...const CommonAtoms().stories,
+        ...const CommonMolecules().stories,
       ],
     );
   }

@@ -1,0 +1,34 @@
+name: cusymint_assets
+description: Cusymint's assets.
+
+environment:
+  sdk: '>=2.18.0 <3.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  flutter_svg: ^1.1.4
+  flutter_gen: ^4.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+  build_runner: ^2.2.0
+  flutter_gen_runner: ^4.3.0
+
+flutter:
+  assets:
+    - assets/
+    - assets/svg/
+    - assets/images/
+
+flutter_gen:
+  integrations:
+    flutter_svg: true
+
+  assets:
+    package_parameter_enabled: true

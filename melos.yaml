@@ -7,6 +7,15 @@ packages:
 ide:
   intellij: false
 
+scripts:
+  generate:
+    run: |
+      melos exec -- \
+        "flutter packages pub run build_runner build --delete-conflicting-outputs"
+    select-package:
+      depends-on: 
+        - build_runner
+
 command:
   bootstrap:
     usePubspecOverrides: true
