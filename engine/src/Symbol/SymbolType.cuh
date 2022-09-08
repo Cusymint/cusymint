@@ -30,12 +30,7 @@ namespace Sym {
         Arcsine,
         Arccosine,
         Arctangent,
-        Arccotangent,
-        // Hyperbolic functions
-        SineHyperbolic,
-        CosineHyperbolic,
-        TangentHyperbolic,
-        CotangentHyperbolic
+        Arccotangent
     };
 }
 
