@@ -1,15 +1,5 @@
-import 'package:cusymint_integrals/src/symbols/symbol.dart';
+import 'package:cusymint_integrals/src/symbols/elements/element.dart';
 
-class Variable extends Symbol {
-  const Variable();
-
-  @override
-  String toTex() {
-    return 'x';
-  }
-
-  @override
-  String toUtf() {
-    return 'x';
-  }
+class Variable extends Element {
+  const Variable() : super(toTexResult: 'x', toUtfResult: 'x');
 }
