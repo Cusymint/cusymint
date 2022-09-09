@@ -17,6 +17,7 @@
 #include "Symbol/Trigonometric.cuh"
 #include "Symbol/Unknown.cuh"
 #include "Symbol/Variable.cuh"
+#include "Symbol/Hyperbolic.cuh"
 
 namespace Sym {
     union Symbol {
