@@ -17,6 +17,7 @@
 #include "Symbol/Trigonometric.cuh"
 #include "Symbol/Unknown.cuh"
 #include "Symbol/Variable.cuh"
+#include "Symbol/Hyperbolic.cuh"
 
 namespace Sym {
     union Symbol {
@@ -108,10 +109,10 @@ namespace Sym {
         /*
          * @brief Swap contents of two symbols
          *
-         * @param s1 First symbol
-         * @param s2 Second symbol
+         * @param symbol1 First symbol
+         * @param symbol2 Second symbol
          */
-        __host__ __device__ static void swap_symbols(Symbol* const s1, Symbol* const s2);
+        __host__ __device__ static void swap_symbols(Symbol* const symbol1, Symbol* const symbol2);
 
         /*
          * @brief Reverses a symbol sequence in place.

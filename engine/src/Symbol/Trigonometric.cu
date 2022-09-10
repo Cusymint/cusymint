@@ -35,26 +35,25 @@ namespace Sym {
 
     std::string Cotangent::to_string() const { return "cot(" + arg().to_string() + ")"; }
 
-    template <class T>
-    std::vector<Symbol> make_trig_function(const T symbol, const std::vector<Symbol>& arg) {
+    template <class T> std::vector<Symbol> make_trig_function(const std::vector<Symbol>& arg) {
         std::vector<Symbol> res(arg.size() + 1);
         T::create(arg.data(), res.data());
         return res;
     }
 
     std::vector<Symbol> sin(const std::vector<Symbol>& arg) {
-        return make_trig_function(Sine::create(), arg);
+        return make_trig_function<Sine>(arg);
     }
 
     std::vector<Symbol> cos(const std::vector<Symbol>& arg) {
-        return make_trig_function(Cosine::create(), arg);
+        return make_trig_function<Cosine>(arg);
     }
 
     std::vector<Symbol> tan(const std::vector<Symbol>& arg) {
-        return make_trig_function(Tangent::create(), arg);
+        return make_trig_function<Tangent>(arg);
     }
 
     std::vector<Symbol> cot(const std::vector<Symbol>& arg) {
-        return make_trig_function(Cotangent::create(), arg);
+        return make_trig_function<Cotangent>(arg);
     }
 }

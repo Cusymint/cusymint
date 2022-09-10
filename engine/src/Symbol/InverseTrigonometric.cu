@@ -36,26 +36,25 @@ namespace Sym {
     std::string Arccotangent::to_string() const { return "arccot(" + arg().to_string() + ")"; }
 
     template <class T>
-    std::vector<Symbol> make_inverse_trigonometric_function(const T symbol,
-                                                            const std::vector<Symbol>& arg) {
+    std::vector<Symbol> make_inverse_trigonometric_function(const std::vector<Symbol>& arg) {
         std::vector<Symbol> result(arg.size() + 1);
         T::create(arg.data(), result.data());
         return result;
     }
 
     std::vector<Symbol> arcsin(const std::vector<Symbol>& arg) {
-        return make_inverse_trigonometric_function(Arcsine::create(), arg);
+        return make_inverse_trigonometric_function<Arcsine>(arg);
     }
 
     std::vector<Symbol> arccos(const std::vector<Symbol>& arg) {
-        return make_inverse_trigonometric_function(Arccosine::create(), arg);
+        return make_inverse_trigonometric_function<Arccosine>(arg);
     }
 
     std::vector<Symbol> arctan(const std::vector<Symbol>& arg) {
-        return make_inverse_trigonometric_function(Arctangent::create(), arg);
+        return make_inverse_trigonometric_function<Arctangent>(arg);
     }
 
     std::vector<Symbol> arccot(const std::vector<Symbol>& arg) {
-        return make_inverse_trigonometric_function(Arccotangent::create(), arg);
+        return make_inverse_trigonometric_function<Arccotangent>(arg);
     }
 }

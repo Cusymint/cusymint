@@ -107,13 +107,13 @@ namespace Sym {
         if (arg2().is(Type::Negation)) {
             return "(" + arg1().to_string() + "-" + arg2().negation.arg().to_string() + ")";
         }
-        else if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value < 0.0) {
+
+        if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value < 0.0) {
             return "(" + arg1().to_string() + "-" + std::to_string(-arg2().numeric_constant.value) +
                    ")";
         }
-        else {
-            return "(" + arg1().to_string() + "+" + arg2().to_string() + ")";
-        }
+
+        return "(" + arg1().to_string() + "+" + arg2().to_string() + ")";
     }
 
     std::string Negation::to_string() const { return "-" + arg().to_string(); }

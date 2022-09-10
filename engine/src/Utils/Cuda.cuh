@@ -2,6 +2,7 @@
 #define CUDA_UTILS_CUH
 
 #include <cassert>
+#include <cstddef>
 
 namespace Util {
     __device__ inline size_t thread_count() { return gridDim.x * blockDim.x; }
@@ -16,7 +17,7 @@ namespace Util {
      *
      * @return `true` if blocks `p1` and `p2` are equal, `false` otherwise
      */
-    __host__ __device__ bool compare_mem(const void* const p1, const void* const p2,
+    __host__ __device__ bool compare_mem(const void* const mem1, const void* const mem2,
                                          const size_t n);
 
     /*
@@ -35,7 +36,7 @@ namespace Util {
      * @param p2 Second memory pointer
      * @param n Number of bytes to swap
      */
-    __host__ __device__ void swap_mem(void* const p1, void* const p2, const size_t n);
+    __host__ __device__ void swap_mem(void* const mem1, void* const mem2, const size_t n);
 
     /*
      * @brief Crashuje program w przypadku nieodwracalny błędów.

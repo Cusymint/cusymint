@@ -27,6 +27,7 @@ add_executable(
   ${SYMBOL_DIR}/Substitution.cu
   ${SYMBOL_DIR}/Solution.cu
   ${SYMBOL_DIR}/InverseTrigonometric.cu
+  ${SYMBOL_DIR}/Hyperbolic.cu
   ${EVALUATION_DIR}/Integrate.cu
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
@@ -41,7 +42,7 @@ else()
   target_compile_options(cusymint PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:>)
 endif()
 
-target_compile_features(cusymint PUBLIC cxx_std_14)
+target_compile_features(cusymint PUBLIC cxx_std_17)
 set_target_properties(cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
                                           CUDA_ARCHITECTURES OFF)
 

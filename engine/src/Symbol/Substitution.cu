@@ -118,7 +118,7 @@ namespace Sym {
         std::vector<Symbol> new_integral(integral.size() + substitution_expr.size() + 1);
 
         const size_t integrand_offset = integral.data()->integral.integrand_offset;
-        std::copy(integral.begin(), integral.begin() + integrand_offset, new_integral.begin());
+        std::copy(integral.data(), integral.data() + integrand_offset, new_integral.begin());
 
         Substitution::create(substitution_expr.data(), new_integral.data() + integrand_offset,
                              integral.data()->integral.substitution_count);

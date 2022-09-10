@@ -28,7 +28,7 @@ namespace Sym {
         bool simplified;                                                         \
                                                                                  \
         __host__ __device__ static _name builder() {                             \
-            _name symbol;                                                        \
+            _name symbol{};                                                      \
             symbol.type = Sym::Type::_name;                                      \
             symbol.simplified = _simple;                                         \
             return symbol;                                                       \
