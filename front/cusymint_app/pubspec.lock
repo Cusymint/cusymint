@@ -56,7 +56,7 @@ packages:
     source: hosted
     version: "2.0.1"
   flutter_math_fork:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: flutter_math_fork
       url: "https://pub.dartlang.org"
@@ -74,6 +74,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  golden_toolkit:
+    dependency: "direct dev"
+    description:
+      name: golden_toolkit
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.13.0"
   lints:
     dependency: transitive
     description:
