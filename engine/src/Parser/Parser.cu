@@ -114,8 +114,8 @@ std::vector<Sym::Symbol> Parser::parse() {
         std::vector<Sym::Symbol> e = expr();
         match_and_get_next_token(Token::End);
         return e;
-    } catch (std::string msg) {
-        printf("ERROR: %s\n", msg.c_str());
+    } catch (std::invalid_argument exc) {
+        printf("ERROR: %s\n", exc.what());
         return {};
     }
 }

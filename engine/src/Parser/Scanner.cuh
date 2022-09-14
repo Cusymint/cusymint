@@ -46,6 +46,12 @@ class Scanner {
     int pos = -1;
 
     Token read_after_start(Token& state, std::string& read_text);
+	Token try_read_inverse_trig(std::string& read_text);
+  Token try_read_cosine_cotangent(std::string& read_text);
+	Token try_read_log(std::string& read_text);
+  Token try_read_sine_sqrt(std::string& read_text);
+  Token try_read_tangent(std::string& read_text);
+  Token check_if_no_letter_ahead(std::string& read_text, Token return_on_success);
 
   public:
     Scanner(std::string& text);
