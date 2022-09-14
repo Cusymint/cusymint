@@ -21,7 +21,7 @@ void Parser::match_and_get_next_token(Token token) {
 std::vector<Sym::Symbol> Parser::expr() {
     std::vector<Sym::Symbol> sum = term();
     while (tok == Token::Plus || tok == Token::Minus) {
-        SymbolicOperator oper = tok == Token::Plus ? Sym::operator+ : Sym::operator-;
+        SymbolicOperator oper = tok == Token::Plus ? Sym::operator+ : static_cast<SymbolicOperator>(Sym::operator-);
         next_token();
         sum = oper(sum, term());
     }
