@@ -10,6 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  cusymint_l10n:
+    path: ../cusymint_l10n
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
