@@ -6,6 +6,3 @@
 .idea/*
 
 build/
-
-# Flutter stuff
-pubspec.lock
