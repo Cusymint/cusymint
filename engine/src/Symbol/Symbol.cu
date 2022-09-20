@@ -3,23 +3,26 @@
 #include "Utils/Cuda.cuh"
 
 namespace Sym {
-    __host__ __device__ void Symbol::copy_symbol_sequence(Symbol* const dst,
-                                                          const Symbol* const src, size_t n) {
-        Util::copy_mem(dst, src, n * sizeof(Symbol));
+    __host__ __device__ void Symbol::copy_symbol_sequence(Symbol* const destination,
+                                                          const Symbol* const source,
+                                                          size_t symbol_count) {
+        Util::copy_mem(destination, source, symbol_count * sizeof(Symbol));
     }
 
-    __host__ __device__ void
-    Symbol::copy_and_reverse_symbol_sequence(Symbol* const dst, const Symbol* const src, size_t n) {
-        for (size_t i = 0; i < n; ++i) {
-            src[n - i - 1].copy_single_to(dst + i);
+    __host__ __device__ void Symbol::copy_and_reverse_symbol_sequence(Symbol* const destination,
+                                                                      const Symbol* const source,
+                                                                      size_t symbol_count) {
+        for (size_t i = 0; i < symbol_count; ++i) {
+            source[symbol_count - i - 1].copy_single_to(destination + i);
         }
     }
 
-    __host__ __device__ bool Symbol::compare_symbol_sequences(const Symbol* seq1,
-                                                              const Symbol* seq2, size_t n) {
+    __host__ __device__ bool Symbol::compare_symbol_sequences(const Symbol* sequence1,
+                                                              const Symbol* sequence2,
+                                                              size_t symbol_count) {
         // Cannot simply use Util::compare_mem because padding can differ
-        for (size_t i = 0; i < n; ++i) {
-            if (seq1[i] != seq2[i]) {
+        for (size_t i = 0; i < symbol_count; ++i) {
+            if (sequence1[i] != sequence2[i]) {
                 return false;
             }
         }
@@ -31,18 +34,19 @@ namespace Sym {
         Util::swap_mem(symbol1, symbol2, sizeof(Symbol));
     }
 
-    __host__ __device__ void Symbol::reverse_symbol_sequence(Symbol* const seq, size_t n) {
-        for (size_t i = 0; i < n / 2; ++i) {
-            swap_symbols(seq + i, seq + n - i - 1);
+    __host__ __device__ void Symbol::reverse_symbol_sequence(Symbol* const sequence,
+                                                             size_t symbol_count) {
+        for (size_t i = 0; i < symbol_count / 2; ++i) {
+            swap_symbols(sequence + i, sequence + symbol_count - i - 1);
         }
     }
 
-    __host__ __device__ void Symbol::copy_single_to(Symbol* const dst) const {
-        VIRTUAL_CALL(*this, copy_single_to, dst);
+    __host__ __device__ void Symbol::copy_single_to(Symbol* const destination) const {
+        VIRTUAL_CALL(*this, copy_single_to, destination);
     }
 
-    __host__ __device__ void Symbol::copy_to(Symbol* const dst) const {
-        Util::copy_mem(dst, this, size() * sizeof(Symbol));
+    __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {
+        Util::copy_mem(destination, this, size() * sizeof(Symbol));
     }
 
     __host__ __device__ bool Symbol::is_constant() const {

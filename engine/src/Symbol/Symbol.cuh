@@ -76,22 +76,22 @@ namespace Sym {
         __host__ __device__ inline Symbol* child() { return this + 1; }
 
         /*
-         * @brief Copies symbol sequence from `src` to `dst`.
+         * @brief Copies symbol sequence from `source` to `destination`.
          *
          * @param seq Symbol sequence to copy. Doesn't need to be semantically correct.
          * @param n number of symbols to copy
          */
-        __host__ __device__ static void copy_symbol_sequence(Symbol* const dst,
-                                                             const Symbol* const src, size_t n);
+        __host__ __device__ static void copy_symbol_sequence(Symbol* const destination,
+                                                             const Symbol* const source, size_t n);
 
         /*
-         * @brief Copies symbol sequence from `src` to `dst` in reverse.
+         * @brief Copies symbol sequence from `source` to `destination` in reverse.
          *
          * @param seq Symbol sequence to copy. Doesn't need to be semantically correct.
          * @param n number of symbols to copy
          */
         __host__ __device__ static void
-        copy_and_reverse_symbol_sequence(Symbol* const dst, const Symbol* const src, size_t n);
+        copy_and_reverse_symbol_sequence(Symbol* const destination, const Symbol* const source, size_t n);
 
         /*
          * @brief Checks if first n symbols of `seq1` and `seq2` are identical.
@@ -123,18 +123,18 @@ namespace Sym {
         __host__ __device__ static void reverse_symbol_sequence(Symbol* const seq, size_t n);
 
         /*
-         * @brief Copies `*this` into `dst`. Does not copy the whole tree, only a single symbol.
+         * @brief Copies `*this` into `destination`. Does not copy the whole tree, only a single symbol.
          *
-         * @param dst Copy destination
+         * @param destination Copy destination
          */
-        __host__ __device__ void copy_single_to(Symbol* const dst) const;
+        __host__ __device__ void copy_single_to(Symbol* const destination) const;
 
         /*
-         * @brief Copies `this` into `dst`. Copies the whole tree.
+         * @brief Copies `this` into `destination`. Copies the whole tree.
          *
-         * @param dst Copy destination
+         * @param destination Copy destination
          */
-        __host__ __device__ void copy_to(Symbol* const dst) const;
+        __host__ __device__ void copy_to(Symbol* const destination) const;
 
         /*
          * @brief Checks if `this` is an expression composed only of constants
