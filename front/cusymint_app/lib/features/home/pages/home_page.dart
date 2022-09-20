@@ -1,3 +1,4 @@
+import 'package:cusymint_app/features/tex_rendering/pages/example_integrals_page.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -5,7 +6,6 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement home page
-    return const Scaffold();
+    return const ExampleIntegralsPage();
   }
 }
