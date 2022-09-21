@@ -17,6 +17,11 @@ namespace Util {
         bool is_data_owner = false;
 
         void allocate_data() { cudaMalloc(&data, size_in_bytes()); }
+        void free_data() {
+            if (is_data_owner) {
+                cudaFree(data);
+            }
+        }
 
       public:
         /*
@@ -40,12 +45,18 @@ namespace Util {
                 return *this;
             }
 
+            free_data();
+
             data_size = other.data_size;
             data = other.data;
             is_data_owner = false;
+
+            return *this;
         }
 
         DeviceArray& operator=(DeviceArray&& other) noexcept {
+            free_data();
+
             data_size = other.data_size;
             data = other.data;
             is_data_owner = other.is_data_owner;
@@ -53,23 +64,21 @@ namespace Util {
             other.data_size = 0;
             other.data = nullptr;
             other.is_data_owner = false;
+
+            return *this;
         }
 
-        ~DeviceArray() {
-            if (is_data_owner) {
-                cudaFree(data);
-            }
-        }
+        ~DeviceArray() { free_data(); }
 
         /*
          * @brief Zwraca rozmiar tablicy
          */
-        __host__ __device__ size_t size() { return data_size; }
+        __host__ __device__ size_t size() const { return data_size; }
 
         /*
          * @brief Zwraca rozmiar tablicy w bajtach
          */
-        __host__ __device__ size_t size_in_bytes() { return sizeof(T) * data_size; }
+        __host__ __device__ size_t size_in_bytes() const { return sizeof(T) * data_size; }
 
         /*
          * @brief Referencję do idx-tego elementu tablicy
