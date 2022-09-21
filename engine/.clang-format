@@ -12,3 +12,5 @@ AlignEscapedNewlines: Left
 NamespaceIndentation: All
 PointerAlignment: Left
 FixNamespaceComments: false
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
