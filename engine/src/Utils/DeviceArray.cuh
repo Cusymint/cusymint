@@ -8,15 +8,13 @@
 namespace Util {
     /*
      * @brief Klasa ułatwiająca korzystanie z pamięci CUDA.
-     * Pozwala na używanie tylko T które są POD (kopie wykonywane są kopiowaniem surowej pamięci).
+     * Właścicielem pamięci jest tylko tablica alokująca pamięć. Wszystkie kopie tylko kopiują
+     * wskaźnik (rozwiązanie ze względu na przekazywanie elementów tej klasy do kerneli CUDA)
      */
     template <class T> class DeviceArray {
-        static_assert(
-            std::is_pod<T>::value,
-            "Type contained in DeviceArray has to be POD, but a different type has been provided.");
-
         size_t data_size = 0;
         T* data = nullptr;
+        bool is_data_owner = false;
 
         void allocate_data() { cudaMalloc(&data, size_in_bytes()); }
 
@@ -24,16 +22,17 @@ namespace Util {
         /*
          * @brief Alokuje tablicę rozmiaru `size`
          */
-        explicit DeviceArray(const size_t size) : data_size(size) { allocate_data(); }
-
-        DeviceArray(const DeviceArray& other) : data_size(other.data_size) {
+        explicit DeviceArray(const size_t size) : data_size(size), is_data_owner(true) {
             allocate_data();
-            copy_mem(data, other.data, sizeof(T) * data_size);
         }
 
-        DeviceArray(DeviceArray&& other) noexcept : data_size(other.data_size), data(other.data) {
+        DeviceArray(const DeviceArray& other) : data_size(other.data_size), data(other.data) {}
+
+        DeviceArray(DeviceArray&& other) noexcept :
+            data_size(other.data_size), data(other.data), is_data_owner(other.is_data_owner) {
             other.data = nullptr;
             other.data_size = 0;
+            other.is_data_owner = false;
         }
 
         DeviceArray& operator=(const DeviceArray& other) {
@@ -42,18 +41,25 @@ namespace Util {
             }
 
             data_size = other.data_size;
-            allocate_data();
-            copy_mem(data, other.data, sizeof(T) * data_size);
+            data = other.data;
+            is_data_owner = false;
         }
 
         DeviceArray& operator=(DeviceArray&& other) noexcept {
             data_size = other.data_size;
-            other.data_size = 0;
             data = other.data;
+            is_data_owner = other.is_data_owner;
+
+            other.data_size = 0;
             other.data = nullptr;
+            other.is_data_owner = false;
         }
 
-        ~DeviceArray() { cudaFree(data); }
+        ~DeviceArray() {
+            if (is_data_owner) {
+                cudaFree(data);
+            }
+        }
 
         /*
          * @brief Zwraca rozmiar tablicy
