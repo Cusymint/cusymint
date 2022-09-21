@@ -1,0 +1,10 @@
+front:
+  - front/**/*
+
+engine:
+  - engine/**/*
+
+devops:
+  - .github/**/*
+  - '*'
+  - '!.gitignore'

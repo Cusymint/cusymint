@@ -12,10 +12,14 @@ dependencies:
 
   cusymint_l10n:
     path: ../cusymint_l10n
+    
+  flutter_math_fork: ^0.6.3+1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  golden_toolkit: ^0.13.0
 
   flutter_lints: ^2.0.0
 

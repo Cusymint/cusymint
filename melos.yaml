@@ -16,6 +16,23 @@ scripts:
       depends-on: 
         - build_runner
 
+  analyze:
+    run: melos exec -c 1 -- "dart analyze . --fatal-infos"
+
+  test:all:
+    run: melos run test --no-select
+
+  test:
+    run: |
+      melos exec -c 6 --fail-fast -- \
+        "flutter test --no-pub"
+    select-package:
+      dir-exists:
+        - test
+  
+  format-check:
+    run: melos exec flutter format . --set-exit-if-changed
+
 command:
   bootstrap:
     usePubspecOverrides: true
