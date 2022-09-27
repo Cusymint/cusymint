@@ -8,6 +8,7 @@
 #include <thrust/scan.h>
 
 #include "Evaluation/Integrate.cuh"
+
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
 
@@ -17,20 +18,20 @@ static constexpr size_t BLOCK_COUNT = 32;
 void test_substitutions() {
     std::cout << "Testing manual substitutions" << std::endl;
     std::vector<Sym::Symbol> ixpr = Sym::integral(Sym::var() ^ Sym::num(2));
-    std::cout << "ixpr1: " << ixpr[0].to_string() << std::endl;
+    std::cout << "Expression 1: " << ixpr.data()->to_string() << std::endl;
 
     std::vector<Sym::Symbol> ixpr2 = Sym::substitute(ixpr, Sym::cos(Sym::var()));
-    std::cout << "ixpr2: " << ixpr2[0].to_string() << std::endl;
+    std::cout << "Expression 2: " << ixpr2.data()->to_string() << std::endl;
 
     std::vector<Sym::Symbol> ixpr3 = Sym::substitute(ixpr2, Sym::var() * (Sym::e() ^ Sym::var()));
-    std::cout << "ixpr3: " << ixpr3[0].to_string() << std::endl;
+    std::cout << "Expression 3: " << ixpr3.data()->to_string() << std::endl;
 }
 
-void simplify_integrals(Sym::Symbol* const d_integrals, Sym::Symbol* const d_help_spaces,
-                        const size_t* const d_integral_count) {
+void simplify_integrals(Sym::ExpressionArray<Sym::Integral>& integrals,
+                        Sym::ExpressionArray<>& help_spaces) {
     std::cout << "Simplifying" << std::endl;
 
-    Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_help_spaces, d_integral_count);
+    Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
 }
 
 std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
@@ -55,44 +56,44 @@ std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
         Sym::integral(Sym::arccot(Sym::var())),
         Sym::integral(Sym::num(1.0) / ((Sym::var() ^ Sym::num(2.0)) + Sym::num(1.0))),
         Sym::integral(Sym::num(1.0) / (Sym::num(1.0) + (Sym::var() ^ Sym::num(2.0)))),
-        Sym::integral(Sym::sinh(Sym::var()))};
+        Sym::integral(Sym::sinh(Sym::var())),
+        Sym::integral(-Sym::num(-5.0))};
 
     for (const auto& integral : integrals) {
-        std::cout << integral[0].to_string() << std::endl;
+        std::cout << integral.data()->to_string() << std::endl;
     }
     std::cout << std::endl;
 
     return integrals;
 }
 
-void check_and_apply_heuristics(Sym::Symbol*& d_integrals, Sym::Symbol*& d_integrals_swap,
-                                Sym::Symbol* const d_help_spaces, size_t* const d_integral_count,
-                                size_t* const d_applicability) {
+void check_and_apply_heuristics(Sym::ExpressionArray<Sym::Integral>& integrals,
+                                Sym::ExpressionArray<Sym::Integral>& integrals_swap,
+                                Sym::ExpressionArray<>& help_spaces,
+                                Util::DeviceArray<size_t>& applicability) {
     std::cout << "Checking heuristics" << std::endl;
 
     cudaDeviceSynchronize();
-    Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_applicability,
-                                                                     d_integral_count);
+    Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, applicability);
 
     cudaDeviceSynchronize();
-    thrust::inclusive_scan(thrust::device, d_applicability,
-                           d_applicability + Sym::APPLICABILITY_ARRAY_SIZE, d_applicability);
+    thrust::inclusive_scan(thrust::device, applicability.begin(), applicability.end(),
+                           applicability.data());
 
     cudaDeviceSynchronize();
-    Sym::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_integrals_swap, d_help_spaces,
-                                                       d_applicability, d_integral_count);
-    cudaMemcpy(d_integral_count, d_applicability + Sym::APPLICABILITY_ARRAY_SIZE - 1,
-               sizeof(size_t), cudaMemcpyDeviceToDevice);
+    Sym::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_spaces,
+                                                       applicability);
+    integrals.resize_from_device(applicability.last());
+    integrals_swap.resize(integrals.size());
+    help_spaces.resize(integrals.size());
 
-    std::swap(d_integrals, d_integrals_swap);
+    std::swap(integrals, integrals_swap);
 
     std::cout << std::endl;
 }
 
-void print_applicability(const size_t* const d_applicability) {
-    std::vector<size_t> h_applicability(Sym::APPLICABILITY_ARRAY_SIZE);
-    cudaMemcpy(h_applicability.data(), d_applicability,
-               Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t), cudaMemcpyDeviceToHost);
+void print_applicability(const Util::DeviceArray<size_t>& applicability) {
+    const auto h_applicability = applicability.to_vector();
 
     std::cout << "Applicability:" << std::endl;
     for (size_t i = 0; i < h_applicability.size(); ++i) {
@@ -105,115 +106,72 @@ void print_applicability(const size_t* const d_applicability) {
     std::cout << std::endl;
 }
 
-void check_and_apply_known_itegrals(Sym::Symbol*& d_integrals, Sym::Symbol*& d_integrals_swap,
-                                    Sym::Symbol* const d_help_spaces,
-                                    size_t* const d_integral_count, size_t* const d_applicability) {
+void check_and_apply_known_itegrals(Sym::ExpressionArray<Sym::Integral>& integrals,
+                                    Sym::ExpressionArray<Sym::Integral>& integrals_swap,
+                                    Sym::ExpressionArray<>& help_spaces,
+                                    Util::DeviceArray<size_t>& applicability) {
     std::cout << "Checking for known integrals" << std::endl;
 
     cudaDeviceSynchronize();
-    Sym::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(d_integrals, d_applicability,
-                                                                d_integral_count);
+    Sym::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, applicability);
 
     cudaDeviceSynchronize();
-    thrust::inclusive_scan(thrust::device, d_applicability,
-                           d_applicability + Sym::APPLICABILITY_ARRAY_SIZE, d_applicability);
+    thrust::inclusive_scan(thrust::device, applicability.begin(), applicability.end(),
+                           applicability.data());
 
     cudaDeviceSynchronize();
-    Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(
-        d_integrals, d_integrals_swap, d_help_spaces, d_applicability, d_integral_count);
-    cudaMemcpy(d_integral_count, d_applicability + Sym::APPLICABILITY_ARRAY_SIZE - 1,
-               sizeof(size_t), cudaMemcpyDeviceToDevice);
+    Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_spaces,
+                                                            applicability);
+    integrals.resize_from_device(applicability.last());
+    integrals_swap.resize(integrals.size());
+    help_spaces.resize(integrals.size());
 
-    std::swap(d_integrals, d_integrals_swap);
+    std::swap(integrals, integrals_swap);
 
     std::cout << std::endl;
 }
 
-void print_results(const Sym::Symbol* const d_integrals, const size_t integral_count) {
-    std::vector<Sym::Symbol> h_integrals(Sym::INTEGRAL_ARRAY_SIZE);
-    cudaMemcpy(h_integrals.data(), d_integrals, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol),
-               cudaMemcpyDeviceToHost);
+void print_results(const Sym::ExpressionArray<Sym::Integral> integrals) {
+    const auto h_integrals = integrals.to_vector();
 
-    std::cout << "Results (" << integral_count << "):" << std::endl;
-    for (size_t i = 0; i < integral_count; ++i) {
-        std::cout << h_integrals[i * Sym::INTEGRAL_MAX_SYMBOL_COUNT].to_string() << std::endl;
+    std::cout << "Results (" << integrals.size() << "):" << std::endl;
+    for (size_t int_idx = 0; int_idx < integrals.size(); ++int_idx) {
+        std::cout << h_integrals[int_idx].data()->to_string() << std::endl;
     }
+
     std::cout << std::endl;
-}
-
-void print_current_results(const size_t* const d_applicability,
-                           const Sym::Symbol* const d_integrals, const size_t h_integral_count) {
-    if (d_applicability != nullptr) {
-        /* print_applicability(d_applicability, h_integral_count); */
-    }
-
-    print_results(d_integrals, h_integral_count);
 }
 
 int main() {
-    std::vector<std::vector<Sym::Symbol>> integrals = create_test_integrals();
+    std::vector<std::vector<Sym::Symbol>> h_integrals = create_test_integrals();
 
-    std::cout << "Allocating and zeroing GPU memory" << std::endl;
+    std::cout << "Allocating and zeroing GPU memory" << std::endl << std::endl;
 
-    size_t mem_total = 0;
+    Sym::ExpressionArray<Sym::Integral> integrals(h_integrals, Sym::INTEGRAL_MAX_SYMBOL_COUNT,
+                                                  Sym::MAX_INTEGRAL_COUNT);
+    Sym::ExpressionArray<Sym::Integral> integrals_swap(Sym::INTEGRAL_MAX_SYMBOL_COUNT,
+                                                       Sym::MAX_INTEGRAL_COUNT, h_integrals.size());
+    Sym::ExpressionArray<> help_spaces(Sym::INTEGRAL_MAX_SYMBOL_COUNT, Sym::MAX_INTEGRAL_COUNT,
+                                       h_integrals.size());
 
-    Sym::Symbol* d_integrals = nullptr;
-    cudaMalloc(&d_integrals, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
-    cudaMemset(d_integrals, 0, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
-    mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
+    Util::DeviceArray<size_t> applicability(Sym::APPLICABILITY_ARRAY_SIZE, true);
 
-    Sym::Symbol* d_integrals_swap = nullptr;
-    cudaMalloc(&d_integrals_swap, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
-    mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
+    print_results(integrals);
 
-    Sym::Symbol* d_help_spaces = nullptr;
-    cudaMalloc(&d_help_spaces, Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol));
-    mem_total += Sym::INTEGRAL_ARRAY_SIZE * sizeof(Sym::Symbol);
+    simplify_integrals(integrals, help_spaces);
+    print_results(integrals);
 
-    size_t* d_applicability = nullptr;
-    cudaMalloc(&d_applicability, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
-    cudaMemset(d_applicability, 0, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
-    mem_total += Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t);
+    check_and_apply_heuristics(integrals, integrals_swap, help_spaces, applicability);
+    print_results(integrals);
+    applicability.zero_mem();
 
-    size_t h_integral_count = integrals.size();
-    size_t* d_integral_count = nullptr;
-    cudaMalloc(&d_integral_count, sizeof(size_t));
-    mem_total += sizeof(size_t);
+    simplify_integrals(integrals, help_spaces);
+    print_results(integrals);
 
-    std::cout << "Allocated " << mem_total << " bytes (" << mem_total / 1024 / 1024 << "MiB)"
-              << std::endl;
+    check_and_apply_known_itegrals(integrals, integrals_swap, help_spaces, applicability);
+    print_results(integrals);
+    applicability.zero_mem();
 
-    cudaMemcpy(d_integral_count, &h_integral_count, sizeof(size_t), cudaMemcpyHostToDevice);
-    for (size_t i = 0; i < integrals.size(); ++i) {
-        cudaMemcpy(d_integrals + Sym::INTEGRAL_MAX_SYMBOL_COUNT * i, integrals[i].data(),
-                   integrals[i].size() * sizeof(Sym::Symbol), cudaMemcpyHostToDevice);
-    }
-
-    std::cout << std::endl;
-
-    simplify_integrals(d_integrals, d_help_spaces, d_integral_count);
-    print_current_results(nullptr, d_integrals, h_integral_count);
-
-    check_and_apply_heuristics(d_integrals, d_integrals_swap, d_help_spaces, d_integral_count,
-                               d_applicability);
-    cudaMemcpy(&h_integral_count, d_integral_count, sizeof(size_t), cudaMemcpyDeviceToHost);
-    print_current_results(d_applicability, d_integrals, h_integral_count);
-    cudaMemset(d_applicability, 0, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
-
-    simplify_integrals(d_integrals, d_help_spaces, d_integral_count);
-    print_current_results(nullptr, d_integrals, h_integral_count);
-
-    check_and_apply_known_itegrals(d_integrals, d_integrals_swap, d_help_spaces, d_integral_count,
-                                   d_applicability);
-    cudaMemcpy(&h_integral_count, d_integral_count, sizeof(size_t), cudaMemcpyDeviceToHost);
-    print_current_results(nullptr, d_integrals, h_integral_count);
-    cudaMemset(d_applicability, 0, Sym::APPLICABILITY_ARRAY_SIZE * sizeof(size_t));
-
-    simplify_integrals(d_integrals, d_help_spaces, d_integral_count);
-    print_current_results(nullptr, d_integrals, h_integral_count);
-
-    std::cout << "Freeing GPU memory" << std::endl;
-    cudaFree(d_applicability);
-    cudaFree(d_integrals_swap);
-    cudaFree(d_integrals);
+    simplify_integrals(integrals, help_spaces);
+    print_results(integrals);
 }

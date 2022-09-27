@@ -1,23 +1,24 @@
 #ifndef SYMBOL_CUH
 #define SYMBOL_CUH
 
+#include <functional>
 #include <string>
 #include <vector>
 
-#include "Symbol/Addition.cuh"
-#include "Symbol/Constants.cuh"
-#include "Symbol/ExpanderPlaceholder.cuh"
-#include "Symbol/Integral.cuh"
-#include "Symbol/InverseTrigonometric.cuh"
-#include "Symbol/Power.cuh"
-#include "Symbol/Product.cuh"
-#include "Symbol/Solution.cuh"
-#include "Symbol/Substitution.cuh"
-#include "Symbol/SymbolType.cuh"
-#include "Symbol/Trigonometric.cuh"
-#include "Symbol/Unknown.cuh"
-#include "Symbol/Variable.cuh"
-#include "Symbol/Hyperbolic.cuh"
+#include "Addition.cuh"
+#include "Constants.cuh"
+#include "ExpanderPlaceholder.cuh"
+#include "Hyperbolic.cuh"
+#include "Integral.cuh"
+#include "InverseTrigonometric.cuh"
+#include "Power.cuh"
+#include "Product.cuh"
+#include "Solution.cuh"
+#include "Substitution.cuh"
+#include "SymbolType.cuh"
+#include "Trigonometric.cuh"
+#include "Unknown.cuh"
+#include "Variable.cuh"
 
 namespace Sym {
     union Symbol {
@@ -49,12 +50,16 @@ namespace Sym {
         __host__ __device__ inline size_t& size() { return unknown.size; }
         __host__ __device__ inline size_t size() const { return unknown.size; }
 
-        template <class T> __host__ __device__ inline T& as() {
-            return *reinterpret_cast<T*>(this);
-        }
+        template <class T> __host__ __device__ inline T& as() { return *reinterpret_cast<T*>(this); }
 
         template <class T> __host__ __device__ inline const T& as() const {
             return *reinterpret_cast<const T*>(this);
+        }
+
+        template <class T> __host__ __device__ inline T* as_ptr() { return reinterpret_cast<T*>(this); }
+
+        template <class T> __host__ __device__ inline const T* as_ptr() const {
+            return reinterpret_cast<const T*>(this);
         }
 
         template <class T> __host__ __device__ static inline Symbol* from(T* sym) {
@@ -90,8 +95,9 @@ namespace Sym {
          * @param seq Symbol sequence to copy. Doesn't need to be semantically correct.
          * @param n number of symbols to copy
          */
-        __host__ __device__ static void
-        copy_and_reverse_symbol_sequence(Symbol* const destination, const Symbol* const source, size_t n);
+        __host__ __device__ static void copy_and_reverse_symbol_sequence(Symbol* const destination,
+                                                                         const Symbol* const source,
+                                                                         size_t n);
 
         /*
          * @brief Checks if first n symbols of `seq1` and `seq2` are identical.
@@ -123,7 +129,8 @@ namespace Sym {
         __host__ __device__ static void reverse_symbol_sequence(Symbol* const seq, size_t n);
 
         /*
-         * @brief Copies `*this` into `destination`. Does not copy the whole tree, only a single symbol.
+         * @brief Copies `*this` into `destination`. Does not copy the whole tree, only a single
+         * symbol.
          *
          * @param destination Copy destination
          */
@@ -222,6 +229,18 @@ namespace Sym {
          * @param n Numer podstawienia z którego wziąta będzie nazwa
          */
         void substitute_variable_with_nth_substitution_name(const size_t n);
+
+        /*
+         * @brief Jeśli ten symbol jest typu T, to wykonaj na nim `function`
+         *
+         * @param function Funkcja która się wykona jeśli `this` jest typu T. Jako argument podawane
+         * jest `this`
+         */
+        template <class T> __host__ __device__ void if_is_do(void (*function)(T*)) {
+            if (T::TYPE == type()) {
+                function(&as<T>());
+            }
+        }
 
         /*
          * @brief Porównuje dwa drzewa wyrażeń, oba muszą być uproszczone.

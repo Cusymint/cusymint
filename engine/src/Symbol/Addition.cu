@@ -116,7 +116,7 @@ namespace Sym {
         return "(" + arg1().to_string() + "+" + arg2().to_string() + ")";
     }
 
-    std::string Negation::to_string() const { return "-" + arg().to_string(); }
+    std::string Negation::to_string() const { return "-(" + arg().to_string() + ")"; }
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);

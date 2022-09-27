@@ -2,6 +2,14 @@
 
 #include "Utils/Cuda.cuh"
 
+namespace {
+    __device__ bool is_zero_size(const size_t index,
+                                 const Util::DeviceArray<size_t>& inclusive_scan) {
+        return index == 0 && inclusive_scan[index] != 0 ||
+               index != 0 && inclusive_scan[index - 1] != inclusive_scan[index];
+    }
+}
+
 namespace Sym {
     __device__ const ApplicabilityCheck known_integral_checks[] = {
         is_single_variable, is_simple_variable_power, is_variable_exponent,
@@ -249,8 +257,8 @@ namespace Sym {
         return solution->expression();
     }
 
-    __device__ void check_applicability(const Symbol* const integrals, size_t* const applicability,
-                                        const size_t* const integral_count,
+    __device__ void check_applicability(const ExpressionArray<Integral>& integrals,
+                                        Util::DeviceArray<size_t>& applicability,
                                         const ApplicabilityCheck* const checks,
                                         const size_t check_count) {
         const size_t thread_count = Util::thread_count();
@@ -260,22 +268,18 @@ namespace Sym {
 
         for (size_t check_idx = thread_idx / TRANSFORM_GROUP_SIZE; check_idx < check_count;
              check_idx += check_step) {
-            for (size_t expr_idx = thread_idx % TRANSFORM_GROUP_SIZE; expr_idx < *integral_count;
-                 expr_idx += TRANSFORM_GROUP_SIZE) {
-                const Integral* const integral_pointer =
-                    &(integrals + expr_idx * INTEGRAL_MAX_SYMBOL_COUNT)->integral;
-                size_t applicability_index = MAX_INTEGRAL_COUNT * check_idx + expr_idx;
-
-                applicability[applicability_index] = checks[check_idx](integral_pointer);
+            for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
+                 int_idx += TRANSFORM_GROUP_SIZE) {
+                size_t appl_idx = MAX_INTEGRAL_COUNT * check_idx + int_idx;
+                applicability[appl_idx] = checks[check_idx](integrals[int_idx]);
             }
         }
     }
 
-    __device__ void apply_transforms(const Symbol* const integrals, Symbol* const destinations,
-                                     Symbol* const help_spaces, const size_t* const applicability,
-                                     const size_t* const integral_count,
-                                     const IntegralTransform* const transforms,
-                                     const size_t transform_count) {
+    __device__ void
+    apply_transforms(const ExpressionArray<Integral>& integrals, ExpressionArray<>& destinations,
+                     ExpressionArray<>& help_spaces, const Util::DeviceArray<size_t>& applicability,
+                     const IntegralTransform* const transforms, const size_t transform_count) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -283,64 +287,50 @@ namespace Sym {
 
         for (size_t trans_idx = thread_idx / TRANSFORM_GROUP_SIZE; trans_idx < transform_count;
              trans_idx += trans_step) {
-            for (size_t expr_idx = thread_idx % TRANSFORM_GROUP_SIZE; expr_idx < *integral_count;
-                 expr_idx += TRANSFORM_GROUP_SIZE) {
-                const Integral* const integral_pointer =
-                    &(integrals + expr_idx * INTEGRAL_MAX_SYMBOL_COUNT)->integral;
-                const size_t applicability_index = MAX_INTEGRAL_COUNT * trans_idx + expr_idx;
-
-                // TODO: Wartownik zamiast specjalnego przypadeku dla applicability_index == 0
-                if (applicability_index == 0 && applicability[applicability_index] != 0 ||
-                    applicability_index != 0 && applicability[applicability_index - 1] !=
-                                                    applicability[applicability_index]) {
-                    const size_t destination_offset =
-                        INTEGRAL_MAX_SYMBOL_COUNT * (applicability[applicability_index] - 1);
-                    Symbol* const destination = destinations + destination_offset;
-                    Symbol* const help_space = help_spaces + destination_offset;
-
-                    transforms[trans_idx](integral_pointer, destination, help_space);
+            for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
+                 int_idx += TRANSFORM_GROUP_SIZE) {
+                const size_t appl_index = MAX_INTEGRAL_COUNT * trans_idx + int_idx;
+                if (is_zero_size(appl_index, applicability)) {
+                    const size_t dest_idx = applicability[appl_index] - 1;
+                    transforms[trans_idx](integrals[int_idx], destinations[dest_idx],
+                                          help_spaces[dest_idx]);
                 }
             }
         }
     }
 
-    __global__ void check_for_known_integrals(const Symbol* const integrals,
-                                              size_t* const applicability,
-                                              const size_t* const integral_count) {
-        check_applicability(integrals, applicability, integral_count, known_integral_checks,
-                            KNOWN_INTEGRAL_COUNT);
+    __global__ void check_for_known_integrals(const ExpressionArray<Integral> integrals,
+                                              Util::DeviceArray<size_t> applicability) {
+        check_applicability(integrals, applicability, known_integral_checks, KNOWN_INTEGRAL_COUNT);
     }
 
-    __global__ void apply_known_integrals(const Symbol* const integrals, Symbol* const destinations,
-                                          Symbol* const help_spaces,
-                                          const size_t* const applicability,
-                                          const size_t* const integral_count) {
-        apply_transforms(integrals, destinations, help_spaces, applicability, integral_count,
+    __global__ void apply_known_integrals(const ExpressionArray<Integral> integrals,
+                                          ExpressionArray<> destinations,
+                                          ExpressionArray<> help_spaces,
+                                          const Util::DeviceArray<size_t> applicability) {
+        apply_transforms(integrals, destinations, help_spaces, applicability,
                          known_integral_applications, KNOWN_INTEGRAL_COUNT);
     }
 
-    __global__ void check_heuristics_applicability(const Symbol* const integrals,
-                                                   size_t* const applicability,
-                                                   const size_t* const integral_count) {
-        check_applicability(integrals, applicability, integral_count, heuristic_checks,
-                            HEURISTIC_CHECK_COUNT);
+    __global__ void check_heuristics_applicability(const ExpressionArray<Integral> integrals,
+                                                   Util::DeviceArray<size_t> applicability) {
+        check_applicability(integrals, applicability, heuristic_checks, HEURISTIC_CHECK_COUNT);
     }
 
-    __global__ void apply_heuristics(const Symbol* const integrals, Symbol* const destinations,
-                                     Symbol* const help_spaces, const size_t* const applicability,
-                                     const size_t* const integral_count) {
-        apply_transforms(integrals, destinations, help_spaces, applicability, integral_count,
+    __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
+                                     ExpressionArray<> destinations, ExpressionArray<> help_spaces,
+                                     const Util::DeviceArray<size_t> applicability) {
+        apply_transforms(integrals, destinations, help_spaces, applicability,
                          heuristic_applications, HEURISTIC_CHECK_COUNT);
     }
 
-    __global__ void simplify(Sym::Symbol* const expressions, Sym::Symbol* const help_spaces,
-                             const size_t* const expression_count) {
+    __global__ void simplify(ExpressionArray<> expressions, ExpressionArray<> help_spaces) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
-        for (size_t expr_idx = thread_idx; expr_idx < *expression_count; expr_idx += thread_count) {
-            const size_t offset = expr_idx * INTEGRAL_MAX_SYMBOL_COUNT;
-            expressions[offset].simplify(help_spaces + offset);
+        for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
+             expr_idx += thread_count) {
+            expressions[expr_idx]->simplify(help_spaces[expr_idx]);
         }
     }
 }

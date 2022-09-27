@@ -23,6 +23,7 @@ namespace Sym {
 
 #define DECLARE_SYMBOL(_name, _simple)                                           \
     struct _name {                                                               \
+        constexpr static Sym::Type TYPE = Sym::Type::_name;                      \
         Sym::Type type;                                                          \
         size_t size;                                                             \
         bool simplified;                                                         \

@@ -1,6 +1,8 @@
 #ifndef INTEGRATE_CUH
 #define INTEGRATE_CUH
 
+#include "Symbol/ExpressionArray.cuh"
+
 #include "Symbol/Symbol.cuh"
 
 namespace Sym {
@@ -38,12 +40,13 @@ namespace Sym {
                                              Symbol* const destination, Symbol* const help_space);
 
     /*
-     * @brief Creates a `Solution` symbol at `destination[0]` and all substitutions from `integral`
+     * @brief Tworzy symbol `Solution` i zapisuje go na `destination` razem z podstawieniami z
+     * `integral`
      *
-     * @param integral Integral to copy substitutions from
-     * @param destination Solution destination
+     * @param integral Całka z której skopiowane mają być podstawienia
+     * @param destination Miejsce do zapisania wyniku
      *
-     * @return Pointer to one symbol after last substitution (destination of solution symbols)
+     * @return Wskaźnik na symbol za ostatnim podstawieniem
      */
     __device__ Symbol* prepare_solution(const Integral* const integral, Symbol* const destination);
 
@@ -55,28 +58,25 @@ namespace Sym {
     constexpr size_t MAX_CHECK_COUNT =
         KNOWN_INTEGRAL_COUNT > HEURISTIC_CHECK_COUNT ? KNOWN_INTEGRAL_COUNT : HEURISTIC_CHECK_COUNT;
     constexpr size_t TRANSFORM_GROUP_SIZE = 32;
-    constexpr size_t MAX_INTEGRAL_COUNT = 32;
-    constexpr size_t INTEGRAL_MAX_SYMBOL_COUNT = 1024;
+    constexpr size_t MAX_INTEGRAL_COUNT = 256;
+    constexpr size_t INTEGRAL_MAX_SYMBOL_COUNT = 256;
     constexpr size_t APPLICABILITY_ARRAY_SIZE = MAX_CHECK_COUNT * MAX_INTEGRAL_COUNT;
     constexpr size_t INTEGRAL_ARRAY_SIZE = MAX_INTEGRAL_COUNT * INTEGRAL_MAX_SYMBOL_COUNT;
 
-    __global__ void check_for_known_integrals(const Symbol* const integrals,
-                                              size_t* const applicability,
-                                              const size_t* const integral_count);
-    __global__ void apply_known_integrals(const Symbol* const integrals, Symbol* const destinations,
-                                          Symbol* const help_spaces,
-                                          const size_t* const applicability,
-                                          const size_t* const integral_count);
+    __global__ void check_for_known_integrals(const ExpressionArray<Integral> integrals,
+                                              Util::DeviceArray<size_t> applicability);
+    __global__ void apply_known_integrals(const ExpressionArray<Integral> integrals,
+                                          ExpressionArray<> destinations,
+                                          ExpressionArray<> help_spaces,
+                                          const Util::DeviceArray<size_t> applicability);
 
-    __global__ void check_heuristics_applicability(const Symbol* const integrals,
-                                                   size_t* const applicability,
-                                                   const size_t* const integral_count);
-    __global__ void apply_heuristics(const Symbol* const integrals, Symbol* const destinations,
-                                     Symbol* const help_spaces, const size_t* const applicability,
-                                     const size_t* const integral_count);
+    __global__ void check_heuristics_applicability(const ExpressionArray<Integral> integrals,
+                                                   Util::DeviceArray<size_t> applicability);
+    __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
+                                     ExpressionArray<> destinations, ExpressionArray<> help_spaces,
+                                     const Util::DeviceArray<size_t> applicability);
 
-    __global__ void simplify(Sym::Symbol* const expressions, Sym::Symbol* const help_spaces,
-                             const size_t* const expression_count);
+    __global__ void simplify(ExpressionArray<> expressions, ExpressionArray<> help_spaces);
 }
 
 #endif
