@@ -11,34 +11,32 @@ enum class Token {
     Minus,
     Dot,
     Dash,
-    Caret, // ok
+    Caret,
     Integer,
     Double,
     SymbolicConstant,
-    Variable, // ok
+    Variable,
     OpenBrace,
     CloseBrace,
-    Underscore, // ok
+    Underscore,
     E,
     Pi,
     Asin,
     Acos,
     Atan,
-    Acot, // ok
+    Acot,
     Cos,
     Cot,
     Cosh,
-    Coth, // ok
+    Coth,
     Ln,
-    Log, // ok
+    Log,
     Sin,
     Sinh,
-    Sqrt, // ok
+    Sqrt,
     Tan,
-    Tanh // ok
+    Tanh
 };
-
-bool isLetter(char c);
 
 class Scanner {
   private:

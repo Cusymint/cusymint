@@ -55,7 +55,7 @@ std::vector<Sym::Symbol> Parser::power_arg() {
     case Token::Double:
         prev_text = read_text;
         next_token();
-        return Sym::num(atof(prev_text.c_str()));
+        return Sym::num(std::stof(prev_text));
     case Token::SymbolicConstant:
         prev_text = read_text;
         next_token();

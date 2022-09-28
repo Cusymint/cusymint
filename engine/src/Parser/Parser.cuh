@@ -14,9 +14,9 @@ bool isFunction(Token tok);
 
 // Produkcje:
 //
-// expr -> term { addop term }					��czny lewostronnie
-// term -> factor { mulop factor }				��czny lewostronnie
-// factor -> power_arg | power_arg ^ factor		��czny prawostronnie
+// expr -> term { addop term }					łączny lewostronnie
+// term -> factor { mulop factor }				łączny lewostronnie
+// factor -> power_arg | power_arg ^ factor		łączny prawostronnie
 // power_arg -> num | const | var | ( expr ) | function ( expr )
 //
 class Parser {

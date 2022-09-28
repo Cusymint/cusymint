@@ -1,7 +1,5 @@
 #include "Scanner.cuh"
 
-bool isLetter(char chr) { return chr >= 'a' && chr <= 'z'; }
-
 Scanner::Scanner(std::string& text) : text(text) {}
 
 Token Scanner::try_read_inverse_trig(std::string& read_text) {
@@ -26,6 +24,16 @@ Token Scanner::try_read_inverse_trig(std::string& read_text) {
         pos += 5;
         return Token::Acot;
     }
+    if (text.substr(pos + 1, 5) == "rctan") {
+        read_text += "rctan";
+        pos += 5;
+        return Token::Atan;
+    }
+    if (text.substr(pos + 1, 5) == "rccot") {
+        read_text += "rccot";
+        pos += 5;
+        return Token::Acot;
+    }
     return Token::Error;
 }
 
@@ -41,13 +49,23 @@ Token Scanner::try_read_cosine_cotangent(std::string& read_text) {
         pos += 3;
         return Token::Coth;
     }
-    if (text.substr(pos + 1, 3) == "os") {
+    if (text.substr(pos + 1, 3) == "oth") {
+        read_text += "oth";
+        pos += 3;
+        return Token::Coth;
+    }
+    if (text.substr(pos + 1, 2) == "os") {
         read_text += "os";
         pos += 2;
         return Token::Cos;
     }
-    if (text.substr(pos + 1, 3) == "tg") {
+    if (text.substr(pos + 1, 2) == "tg") {
         read_text += "tg";
+        pos += 2;
+        return Token::Cot;
+    }
+    if (text.substr(pos + 1, 2) == "ot") {
+        read_text += "ot";
         pos += 2;
         return Token::Cot;
     }
@@ -99,6 +117,16 @@ Token Scanner::try_read_tangent(std::string& read_text) {
     if (text.substr(pos + 1, 1) == "g") {
         read_text += "g";
         ++pos;
+        return Token::Tan;
+    }
+    if (text.substr(pos + 1, 3) == "anh") {
+        read_text += "anh";
+        pos += 3;
+        return Token::Tanh;
+    }
+    if (text.substr(pos + 1, 2) == "an") {
+        read_text += "an";
+        pos += 2;
         return Token::Tan;
     }
     return Token::Error;
@@ -206,7 +234,7 @@ Token Scanner::read_after_start(Token& state, std::string& read_text) {
         break;
     default:
         read_text += text[pos];
-        if (isLetter(text[pos])) {
+        if (std::isalpha(text[pos]) != 0) {
             state = Token::SymbolicConstant;
             break;
         }
@@ -216,7 +244,7 @@ Token Scanner::read_after_start(Token& state, std::string& read_text) {
 }
 
 Token Scanner::check_if_no_letter_ahead(std::string& read_text, Token return_on_success) {
-    if (pos == text.size() - 1 || !isLetter(text[pos + 1])) {
+    if (pos == text.size() - 1 || std::isalpha(text[pos + 1]) == 0) {
         return return_on_success;
     }
     read_text += text[++pos];
