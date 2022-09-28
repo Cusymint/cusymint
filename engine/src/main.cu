@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include <iostream>
+#include <optional>
 #include <vector>
 
 #include <thrust/execution_policy.h>
@@ -14,6 +15,40 @@
 
 static constexpr size_t BLOCK_SIZE = 1024;
 static constexpr size_t BLOCK_COUNT = 32;
+
+std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Symbol>& integral) {
+    Sym::ExpressionArray<> expressions({integral}, Sym::EXPRESSION_MAX_SYMBOL_COUNT,
+                                       Sym::MAX_EXPRESSION_COUNT);
+    Sym::ExpressionArray<> expressions_swap(Sym::MAX_EXPRESSION_COUNT,
+                                            Sym::EXPRESSION_MAX_SYMBOL_COUNT, expressions.size());
+
+    Sym::ExpressionArray<Sym::SubexpressionCandidate> integrals(Sym::MAX_EXPRESSION_COUNT,
+                                                                Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+    Sym::ExpressionArray<Sym::SubexpressionCandidate> integrals_swap(
+        Sym::MAX_EXPRESSION_COUNT, Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+    Sym::ExpressionArray<> help_spaces(Sym::MAX_EXPRESSION_COUNT, Sym::EXPRESSION_MAX_SYMBOL_COUNT,
+                                       integrals.size());
+    Util::DeviceArray<size_t> applicability(Sym::APPLICABILITY_ARRAY_SIZE, true);
+
+    // TODO: Przenieść pierwszą całkę z `integral` do `intregrals` i dodać `SubexpressionVacancy`
+
+    for (;;) {
+        Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, help_spaces);
+        cudaDeviceSynchronize();
+
+        Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, applicability);
+        cudaDeviceSynchronize();
+
+        thrust::inclusive_scan(thrust::device, applicability.begin(), applicability.end(),
+                               applicability.data());
+        cudaDeviceSynchronize();
+
+        Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
+                                                                help_spaces, applicability);
+        cudaDeviceSynchronize();
+        std::swap(integrals, integrals_swap);
+    }
+}
 
 void test_substitutions() {
     std::cout << "Testing manual substitutions" << std::endl;
@@ -97,7 +132,7 @@ void print_applicability(const Util::DeviceArray<size_t>& applicability) {
 
     std::cout << "Applicability:" << std::endl;
     for (size_t i = 0; i < h_applicability.size(); ++i) {
-        if (i % Sym::MAX_INTEGRAL_COUNT == 0 && i != 0) {
+        if (i % Sym::MAX_EXPRESSION_COUNT == 0 && i != 0) {
             std::cout << std::endl;
         }
 
@@ -147,11 +182,11 @@ int main() {
 
     std::cout << "Allocating and zeroing GPU memory" << std::endl << std::endl;
 
-    Sym::ExpressionArray<Sym::Integral> integrals(h_integrals, Sym::INTEGRAL_MAX_SYMBOL_COUNT,
-                                                  Sym::MAX_INTEGRAL_COUNT);
-    Sym::ExpressionArray<Sym::Integral> integrals_swap(Sym::INTEGRAL_MAX_SYMBOL_COUNT,
-                                                       Sym::MAX_INTEGRAL_COUNT, h_integrals.size());
-    Sym::ExpressionArray<> help_spaces(Sym::INTEGRAL_MAX_SYMBOL_COUNT, Sym::MAX_INTEGRAL_COUNT,
+    Sym::ExpressionArray<Sym::Integral> integrals(h_integrals, Sym::EXPRESSION_MAX_SYMBOL_COUNT,
+                                                  Sym::MAX_EXPRESSION_COUNT);
+    Sym::ExpressionArray<Sym::Integral> integrals_swap(
+        Sym::EXPRESSION_MAX_SYMBOL_COUNT, Sym::MAX_EXPRESSION_COUNT, h_integrals.size());
+    Sym::ExpressionArray<> help_spaces(Sym::EXPRESSION_MAX_SYMBOL_COUNT, Sym::MAX_EXPRESSION_COUNT,
                                        h_integrals.size());
 
     Util::DeviceArray<size_t> applicability(Sym::APPLICABILITY_ARRAY_SIZE, true);
