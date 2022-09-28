@@ -27,6 +27,8 @@ add_executable(
   ${SYMBOL_DIR}/Solution.cu
   ${SYMBOL_DIR}/InverseTrigonometric.cu
   ${SYMBOL_DIR}/Hyperbolic.cu
+  ${SYMBOL_DIR}/SubexpressionCandidate.cu
+  ${SYMBOL_DIR}/SubexpressionVacancy.cu
   ${EVALUATION_DIR}/Integrate.cu)
 
 target_include_directories(cusymint PRIVATE ${SRC_DIR})

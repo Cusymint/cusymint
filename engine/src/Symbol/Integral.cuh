@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "Substitution.cuh"
 #include "Macros.cuh"
+#include "Substitution.cuh"
 
 namespace Sym {
     DECLARE_SYMBOL(Integral, false)

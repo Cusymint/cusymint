@@ -14,6 +14,8 @@
 #include "Power.cuh"
 #include "Product.cuh"
 #include "Solution.cuh"
+#include "SubexpressionCandidate.cuh"
+#include "SubexpressionVacancy.cuh"
 #include "Substitution.cuh"
 #include "SymbolType.cuh"
 #include "Trigonometric.cuh"
@@ -31,6 +33,8 @@ namespace Sym {
         Integral integral;
         Solution solution;
         Substitution substitution;
+        SubexpressionCandidate subexpression_candidate;
+        SubexpressionVacancy subexpression_vacancy;
         Addition addition;
         Negation negation;
         Product product;
@@ -50,13 +54,17 @@ namespace Sym {
         __host__ __device__ inline size_t& size() { return unknown.size; }
         __host__ __device__ inline size_t size() const { return unknown.size; }
 
-        template <class T> __host__ __device__ inline T& as() { return *reinterpret_cast<T*>(this); }
+        template <class T> __host__ __device__ inline T& as() {
+            return *reinterpret_cast<T*>(this);
+        }
 
         template <class T> __host__ __device__ inline const T& as() const {
             return *reinterpret_cast<const T*>(this);
         }
 
-        template <class T> __host__ __device__ inline T* as_ptr() { return reinterpret_cast<T*>(this); }
+        template <class T> __host__ __device__ inline T* as_ptr() {
+            return reinterpret_cast<T*>(this);
+        }
 
         template <class T> __host__ __device__ inline const T* as_ptr() const {
             return reinterpret_cast<const T*>(this);

@@ -15,6 +15,8 @@ namespace Sym {
         Integral,
         Solution,
         Substitution,
+        SubexpressionVacancy,
+        SubexpressionCandidate,
         // Arithmetic
         Addition,
         Negation,
