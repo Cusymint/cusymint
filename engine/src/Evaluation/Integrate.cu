@@ -8,6 +8,46 @@ namespace {
         return index == 0 && inclusive_scan[index] != 0 ||
                index != 0 && inclusive_scan[index - 1] != inclusive_scan[index];
     }
+
+    /*
+     * @brief Podejmuje próbę ustawienia `expressions[potential_solver_idx]` (będącego
+     * SubexpressionCandidate) jako rozwiązania wskazywanego przez siebie SubexpressionVacancy
+     *
+     * @param expressions Talbica wyrażeń z kandydatem do rozwiązania i brakującym podwyrażeniem
+     * @param potential_solver_idx Indeks kandydata do rozwiązania
+     *
+     * @return `false` jeśli nie udało się ustawić wybranego kandydata jako rozwiązanie
+     * podwyrażenia, lub udało się, ale w nadwyrażeniu są jeszcze inne nierozwiązane podwyrażenia.
+     * `true` jeśli się udało i było to ostatnie nierozwiązane podwyrażenie w nadwyrażeniu.
+     */
+    __device__ bool try_set_solver_idx(Sym::ExpressionArray<>& expressions,
+                                       const size_t potential_solver_idx) {
+        const size_t& vacancy_expr_idx =
+            expressions[potential_solver_idx]->subexpression_candidate.vacancy_expression_idx;
+
+        const size_t& vacancy_idx =
+            expressions[potential_solver_idx]->subexpression_candidate.vacancy_idx;
+
+        Sym::SubexpressionVacancy& subexpr_vacancy =
+            expressions[vacancy_expr_idx][vacancy_idx].subexpression_vacancy;
+
+        const bool solver_lock_acquired = atomicCAS(&subexpr_vacancy.is_solved, 0, 1) == 0;
+
+        if (!solver_lock_acquired) {
+            return false;
+        }
+
+        subexpr_vacancy.solver_idx = potential_solver_idx;
+
+        if (!expressions[vacancy_expr_idx]->is(Sym::Type::SubexpressionCandidate)) {
+            return true;
+        }
+
+        unsigned int subexpressions_left = atomicSub(
+            &expressions[vacancy_expr_idx]->subexpression_candidate.subexpressions_left, 1);
+
+        return subexpressions_left == 0;
+    }
 }
 
 namespace Sym {
@@ -304,24 +344,6 @@ namespace Sym {
         check_applicability(integrals, applicability, known_integral_checks, KNOWN_INTEGRAL_COUNT);
     }
 
-    __device__ void try_set_solver_idx(ExpressionArray<>& expressions,
-                                       const size_t potential_solver_idx) {
-        const size_t& vacancy_expr_idx =
-            expressions[potential_solver_idx]->subexpression_candidate.vacancy_expression_idx;
-
-        const size_t& vacancy_idx =
-            expressions[potential_solver_idx]->subexpression_candidate.vacancy_idx;
-
-        SubexpressionVacancy& subexpr_vacancy =
-            expressions[vacancy_expr_idx][vacancy_idx].subexpression_vacancy;
-
-        const bool solver_lock_acquired = atomicCAS(&subexpr_vacancy.is_solved, 0, 1) == 0;
-
-        if (solver_lock_acquired) {
-            subexpr_vacancy.solver_idx = potential_solver_idx;
-        }
-    }
-
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                                           ExpressionArray<> expressions,
                                           ExpressionArray<> help_spaces,
@@ -352,6 +374,36 @@ namespace Sym {
                 subexpr_candidate->seal();
 
                 try_set_solver_idx(expressions, dest_idx);
+            }
+        }
+    }
+
+    __global__ void propagate_solved_subexpressions(ExpressionArray<> expressions) {
+        const size_t thread_count = Util::thread_count();
+        const size_t thread_idx = Util::thread_idx();
+
+        // W każdym węźle drzewa zależności wyrażeń zaczyna jeden wątek. Jeśli jego węzeł jest
+        // rozwiązany, to próbuje się ustawić jako rozwiązanie swojego podwyrażenia w rodzicu. Jeśli
+        // mu się to uda i nie pozostaną w rodzicu inne nierozwiązane podwyrażenia, to przechodzi do
+        // niego i powtaża wszystko. W skrócie następuje propagacja informacji o rozwiązaniu z dołu
+        // drzewa na samą górę.
+
+        // Na expr_idx = 0 jest tylko SubexpressionVacancy oryginalnej całki
+        for (size_t expr_idx = 1; expr_idx < expressions.size(); expr_idx += thread_count) {
+            while (expr_idx != 0) {
+                if (expressions[expr_idx]->subexpression_candidate.subexpressions_left != 0) {
+                    break;
+                }
+
+                if (!try_set_solver_idx(expressions, expr_idx)) {
+                    break;
+                }
+
+                // Przechodzimy w drzewie zależności do rodzica. Być może będziemy tam razem z
+                // wątkiem, który tam zaczął pętlę. `try_set_solver_idx` jest jednak atomowe, więc
+                // tylko jednemu z wątków uda się ustawić `solver_idx` na kolejnym rodzicu, więc
+                // tylko jeden wątek tam przetrwa.
+                expr_idx = expressions[expr_idx]->subexpression_candidate.vacancy_expression_idx;
             }
         }
     }
@@ -391,7 +443,7 @@ namespace Sym {
 
             const bool will_expression_be_removed = expressions_removability[expr_idx] == 0;
             const bool is_subexpression_solved =
-                expressions[expr_idx][subexpr_idx].subexpression_vacancy.solver_type;
+                expressions[expr_idx][subexpr_idx].subexpression_vacancy.is_solved;
 
             integrals_removability[int_idx] =
                 is_subexpression_solved || will_expression_be_removed ? 0 : 1;
@@ -429,7 +481,7 @@ namespace Sym {
 
                 for (size_t symbol_idx = 0; symbol_idx < destination->size(); ++symbol_idx) {
                     if (destination[symbol_idx].is(Type::SubexpressionVacancy) &&
-                        destination->subexpression_vacancy.solver_type) {
+                        destination->subexpression_vacancy.is_solved) {
                         size_t& solver_idx = destination->subexpression_vacancy.solver_idx;
                         solver_idx = removability[solver_idx] - 1;
                     }

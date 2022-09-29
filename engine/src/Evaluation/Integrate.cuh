@@ -63,20 +63,55 @@ namespace Sym {
     constexpr size_t APPLICABILITY_ARRAY_SIZE = MAX_CHECK_COUNT * MAX_EXPRESSION_COUNT;
     constexpr size_t INTEGRAL_ARRAY_SIZE = MAX_EXPRESSION_COUNT * EXPRESSION_MAX_SYMBOL_COUNT;
 
+    /*
+     * @brief Upraszcza wyrażenia w `expressions`. Wynik zastępuje stare wyrażenia.
+     *
+     * @param expressions Wyrażenia do uproszczenia
+     * @param help_spaces Dodatkowa pamięć pomocnicza przy upraszczaniu wyrażeń
+     */
+    __global__ void simplify(ExpressionArray<> expressions, ExpressionArray<> help_spaces);
+
+    /*
+     * @brief Sprawdza, czy całki w `integrals` mają znane rozwiązania
+     *
+     * @param integrals Całki do sprawdzenia znanych form
+     * @param applicability Wynik sprawdzania dla każdej całki w `integrals` i każdej znanej całki.
+     * Informacja, czy całka pod `int_idx` ma postać o indeksie `form_idx` zapisywana jest w
+     * `applicability[MAX_EXPRESSION_COUNT * form_idx + int_idx]`, gdzie MAX_EXPRESSION_COUNT jest
+     * maksymalną liczbą wyrażeń dopuszczalną w `integrals`
+     */
     __global__ void check_for_known_integrals(const ExpressionArray<Integral> integrals,
                                               Util::DeviceArray<size_t> applicability);
+
+    /*
+     * @brief Na podstawie informacji z `check_for_known_integrals` przekształca całki na ich
+     * rozwiązania.
+     *
+     * @param integrals Całki o potencjalnie znanych rozwiązaniach
+     * @param expressions Wyrażenia zawierające SubexpressionVacancy do których odnoszą się całki.
+     * Rozwiązania całek są zapisywane w pamięci za ostatnim wyrażeniem w expressions
+     * @param help_spaces Pamięć pomocnicza do wykonania przekształceń
+     * @param applicability Tablica która jest wynikiem `inclusive_scan` na tablicy o tej samej
+     * nazwie zwróconej przez `check_for_known_integrals`
+     */
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                                           ExpressionArray<> expressions,
                                           ExpressionArray<> help_spaces,
                                           const Util::DeviceArray<size_t> applicability);
+
+    /*
+     * @brief Ustawia `is_solved` i `solver_id` w SubexpressionVacancy na które wskazują
+     * SubexpressionCandidate w których wszystkie SubexpressionVacancy są rozwiązane
+     *
+     * @param expressions Wyrażenia do propagacji informacji o rozwiązaniach
+     */
+    __global__ void propagate_solved_subexpressions(ExpressionArray<> expressions);
 
     __global__ void check_heuristics_applicability(const ExpressionArray<Integral> integrals,
                                                    Util::DeviceArray<size_t> applicability);
     __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
                                      ExpressionArray<> destinations, ExpressionArray<> help_spaces,
                                      const Util::DeviceArray<size_t> applicability);
-
-    __global__ void simplify(ExpressionArray<> expressions, ExpressionArray<> help_spaces);
 
     /*
      * @brief Sprawdza które całki wskazują na wyrażenia rozwiązane lub takie, które będą usunięte

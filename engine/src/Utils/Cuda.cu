@@ -6,8 +6,6 @@
 #include <memory>
 
 namespace Util {
-    // TODO: Sprawdzać alignment w funkcjach operujących na pamięci
-
     __host__ __device__ bool compare_mem(const void* const mem1, const void* const mem2,
                                          const size_t n) {
         const auto* const p1_8 = reinterpret_cast<const uint8_t*>(mem1);

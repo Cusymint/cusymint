@@ -18,5 +18,6 @@ namespace Sym {
     SubexpressionCandidate::copy_metadata_from(const SubexpressionCandidate& other) {
         vacancy_expression_idx = other.vacancy_expression_idx;
         vacancy_idx = other.vacancy_idx;
+        subexpressions_left = other.subexpressions_left;
     }
 }

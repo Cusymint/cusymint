@@ -64,14 +64,25 @@ namespace Sym {
          */
         std::vector<std::vector<Symbol>> to_vector() const {
             std::vector<std::vector<Symbol>> expressions;
+            expressions.reserve(expression_count);
 
             for (size_t expr_idx = 0; expr_idx < expression_count; ++expr_idx) {
-                expressions.emplace_back(expression_size);
-                cudaMemcpy(expressions[expr_idx].data(), (*this)[expr_idx],
-                           expression_size * sizeof(Symbol), cudaMemcpyDeviceToHost);
+                expressions.emplace_back(to_vector(expr_idx));
             }
 
             return expressions;
+        }
+
+        /*
+         * @brief Kopiuje idx-te wyrażenie do tablicy vectorów
+         */
+        std::vector<Symbol> to_vector(const size_t idx) const {
+            std::vector<Symbol> expression(expression_size);
+
+            cudaMemcpy(expression.data(), (*this)[idx], expression_size * sizeof(Symbol),
+                       cudaMemcpyDeviceToHost);
+            expression.resize(expression.front().size());
+            return expression;
         }
 
         /*

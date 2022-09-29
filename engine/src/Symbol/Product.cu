@@ -65,12 +65,12 @@ namespace Sym {
         }
 
         if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value == 1.0) {
-            arg1().copy_to(this_symbol());
+            arg1().copy_to(symbol());
             return;
         }
 
         if (arg1().is(Type::NumericConstant) && arg1().numeric_constant.value == 1.0) {
-            arg2().copy_to(this_symbol());
+            arg2().copy_to(symbol());
         }
     }
 

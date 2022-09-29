@@ -33,7 +33,7 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
     // TODO: Przenieść pierwszą całkę z `integral` do `intregrals` i dodać `SubexpressionVacancy`
 
     for (;;) {
-        Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, help_spaces);
+        Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
         cudaDeviceSynchronize();
 
         Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, applicability);
@@ -43,11 +43,22 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
                                applicability.data());
         cudaDeviceSynchronize();
 
-        Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
-                                                                help_spaces, applicability);
+        Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions, help_spaces,
+                                                                applicability);
         cudaDeviceSynchronize();
         std::swap(integrals, integrals_swap);
+
+        Sym::propagate_solved_subexpressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions);
+        cudaDeviceSynchronize();
+
+        std::vector<Sym::Symbol> first_expression = expressions.to_vector(0);
+        if (first_expression.data()->subexpression_vacancy.is_solved == 1) {
+            // TODO: Zwycięstwo, jakoś teraz trzeba zwinąć całe drzewo, zrobić podstawienia i można
+            // zwracać wynik
+        }
     }
+
+    return std::nullopt;
 }
 
 void test_substitutions() {

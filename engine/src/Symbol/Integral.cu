@@ -56,7 +56,7 @@ namespace Sym {
     __host__ __device__ void
     Integral::copy_substitutions_with_an_additional_one(const Symbol* const substitution_expr,
                                                         Symbol* const destination) const {
-        Symbol::copy_symbol_sequence(destination, this_symbol(), integrand_offset);
+        Symbol::copy_symbol_sequence(destination, symbol(), integrand_offset);
 
         Symbol* const new_substitution = destination + integrand_offset;
         Substitution::create(substitution_expr, new_substitution, substitution_count);
