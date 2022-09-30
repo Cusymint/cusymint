@@ -32,12 +32,14 @@ Diagnostics:
       - google-readability-namespace-comments
       - google-readability-todo
       - hicpp-avoid-c-arrays
+      - hicpp-explicit-conversions
       - hicpp-no-array-decay
       - hicpp-vararg
       - modernize-avoid-c-arrays
       - modernize-use-trailing-return-type
       - misc-non-private-member-variables-in-classes
       - misc-no-recursion
+      - performance-unnecessary-value-param
       - readability-avoid-const-params-in-decls
       - readability-magic-numbers
       - readability-suspicious-call-argument

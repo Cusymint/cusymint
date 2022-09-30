@@ -34,6 +34,10 @@ add_executable(
 
 target_include_directories(cusymint PRIVATE ${SRC_DIR})
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "DEBUG")
+endif()
+
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
 if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
