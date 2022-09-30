@@ -1,6 +1,7 @@
 #include "Power.cuh"
 
 #include "Symbol.cuh"
+#include <fmt/core.h>
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(Power)
@@ -45,7 +46,7 @@ namespace Sym {
     }
 
     std::string Power::to_string() const {
-        return "(" + arg1().to_string() + "^" + arg2().to_string() + ")";
+        return fmt::format("({}^{})", arg1().to_string(), arg2().to_string());
     }
 
     std::vector<Symbol> operator^(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {

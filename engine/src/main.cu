@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <fmt/core.h>
 #include <iostream>
 #include <vector>
 
@@ -16,26 +17,27 @@ static constexpr size_t BLOCK_SIZE = 1024;
 static constexpr size_t BLOCK_COUNT = 32;
 
 void test_substitutions() {
-    std::cout << "Testing manual substitutions" << std::endl;
+    fmt::print("Testing manual substitutions\n");
+
     std::vector<Sym::Symbol> ixpr = Sym::integral(Sym::var() ^ Sym::num(2));
-    std::cout << "Expression 1: " << ixpr.data()->to_string() << std::endl;
+    fmt::print("Expression 1: {}\n", ixpr.data()->to_string());
 
     std::vector<Sym::Symbol> ixpr2 = Sym::substitute(ixpr, Sym::cos(Sym::var()));
-    std::cout << "Expression 2: " << ixpr2.data()->to_string() << std::endl;
+    fmt::print("Expression 2: {}\n", ixpr2.data()->to_string());
 
     std::vector<Sym::Symbol> ixpr3 = Sym::substitute(ixpr2, Sym::var() * (Sym::e() ^ Sym::var()));
-    std::cout << "Expression 3: " << ixpr3.data()->to_string() << std::endl;
+    fmt::print("Expression 3: {}\n", ixpr3.data()->to_string());
 }
 
 void simplify_integrals(Sym::ExpressionArray<Sym::Integral>& integrals,
                         Sym::ExpressionArray<>& help_spaces) {
-    std::cout << "Simplifying" << std::endl;
+    fmt::print("Simplifying\n");
 
     Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
 }
 
 std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
-    std::cout << "Creating integrals" << std::endl;
+    fmt::print("Creating integrals\n");
     std::vector<std::vector<Sym::Symbol>> integrals{
         Sym::substitute(Sym::integral(Sym::cos(Sym::var())), Sym::pi() * Sym::var()),
         Sym::integral((Sym::sin(Sym::var()) ^ Sym::num(2.0)) +
@@ -60,9 +62,9 @@ std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
         Sym::integral(-Sym::num(-5.0))};
 
     for (const auto& integral : integrals) {
-        std::cout << integral.data()->to_string() << std::endl;
+        fmt::print("{}\n", integral.data()->to_string());
     }
-    std::cout << std::endl;
+    fmt::print("\n");
 
     return integrals;
 }
@@ -71,7 +73,7 @@ void check_and_apply_heuristics(Sym::ExpressionArray<Sym::Integral>& integrals,
                                 Sym::ExpressionArray<Sym::Integral>& integrals_swap,
                                 Sym::ExpressionArray<>& help_spaces,
                                 Util::DeviceArray<size_t>& applicability) {
-    std::cout << "Checking heuristics" << std::endl;
+    fmt::print("Creating heuristics\n");
 
     cudaDeviceSynchronize();
     Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, applicability);
@@ -89,28 +91,28 @@ void check_and_apply_heuristics(Sym::ExpressionArray<Sym::Integral>& integrals,
 
     std::swap(integrals, integrals_swap);
 
-    std::cout << std::endl;
+    fmt::print("\n");
 }
 
 void print_applicability(const Util::DeviceArray<size_t>& applicability) {
     const auto h_applicability = applicability.to_vector();
 
-    std::cout << "Applicability:" << std::endl;
+    fmt::print("Applicability:\n");
     for (size_t i = 0; i < h_applicability.size(); ++i) {
         if (i % Sym::MAX_INTEGRAL_COUNT == 0 && i != 0) {
-            std::cout << std::endl;
+            fmt::print("\n");
         }
 
-        std::cout << h_applicability[i] << ", ";
+        fmt::print("{}, ", h_applicability[i]);
     }
-    std::cout << std::endl;
+    fmt::print("\n");
 }
 
 void check_and_apply_known_itegrals(Sym::ExpressionArray<Sym::Integral>& integrals,
                                     Sym::ExpressionArray<Sym::Integral>& integrals_swap,
                                     Sym::ExpressionArray<>& help_spaces,
                                     Util::DeviceArray<size_t>& applicability) {
-    std::cout << "Checking for known integrals" << std::endl;
+    fmt::print("Checking for known integrals\n");
 
     cudaDeviceSynchronize();
     Sym::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, applicability);
@@ -128,24 +130,24 @@ void check_and_apply_known_itegrals(Sym::ExpressionArray<Sym::Integral>& integra
 
     std::swap(integrals, integrals_swap);
 
-    std::cout << std::endl;
+    fmt::print("\n");
 }
 
 void print_results(const Sym::ExpressionArray<Sym::Integral> integrals) {
     const auto h_integrals = integrals.to_vector();
 
-    std::cout << "Results (" << integrals.size() << "):" << std::endl;
+    fmt::print("Results:({}):\n", integrals.size());
     for (size_t int_idx = 0; int_idx < integrals.size(); ++int_idx) {
-        std::cout << h_integrals[int_idx].data()->to_string() << std::endl;
+        fmt::print("{}\n", h_integrals[int_idx].data()->to_string());
     }
 
-    std::cout << std::endl;
+    fmt::print("\n");
 }
 
 int main() {
     std::vector<std::vector<Sym::Symbol>> h_integrals = create_test_integrals();
 
-    std::cout << "Allocating and zeroing GPU memory" << std::endl << std::endl;
+    fmt::print("Allocating and zeroing GPU memory\n\n");
 
     Sym::ExpressionArray<Sym::Integral> integrals(h_integrals, Sym::INTEGRAL_MAX_SYMBOL_COUNT,
                                                   Sym::MAX_INTEGRAL_COUNT);

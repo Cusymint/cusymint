@@ -70,14 +70,13 @@ namespace Sym {
         std::vector<Symbol> expression_copy(expression()->size());
         expression()->copy_to(expression_copy.data());
 
-        std::string substitutions_str;
         if (substitution_count != 0) {
-            substitutions_str = ", " + first_substitution()->to_string();
             expression_copy.data()->substitute_variable_with_nth_substitution_name(
                 substitution_count - 1);
+            return fmt::format("Solution: {}, {}", expression_copy.data()->to_string(), first_substitution()->to_string());
         }
 
-        return "Solution: " + expression_copy.data()->to_string() + substitutions_str;
+        return fmt::format("Solution: {}", expression_copy.data()->to_string());
     }
 
     std::vector<Symbol> solution(const std::vector<Symbol>& arg) {
