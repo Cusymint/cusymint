@@ -60,7 +60,7 @@ namespace Sym {
     constexpr size_t TRANSFORM_GROUP_SIZE = 32;
     constexpr size_t MAX_EXPRESSION_COUNT = 256;
     constexpr size_t EXPRESSION_MAX_SYMBOL_COUNT = 256;
-    constexpr size_t APPLICABILITY_ARRAY_SIZE = MAX_CHECK_COUNT * MAX_EXPRESSION_COUNT;
+    constexpr size_t SCAN_ARRAY_SIZE = MAX_CHECK_COUNT * MAX_EXPRESSION_COUNT;
     constexpr size_t INTEGRAL_ARRAY_SIZE = MAX_EXPRESSION_COUNT * EXPRESSION_MAX_SYMBOL_COUNT;
 
     /*
@@ -106,6 +106,33 @@ namespace Sym {
      * @param expressions Wyrażenia do propagacji informacji o rozwiązaniach
      */
     __global__ void propagate_solved_subexpressions(ExpressionArray<> expressions);
+
+    /*
+     * @brief Oznacza SubexpressionCandidate wskazujące na SubexpressionVacancy rozwiązane przez
+     * innych kandydatów
+     *
+     * @param expressions Wyrażenia do sprawdzenia
+     * @param removability Wynik sprawdzania. `0` dla wyrażeń, dla których istnieje przodek
+     * rozwiązany w innej linii.
+     */
+    __global__ void find_redundand_expressions(const ExpressionArray<> expressions,
+                                               Util::DeviceArray<size_t> removability);
+
+    /*
+     * @brief Oznacza całki wskazujące na wyrażenia, które będą usunięte lub wskazujące na
+     * SubexpressionVacancy, które są rozwiązane
+     *
+     * @param integrals Całki do sprawdzenia
+     * @param expressions Wyrażenia, na które wskazują całki
+     * @param expressions_removability Wyrażenia, które mają być usunięte. `0` dla tych, które
+     * zostaną usunięte, `1` dla pozostałych
+     * @param integrals_removability Wynik sprawdzania. `0` dla całek, które wskazują na rozwiązane
+     * podwyrażenia, `1` w przeciwnym wypadku
+     */
+    __global__ void
+    find_redundand_integrals(const ExpressionArray<> integrals, const ExpressionArray<> expressions,
+                             const Util::DeviceArray<size_t> expressions_removability,
+                             Util::DeviceArray<size_t> integrals_removability);
 
     __global__ void check_heuristics_applicability(const ExpressionArray<Integral> integrals,
                                                    Util::DeviceArray<size_t> applicability);

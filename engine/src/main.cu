@@ -28,7 +28,8 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
         Sym::MAX_EXPRESSION_COUNT, Sym::EXPRESSION_MAX_SYMBOL_COUNT);
     Sym::ExpressionArray<> help_spaces(Sym::MAX_EXPRESSION_COUNT, Sym::EXPRESSION_MAX_SYMBOL_COUNT,
                                        integrals.size());
-    Util::DeviceArray<size_t> applicability(Sym::APPLICABILITY_ARRAY_SIZE, true);
+    Util::DeviceArray<size_t> scan_array_1(Sym::SCAN_ARRAY_SIZE, true);
+    Util::DeviceArray<size_t> scan_array_2(Sym::SCAN_ARRAY_SIZE, true);
 
     // TODO: Przenieść pierwszą całkę z `integral` do `intregrals` i dodać `SubexpressionVacancy`
 
@@ -36,15 +37,15 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
         Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
         cudaDeviceSynchronize();
 
-        Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, applicability);
+        Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_1);
         cudaDeviceSynchronize();
 
-        thrust::inclusive_scan(thrust::device, applicability.begin(), applicability.end(),
-                               applicability.data());
+        thrust::inclusive_scan(thrust::device, scan_array_1.begin(), scan_array_1.end(),
+                               scan_array_1.data());
         cudaDeviceSynchronize();
 
         Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions, help_spaces,
-                                                                applicability);
+                                                                scan_array_1);
         cudaDeviceSynchronize();
         std::swap(integrals, integrals_swap);
 
@@ -55,7 +56,22 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
         if (first_expression.data()->subexpression_vacancy.is_solved == 1) {
             // TODO: Zwycięstwo, jakoś teraz trzeba zwinąć całe drzewo, zrobić podstawienia i można
             // zwracać wynik
+            return std::vector<Sym::Symbol>();
         }
+
+        scan_array_1.zero_mem();
+        Sym::find_redundand_expressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1);
+        cudaDeviceSynchronize();
+
+        scan_array_2.zero_mem();
+        Sym::find_redundand_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
+                                                                   scan_array_1, scan_array_2);
+
+        thrust::inclusive_scan(thrust::device, scan_array_1.begin(), scan_array_1.end(),
+                               scan_array_1.data());
+        thrust::inclusive_scan(thrust::device, scan_array_2.begin(), scan_array_2.end(),
+                               scan_array_2.data());
+        cudaDeviceSynchronize();
     }
 
     return std::nullopt;
@@ -200,7 +216,7 @@ int main() {
     Sym::ExpressionArray<> help_spaces(Sym::EXPRESSION_MAX_SYMBOL_COUNT, Sym::MAX_EXPRESSION_COUNT,
                                        h_integrals.size());
 
-    Util::DeviceArray<size_t> applicability(Sym::APPLICABILITY_ARRAY_SIZE, true);
+    Util::DeviceArray<size_t> applicability(Sym::SCAN_ARRAY_SIZE, true);
 
     print_results(integrals);
 

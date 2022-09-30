@@ -388,8 +388,9 @@ namespace Sym {
         // niego i powtaża wszystko. W skrócie następuje propagacja informacji o rozwiązaniu z dołu
         // drzewa na samą górę.
 
-        // Na expr_idx = 0 jest tylko SubexpressionVacancy oryginalnej całki
-        for (size_t expr_idx = 1; expr_idx < expressions.size(); expr_idx += thread_count) {
+        // Na expr_idx = 0 jest tylko SubexpressionVacancy oryginalnej całki, więc pomijamy
+        for (size_t expr_idx = thread_idx + 1; expr_idx < expressions.size();
+             expr_idx += thread_count) {
             while (expr_idx != 0) {
                 if (expressions[expr_idx]->subexpression_candidate.subexpressions_left != 0) {
                     break;
@@ -405,6 +406,59 @@ namespace Sym {
                 // tylko jeden wątek tam przetrwa.
                 expr_idx = expressions[expr_idx]->subexpression_candidate.vacancy_expression_idx;
             }
+        }
+    }
+
+    __global__ void find_redundand_expressions(const ExpressionArray<> expressions,
+                                               Util::DeviceArray<size_t> removability) {
+        const size_t thread_count = Util::thread_count();
+        const size_t thread_idx = Util::thread_idx();
+
+        // Szukamy coraz wyżej w drzewie zależności, czy nie próbujemy rozwiązać czegoś, co zostało
+        // już rozwiązane w inny sposób.
+
+        // Na expr_idx = 0 jest tylko SubexpressionVacancy oryginalnej całki, więc pomijamy
+        for (size_t expr_idx = thread_idx + 1; expr_idx < expressions.size();
+             expr_idx += thread_count) {
+            size_t current_expr_idx = 0;
+            removability[expr_idx] = 1;
+
+            while (current_expr_idx != 0) {
+                const size_t& parent_idx =
+                    expressions[current_expr_idx]->subexpression_candidate.vacancy_expression_idx;
+                const size_t& parent_vacancy_idx =
+                    expressions[current_expr_idx]->subexpression_candidate.vacancy_idx;
+                const SubexpressionVacancy& parent_vacancy =
+                    expressions[parent_idx][parent_vacancy_idx].subexpression_vacancy;
+
+                if (parent_vacancy.is_solved == 1 &&
+                    parent_vacancy.solver_idx != current_expr_idx) {
+                    removability[expr_idx] = 0;
+                    break;
+                }
+
+                current_expr_idx = parent_idx;
+            }
+        }
+    }
+
+    __global__ void
+    find_redundand_integrals(const ExpressionArray<> integrals, const ExpressionArray<> expressions,
+                             const Util::DeviceArray<size_t> expressions_removability,
+                             Util::DeviceArray<size_t> integrals_removability) {
+        const size_t thread_count = Util::thread_count();
+        const size_t thread_idx = Util::thread_idx();
+
+        for (size_t int_idx = thread_idx + 1; int_idx < integrals.size(); int_idx += thread_count) {
+            const size_t& vacancy_expr_idx =
+                integrals[int_idx]->subexpression_candidate.vacancy_expression_idx;
+            const size_t& vacancy_idx = integrals[int_idx]->subexpression_candidate.vacancy_idx;
+
+            bool parent_expr_failed = expressions_removability[vacancy_expr_idx] == 0;
+            bool parent_vacancy_solved =
+                expressions[vacancy_expr_idx][vacancy_idx].subexpression_vacancy.is_solved == 1;
+
+            integrals_removability[int_idx] = parent_expr_failed || parent_vacancy_solved ? 0 : 1;
         }
     }
 
