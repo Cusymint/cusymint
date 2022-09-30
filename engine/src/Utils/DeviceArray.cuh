@@ -13,6 +13,7 @@ namespace Util {
      * wskaźnik (rozwiązanie ze względu na przekazywanie elementów tej klasy do kerneli CUDA)
      */
     template <class T> class DeviceArray {
+        // Liczba elementów T w tablicy
         size_t data_size = 0;
         T* data_ptr = nullptr;
         bool is_data_owner = false;
@@ -170,7 +171,7 @@ namespace Util {
         /*
          * @brief Wskaźnik do ostatniego elementu tablicy
          */
-        inline T* last() { return &data_ptr[data_size - 1]; }
+        inline T* last() { return at(data_size - 1); }
 
         ~DeviceArray() { free_data(); }
     };

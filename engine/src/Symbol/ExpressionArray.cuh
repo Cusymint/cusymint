@@ -12,8 +12,11 @@ namespace Sym {
      */
     template <class T = Symbol> class ExpressionArray {
         Util::DeviceArray<Symbol> data;
+        // Maksymalna liczba symboli w pojedynczym wyrażeniu
         size_t expression_size = 0;
+        // Maksymalna liczba wyrażeń w tablicy
         size_t expression_capacity = 0;
+        // Obecna liczba wyrażeń w tablicy
         size_t expression_count = 0;
 
         template <typename U> friend class ExpressionArray;
