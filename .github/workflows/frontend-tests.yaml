@@ -21,7 +21,7 @@ jobs:
           pub global activate melos
           echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
 
-      - name: Check melos install
+      - name: Check melos version
         run: melos --version
 
       - name: Bootstrap project
