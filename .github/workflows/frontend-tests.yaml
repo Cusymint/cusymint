@@ -1,0 +1,32 @@
+name: frontend-tests
+on:
+  pull_request:
+    types: [ labeled ]
+
+jobs:
+  tests:
+    if: ${{ github.event.label.name == 'front' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v1
+
+      - name: Install melos
+        run: |
+          pub global activate melos
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+
+      - name: Check melos install
+        run: melos --version
+
+      - name: Bootstrap project
+        run: melos bootstrap
+
+      - name: Run tests
+        run: melos test:all
+      
