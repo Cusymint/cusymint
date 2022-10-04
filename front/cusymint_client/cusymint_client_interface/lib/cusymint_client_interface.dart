@@ -3,7 +3,7 @@ library cusymint_client_interface;
 class Request {
   final String integralToBeSolved;
 
-  Request(this.integralToBeSolved);
+  const Request(this.integralToBeSolved);
 }
 
 class Response {
@@ -13,9 +13,9 @@ class Response {
   final String? outputInUtf;
   final String? outputInTex;
 
-  final List<ResponseErrors> errors;
+  final List<ResponseError> errors;
 
-  Response({
+  const Response({
     this.inputInUtf,
     this.inputInTex,
     this.outputInUtf,
@@ -26,10 +26,10 @@ class Response {
   bool get hasErrors => errors.isNotEmpty;
 }
 
-class ResponseErrors {
+class ResponseError {
   final String errorMessage;
 
-  ResponseErrors(this.errorMessage);
+  const ResponseError(this.errorMessage);
 }
 
 abstract class CusymintClient {
