@@ -134,39 +134,10 @@ namespace Sym {
                              const Util::DeviceArray<size_t> expressions_removability,
                              Util::DeviceArray<size_t> integrals_removability);
 
-    __global__ void check_heuristics_applicability(const ExpressionArray<Integral> integrals,
-                                                   Util::DeviceArray<size_t> applicability);
-    __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
-                                     ExpressionArray<> destinations, ExpressionArray<> help_spaces,
-                                     const Util::DeviceArray<size_t> applicability);
-
-    /*
-     * @brief Sprawdza które całki wskazują na wyrażenia rozwiązane lub takie, które będą usunięte
-     *
-     * @param integrals Całki do sprawdzenia
-     * @param expressions_removability Wyrażenia oznaczone jako do usunięcia (0 -> będzie usunięte)
-     * @param integrals_removability Oznaczenie całek które można usunąć (0 -> można usunąć)
-     */
-    __global__ void did_integrals_expire(const ExpressionArray<SubexpressionCandidate> integrals,
-                                         const size_t* const expressions_removability,
-                                         size_t* const integral_removability);
-
-    /*
-     * @brief Sprawdza które całki wskazują na wyrażenia, które będą usunięte
-     *
-     * @param expressions Wyrażenia na które wskazują całki
-     * @param integrals Całki do sprawdzenia
-     * @param expressions_removability Wyrażenia oznaczone jako do usunięcia (0 -> będzie usunięte)
-     * @param integrals_removability Oznaczenie całek które można usunąć (0 -> można usunąć)
-     */
-    __global__ void are_integrals_failed(const ExpressionArray<> expressions,
-                                         const ExpressionArray<SubexpressionCandidate> integrals,
-                                         const size_t* const expressions_removability,
-                                         size_t* const integral_removability);
-
     /*
      * @brief Przenosi wyrażenia z `expressions` do `destinations` pomijając te, które wyznacza
-     * `removability`. Aktualizuje też `winner_idx` i `vacancy_expression_idx`
+     * `removability`. Aktualizuje też `solver_idx` i `vacancy_expression_idx`, oraz zeruje
+     * `candidate_integral_count` (przygotowanie do sprawdzania heurystyk)
      *
      * @param expressions Wyrażenia do przeniesienia
      * @param removability Lokalizacje wyrażeń w `destinations`. Jeśli `removability[i] ==
@@ -174,40 +145,60 @@ namespace Sym {
      * `destinations[removability[i] - 1]`.
      * @param destinations Docelowe miejsce zapisu wyrażeń
      */
-    __global__ void remove_expressions(const ExpressionArray<> expressions,
-                                       const Util::DeviceArray<size_t> removability,
-                                       ExpressionArray<> destinations);
+    __global__ void remove_expressions_1(const ExpressionArray<> expressions,
+                                         const Util::DeviceArray<size_t> removability,
+                                         ExpressionArray<> destinations);
 
     /*
-     * @brief Usuwa wyrażenia z expressions wskazane przez removability oraz
-     * aktualizuje wszystkie odniesienia do nich w `subexpression_candidates`.
+     * @brief Przenosi całki z `integrals` do `destinations` pomijając te, które wyznacza
+     * `removability`. Aktualizuje też `vacancy_expression_idx`.
      *
-     * @param expressions Wyrażenia z których część ma być usunięta
-     * @param removability inclusive scan wyrażeń które zostają, wyrażenie `expressions[i]` będzie
-     * zachowane jeśli `removability[i] - removability[i - 1] != 0` lub dla `i == 0` gdy
-     * `removability[0] != 0`.
-     * @param subexpression_candidates Kandydaci do podstawień w podwyrażeniach w wyrażeniach w
-     * `expressions`. Zakłada, że nie znajdują się w tej tablicy żadne podwyrażenia odnoszące
-     * się do `expressions`
-     * @param destinations Miejsce gdzie zapisane będą wyrażenia
-     */
-    __global__ void
-    remove_expressions(ExpressionArray<> expressions, Util::DeviceArray<size_t> removability,
-                       ExpressionArray<SubexpressionCandidate> subexpression_candidates,
-                       ExpressionArray<> destinations);
-
-    /*
-     * @brief Przenosi całki do `destinations`, pozostawiając te wskazane w `removability`
-     *
-     * @param integrals Całki do przeniesienia do `destinations`
-     * @param removability inclusive scan całek które zostają, całka `integrals[i]` będzie zachowana
-     * jeśli `removability[i] - removability[i - 1] != 0` lub dla `i == 0` gdy `removability[0] !=
-     * 0`.
-     * @param expressions Wyrażenia w których SubexpressionVacancy zostaną zaktualizowane.
+     * @param integrals Całki do przeniesienia
+     * @param integrals_removability Lokalizacje wyrażeń w `destinations`. Jeśli
+     * `integrals_removability[i] == integrals_removability[i - 1]` lub `i == 0 && removability[i]
+     * != 0` to wyrażenie przenoszone jest na `destinations[removability[i] - 1]`.
+     * @param expressions_removability To samo co `integrals_removability`, tylko że dla wyrażeń na
+     * które wskazuję SubexpressionCandidate w `integrals`
+     * @param destinations Docelowe miejsce zapisu całek
      */
     __global__ void remove_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
-                                     const Util::DeviceArray<size_t> removability,
-                                     ExpressionArray<> destinations);
+                                     const Util::DeviceArray<size_t> integrals_removability,
+                                     const Util::DeviceArray<size_t> expressions_removability,
+                                     ExpressionArray<SubexpressionCandidate> destinations);
+
+    /*
+     * @brief Sprawdza, które heurystyki pasują do których całek oraz aktualizuje
+     * `candidate_integral_count` i `candidate_expression_count` w wyrażeniach, na które wskazywać
+     * będą utworzone później całki.
+     *
+     * @param integrals Całki do sprawdzenia
+     * @param expressions Wyrażenia na które wskazują SubexpressionCandidate w `integrals`.
+     * @param applicability Wynik sprawdzania zastosowalności heurystyk. Jeśli całka na indeksie `i`
+     * pasuje do heurystyki na indeksie `j`, to applicability[MAX_EXPRESSION_COUNT * j + i] będzie
+     * ustawione na `1`.
+     */
+    __global__ void
+    check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
+                                   ExpressionArray<> expressions,
+                                   Util::DeviceArray<size_t> applicability);
+
+    __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
+                                     ExpressionArray<> destinations, ExpressionArray<> help_spaces,
+                                     const Util::DeviceArray<size_t> applicability);
+
+    /*
+     * @brief Sprawdza które całki wskazują na wyrażenia, które będą usunięte
+     *
+     * @param expressions Wyrażenia na które wskazują całki
+     * @param integrals Całki do sprawdzenia
+     * @param expressions_removability Wyrażenia oznaczone jako do usunięcia (0 -> będzie
+     * usunięte)
+     * @param integrals_removability Oznaczenie całek które można usunąć (0 -> można usunąć)
+     */
+    __global__ void are_integrals_failed(const ExpressionArray<> expressions,
+                                         const ExpressionArray<SubexpressionCandidate> integrals,
+                                         const size_t* const expressions_removability,
+                                         size_t* const integral_removability);
 
     /*
      * @brief Zeruje `candidate_integral_count`

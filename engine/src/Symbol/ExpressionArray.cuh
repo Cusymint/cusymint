@@ -41,6 +41,14 @@ namespace Sym {
             expression_capacity(other.expression_capacity),
             expression_count(other.expression_count) {}
 
+        template <class U>
+        ExpressionArray(ExpressionArray<U>&& other) // NOLINT(google-explicit-constructor)
+            :
+            data(std::forward(other.data)),
+            expression_size(other.expression_size),
+            expression_capacity(other.expression_capacity),
+            expression_count(other.expression_count) {}
+
         template <class U> ExpressionArray& operator=(const ExpressionArray<U>& other) {
             data = other.data;
             expression_size = other.expression_size;

@@ -37,7 +37,7 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
         Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
         cudaDeviceSynchronize();
 
-        Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_1);
+        Sym::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_1);
         cudaDeviceSynchronize();
 
         thrust::inclusive_scan(thrust::device, scan_array_1.begin(), scan_array_1.end(),
@@ -71,6 +71,18 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
                                scan_array_1.data());
         thrust::inclusive_scan(thrust::device, scan_array_2.begin(), scan_array_2.end(),
                                scan_array_2.data());
+        cudaDeviceSynchronize();
+
+        Sym::remove_expressions_1<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1,
+                                                               expressions_swap);
+        std::swap(expressions, expressions_swap);
+        Sym::remove_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_2, scan_array_1,
+                                                           integrals_swap);
+        std::swap(integrals, integrals_swap);
+        cudaDeviceSynchronize();
+
+        Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
+                                                                         scan_array_1);
         cudaDeviceSynchronize();
     }
 
@@ -136,7 +148,7 @@ void check_and_apply_heuristics(Sym::ExpressionArray<Sym::Integral>& integrals,
     std::cout << "Checking heuristics" << std::endl;
 
     cudaDeviceSynchronize();
-    Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, applicability);
+    // Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, applicability);
 
     cudaDeviceSynchronize();
     thrust::inclusive_scan(thrust::device, applicability.begin(), applicability.end(),

@@ -297,6 +297,16 @@ namespace Sym {
         return solution->expression();
     }
 
+    __global__ void simplify(ExpressionArray<> expressions, ExpressionArray<> help_spaces) {
+        const size_t thread_count = Util::thread_count();
+        const size_t thread_idx = Util::thread_idx();
+
+        for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
+             expr_idx += thread_count) {
+            expressions[expr_idx]->simplify(help_spaces[expr_idx]);
+        }
+    }
+
     __device__ void check_applicability(const ExpressionArray<Integral>& integrals,
                                         Util::DeviceArray<size_t>& applicability,
                                         const ApplicabilityCheck* const checks,
@@ -454,53 +464,64 @@ namespace Sym {
                 integrals[int_idx]->subexpression_candidate.vacancy_expression_idx;
             const size_t& vacancy_idx = integrals[int_idx]->subexpression_candidate.vacancy_idx;
 
-            bool parent_expr_failed = expressions_removability[vacancy_expr_idx] == 0;
-            bool parent_vacancy_solved =
+            const bool parent_expr_failed = expressions_removability[vacancy_expr_idx] == 0;
+            const bool parent_vacancy_solved =
                 expressions[vacancy_expr_idx][vacancy_idx].subexpression_vacancy.is_solved == 1;
 
             integrals_removability[int_idx] = parent_expr_failed || parent_vacancy_solved ? 0 : 1;
         }
     }
 
-    __global__ void check_heuristics_applicability(const ExpressionArray<Integral> integrals,
-                                                   Util::DeviceArray<size_t> applicability) {
-        check_applicability(integrals, applicability, heuristic_checks, HEURISTIC_CHECK_COUNT);
-    }
-
-    __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
-                                     ExpressionArray<> destinations, ExpressionArray<> help_spaces,
-                                     const Util::DeviceArray<size_t> applicability) {
-        apply_transforms(integrals, destinations, help_spaces, applicability,
-                         heuristic_applications, HEURISTIC_CHECK_COUNT);
-    }
-
-    __global__ void simplify(ExpressionArray<> expressions, ExpressionArray<> help_spaces) {
+    __global__ void remove_expressions_1(const ExpressionArray<> expressions,
+                                         const Util::DeviceArray<size_t> removability,
+                                         ExpressionArray<> destinations) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
-        for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
-             expr_idx += thread_count) {
-            expressions[expr_idx]->simplify(help_spaces[expr_idx]);
+        for (size_t expr_idx = 0; expr_idx < expressions.size(); expr_idx += thread_count) {
+            if (!is_zero_size(expr_idx, removability)) {
+                continue;
+            }
+
+            Symbol* destination = destinations[removability[expr_idx] - 1];
+            expressions[expr_idx]->copy_to(destination);
+
+            if (destination->is(Type::SubexpressionCandidate)) {
+                size_t& vacancy_expr_idx =
+                    destination->subexpression_candidate.vacancy_expression_idx;
+                vacancy_expr_idx = removability[vacancy_expr_idx] - 1;
+            }
+
+            for (size_t symbol_idx = 0; symbol_idx < destination->size(); ++symbol_idx) {
+                if (destination[symbol_idx].is(Type::SubexpressionVacancy) &&
+                    destination->subexpression_vacancy.is_solved == 1) {
+                    size_t& solver_idx = destination->subexpression_vacancy.solver_idx;
+                    solver_idx = removability[solver_idx] - 1;
+                    // Przygotowanie do liczenia heurystyk
+                    destination->subexpression_vacancy.candidate_integral_count = 0;
+                }
+            }
         }
     }
 
-    __global__ void did_integrals_expire(const ExpressionArray<> expressions,
-                                         const Util::DeviceArray<size_t> expressions_removability,
-                                         const ExpressionArray<SubexpressionCandidate> integrals,
-                                         Util::DeviceArray<size_t> integrals_removability) {
+    __global__ void remove_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
+                                     const Util::DeviceArray<size_t> integrals_removability,
+                                     const Util::DeviceArray<size_t> expressions_removability,
+                                     ExpressionArray<SubexpressionCandidate> destinations) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
-        for (size_t int_idx = 0; int_idx < integrals.size(); int_idx += thread_count) {
-            const size_t expr_idx = integrals[int_idx]->vacancy_expression_idx;
-            const size_t subexpr_idx = integrals[int_idx]->vacancy_idx;
+        for (size_t int_idx = thread_idx; int_idx < integrals.size(); int_idx += thread_count) {
+            if (!is_zero_size(int_idx, integrals_removability)) {
+                continue;
+            }
 
-            const bool will_expression_be_removed = expressions_removability[expr_idx] == 0;
-            const bool is_subexpression_solved =
-                expressions[expr_idx][subexpr_idx].subexpression_vacancy.is_solved;
+            SubexpressionCandidate& destination =
+                *destinations[integrals_removability[int_idx] - 1];
+            integrals[int_idx]->symbol()->copy_to(destination.symbol());
 
-            integrals_removability[int_idx] =
-                is_subexpression_solved || will_expression_be_removed ? 0 : 1;
+            size_t& vacancy_expr_idx = destination.vacancy_expression_idx;
+            vacancy_expr_idx = expressions_removability[vacancy_expr_idx] - 1;
         }
     }
 
@@ -516,67 +537,37 @@ namespace Sym {
         }
     }
 
-    __global__ void remove_expressions(const ExpressionArray<> expressions,
-                                       const Util::DeviceArray<size_t> removability,
-                                       ExpressionArray<> destinations) {
-        const size_t thread_count = Util::thread_count();
-        const size_t thread_idx = Util::thread_idx();
-
-        for (size_t expr_idx = 0; expr_idx < expressions.size(); expr_idx += thread_count) {
-            if (is_zero_size(expr_idx, removability)) {
-                Symbol* destination = destinations[removability[expr_idx] - 1];
-                expressions[expr_idx]->copy_to(destination);
-
-                if (destination->is(Type::SubexpressionCandidate)) {
-                    size_t& vacancy_expr_idx =
-                        destination->subexpression_candidate.vacancy_expression_idx;
-                    vacancy_expr_idx = removability[vacancy_expr_idx] - 1;
-                }
-
-                for (size_t symbol_idx = 0; symbol_idx < destination->size(); ++symbol_idx) {
-                    if (destination[symbol_idx].is(Type::SubexpressionVacancy) &&
-                        destination->subexpression_vacancy.is_solved) {
-                        size_t& solver_idx = destination->subexpression_vacancy.solver_idx;
-                        solver_idx = removability[solver_idx] - 1;
-                    }
-                }
-            }
-        }
-    }
-
     __global__ void
-    remove_expressions(ExpressionArray<> expressions, const Util::DeviceArray<size_t> removability,
-                       ExpressionArray<SubexpressionCandidate> subexpression_candidates,
-                       ExpressionArray<> destinations) {
+    check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
+                                   ExpressionArray<> expressions,
+                                   Util::DeviceArray<size_t> applicability) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
-        for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
-             expr_idx += thread_count) {
-            if (is_zero_size(expr_idx, removability)) {
-                const size_t destination_idx = removability[expr_idx] - 1;
-                expressions[expr_idx]->copy_to(destinations[destination_idx]);
-            }
-        }
+        const size_t check_step = thread_count / TRANSFORM_GROUP_SIZE;
 
-        for (size_t candidate_idx = thread_idx; candidate_idx < subexpression_candidates.size();
-             candidate_idx += thread_count) {
-            const size_t expr_idx = subexpression_candidates[candidate_idx]->vacancy_expression_idx;
-            subexpression_candidates[candidate_idx]->vacancy_expression_idx =
-                removability[expr_idx] - 1;
+        for (size_t check_idx = thread_idx / TRANSFORM_GROUP_SIZE;
+             check_idx < HEURISTIC_CHECK_COUNT; check_idx += check_step) {
+            for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
+                 int_idx += TRANSFORM_GROUP_SIZE) {
+                size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
+                applicability[appl_idx] =
+                    heuristic_checks[check_idx](&integrals[int_idx]->arg().integral);
+
+                const size_t& vacancy_expr_idx = integrals[int_idx]->vacancy_expression_idx;
+                const size_t& vacancy_idx = integrals[int_idx]->vacancy_idx;
+                SubexpressionVacancy& vacancy =
+                    expressions[vacancy_expr_idx][vacancy_idx].subexpression_vacancy;
+                atomicAdd(&vacancy.candidate_integral_count, 1);
+            }
         }
     }
 
-    __global__ void remove_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
-                                     const Util::DeviceArray<size_t> removability,
-                                     ExpressionArray<> destinations) {
-        const size_t thread_count = Util::thread_count();
-        const size_t thread_idx = Util::thread_idx();
-
-        for (size_t int_idx = thread_idx; int_idx < integrals.size(); int_idx += thread_count) {
-            if (is_zero_size(int_idx, removability)) {
-            }
-        }
+    __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
+                                     ExpressionArray<> destinations, ExpressionArray<> help_spaces,
+                                     const Util::DeviceArray<size_t> applicability) {
+        apply_transforms(integrals, destinations, help_spaces, applicability,
+                         heuristic_applications, HEURISTIC_CHECK_COUNT);
     }
 
     __global__ void zero_candidate_integral_count(ExpressionArray<> expressions) {
