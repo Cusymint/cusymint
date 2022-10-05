@@ -5,8 +5,15 @@ import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final _controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -26,28 +33,39 @@ class HomePage extends StatelessWidget {
             },
             child: const Icon(Icons.refresh),
           ),
-          body: Column(
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: CuTextField(),
-              ),
-              if (state is ClientInitial)
-                ElevatedButton(
-                  onPressed: () =>
-                      clientCubit.solveIntegral('x^2 + sin(x) / cos(x)'),
-                  child: const Text('Solve integral'),
+          body: Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SizedBox(
+                    width: 400,
+                    child: CuTextField(
+                      controller: _controller,
+                    ),
+                  ),
                 ),
-              if (state is ClientLoading) const _LoadingBody(),
-              if (state is ClientSuccess)
-                _SuccessBody(
-                  response: state.response,
-                ),
-              if (state is ClientFailure)
-                _FailureBody(
-                  errors: state.errors,
-                ),
-            ],
+                if (state is ClientInitial)
+                  ElevatedButton(
+                    onPressed: () async {
+                      final integralToBeSolved = _controller.text;
+                      await clientCubit.solveIntegral(integralToBeSolved);
+                    },
+                    child: const Text('Solve integral'),
+                  ),
+                if (state is ClientLoading) const _LoadingBody(),
+                if (state is ClientSuccess)
+                  _SuccessBody(
+                    response: state.response,
+                  ),
+                if (state is ClientFailure)
+                  _FailureBody(
+                    errors: state.errors,
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -62,11 +80,20 @@ class _SuccessBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CuCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: TexView(response.outputInTex!, fontScale: 2),
-      ),
+    return Column(
+      children: [
+        Text(
+          'Integral solved successfully',
+        ),
+        Center(
+          child: CuCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: TexView(response.outputInTex!, fontScale: 2),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
