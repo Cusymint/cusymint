@@ -18,7 +18,7 @@ jobs:
 
       - name: Install melos
         run: |
-          pub global activate melos
+          dart pub global activate melos
           echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
 
       - name: Check melos version
