@@ -1,5 +1,6 @@
 {
     "enterIntegral": "Wpisz całkę",
     "tryExamples": "Lub spróbuj przykładów",
-    "foundResult": "Znaleziono wynik w {timeInMs} ms"
+    "foundResult": "Znaleziono wynik w {timeInMs} ms",
+    "encounteredErrors": "Wystąpiły błędy:"
 }
