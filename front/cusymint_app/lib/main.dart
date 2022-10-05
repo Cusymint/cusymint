@@ -1,4 +1,4 @@
-import 'package:cusymint_app/features/l10n/pages/l10n_example_page.dart';
+import 'package:cusymint_app/features/home/pages/home_page.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +18,7 @@ class CusymintApp extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       title: 'cusymint',
-      home: const L10nExamplePage(),
+      home: const HomePage(),
     );
   }
 }

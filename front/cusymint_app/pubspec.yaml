@@ -10,8 +10,13 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_bloc: ^8.1.1
+
   cusymint_l10n:
     path: ../cusymint_l10n
+
+  cusymint_client_mock:
+    path: ../cusymint_client/cusymint_client_mock
     
   flutter_math_fork: ^0.6.3+1
 
@@ -20,6 +25,8 @@ dev_dependencies:
     sdk: flutter
 
   golden_toolkit: ^0.13.0
+
+  bloc_test: ^9.1.0
 
   flutter_lints: ^2.0.0
 
