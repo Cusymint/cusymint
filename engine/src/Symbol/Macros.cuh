@@ -141,11 +141,11 @@ namespace Sym {
         return new_arg1_size + new_arg2_size + 1;                                             \
     }
 
-#define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                            \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                          \
-        fmt::print(stderr, "ERROR: compress_reverse_to used on unsupported type: {}\n", #_name); \
-        Util::crash("");                                                                         \
-        return 0;                                                                                \
+#define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                              \
+        printf("ERROR: compress_reverse_to used on unsupported type: %s\n", #_name); \
+        Util::crash("");                                                             \
+        return 0;                                                                    \
     }
 
 #define DEFINE_INTO_DESTINATION_OPERATOR(_name)                                        \
