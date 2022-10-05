@@ -17,6 +17,9 @@ dependencies:
 
   cusymint_client_mock:
     path: ../cusymint_client/cusymint_client_mock
+
+  cusymint_ui:
+    path: ../cusymint_ui
     
   flutter_math_fork: ^0.6.3+1
 

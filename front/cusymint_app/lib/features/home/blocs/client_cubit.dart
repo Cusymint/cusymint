@@ -34,7 +34,7 @@ class ClientCubit extends Cubit<ClientState> {
     }
   }
 
-  Future<void> reset() async {
+  void reset() {
     emit(const ClientInitial());
   }
 }
