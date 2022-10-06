@@ -47,7 +47,7 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
         Sym::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions, help_spaces,
                                                                 scan_array_1);
         cudaDeviceSynchronize();
-        std::swap(integrals, integrals_swap);
+        expressions.increment_size_from_device(scan_array_1.last());
 
         Sym::propagate_solved_subexpressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions);
         cudaDeviceSynchronize();
@@ -76,14 +76,31 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
         Sym::remove_expressions_1<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1,
                                                                expressions_swap);
         std::swap(expressions, expressions_swap);
+        expressions.resize_from_device(scan_array_1.last());
+
         Sym::remove_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_2, scan_array_1,
                                                            integrals_swap);
         std::swap(integrals, integrals_swap);
+        integrals.resize_from_device(scan_array_2.last());
         cudaDeviceSynchronize();
 
-        Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
-                                                                         scan_array_1);
+        Sym::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(
+            integrals, expressions, scan_array_1, scan_array_2);
         cudaDeviceSynchronize();
+
+        thrust::inclusive_scan(thrust::device, scan_array_1.begin(), scan_array_1.end(),
+                               scan_array_1.data());
+        thrust::inclusive_scan(thrust::device, scan_array_2.begin(), scan_array_2.end(),
+                               scan_array_2.data());
+        cudaDeviceSynchronize();
+
+        Sym::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, expressions,
+                                                           help_spaces, scan_array_1, scan_array_2);
+        cudaDeviceSynchronize();
+
+        std::swap(integrals, integrals_swap);
+        integrals.resize_from_device(scan_array_1.last());
+        expressions.increment_size_from_device(scan_array_2.last());
     }
 
     return std::nullopt;
@@ -155,8 +172,8 @@ void check_and_apply_heuristics(Sym::ExpressionArray<Sym::Integral>& integrals,
                            applicability.data());
 
     cudaDeviceSynchronize();
-    Sym::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_spaces,
-                                                       applicability);
+    // Sym::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_spaces,
+    //                                                    applicability);
     integrals.resize_from_device(applicability.last());
     integrals_swap.resize(integrals.size());
     help_spaces.resize(integrals.size());

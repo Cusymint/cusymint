@@ -127,6 +127,18 @@ namespace Sym {
         }
 
         /*
+         * @brief Dodaje wartość z GPU do liczby wyrażeń
+         *
+         * @param expression_count_increment Wskaźnik do nowej liczby wyrażeń.
+         */
+        void increment_size_from_device(const size_t* const expression_count_increment) {
+            size_t increment = 0;
+            cudaMemcpy(&increment, expression_count_increment, sizeof(size_t),
+                       cudaMemcpyDeviceToHost);
+            expression_count += increment;
+        }
+
+        /*
          * @brief Maksymalny rozmiar wyrażenia
          */
         __host__ __device__ size_t expression_max_size() const { return expression_size; }

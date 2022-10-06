@@ -51,12 +51,12 @@ namespace {
 }
 
 namespace Sym {
-    __device__ const ApplicabilityCheck known_integral_checks[] = {
+    __device__ const KnownIntegralCheck known_integral_checks[] = {
         is_single_variable, is_simple_variable_power, is_variable_exponent,
         is_simple_sine,     is_simple_cosine,         is_constant,
         is_known_arctan};
 
-    __device__ const IntegralTransform known_integral_applications[] = {
+    __device__ const KnownIntegralTransform known_integral_applications[] = {
         integrate_single_variable, integrate_simple_variable_power, integrate_variable_exponent,
         integrate_simple_sine,     integrate_simple_cosine,         integrate_constant,
         integrate_arctan};
@@ -65,17 +65,17 @@ namespace Sym {
                   "Different number of heuristics and applications defined");
 
     static_assert(sizeof(known_integral_checks) ==
-                      sizeof(ApplicabilityCheck) * KNOWN_INTEGRAL_COUNT,
+                      sizeof(KnownIntegralCheck) * KNOWN_INTEGRAL_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
-    __device__ const ApplicabilityCheck heuristic_checks[] = {is_function_of_ex};
+    __device__ const HeuristicCheck heuristic_checks[] = {is_function_of_ex};
 
-    __device__ const IntegralTransform heuristic_applications[] = {transform_function_of_ex};
+    __device__ const HeuristicApplication heuristic_applications[] = {transform_function_of_ex};
 
     static_assert(sizeof(heuristic_checks) == sizeof(heuristic_applications),
                   "Different number of heuristics and applications defined");
 
-    static_assert(sizeof(heuristic_checks) == sizeof(ApplicabilityCheck) * HEURISTIC_CHECK_COUNT,
+    static_assert(sizeof(heuristic_checks) == sizeof(KnownIntegralCheck) * HEURISTIC_CHECK_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
     __device__ Symbol ex_function[3];
@@ -87,22 +87,24 @@ namespace Sym {
         power->seal();
     }
 
-    __device__ size_t is_function_of_ex(const Integral* const integral) {
+    __device__ HeuristicCheckResult is_function_of_ex(const Integral* const integral) {
         // TODO: Move somewhere so that it's initialized only once and not every time this function
         // is called
         init_ex_function();
-        return integral->integrand()->is_function_of(ex_function) ? 1 : 0;
+        return {integral->integrand()->is_function_of(ex_function) ? 1UL : 0UL, 0UL};
     }
 
     __device__ void transform_function_of_ex(const Integral* const integral,
-                                             Symbol* const destination, Symbol* const help_space) {
+                                             Symbol* const integral_dst,
+                                             Symbol* const /*expression_dst*/,
+                                             Symbol* const help_space) {
         // TODO: Move somewhere so that it's initialized only once and not every time this function
         // is called
         init_ex_function();
         Symbol variable{};
         variable.variable = Variable::create();
 
-        integral->integrate_by_substitution_with_derivative(ex_function, &variable, destination,
+        integral->integrate_by_substitution_with_derivative(ex_function, &variable, integral_dst,
                                                             help_space);
     }
 
@@ -309,7 +311,7 @@ namespace Sym {
 
     __device__ void check_applicability(const ExpressionArray<Integral>& integrals,
                                         Util::DeviceArray<size_t>& applicability,
-                                        const ApplicabilityCheck* const checks,
+                                        const KnownIntegralCheck* const checks,
                                         const size_t check_count) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
@@ -329,7 +331,7 @@ namespace Sym {
     __device__ void
     apply_transforms(const ExpressionArray<Integral>& integrals, ExpressionArray<>& destinations,
                      ExpressionArray<>& help_spaces, const Util::DeviceArray<size_t>& applicability,
-                     const IntegralTransform* const transforms, const size_t transform_count) {
+                     const KnownIntegralTransform* const transforms, const size_t transform_count) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -483,23 +485,22 @@ namespace Sym {
                 continue;
             }
 
-            Symbol* destination = destinations[removability[expr_idx] - 1];
-            expressions[expr_idx]->copy_to(destination);
+            Symbol& destination = *destinations[removability[expr_idx] - 1];
+            expressions[expr_idx]->copy_to(&destination);
 
-            if (destination->is(Type::SubexpressionCandidate)) {
-                size_t& vacancy_expr_idx =
-                    destination->subexpression_candidate.vacancy_expression_idx;
-                vacancy_expr_idx = removability[vacancy_expr_idx] - 1;
-            }
+            destination.if_is_do<SubexpressionCandidate>([&removability](auto& dst) {
+                dst.vacancy_expression_idx = removability[dst.vacancy_expression_idx] - 1;
+            });
 
-            for (size_t symbol_idx = 0; symbol_idx < destination->size(); ++symbol_idx) {
-                if (destination[symbol_idx].is(Type::SubexpressionVacancy) &&
-                    destination->subexpression_vacancy.is_solved == 1) {
-                    size_t& solver_idx = destination->subexpression_vacancy.solver_idx;
-                    solver_idx = removability[solver_idx] - 1;
-                    // Przygotowanie do liczenia heurystyk
-                    destination->subexpression_vacancy.candidate_integral_count = 0;
-                }
+            for (size_t symbol_idx = 0; symbol_idx < destination.size(); ++symbol_idx) {
+                destination[symbol_idx].if_is_do<SubexpressionVacancy>([&removability](auto& vac) {
+                    if (vac.is_solved != 1) {
+                        return;
+                    }
+
+                    vac.solver_idx = removability[vac.solver_idx] - 1;
+                    vac.candidate_integral_count = 0;
+                });
             }
         }
     }
@@ -540,7 +541,8 @@ namespace Sym {
     __global__ void
     check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
                                    ExpressionArray<> expressions,
-                                   Util::DeviceArray<size_t> applicability) {
+                                   Util::DeviceArray<size_t> new_integrals_flags,
+                                   Util::DeviceArray<size_t> new_expressions_flags) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -551,8 +553,10 @@ namespace Sym {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
                 size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
-                applicability[appl_idx] =
+                HeuristicCheckResult result =
                     heuristic_checks[check_idx](&integrals[int_idx]->arg().integral);
+                new_integrals_flags[appl_idx] = result.new_integrals;
+                new_expressions_flags[appl_idx] = result.new_expressions;
 
                 const size_t& vacancy_expr_idx = integrals[int_idx]->vacancy_expression_idx;
                 const size_t& vacancy_idx = integrals[int_idx]->vacancy_idx;
@@ -564,21 +568,28 @@ namespace Sym {
     }
 
     __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
-                                     ExpressionArray<> destinations, ExpressionArray<> help_spaces,
-                                     const Util::DeviceArray<size_t> applicability) {
-        apply_transforms(integrals, destinations, help_spaces, applicability,
-                         heuristic_applications, HEURISTIC_CHECK_COUNT);
-    }
-
-    __global__ void zero_candidate_integral_count(ExpressionArray<> expressions) {
+                                     ExpressionArray<> integrals_destinations,
+                                     ExpressionArray<> expressions_destinations,
+                                     ExpressionArray<> help_spaces,
+                                     const Util::DeviceArray<size_t> new_integrals_indices,
+                                     const Util::DeviceArray<size_t> new_expressions_indices) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
-        for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
-             expr_idx += thread_count) {
-            for (size_t symbol_idx = 0; symbol_idx < expressions[expr_idx]->size(); ++symbol_idx) {
-                expressions[expr_idx][symbol_idx].if_is_do<SubexpressionVacancy>(
-                    [](const auto sym) { sym->candidate_integral_count = 0; });
+        const size_t trans_step = thread_count / TRANSFORM_GROUP_SIZE;
+
+        for (size_t trans_idx = thread_idx / TRANSFORM_GROUP_SIZE;
+             trans_idx < HEURISTIC_CHECK_COUNT; trans_idx += trans_step) {
+            for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
+                 int_idx += TRANSFORM_GROUP_SIZE) {
+                const size_t appl_index = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
+                if (is_zero_size(appl_index, new_integrals_indices)) {
+                    const size_t int_dst_idx = new_integrals_indices[appl_index] - 1;
+                    const size_t expr_dst_idx = new_expressions_indices[appl_index] - 1;
+                    heuristic_applications[trans_idx](
+                        integrals[int_idx], integrals_destinations[int_dst_idx],
+                        expressions_destinations[expr_dst_idx], help_spaces[int_dst_idx]);
+                }
             }
         }
     }

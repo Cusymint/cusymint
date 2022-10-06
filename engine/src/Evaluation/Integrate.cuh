@@ -6,8 +6,21 @@
 #include "Symbol/Symbol.cuh"
 
 namespace Sym {
-    using ApplicabilityCheck = size_t (*)(const Integral* const);
-    using IntegralTransform = void (*)(const Integral* const, Symbol* const, Symbol* const);
+    struct HeuristicCheckResult {
+        __host__ __device__ HeuristicCheckResult(const size_t new_integrals,
+                                                 const size_t new_expressions) :
+            new_integrals(new_integrals), new_expressions(new_expressions) {}
+
+        size_t new_integrals;
+        size_t new_expressions;
+    };
+
+    using HeuristicCheck = HeuristicCheckResult (*)(const Integral* const);
+    using HeuristicApplication = void (*)(const Integral* const, Symbol* const, Symbol* const,
+                                          Symbol* const);
+
+    using KnownIntegralCheck = size_t (*)(const Integral* const);
+    using KnownIntegralTransform = void (*)(const Integral* const, Symbol* const, Symbol* const);
 
     __device__ size_t is_single_variable(const Integral* const integral);
     __device__ size_t is_simple_variable_power(const Integral* const integral);
@@ -34,10 +47,12 @@ namespace Sym {
     __device__ void integrate_arctan(const Integral* const integral, Symbol* const destination,
                                      Symbol* const help_space);
 
-    __device__ size_t is_function_of_ex(const Integral* const integral);
+    __device__ HeuristicCheckResult is_function_of_ex(const Integral* const integral);
 
     __device__ void transform_function_of_ex(const Integral* const integral,
-                                             Symbol* const destination, Symbol* const help_space);
+                                             Symbol* const integral_dst,
+                                             Symbol* const expression_dst,
+                                             Symbol* const help_space);
 
     /*
      * @brief Tworzy symbol `Solution` i zapisuje go na `destination` razem z podstawieniami z
@@ -173,18 +188,41 @@ namespace Sym {
      *
      * @param integrals Całki do sprawdzenia
      * @param expressions Wyrażenia na które wskazują SubexpressionCandidate w `integrals`.
-     * @param applicability Wynik sprawdzania zastosowalności heurystyk. Jeśli całka na indeksie `i`
-     * pasuje do heurystyki na indeksie `j`, to applicability[MAX_EXPRESSION_COUNT * j + i] będzie
+     * @param new_integrals_flags Jeśli całka na indeksie `i` pasuje do heurystyki na indeksie `j`,
+     * która przekształca na inną całkę, to new_integrals_flags[MAX_EXPRESSION_COUNT * j + i] będzie
      * ustawione na `1`.
+     * @param new_expressions_flags Jeśli całka na indeksie `i` pasuje do heurystyki na indeksie
+     * `j`, która przekształca ją na wyrażenie z całek, to
+     * `new_expressions_flags[MAX_EXPRESSION_COUNT * j + i]` będzie ustawione na `1`.
      */
     __global__ void
     check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
                                    ExpressionArray<> expressions,
-                                   Util::DeviceArray<size_t> applicability);
+                                   Util::DeviceArray<size_t> new_integrals_flags,
+                                   Util::DeviceArray<size_t> new_expressions_flags);
 
+    /*
+     * @brief Stosuje heurystyki na całkach
+     *
+     * @param integrals Całki, na których zastosowane zostaną heurystyki
+     * @param integrals_destinations Miejsce, gdzie zapisane będą nowe całki
+     * @param expressions_destinations Miejsce, gdzie zapisane będą nowe wyrażenia. Wyrażenia
+     * zapisywane są od pierwszego niezajętego miesca za końcem tablicy (czyli obecna zawartość jest
+     * nienaruszona).
+     * @param help_spaces Pamięć pomocnicza do wykonywania przekształceń
+     * @param new_integrals_indices Indeksy nowych całek powiększone o 1. Jeśli jakiś indeks jest
+     * równy poprzedniemu, to wskazywane przez niego połączenie całki i heurystyki (indeksowanie
+     * opisane przy `check_heuristics_applicability`) nie dało żadnego wyniku. Dla
+     * `new_integrals_indices[0]` jest to sygnalizowane przez zapisaną tam wartość 0 (zamiast 1)
+     * @param new_expressions_indices Inteksy nowych wyrażeń powiększone o 1. Zasady takie same jak
+     * w `new_integrals_indices`
+     */
     __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
-                                     ExpressionArray<> destinations, ExpressionArray<> help_spaces,
-                                     const Util::DeviceArray<size_t> applicability);
+                                     ExpressionArray<> integrals_destinations,
+                                     ExpressionArray<> expressions_destinations,
+                                     ExpressionArray<> help_spaces,
+                                     const Util::DeviceArray<size_t> new_integrals_indices,
+                                     const Util::DeviceArray<size_t> new_expressions_indices);
 
     /*
      * @brief Sprawdza które całki wskazują na wyrażenia, które będą usunięte
@@ -200,13 +238,7 @@ namespace Sym {
                                          const size_t* const expressions_removability,
                                          size_t* const integral_removability);
 
-    /*
-     * @brief Zeruje `candidate_integral_count`
-     *
-     * @param expressions Wyrażenia w których `candidate_integral_count` wszystkich
-     * SubexpressionVacancy będzie wyzerowane
-     */
-    __global__ void zero_candidate_integral_count(ExpressionArray<> expressions);
+    __global__ void update_candidate_expression_count_upwards();
 }
 
 #endif

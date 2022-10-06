@@ -21,49 +21,51 @@ namespace Sym {
 #define SIMPLIFY_IN_PLACE_HEADER(_simplify_in_place) \
     __host__ __device__ void _simplify_in_place(Symbol* const help_space)
 
-#define DECLARE_SYMBOL(_name, _simple)                                                          \
-    struct _name {                                                                              \
-        constexpr static Sym::Type TYPE = Sym::Type::_name;                                     \
-        Sym::Type type;                                                                         \
-        size_t size;                                                                            \
-        bool simplified;                                                                        \
-                                                                                                \
-        __host__ __device__ static _name builder() {                                            \
-            _name symbol{};                                                                     \
-            symbol.type = Sym::Type::_name;                                                     \
-            symbol.simplified = _simple;                                                        \
-            return symbol;                                                                      \
-        }                                                                                       \
-                                                                                                \
-        __host__ __device__ void seal();                                                        \
-                                                                                                \
-        __host__ __device__ static _name create() {                                             \
-            return {                                                                            \
-                .type = Sym::Type::_name,                                                       \
-                .size = 1,                                                                      \
-                .simplified = _simple,                                                          \
-            };                                                                                  \
-        }                                                                                       \
-                                                                                                \
-        __host__ __device__ void copy_single_to(Symbol* const dst) const {                      \
-            Util::copy_mem(dst, this, sizeof(_name));                                           \
-        }                                                                                       \
-        __host__ __device__ inline const Symbol* symbol() const {                               \
-            return reinterpret_cast<const Symbol*>(this);                                       \
-        }                                                                                       \
-                                                                                                \
-        __host__ __device__ inline Symbol* symbol() { return reinterpret_cast<Symbol*>(this); } \
-                                                                                                \
-        template <class T> __host__ __device__ inline const T* as() const {                     \
-            return reinterpret_cast<const T*>(this);                                            \
-        }                                                                                       \
-                                                                                                \
-        template <class T> __host__ __device__ inline T* as() {                                 \
-            return reinterpret_cast<T*>(this);                                                  \
-        }                                                                                       \
-                                                                                                \
-        COMPARE_HEADER(compare);                                                                \
-        COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                                        \
+#define DECLARE_SYMBOL(_name, _simple)                                            \
+    struct _name {                                                                \
+        constexpr static Sym::Type TYPE = Sym::Type::_name;                       \
+        Sym::Type type;                                                           \
+        size_t size;                                                              \
+        bool simplified;                                                          \
+                                                                                  \
+        __host__ __device__ static _name builder() {                              \
+            _name symbol{};                                                       \
+            symbol.type = Sym::Type::_name;                                       \
+            symbol.simplified = _simple;                                          \
+            return symbol;                                                        \
+        }                                                                         \
+                                                                                  \
+        __host__ __device__ void seal();                                          \
+                                                                                  \
+        __host__ __device__ static _name create() {                               \
+            return {                                                              \
+                .type = Sym::Type::_name,                                         \
+                .size = 1,                                                        \
+                .simplified = _simple,                                            \
+            };                                                                    \
+        }                                                                         \
+                                                                                  \
+        __host__ __device__ void copy_single_to(Symbol* const dst) const {        \
+            Util::copy_mem(dst, this, sizeof(_name));                             \
+        }                                                                         \
+        __host__ __device__ inline const Symbol* symbol() const {                 \
+            return reinterpret_cast<const Symbol*>(this);                         \
+        }                                                                         \
+                                                                                  \
+        __host__ __device__ inline Symbol* symbol() {                             \
+            return const_cast<Symbol*>(const_cast<const _name*>(this)->symbol()); \
+        }                                                                         \
+                                                                                  \
+        template <class T> __host__ __device__ inline const T* as() const {       \
+            return reinterpret_cast<const T*>(this);                              \
+        }                                                                         \
+                                                                                  \
+        template <class T> __host__ __device__ inline T* as() {                   \
+            return const_cast<T*>(const_cast<const _name*>(this)->as<T>());       \
+        }                                                                         \
+                                                                                  \
+        COMPARE_HEADER(compare);                                                  \
+        COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                          \
         SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.

@@ -54,39 +54,67 @@ namespace Sym {
         __host__ __device__ inline size_t& size() { return unknown.size; }
         __host__ __device__ inline size_t size() const { return unknown.size; }
 
-        template <class T> __host__ __device__ inline T& as() {
-            return *reinterpret_cast<T*>(this);
-        }
-
         template <class T> __host__ __device__ inline const T& as() const {
             return *reinterpret_cast<const T*>(this);
         }
 
-        template <class T> __host__ __device__ inline T* as_ptr() {
-            return reinterpret_cast<T*>(this);
+        template <class T> __host__ __device__ inline T& as() {
+            return const_cast<T&>(const_cast<const Symbol&>(*this).as<T>());
         }
 
         template <class T> __host__ __device__ inline const T* as_ptr() const {
             return reinterpret_cast<const T*>(this);
         }
 
-        template <class T> __host__ __device__ static inline Symbol* from(T* sym) {
-            return reinterpret_cast<Symbol*>(sym);
+        template <class T> __host__ __device__ inline T* as_ptr() {
+            return const_cast<T*>(const_cast<const T*>(this)->as_ptr());
         }
 
         template <class T> __host__ __device__ static inline const Symbol* from(const T* sym) {
             return reinterpret_cast<const Symbol*>(sym);
         }
 
-        /*
-         * @brief Zwraca symbol bezpośrednio za `this`
-         */
-        __host__ __device__ inline const Symbol* child() const { return this + 1; }
+        template <class T> __host__ __device__ static inline Symbol* from(T* sym) {
+            return const_cast<Symbol*>(from(const_cast<const T*>(sym)));
+        }
 
         /*
-         * @brief Zwraca symbol bezpośrednio za `this`
+         * @brief Zwraca wskaźnik na n-ty element za `this`
          */
-        __host__ __device__ inline Symbol* child() { return this + 1; }
+        __host__ __device__ const inline Symbol* at(const size_t idx) const { return this + idx; }
+
+        /*
+         * @brief Zwraca wskaźnik na n-ty element za `this`
+         */
+        __host__ __device__ inline Symbol* at(const size_t idx) {
+            return const_cast<Symbol*>(const_cast<const Symbol*>(this)->at(idx));
+        }
+
+        /*
+         * @brief Zwraca n-ty element za `this`
+         */
+        __host__ __device__ inline const Symbol& operator[](const size_t idx) const {
+            return *at(idx);
+        }
+
+        /*
+         * @brief Zwraca n-ty element za `this`
+         */
+        __host__ __device__ inline Symbol& operator[](const size_t idx) {
+            return *const_cast<Symbol*>(&(*const_cast<const Symbol*>(this))[idx]);
+        }
+
+        /*
+         * @brief Zwraca wskaźnik na symbol bezpośrednio za `this`
+         */
+        __host__ __device__ inline const Symbol* child() const { return at(1); }
+
+        /*
+         * @brief Zwraca wskaźnik na symbol bezpośrednio za `this`
+         */
+        __host__ __device__ inline Symbol* child() {
+            return const_cast<Symbol*>(const_cast<const Symbol*>(this)->child());
+        }
 
         /*
          * @brief Copies symbol sequence from `source` to `destination`.
@@ -244,9 +272,21 @@ namespace Sym {
          * @param function Funkcja która się wykona jeśli `this` jest typu T. Jako argument podawane
          * jest `this`
          */
-        template <class T> __host__ __device__ void if_is_do(void (*function)(T*)) {
+        template <class T, class F> __host__ __device__ void if_is_do(F function) {
             if (T::TYPE == type()) {
-                function(&as<T>());
+                function(as<T>());
+            }
+        }
+
+        /*
+         * @brief Jeśli ten symbol jest typu T, to wykonaj na nim `function`
+         *
+         * @param function Funkcja która się wykona jeśli `this` jest typu T. Jako argument podawane
+         * jest `this`
+         */
+        template <class T, class F> __host__ __device__ void if_is_do(F function) const {
+            if (T::TYPE == type()) {
+                function(as<T>());
             }
         }
 

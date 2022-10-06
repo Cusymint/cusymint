@@ -109,19 +109,14 @@ namespace Util {
         inline void zero_mem() { cudaMemset(data_ptr, 0, size_in_bytes()); }
 
         /*
-         * @brief Rozmiar tablicy
-         */
-        __host__ __device__ inline size_t size() const { return data_size; }
-
-        /*
          * @brief Rozmiar tablicy w bajtach
          */
         __host__ __device__ inline size_t size_in_bytes() const { return sizeof(T) * data_size; }
 
         /*
-         * @brief Wskaźnik do pamięci tablicy
+         * @brief Rozmiar tablicy
          */
-        __host__ __device__ inline T* data() { return data_ptr; }
+        __host__ __device__ inline size_t size() const { return data_size; }
 
         /*
          * @brief Wskaźnik do pamięci tablicy
@@ -129,9 +124,11 @@ namespace Util {
         __host__ __device__ inline const T* data() const { return data_ptr; }
 
         /*
-         * @brief Wskaźnik do elementu o jeden za tablicą
+         * @brief Wskaźnik do pamięci tablicy
          */
-        __host__ __device__ inline T* end() { return const_cast<T*>(cend()); }
+        __host__ __device__ inline T* data() {
+            return const_cast<T*>(const_cast<const DeviceArray<T>*>(this)->data());
+        }
 
         /*
          * @brief Stały wskaźnik do elementu o jeden za tablicą
@@ -139,19 +136,19 @@ namespace Util {
         __host__ __device__ inline const T* cend() const { return data_ptr + data_size; }
 
         /*
-         * @brief Wskaźnik do pierwszego elementu tablicy
+         * @brief Wskaźnik do elementu o jeden za tablicą
          */
-        __host__ __device__ inline T* begin() { return const_cast<T*>(cbegin()); }
+        __host__ __device__ inline T* end() { return const_cast<T*>(cend()); }
 
         /*
          * @brief Stały wskaźnik do pierwszego elementu tablicy
          */
-        __host__ __device__ inline const T* cbegin() const { return data_ptr; }
+        __host__ __device__ inline const T* cbegin() const { return data(); }
 
         /*
-         * @brief Referencja do idx-tego elementu tablicy
+         * @brief Wskaźnik do pierwszego elementu tablicy
          */
-        __device__ inline T& operator[](const size_t idx) { return data_ptr[idx]; }
+        __host__ __device__ inline T* begin() { return const_cast<T*>(cbegin()); }
 
         /*
          * @brief Referencja do idx-tego elementu tablicy
@@ -159,14 +156,23 @@ namespace Util {
         __device__ inline const T& operator[](const size_t idx) const { return data_ptr[idx]; }
 
         /*
-         * @brief Wskaźnik do idx-tego elementu tablicy
+         * @brief Referencja do idx-tego elementu tablicy
          */
-        __host__ __device__ inline T* at(const size_t idx) { return data_ptr + idx; }
+        __device__ inline T& operator[](const size_t idx) {
+            return const_cast<T&>(const_cast<const DeviceArray<T>&>(*this)[idx]);
+        }
 
         /*
          * @brief Wskaźnik do idx-tego elementu tablicy
          */
         __host__ __device__ inline const T* at(const size_t idx) const { return data_ptr + idx; }
+
+        /*
+         * @brief Wskaźnik do idx-tego elementu tablicy
+         */
+        __host__ __device__ inline T* at(const size_t idx) {
+            return const_cast<T*>(const_cast<const DeviceArray<T>*>(this)->at(idx));
+        }
 
         /*
          * @brief Wskaźnik do ostatniego elementu tablicy
