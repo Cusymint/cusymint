@@ -1,6 +1,7 @@
 #include "ExpanderPlaceholder.cuh"
 
 #include "Symbol.cuh"
+#include <fmt/core.h>
 
 namespace Sym {
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(ExpanderPlaceholder)
@@ -16,6 +17,6 @@ namespace Sym {
     }
 
     std::string ExpanderPlaceholder::to_string() const {
-        return "ExpanderPlaceholder(" + std::to_string(size) + ")";
+        return fmt::format("ExpanderPlaceholder({})", size);
     }
 }

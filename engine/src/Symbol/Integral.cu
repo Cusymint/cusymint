@@ -2,6 +2,7 @@
 
 #include "Substitution.cuh"
 #include "Symbol.cuh"
+#include <fmt/core.h>
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Integral)
@@ -111,19 +112,16 @@ namespace Sym {
         integrand()->copy_to(integrand_copy.data());
 
         std::string last_substitution_name;
-        std::string substitutions_str;
+
         if (substitution_count == 0) {
-            last_substitution_name = "x";
-        }
-        else {
-            substitutions_str = ", " + first_substitution()->to_string();
-            last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
-            integrand_copy.data()->substitute_variable_with_nth_substitution_name(
-                substitution_count - 1);
+            return fmt::format("∫{}dx", integrand_copy.data()->to_string());
         }
 
-        return "∫" + integrand_copy.data()->to_string() + "d" + last_substitution_name +
-               substitutions_str;
+        last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
+        integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count - 1);
+        
+        return fmt::format("∫{}d{}, {}", integrand_copy.data()->to_string(), last_substitution_name,
+                           first_substitution()->to_string());
     }
 
     std::vector<Symbol> integral(const std::vector<Symbol>& arg) {

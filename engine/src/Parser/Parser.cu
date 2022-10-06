@@ -106,16 +106,10 @@ SymbolicFunction Parser::function() {
 
 std::vector<Sym::Symbol> Parser::parse() {
     if (tok != Token::Start) {
-        printf("ERROR: Parser has already processed a string.\n");
-        return {};
+        throw std::logic_error("Parser has already processed a string.");
     }
     next_token();
-    try {
-        std::vector<Sym::Symbol> e = expr();
-        match_and_get_next_token(Token::End);
-        return e;
-    } catch (std::invalid_argument exc) {
-        printf("ERROR: %s\n", exc.what());
-        return {};
-    }
+    std::vector<Sym::Symbol> e = expr();
+    match_and_get_next_token(Token::End);
+    return e;
 }
