@@ -6,31 +6,41 @@ class ClientCubit extends Cubit<ClientState> {
 
   final CusymintClient client;
 
-  Future<void> solveIntegral(String integralToBeSolved) async {
+  Future solveIntegral(String integralToBeSolved) async {
+    final watch = Stopwatch()..start();
+
     final request = Request(integralToBeSolved);
 
     emit(ClientLoading(request: request));
 
+    final response = await _getResponse(request);
+
+    watch.stop();
+
+    if (response.hasErrors) {
+      emit(ClientFailure(
+        request: request,
+        errors: response.errors.map((e) => e.errorMessage).toList(),
+      ));
+      return;
+    }
+
+    final duration = watch.elapsed;
+
+    emit(ClientSuccess(
+      response: response,
+      request: request,
+      duration: duration,
+    ));
+  }
+
+  Future<Response> _getResponse(Request request) async {
     try {
       final response = await client.solveIntegral(request);
 
-      if (response.hasErrors) {
-        emit(ClientFailure(
-          request: request,
-          errors: response.errors.map((e) => e.errorMessage).toList(),
-        ));
-        return;
-      }
-
-      emit(ClientSuccess(
-        request: request,
-        response: response,
-      ));
+      return response;
     } catch (e) {
-      emit(ClientFailure(
-        request: request,
-        errors: [e.toString()],
-      ));
+      return Response(errors: [ResponseError(e.toString())]);
     }
   }
 
@@ -57,10 +67,12 @@ class ClientLoading extends ClientState {
 
 class ClientSuccess extends ClientState {
   const ClientSuccess({
+    required this.duration,
     required this.request,
     required this.response,
   });
 
+  final Duration duration;
   final Request request;
   final Response response;
 }

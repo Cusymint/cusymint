@@ -1,6 +1,7 @@
 import 'package:cusymint_app/features/home/blocs/client_cubit.dart';
 import 'package:cusymint_app/features/tex_rendering/widgets/tex_view.dart';
 import 'package:cusymint_client_mock/cusymint_client_mock.dart';
+import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -82,9 +83,7 @@ class _SuccessBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          'Integral solved successfully',
-        ),
+        Text(Strings.foundResult.tr(namedArgs: {'timeInMs': '12'})),
         Center(
           child: CuCard(
             child: Padding(
