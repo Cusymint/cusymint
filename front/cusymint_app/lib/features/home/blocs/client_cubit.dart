@@ -66,11 +66,17 @@ class ClientLoading extends ClientState {
 }
 
 class ClientSuccess extends ClientState {
-  const ClientSuccess({
+  ClientSuccess({
     required this.duration,
     required this.request,
     required this.response,
-  });
+  }) {
+    assert(response.hasErrors == false);
+    assert(response.outputInUtf != null);
+    assert(response.outputInTex != null);
+    assert(response.inputInUtf != null);
+    assert(response.inputInTex != null);
+  }
 
   final Duration duration;
   final Request request;

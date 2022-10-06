@@ -55,6 +55,60 @@ void main() {
       await cubit.solveIntegral('x');
     },
     wait: waitDuration + waitDuration, // race condition
-    expect: () => [isA<ClientLoading>(), isA<ClientSuccess>()],
+    expect: () => [
+      isA<ClientLoading>(),
+      isA<ClientSuccess>()
+          .having(
+            (cs) => cs.response.inputInTex,
+            'Input in tex matches that produced by client',
+            same(ResponseMockFactory.defaultResponse.inputInTex),
+          )
+          .having(
+            (cs) => cs.response.inputInUtf,
+            'Input in utf matches that produced by client',
+            same(ResponseMockFactory.defaultResponse.inputInUtf),
+          )
+          .having(
+            (cs) => cs.response.outputInTex,
+            'Output in tex matches that produced by client',
+            same(ResponseMockFactory.defaultResponse.outputInTex),
+          )
+          .having(
+            (cs) => cs.response.outputInUtf,
+            'Output in utf matches that produced by client',
+            same(ResponseMockFactory.defaultResponse.outputInUtf),
+          )
+          .having(
+            (cs) => cs.response.hasErrors,
+            'No errors',
+            isFalse,
+          ),
+    ],
+  );
+
+  blocTest(
+    'emits ClientLoading and ClientFailure after client failure',
+    build: () {
+      final client = CusymintClientMock(
+        fakeResponse: ResponseMockFactory.validationErrors,
+        delay: waitDuration,
+      );
+
+      final clientCubit = ClientCubit(client: client);
+
+      return clientCubit;
+    },
+    act: (ClientCubit cubit) async {
+      await cubit.solveIntegral('x');
+    },
+    wait: waitDuration + waitDuration, // race condition
+    expect: () => [
+      isA<ClientLoading>(),
+      isA<ClientFailure>().having(
+        (cf) => cf.errors,
+        'Has errors',
+        isNotEmpty,
+      ),
+    ],
   );
 }
