@@ -6,7 +6,7 @@ class ClientCubit extends Cubit<ClientState> {
 
   final CusymintClient client;
 
-  Future solveIntegral(String integralToBeSolved) async {
+  Future<void> solveIntegral(String integralToBeSolved) async {
     final watch = Stopwatch()..start();
 
     final request = Request(integralToBeSolved);
