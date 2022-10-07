@@ -121,9 +121,10 @@ namespace Sym {
          *
          * @param new_expression_count Wskaźnik do nowej liczby wyrażeń.
          */
-        inline void resize_from_device(const size_t* const new_expression_count) {
-            cudaMemcpy(&expression_count, new_expression_count, sizeof(size_t),
-                       cudaMemcpyDeviceToHost);
+        template <class U> inline void resize_from_device(const U* const new_expression_count) {
+            U new_count;
+            cudaMemcpy(&new_count, new_expression_count, sizeof(U), cudaMemcpyDeviceToHost);
+            expression_count = new_count;
         }
 
         /*
@@ -131,10 +132,10 @@ namespace Sym {
          *
          * @param expression_count_increment Wskaźnik do nowej liczby wyrażeń.
          */
-        void increment_size_from_device(const size_t* const expression_count_increment) {
-            size_t increment = 0;
-            cudaMemcpy(&increment, expression_count_increment, sizeof(size_t),
-                       cudaMemcpyDeviceToHost);
+        template <class U>
+        void increment_size_from_device(const U* const expression_count_increment) {
+            U increment;
+            cudaMemcpy(&increment, expression_count_increment, sizeof(U), cudaMemcpyDeviceToHost);
             expression_count += increment;
         }
 

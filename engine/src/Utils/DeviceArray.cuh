@@ -7,12 +7,27 @@
 #include "Cuda.cuh"
 
 namespace Util {
+    template <class T> class DeviceArray;
+
+    /*
+     * @brief Sets all elements of `array` to `val` in parallel
+     */
+    template <class T> __global__ void _set_mem(DeviceArray<T> array, const T& val) {
+        const size_t idx = Util::thread_idx();
+
+        if (idx <= array.size()) {
+            array[idx] = val;
+        }
+    }
+
     /*
      * @brief Klasa ułatwiająca korzystanie z pamięci CUDA.
      * Właścicielem pamięci jest tylko tablica alokująca pamięć. Wszystkie kopie tylko kopiują
      * wskaźnik (rozwiązanie ze względu na przekazywanie elementów tej klasy do kerneli CUDA)
      */
     template <class T> class DeviceArray {
+        static constexpr size_t SET_MEM_BLOCK_SIZE = 1024;
+
         // Liczba elementów T w tablicy
         size_t data_size = 0;
         T* data_ptr = nullptr;
@@ -98,7 +113,7 @@ namespace Util {
         }
 
         /*
-         * @brief Tworzy std::vector i kopiuje do niego swoją zawartość
+         * @brief Creates std::vector with contets of the array
          */
         std::vector<T> to_vector() const {
             std::vector<T> vector(data_size);
@@ -106,7 +121,47 @@ namespace Util {
             return vector;
         }
 
+        /*
+         * @brief Copies one value from the array to the cpu
+         *
+         * @param idx Index from which to copy the value
+         *
+         * @param copied value
+         */
+        T to_cpu(const size_t idx) const {
+            T value;
+            cudaMemcpy(&value, at(idx), sizeof(T), cudaMemcpyDeviceToHost);
+            return value;
+        }
+
+        /*
+         * @brief Zeros the array
+         */
         inline void zero_mem() { cudaMemset(data_ptr, 0, size_in_bytes()); }
+
+        /*
+         * @brief Sets value of all elements without synchronizing the device
+         *
+         * @param val Value to assign to each element
+         */
+        void set_mem_async(const T& val) {
+            if (size() == 0) {
+                return;
+            }
+
+            const size_t block_count = (size() - 1) / (SET_MEM_BLOCK_SIZE) + 1;
+            _set_mem<<<block_count, SET_MEM_BLOCK_SIZE>>>(*this, val);
+        }
+
+        /*
+         * @brief Sets value of all elements and synchronizes the device
+         *
+         * @param val Value to assign to each element
+         */
+        void set_mem(const T& val) {
+            set_mem_async(val);
+            cudaDeviceSynchronize();
+        }
 
         /*
          * @brief Rozmiar tablicy w bajtach

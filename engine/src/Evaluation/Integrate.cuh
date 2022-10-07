@@ -79,6 +79,17 @@ namespace Sym {
     constexpr size_t INTEGRAL_ARRAY_SIZE = MAX_EXPRESSION_COUNT * EXPRESSION_MAX_SYMBOL_COUNT;
 
     /*
+     * @brief Checks if inclusive_scan[index] is signaling a zero-sized element
+     *
+     * @param index Index to check
+     * @param inclusive_scan Array of element sizes on which inclusive_scan has been run
+     *
+     * @return `false` if element is zero-sized, `true` otherwise
+     */
+    __device__ bool is_nonzero(const size_t index,
+                                 const Util::DeviceArray<uint32_t>& inclusive_scan);
+
+    /*
      * @brief Upraszcza wyrażenia w `expressions`. Wynik zastępuje stare wyrażenia.
      *
      * @param expressions Wyrażenia do uproszczenia
@@ -96,7 +107,7 @@ namespace Sym {
      * maksymalną liczbą wyrażeń dopuszczalną w `integrals`
      */
     __global__ void check_for_known_integrals(const ExpressionArray<Integral> integrals,
-                                              Util::DeviceArray<size_t> applicability);
+                                              Util::DeviceArray<uint32_t> applicability);
 
     /*
      * @brief Na podstawie informacji z `check_for_known_integrals` przekształca całki na ich
@@ -112,7 +123,7 @@ namespace Sym {
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                                           ExpressionArray<> expressions,
                                           ExpressionArray<> help_spaces,
-                                          const Util::DeviceArray<size_t> applicability);
+                                          const Util::DeviceArray<uint32_t> applicability);
 
     /*
      * @brief Ustawia `is_solved` i `solver_id` w SubexpressionVacancy na które wskazują
@@ -131,7 +142,7 @@ namespace Sym {
      * rozwiązany w innej linii.
      */
     __global__ void find_redundand_expressions(const ExpressionArray<> expressions,
-                                               Util::DeviceArray<size_t> removability);
+                                               Util::DeviceArray<uint32_t> removability);
 
     /*
      * @brief Oznacza całki wskazujące na wyrażenia, które będą usunięte lub wskazujące na
@@ -146,8 +157,8 @@ namespace Sym {
      */
     __global__ void
     find_redundand_integrals(const ExpressionArray<> integrals, const ExpressionArray<> expressions,
-                             const Util::DeviceArray<size_t> expressions_removability,
-                             Util::DeviceArray<size_t> integrals_removability);
+                             const Util::DeviceArray<uint32_t> expressions_removability,
+                             Util::DeviceArray<uint32_t> integrals_removability);
 
     /*
      * @brief Przenosi wyrażenia z `expressions` do `destinations` pomijając te, które wyznacza
@@ -160,9 +171,39 @@ namespace Sym {
      * `destinations[removability[i] - 1]`.
      * @param destinations Docelowe miejsce zapisu wyrażeń
      */
-    __global__ void remove_expressions_1(const ExpressionArray<> expressions,
-                                         const Util::DeviceArray<size_t> removability,
-                                         ExpressionArray<> destinations);
+    template <bool ZERO_CANDIDATE_INTEGRAL_COUNT = false>
+    __global__ void remove_expressions(const ExpressionArray<> expressions,
+                                       const Util::DeviceArray<uint32_t> removability,
+                                       ExpressionArray<> destinations) {
+        const size_t thread_count = Util::thread_count();
+        const size_t thread_idx = Util::thread_idx();
+
+        for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
+             expr_idx += thread_count) {
+            if (!is_nonzero(expr_idx, removability)) {
+                continue;
+            }
+
+            Symbol& destination = *destinations[removability[expr_idx] - 1];
+            expressions[expr_idx]->copy_to(&destination);
+
+            destination.if_is_do<SubexpressionCandidate>([&removability](auto& dst) {
+                dst.vacancy_expression_idx = removability[dst.vacancy_expression_idx] - 1;
+            });
+
+            for (size_t symbol_idx = 0; symbol_idx < destination.size(); ++symbol_idx) {
+                destination[symbol_idx].if_is_do<SubexpressionVacancy>([&removability](auto& vac) {
+                    // We copy this value regardless of whether `vac` is really solved, if it is
+                    // not, then `solver_idx` contains garbage anyways
+                    vac.solver_idx = removability[vac.solver_idx] - 1;
+
+                    if constexpr (ZERO_CANDIDATE_INTEGRAL_COUNT) {
+                        vac.candidate_integral_count = 0;
+                    }
+                });
+            }
+        }
+    }
 
     /*
      * @brief Przenosi całki z `integrals` do `destinations` pomijając te, które wyznacza
@@ -177,8 +218,8 @@ namespace Sym {
      * @param destinations Docelowe miejsce zapisu całek
      */
     __global__ void remove_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
-                                     const Util::DeviceArray<size_t> integrals_removability,
-                                     const Util::DeviceArray<size_t> expressions_removability,
+                                     const Util::DeviceArray<uint32_t> integrals_removability,
+                                     const Util::DeviceArray<uint32_t> expressions_removability,
                                      ExpressionArray<SubexpressionCandidate> destinations);
 
     /*
@@ -198,8 +239,8 @@ namespace Sym {
     __global__ void
     check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
                                    ExpressionArray<> expressions,
-                                   Util::DeviceArray<size_t> new_integrals_flags,
-                                   Util::DeviceArray<size_t> new_expressions_flags);
+                                   Util::DeviceArray<uint32_t> new_integrals_flags,
+                                   Util::DeviceArray<uint32_t> new_expressions_flags);
 
     /*
      * @brief Stosuje heurystyki na całkach
@@ -221,24 +262,43 @@ namespace Sym {
                                      ExpressionArray<> integrals_destinations,
                                      ExpressionArray<> expressions_destinations,
                                      ExpressionArray<> help_spaces,
-                                     const Util::DeviceArray<size_t> new_integrals_indices,
-                                     const Util::DeviceArray<size_t> new_expressions_indices);
+                                     const Util::DeviceArray<uint32_t> new_integrals_indices,
+                                     const Util::DeviceArray<uint32_t> new_expressions_indices);
 
     /*
-     * @brief Sprawdza które całki wskazują na wyrażenia, które będą usunięte
+     * @brief Propagates information about failed SubexpressionVacancy upwards to parent
+     * expressions.
      *
-     * @param expressions Wyrażenia na które wskazują całki
-     * @param integrals Całki do sprawdzenia
-     * @param expressions_removability Wyrażenia oznaczone jako do usunięcia (0 -> będzie
-     * usunięte)
-     * @param integrals_removability Oznaczenie całek które można usunąć (0 -> można usunąć)
+     * @param expressions Expressions to update
+     * @param failures Array that should be filled with values of `1`, if `expressions[i]` fails
+     * then `failures[i]` is set to 0
      */
-    __global__ void are_integrals_failed(const ExpressionArray<> expressions,
-                                         const ExpressionArray<SubexpressionCandidate> integrals,
-                                         const size_t* const expressions_removability,
-                                         size_t* const integral_removability);
+    __global__ void propagate_failures_upwards(ExpressionArray<> expressions,
+                                               Util::DeviceArray<uint32_t> failures);
 
-    __global__ void update_candidate_expression_count_upwards();
+    /*
+     * @brief Propagates information about failed SubexpressionCandidate downwards
+     *
+     * @param expression Expressions to update
+     * @param failurs Arrays that should point out already failed expressions, all descendands of
+     * which are going to be failed (failures[i] == 0 iff failed, 1 otherwise)
+     */
+    __global__ void propagate_failures_downwards(ExpressionArray<> expressions,
+                                                 Util::DeviceArray<uint32_t> failures);
+
+    /*
+     * @brief Marks integrals that point to expressions which are going to be removed
+     *
+     * @param integrals Integrals to mark
+     * @param expressions_removability Expressions which are going to be removed, 0 for the ones
+     * awaiting removal, 1 for the ones staying
+     * @param integrals_removability Checking result, same convention as in
+     * `expressions_removability`
+     */
+    __global__ void
+    find_redundand_integrals(const ExpressionArray<> integrals,
+                             const Util::DeviceArray<uint32_t> expressions_removability,
+                             Util::DeviceArray<uint32_t> integrals_removability);
 }
 
 #endif
