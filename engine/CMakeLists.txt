@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.12)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -37,13 +37,14 @@ add_executable(
 target_include_directories(cusymint PRIVATE ${SRC_DIR})
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "DEBUG")
+  set(CMAKE_BUILD_TYPE "DEBUG")
 endif()
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
 if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
   target_compile_options(cusymint PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -g -G >)
+  add_compile_definitions(__DEBUG__)
 else()
   target_compile_options(cusymint PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:>)
 endif()

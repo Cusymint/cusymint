@@ -13,6 +13,8 @@
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
 
+#include "Utils/CompileConstants.cuh"
+
 static constexpr size_t BLOCK_SIZE = 1024;
 static constexpr size_t BLOCK_COUNT = 32;
 
@@ -146,6 +148,10 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
 }
 
 int main() {
+    if constexpr (Util::DEBUG) {
+        std::cout << "Running in debug mode" << std::endl;
+    }
+
     std::vector<Sym::Symbol> integral = Sym::integral(
         (Sym::var() + Sym::num(1.0)) + (Sym::pi() + (Sym::e() + Sym::cos(Sym::var()))));
 
