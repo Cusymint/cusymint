@@ -2,6 +2,7 @@
 
 #include "Symbol/Symbol.cuh"
 #include "Symbol/TreeIterator.cuh"
+#include <fmt/core.h>
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Product)
@@ -49,14 +50,14 @@ namespace Sym {
 
     std::string Product::to_string() const {
         if (arg1().is(Type::Reciprocal)) {
-            return "(" + arg2().to_string() + "/" + arg1().reciprocal.arg().to_string() + ")";
+            return fmt::format("({}/{})", arg2().to_string(), arg1().reciprocal.arg().to_string());
         }
 
         if (arg2().is(Type::Reciprocal)) {
-            return "(" + arg1().to_string() + "/" + arg2().reciprocal.arg().to_string() + ")";
+            return fmt::format("({}/{})", arg1().to_string(), arg2().reciprocal.arg().to_string());
         }
 
-        return "(" + arg1().to_string() + "*" + arg2().to_string() + ")";
+        return fmt::format("({}*{})", arg1().to_string(), arg2().to_string());
     }
 
     __host__ __device__ void Product::eliminate_ones() {
@@ -74,7 +75,7 @@ namespace Sym {
         }
     }
 
-    std::string Reciprocal::to_string() const { return "(1/" + arg().to_string() + ")"; }
+    std::string Reciprocal::to_string() const { return fmt::format("(1/{})", arg().to_string()); }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Reciprocal)

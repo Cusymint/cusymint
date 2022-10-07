@@ -54,3 +54,6 @@ if(APPLE)
   set_property(TARGET cusymint PROPERTY BUILD_RPATH
                                         ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
 endif()
+
+find_package(fmt)
+target_link_libraries(cusymint fmt::fmt)

@@ -1,5 +1,6 @@
 #include "Substitution.cuh"
 
+#include <fmt/core.h>
 #include <stdexcept>
 #include <vector>
 
@@ -76,17 +77,15 @@ namespace Sym {
 
     std::string Substitution::to_string_this() const {
         std::vector<Symbol> expr_with_const = expression_with_constant();
-        return nth_substitution_name(substitution_idx) + " = " +
-               expr_with_const.data()->to_string();
+        return fmt::format("{} = {}", nth_substitution_name(substitution_idx), expr_with_const.data()->to_string());
     }
 
     std::string Substitution::to_string() const {
-        std::string sub_substitutions;
         if (!is_last_substitution()) {
-            sub_substitutions = next_substitution()->to_string() + ", ";
+            return fmt::format("{}, {}", next_substitution()->to_string(), to_string_this());
         }
 
-        return sub_substitutions + to_string_this();
+        return to_string_this();
     }
 
     __host__ __device__ Symbol* Substitution::expression() { return Symbol::from(this)->child(); }
