@@ -60,6 +60,20 @@ namespace Sym {
         return fmt::format("({}*{})", arg1().to_string(), arg2().to_string());
     }
 
+    std::string Product::to_tex() const {
+        if (arg1().is(Type::Reciprocal)) {
+            return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg2().to_tex(),
+                               arg1().reciprocal.arg().to_tex());
+        }
+
+        if (arg2().is(Type::Reciprocal)) {
+            return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg1().to_tex(),
+                               arg2().reciprocal.arg().to_tex());
+        }
+
+        return fmt::format(R"(\left({} \cdot {}\right))", arg1().to_tex(), arg2().to_tex());
+    }
+
     __host__ __device__ void Product::eliminate_ones() {
         if (arg1().is(Type::Product)) {
             arg1().product.eliminate_ones();
@@ -76,6 +90,8 @@ namespace Sym {
     }
 
     std::string Reciprocal::to_string() const { return fmt::format("(1/{})", arg().to_string()); }
+
+    std::string Reciprocal::to_tex() const { return fmt::format(R"(\frac{{1}}{{ {} }})", arg().to_string()); }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Reciprocal)

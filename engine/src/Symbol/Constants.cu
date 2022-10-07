@@ -52,6 +52,18 @@ namespace Sym {
         }
     }
 
+    std::string KnownConstant::to_tex() const {
+        switch (value) {
+        case KnownConstantValue::E:
+            return "\\text{e}";
+        case KnownConstantValue::Pi:
+            return "\\pi";
+        case KnownConstantValue::Unknown:
+        default:
+            return "?";
+        }
+    }
+
     UnknownConstant UnknownConstant::create(const char* const name) {
         UnknownConstant unknown_constant = UnknownConstant::create();
         if (strlen(name) + 1 > NAME_LEN) {

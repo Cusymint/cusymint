@@ -151,6 +151,8 @@ namespace Sym {
 
     std::string Symbol::to_string() const { return VIRTUAL_CALL(*this, to_string); }
 
+    std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
+
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {
         return VIRTUAL_CALL(sym1, compare, &sym2);
     }

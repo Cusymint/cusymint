@@ -144,6 +144,17 @@ void print_results(const Sym::ExpressionArray<Sym::Integral> integrals) {
     fmt::print("\n");
 }
 
+void print_results_tex(const Sym::ExpressionArray<Sym::Integral> integrals) {
+    const auto h_integrals = integrals.to_vector();
+
+    fmt::print("Results:({}):\n", integrals.size());
+    for (size_t int_idx = 0; int_idx < integrals.size(); ++int_idx) {
+        fmt::print("{}\n", h_integrals[int_idx].data()->to_tex());
+    }
+
+    fmt::print("\n");
+}
+
 int main() {
     std::vector<std::vector<Sym::Symbol>> h_integrals = create_test_integrals();
 
@@ -158,7 +169,7 @@ int main() {
 
     Util::DeviceArray<size_t> applicability(Sym::APPLICABILITY_ARRAY_SIZE, true);
 
-    print_results(integrals);
+    print_results_tex(integrals);
 
     simplify_integrals(integrals, help_spaces);
     print_results(integrals);

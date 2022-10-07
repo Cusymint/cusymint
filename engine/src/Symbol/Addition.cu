@@ -117,7 +117,21 @@ namespace Sym {
         return fmt::format("({}+{})", arg1().to_string(), arg2().to_string());
     }
 
+    std::string Addition::to_tex() const {
+        if (arg2().is(Type::Negation)) {
+            return fmt::format("\\left({}-{}\\right)", arg1().to_tex(), arg2().negation.arg().to_tex());
+        }
+
+        if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value < 0.0) {
+            return fmt::format("\\left({}-{}\\right)", arg1().to_tex(), -arg2().numeric_constant.value);
+        }
+
+        return fmt::format("\\left({}+{}\\right)", arg1().to_tex(), arg2().to_tex());
+    }
+
     std::string Negation::to_string() const { return fmt::format("-({})", arg().to_string()); }
+
+    std::string Negation::to_tex() const { return fmt::format("-\\left({}\\right)",arg().to_tex()); }
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);

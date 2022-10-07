@@ -49,6 +49,10 @@ namespace Sym {
         return fmt::format("({}^{})", arg1().to_string(), arg2().to_string());
     }
 
+    std::string Power::to_tex() const {
+        return fmt::format(R"(\left({}\right)^{{ \left({}\right) }})", arg1().to_tex(), arg2().to_tex());
+    }
+
     std::vector<Symbol> operator^(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);
         Power::create(lhs.data(), rhs.data(), res.data());

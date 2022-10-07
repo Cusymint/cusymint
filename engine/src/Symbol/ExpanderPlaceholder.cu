@@ -19,4 +19,8 @@ namespace Sym {
     std::string ExpanderPlaceholder::to_string() const {
         return fmt::format("ExpanderPlaceholder({})", size);
     }
+
+    std::string ExpanderPlaceholder::to_tex() const {
+        return fmt::format(R"((\cdot)_{{ size={} }})", size);
+    }
 }

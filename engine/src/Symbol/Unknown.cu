@@ -12,4 +12,9 @@ namespace Sym {
         return fmt::format("Unknown(type={},size={})",
                            static_cast<std::underlying_type<Type>::type>(type), size);
     }
+
+    std::string Unknown::to_tex() const {
+        return fmt::format(R"(?_{{ \text{{ type= }} {}, \text{{ size= }} {} }})",
+                           static_cast<std::underlying_type<Type>::type>(type), size);
+    }
 }
