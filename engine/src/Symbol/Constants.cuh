@@ -12,7 +12,7 @@ namespace Sym {
     double value;
     __host__ __device__ NumericConstant static with_value(double value);
     DEFINE_TO_STRING(std::to_string(value));
-    DEFINE_TO_TEX(std::to_string(value));
+    std::string to_tex() const;
     END_DECLARE_SYMBOL(NumericConstant)
 
     DECLARE_SYMBOL(KnownConstant, true)

@@ -149,7 +149,7 @@ void print_results_tex(const Sym::ExpressionArray<Sym::Integral> integrals) {
 
     fmt::print("Results:({}):\n", integrals.size());
     for (size_t int_idx = 0; int_idx < integrals.size(); ++int_idx) {
-        fmt::print("{}\n", h_integrals[int_idx].data()->to_tex());
+        fmt::print("{} \\\\ \n", h_integrals[int_idx].data()->to_tex());
     }
 
     fmt::print("\n");
