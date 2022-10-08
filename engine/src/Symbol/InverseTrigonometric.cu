@@ -36,6 +36,14 @@ namespace Sym {
 
     std::string Arccotangent::to_string() const { return fmt::format("arccot({})", arg().to_string()); }
 
+    std::string Arcsine::to_tex() const { return fmt::format(R"(\arcsin\left({}\right))", arg().to_tex()); }
+
+    std::string Arccosine::to_tex() const { return fmt::format(R"(\arccos\left({}\right))", arg().to_tex()); }
+
+    std::string Arctangent::to_tex() const { return fmt::format(R"(\arctan\left({}\right))", arg().to_tex()); }
+
+    std::string Arccotangent::to_tex() const { return fmt::format(R"(\arccot\left({}\right))", arg().to_tex()); }
+
     template <class T>
     std::vector<Symbol> make_inverse_trigonometric_function(const std::vector<Symbol>& arg) {
         std::vector<Symbol> result(arg.size() + 1);

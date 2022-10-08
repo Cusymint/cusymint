@@ -257,6 +257,11 @@ namespace Sym {
          * @brief Zwraca przyjazny użytkownikowi `std::string` reprezentujący wyrażenie.
          */
         std::string to_string() const;
+
+        /*
+         * @brief Zwraca zapis wyrażenia w formacie TeX-a.
+         */
+        std::string to_tex() const;
     };
 
     /*

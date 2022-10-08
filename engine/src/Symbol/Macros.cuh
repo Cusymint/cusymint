@@ -111,6 +111,9 @@ namespace Sym {
 #define DEFINE_TO_STRING(_str) \
     std::string to_string() const { return _str; }
 
+#define DEFINE_TO_TEX(_str) \
+    std::string to_tex() const { return _str; }
+
 #define DEFINE_COMPRESS_REVERSE_TO(_name) COMPRESS_REVERSE_TO_HEADER(_name::compress_reverse_to)
 
 #define DEFINE_SIMPLE_COMPRESS_REVERSE_TO(_name) \

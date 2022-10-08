@@ -1,6 +1,8 @@
 #include "Constants.cuh"
 
+#include <fmt/core.h>
 #include <stdexcept>
+#include <string>
 
 #include "Symbol.cuh"
 #include "Utils/Cuda.cuh"
@@ -50,6 +52,25 @@ namespace Sym {
         default:
             return "<Undefined known constant>";
         }
+    }
+
+    std::string KnownConstant::to_tex() const {
+        switch (value) {
+        case KnownConstantValue::E:
+            return "\\text{e}";
+        case KnownConstantValue::Pi:
+            return "\\pi";
+        case KnownConstantValue::Unknown:
+        default:
+            return "?";
+        }
+    }
+
+    std::string NumericConstant::to_tex() const {
+        if (value < 0) {
+            return fmt::format("\\left( {} \\right)", value);
+        }
+        return std::to_string(value);
     }
 
     UnknownConstant UnknownConstant::create(const char* const name) {

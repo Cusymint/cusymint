@@ -36,6 +36,14 @@ namespace Sym {
 
     std::string Cotangent::to_string() const { return fmt::format("cot({})", arg().to_string()); }
 
+    std::string Sine::to_tex() const { return fmt::format(R"(\sin\left({}\right))", arg().to_tex()); }
+
+    std::string Cosine::to_tex() const { return fmt::format(R"(\cos\left({}\right))", arg().to_tex()); }
+
+    std::string Tangent::to_tex() const { return fmt::format(R"(\tan\left({}\right))", arg().to_tex()); }
+
+    std::string Cotangent::to_tex() const { return fmt::format(R"(\cot\left({}\right))", arg().to_tex()); }
+
     template <class T> std::vector<Symbol> make_trig_function(const std::vector<Symbol>& arg) {
         std::vector<Symbol> res(arg.size() + 1);
         T::create(arg.data(), res.data());
