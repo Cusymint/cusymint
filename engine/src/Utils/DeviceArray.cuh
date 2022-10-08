@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "CompileConstants.cuh"
 #include "Cuda.cuh"
 
 namespace Util {
@@ -12,10 +13,10 @@ namespace Util {
     /*
      * @brief Sets all elements of `array` to `val` in parallel
      */
-    template <class T> __global__ void _set_mem(DeviceArray<T> array, const T& val) {
+    template <class T> __global__ void _set_mem(DeviceArray<T> array, const T val) {
         const size_t idx = Util::thread_idx();
 
-        if (idx <= array.size()) {
+        if (idx < array.size()) {
             array[idx] = val;
         }
     }
@@ -206,21 +207,22 @@ namespace Util {
         __host__ __device__ inline T* begin() { return const_cast<T*>(cbegin()); }
 
         /*
-         * @brief Referencja do idx-tego elementu tablicy
-         */
-        __device__ inline const T& operator[](const size_t idx) const { return data_ptr[idx]; }
-
-        /*
-         * @brief Referencja do idx-tego elementu tablicy
-         */
-        __device__ inline T& operator[](const size_t idx) {
-            return const_cast<T&>(const_cast<const DeviceArray<T>&>(*this)[idx]);
-        }
-
-        /*
          * @brief Wskaźnik do idx-tego elementu tablicy
          */
-        __host__ __device__ inline const T* at(const size_t idx) const { return data_ptr + idx; }
+        __host__ __device__ inline const T* at(const size_t idx) const {
+            if constexpr (Consts::DEBUG) {
+                if (idx > data_size) {
+                    crash("Trying to access element %lu of an array of %lu elements", idx,
+                          data_size);
+                }
+
+                if (data_ptr == nullptr) {
+                    crash("Trying to index an array that does not point to any data.");
+                }
+            }
+
+            return data_ptr + idx;
+        }
 
         /*
          * @brief Wskaźnik do idx-tego elementu tablicy
@@ -230,7 +232,19 @@ namespace Util {
         }
 
         /*
-         * @brief Wskaźnik do ostatniego elementu tablicy
+         * @brief Referencja do idx-tego elementu tablicy
+         */
+        __device__ inline const T& operator[](const size_t idx) const { return *at(idx); }
+
+        /*
+         * @brief Reference to the idx-th element of the array
+         */
+        __device__ inline T& operator[](const size_t idx) {
+            return const_cast<T&>(const_cast<const DeviceArray<T>&>(*this)[idx]);
+        }
+
+        /*
+         * @brief Pointer to the last element of the array
          */
         inline T* last() { return at(data_size - 1); }
 

@@ -87,7 +87,7 @@ namespace Sym {
      * @return `false` if element is zero-sized, `true` otherwise
      */
     __device__ bool is_nonzero(const size_t index,
-                                 const Util::DeviceArray<uint32_t>& inclusive_scan);
+                               const Util::DeviceArray<uint32_t>& inclusive_scan);
 
     /*
      * @brief Upraszcza wyrażenia w `expressions`. Wynik zastępuje stare wyrażenia.
@@ -106,8 +106,9 @@ namespace Sym {
      * `applicability[MAX_EXPRESSION_COUNT * form_idx + int_idx]`, gdzie MAX_EXPRESSION_COUNT jest
      * maksymalną liczbą wyrażeń dopuszczalną w `integrals`
      */
-    __global__ void check_for_known_integrals(const ExpressionArray<Integral> integrals,
-                                              Util::DeviceArray<uint32_t> applicability);
+    __global__ void
+    check_for_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
+                              Util::DeviceArray<uint32_t> applicability);
 
     /*
      * @brief Na podstawie informacji z `check_for_known_integrals` przekształca całki na ich
@@ -184,8 +185,8 @@ namespace Sym {
                 continue;
             }
 
-            Symbol& destination = *destinations[removability[expr_idx] - 1];
-            expressions[expr_idx]->copy_to(&destination);
+            Symbol& destination = destinations[removability[expr_idx] - 1];
+            expressions[expr_idx].copy_to(&destination);
 
             destination.if_is_do<SubexpressionCandidate>([&removability](auto& dst) {
                 dst.vacancy_expression_idx = removability[dst.vacancy_expression_idx] - 1;
@@ -258,7 +259,7 @@ namespace Sym {
      * @param new_expressions_indices Inteksy nowych wyrażeń powiększone o 1. Zasady takie same jak
      * w `new_integrals_indices`
      */
-    __global__ void apply_heuristics(const ExpressionArray<Integral> integrals,
+    __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
                                      ExpressionArray<> integrals_destinations,
                                      ExpressionArray<> expressions_destinations,
                                      ExpressionArray<> help_spaces,

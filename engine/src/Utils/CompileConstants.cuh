@@ -1,7 +1,7 @@
 #ifndef COMPILE_CONSTANTS_CUH
 #define COMPILE_CONSTANTS_CUH
 
-namespace Util {
+namespace Consts {
     static constexpr bool DEBUG =
 #ifdef __DEBUG__
         true

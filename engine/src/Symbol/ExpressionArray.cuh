@@ -3,6 +3,7 @@
 
 #include "Symbol.cuh"
 
+#include "Utils/CompileConstants.cuh"
 #include "Utils/DeviceArray.cuh"
 
 namespace Sym {
@@ -50,6 +51,10 @@ namespace Sym {
             expression_count(other.expression_count) {}
 
         template <class U> ExpressionArray& operator=(const ExpressionArray<U>& other) {
+            if (&other == this) {
+                return *this;
+            }
+
             data = other.data;
             expression_size = other.expression_size;
             expression_count = other.expression_count;
@@ -90,7 +95,7 @@ namespace Sym {
         std::vector<Symbol> to_vector(const size_t idx) const {
             std::vector<Symbol> expression(expression_size);
 
-            cudaMemcpy(expression.data(), (*this)[idx], expression_size * sizeof(Symbol),
+            cudaMemcpy(expression.data(), at(idx), expression_size * sizeof(Symbol),
                        cudaMemcpyDeviceToHost);
             expression.resize(expression.front().size());
             return expression;
@@ -147,15 +152,35 @@ namespace Sym {
         /*
          * @brief Wskaźnik do idx-tego ciągu symboli
          */
-        __host__ __device__ const T* operator[](const size_t idx) const {
+        __host__ __device__ const T* at(const size_t idx) const {
+            if constexpr (Consts::DEBUG) {
+                if (idx > expression_capacity) {
+                    Util::crash("Trying to access expression %lu of an ExpressionArray with "
+                                "capacity of %lu",
+                                idx, expression_capacity);
+                }
+            }
+
             return data.at(expression_size * idx)->as_ptr<T>();
         }
 
         /*
          * @brief Wskaźnik do idx-tego ciągu symboli
          */
-        __host__ __device__ T* operator[](const size_t idx) {
-            return const_cast<T*>((*const_cast<const ExpressionArray<T>*>(this))[idx]);
+        __host__ __device__ T* at(const size_t idx) {
+            return const_cast<T*>(const_cast<const ExpressionArray<T>*>(this)->at(idx));
+        }
+
+        /*
+         * @brief Wskaźnik do idx-tego ciągu symboli
+         */
+        __host__ __device__ const T& operator[](const size_t idx) const { return *at(idx); }
+
+        /*
+         * @brief Wskaźnik do idx-tego ciągu symboli
+         */
+        __host__ __device__ T& operator[](const size_t idx) {
+            return const_cast<T&>((*const_cast<const ExpressionArray<T>*>(this))[idx]);
         }
     };
 }

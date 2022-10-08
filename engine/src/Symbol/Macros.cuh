@@ -11,6 +11,8 @@
 #include "Utils/Cuda.cuh"
 
 namespace Sym {
+    static constexpr size_t BUILDER_SIZE = std::numeric_limits<size_t>::max();
+
     union Symbol;
 }
 
@@ -30,10 +32,11 @@ namespace Sym {
         bool simplified;                                                          \
                                                                                   \
         __host__ __device__ static _name builder() {                              \
-            _name symbol{};                                                       \
-            symbol.type = Sym::Type::_name;                                       \
-            symbol.simplified = _simple;                                          \
-            return symbol;                                                        \
+            return {                                                              \
+                .type = Sym::Type::_name,                                         \
+                .size = BUILDER_SIZE,                                             \
+                .simplified = _simple,                                            \
+            };                                                                    \
         }                                                                         \
                                                                                   \
         __host__ __device__ void seal();                                          \
@@ -109,10 +112,10 @@ namespace Sym {
     DEFINE_COMPARE(_name) { return BASE_COMPARE(_name) && TWO_ARGUMENT_OP_COMPARE(_name); }
 
 #define DEFINE_TO_STRING(_str) \
-    std::string to_string() const { return _str; }
+    [[nodiscard]] std::string to_string() const { return _str; }
 
 #define DEFINE_TO_TEX(_str) \
-    std::string to_tex() const { return _str; }
+    [[nodiscard]] std::string to_tex() const { return _str; }
 
 #define DEFINE_COMPRESS_REVERSE_TO(_name) COMPRESS_REVERSE_TO_HEADER(_name::compress_reverse_to)
 
@@ -126,39 +129,37 @@ namespace Sym {
     DEFINE_COMPRESS_REVERSE_TO(_name) {                                     \
         const size_t new_arg_size = arg().compress_reverse_to(destination); \
         copy_single_to(destination + new_arg_size);                         \
-        destination[new_arg_size].unknown.size = new_arg_size + 1;          \
+        destination[new_arg_size].size() = new_arg_size + 1;                \
         return new_arg_size + 1;                                            \
     }
 
-#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                     \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                       \
-        const size_t new_arg2_size = arg2().compress_reverse_to(destination);                 \
-        const size_t new_arg1_size = arg1().compress_reverse_to(destination + new_arg2_size); \
-                                                                                              \
-        copy_single_to(destination + new_arg1_size + new_arg2_size);                          \
-        destination[new_arg1_size + new_arg2_size].unknown.size =                             \
-            new_arg1_size + new_arg2_size + 1;                                                \
-        (destination + new_arg1_size + new_arg2_size)->as<_name>().second_arg_offset =        \
-            new_arg1_size + 1;                                                                \
-                                                                                              \
-        return new_arg1_size + new_arg2_size + 1;                                             \
+#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                      \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                        \
+        const size_t new_arg2_size = arg2().compress_reverse_to(destination);                  \
+        const size_t new_arg1_size = arg1().compress_reverse_to(destination + new_arg2_size);  \
+                                                                                               \
+        copy_single_to(destination + new_arg1_size + new_arg2_size);                           \
+        destination[new_arg1_size + new_arg2_size].size() = new_arg1_size + new_arg2_size + 1; \
+        (destination + new_arg1_size + new_arg2_size)->as<_name>().second_arg_offset =         \
+            new_arg1_size + 1;                                                                 \
+                                                                                               \
+        return new_arg1_size + new_arg2_size + 1;                                              \
     }
 
-#define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                              \
-        printf("ERROR: compress_reverse_to used on unsupported type: %s\n", #_name); \
-        Util::crash("");                                                             \
-        return 0;                                                                    \
+#define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                     \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                   \
+        Util::crash("ERROR: compress_reverse_to used on unsupported type: %s\n", #_name); \
+        return 0;                                                                         \
     }
 
 #define DEFINE_INTO_DESTINATION_OPERATOR(_name)                                        \
     __host__ __device__ _name* operator<<(Symbol* const destination, _name&& target) { \
-        destination->as<_name>() = target;                                             \
+        destination->init_from(target);                                                \
         return &destination->as<_name>();                                              \
     }                                                                                  \
                                                                                        \
     __host__ __device__ _name* operator<<(Symbol& destination, _name&& target) {       \
-        destination.as<_name>() = target;                                              \
+        destination.init_from(target);                                                 \
         return &destination.as<_name>();                                               \
     }
 

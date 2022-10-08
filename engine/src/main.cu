@@ -17,25 +17,25 @@
 
 #include "Utils/CompileConstants.cuh"
 
-static constexpr size_t BLOCK_SIZE = 1024;
+static constexpr size_t BLOCK_SIZE = 512;
 static constexpr size_t BLOCK_COUNT = 32;
 
-std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Symbol>& integral) {
-    Sym::ExpressionArray<> expressions({integral}, Sym::EXPRESSION_MAX_SYMBOL_COUNT,
-                                       Sym::MAX_EXPRESSION_COUNT);
+std::optional<std::vector<std::vector<Sym::Symbol>>>
+solve_integral(const std::vector<Sym::Symbol>& integral) {
+    Sym::ExpressionArray<> expressions({Sym::single_integral_vacancy()},
+                                       Sym::EXPRESSION_MAX_SYMBOL_COUNT, Sym::MAX_EXPRESSION_COUNT);
     Sym::ExpressionArray<> expressions_swap(Sym::MAX_EXPRESSION_COUNT,
                                             Sym::EXPRESSION_MAX_SYMBOL_COUNT, expressions.size());
 
-    Sym::ExpressionArray<Sym::SubexpressionCandidate> integrals(Sym::MAX_EXPRESSION_COUNT,
-                                                                Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+    Sym::ExpressionArray<Sym::SubexpressionCandidate> integrals(
+        {Sym::first_expression_candidate(integral)}, Sym::MAX_EXPRESSION_COUNT,
+        Sym::EXPRESSION_MAX_SYMBOL_COUNT);
     Sym::ExpressionArray<Sym::SubexpressionCandidate> integrals_swap(
         Sym::MAX_EXPRESSION_COUNT, Sym::EXPRESSION_MAX_SYMBOL_COUNT);
     Sym::ExpressionArray<> help_spaces(Sym::MAX_EXPRESSION_COUNT, Sym::EXPRESSION_MAX_SYMBOL_COUNT,
                                        integrals.size());
     Util::DeviceArray<uint32_t> scan_array_1(Sym::SCAN_ARRAY_SIZE, true);
     Util::DeviceArray<uint32_t> scan_array_2(Sym::SCAN_ARRAY_SIZE, true);
-
-    // TODO: Przenieść pierwszą całkę z `integral` do `intregrals` i dodać `SubexpressionVacancy`
 
     for (;;) {
         Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
@@ -57,13 +57,14 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
         cudaDeviceSynchronize();
 
         std::vector<Sym::Symbol> first_expression = expressions.to_vector(0);
-        if (first_expression.data()->subexpression_vacancy.is_solved == 1) {
-            // TODO: Zwycięstwo, jakoś teraz trzeba zwinąć całe drzewo, zrobić podstawienia i można
-            // zwracać wynik
-            return std::vector<Sym::Symbol>();
+        if (first_expression.data()->as<Sym::SubexpressionVacancy>().is_solved == 1) {
+            // TODO: Collapse the tree instead of returning it
+            Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, help_spaces);
+            return expressions.to_vector();
         }
 
-        scan_array_1.zero_mem();
+        scan_array_1.set_mem(1); // TODO: Causes problems when .last() is used later, should be ones
+                                 // only for expressions, zeros elsewhere
         Sym::find_redundand_expressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1);
         cudaDeviceSynchronize();
 
@@ -109,7 +110,8 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
         integrals.resize_from_device(scan_array_1.last());
         expressions.increment_size_from_device(scan_array_2.last());
 
-        scan_array_1.set_mem(1);
+        scan_array_1.set_mem(1); // TODO: Causes problems when .last() is used later, should be ones
+                                 // only for expressions, zeros elsewhere
         cudaDeviceSynchronize();
 
         Sym::propagate_failures_upwards<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1);
@@ -150,19 +152,26 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
 }
 
 int main() {
-    if constexpr (Util::DEBUG) {
-        fmt::print("Running in debug mode");
+    if constexpr (Consts::DEBUG) {
+        fmt::print("Running in debug mode\n");
     }
 
-    std::vector<Sym::Symbol> integral = Sym::integral(
-        (Sym::var() + Sym::num(1.0)) + (Sym::pi() + (Sym::e() + Sym::cos(Sym::var()))));
+    std::vector<Sym::Symbol> integral =
+        /* Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))); */
+        Sym::integral(Sym::var() ^ (Sym::e() + Sym::num(10) + Sym::pi() +
+                                    Sym::cnst("phi") * Sym::num(2) + Sym::num(5)));
 
-    std::optional<std::vector<Sym::Symbol>> solution = solve_integral(integral);
+    fmt::print("Trying to solve an integral: {}\n", integral.data()->to_string());
+
+    std::optional<std::vector<std::vector<Sym::Symbol>>> solution = solve_integral(integral);
 
     if (solution.has_value()) {
-        fmt::print("{}", solution->data()->to_string());
+        fmt::print("Success! Expressions tree:\n");
+        for (const auto& expr : solution.value()) {
+            fmt::print("{}\n", expr.data()->to_string());
+        }
     }
     else {
-        fmt::print("No solution found");
+        fmt::print("No solution found\n");
     }
 }

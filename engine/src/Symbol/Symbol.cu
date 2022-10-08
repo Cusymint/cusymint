@@ -46,7 +46,7 @@ namespace Sym {
     }
 
     __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {
-        Util::copy_mem(destination, this, size() * sizeof(Symbol));
+        copy_symbol_sequence(destination, this, size());
     }
 
     __host__ __device__ bool Symbol::is_constant() const {
