@@ -1,6 +1,7 @@
 #include "Trigonometric.cuh"
 
 #include "Symbol.cuh"
+#include <fmt/core.h>
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Sine)
@@ -27,13 +28,21 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Cotangent) { arg().simplify_in_place(help_space); }
 
-    std::string Sine::to_string() const { return "sin(" + arg().to_string() + ")"; }
+    std::string Sine::to_string() const { return fmt::format("sin({})", arg().to_string()); }
 
-    std::string Cosine::to_string() const { return "cos(" + arg().to_string() + ")"; }
+    std::string Cosine::to_string() const { return fmt::format("cos({})", arg().to_string()); }
 
-    std::string Tangent::to_string() const { return "tan(" + arg().to_string() + ")"; }
+    std::string Tangent::to_string() const { return fmt::format("tan({})", arg().to_string()); }
 
-    std::string Cotangent::to_string() const { return "cot(" + arg().to_string() + ")"; }
+    std::string Cotangent::to_string() const { return fmt::format("cot({})", arg().to_string()); }
+
+    std::string Sine::to_tex() const { return fmt::format(R"(\sin\left({}\right))", arg().to_tex()); }
+
+    std::string Cosine::to_tex() const { return fmt::format(R"(\cos\left({}\right))", arg().to_tex()); }
+
+    std::string Tangent::to_tex() const { return fmt::format(R"(\tan\left({}\right))", arg().to_tex()); }
+
+    std::string Cotangent::to_tex() const { return fmt::format(R"(\cot\left({}\right))", arg().to_tex()); }
 
     template <class T> std::vector<Symbol> make_trig_function(const std::vector<Symbol>& arg) {
         std::vector<Symbol> res(arg.size() + 1);

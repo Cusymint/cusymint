@@ -1,6 +1,7 @@
 #include "InverseTrigonometric.cuh"
 
 #include "Symbol.cuh"
+#include <fmt/core.h>
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arcsine)
@@ -27,13 +28,21 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Arccotangent) { arg().simplify_in_place(help_space); }
 
-    std::string Arcsine::to_string() const { return "arcsin(" + arg().to_string() + ")"; }
+    std::string Arcsine::to_string() const { return fmt::format("arcsin({})", arg().to_string()); }
 
-    std::string Arccosine::to_string() const { return "arccos(" + arg().to_string() + ")"; }
+    std::string Arccosine::to_string() const { return fmt::format("arccos({})", arg().to_string()); }
 
-    std::string Arctangent::to_string() const { return "arctan(" + arg().to_string() + ")"; }
+    std::string Arctangent::to_string() const { return fmt::format("arctan({})", arg().to_string()); }
 
-    std::string Arccotangent::to_string() const { return "arccot(" + arg().to_string() + ")"; }
+    std::string Arccotangent::to_string() const { return fmt::format("arccot({})", arg().to_string()); }
+
+    std::string Arcsine::to_tex() const { return fmt::format(R"(\arcsin\left({}\right))", arg().to_tex()); }
+
+    std::string Arccosine::to_tex() const { return fmt::format(R"(\arccos\left({}\right))", arg().to_tex()); }
+
+    std::string Arctangent::to_tex() const { return fmt::format(R"(\arctan\left({}\right))", arg().to_tex()); }
+
+    std::string Arccotangent::to_tex() const { return fmt::format(R"(\arccot\left({}\right))", arg().to_tex()); }
 
     template <class T>
     std::vector<Symbol> make_inverse_trigonometric_function(const std::vector<Symbol>& arg) {

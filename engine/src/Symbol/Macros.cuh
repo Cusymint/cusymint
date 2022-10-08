@@ -3,6 +3,7 @@
 
 #include <cstring>
 
+#include <fmt/core.h>
 #include <string>
 #include <type_traits>
 
@@ -110,6 +111,9 @@ namespace Sym {
 #define DEFINE_TO_STRING(_str) \
     std::string to_string() const { return _str; }
 
+#define DEFINE_TO_TEX(_str) \
+    std::string to_tex() const { return _str; }
+
 #define DEFINE_COMPRESS_REVERSE_TO(_name) COMPRESS_REVERSE_TO_HEADER(_name::compress_reverse_to)
 
 #define DEFINE_SIMPLE_COMPRESS_REVERSE_TO(_name) \
@@ -140,13 +144,11 @@ namespace Sym {
         return new_arg1_size + new_arg2_size + 1;                                             \
     }
 
-#define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                    \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                  \
-        printf("ERROR: compress_reverse_to used on unsupported type: "); \
-        printf(#_name);                                                  \
-        printf("\n");                                                    \
-        Util::crash("");                                                 \
-        return 0;                                                        \
+#define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                              \
+        printf("ERROR: compress_reverse_to used on unsupported type: %s\n", #_name); \
+        Util::crash("");                                                             \
+        return 0;                                                                    \
     }
 
 #define DEFINE_INTO_DESTINATION_OPERATOR(_name)                                        \

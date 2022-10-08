@@ -5,6 +5,8 @@
 #include <optional>
 #include <vector>
 
+#include <fmt/core.h>
+
 #include <thrust/execution_policy.h>
 #include <thrust/scan.h>
 
@@ -149,7 +151,7 @@ std::optional<std::vector<Sym::Symbol>> solve_integral(const std::vector<Sym::Sy
 
 int main() {
     if constexpr (Util::DEBUG) {
-        std::cout << "Running in debug mode" << std::endl;
+        fmt::print("Running in debug mode");
     }
 
     std::vector<Sym::Symbol> integral = Sym::integral(
@@ -158,9 +160,9 @@ int main() {
     std::optional<std::vector<Sym::Symbol>> solution = solve_integral(integral);
 
     if (solution.has_value()) {
-        std::cout << solution->data()->to_string() << std::endl;
+        fmt::print("{}", solution->data()->to_string());
     }
     else {
-        std::cout << "No solution found" << std::endl;
+        fmt::print("No solution found");
     }
 }

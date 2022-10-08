@@ -4,6 +4,8 @@
 #include "TreeIterator.cuh"
 #include "Utils/Cuda.cuh"
 
+#include <fmt/core.h>
+
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Addition)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Addition)
@@ -104,18 +106,36 @@ namespace Sym {
 
     std::string Addition::to_string() const {
         if (arg2().is(Type::Negation)) {
-            return "(" + arg1().to_string() + "-" + arg2().negation.arg().to_string() + ")";
+            return fmt::format("({}-{})", arg1().to_string(), arg2().negation.arg().to_string());
         }
 
         if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value < 0.0) {
-            return "(" + arg1().to_string() + "-" + std::to_string(-arg2().numeric_constant.value) +
-                   ")";
+            return fmt::format("({}-{})", arg1().to_string(), -arg2().numeric_constant.value);
         }
 
-        return "(" + arg1().to_string() + "+" + arg2().to_string() + ")";
+        return fmt::format("({}+{})", arg1().to_string(), arg2().to_string());
     }
 
-    std::string Negation::to_string() const { return "-(" + arg().to_string() + ")"; }
+    std::string Addition::to_tex() const {
+        if (arg2().is(Type::Negation)) {
+            return fmt::format("{}-{}", arg1().to_tex(), arg2().negation.arg().to_tex());
+        }
+
+        if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value < 0.0) {
+            return fmt::format("{}-{}", arg1().to_tex(), -arg2().numeric_constant.value);
+        }
+
+        return fmt::format("{}+{}", arg1().to_tex(), arg2().to_tex());
+    }
+
+    std::string Negation::to_string() const { return fmt::format("-({})", arg().to_string()); }
+
+    std::string Negation::to_tex() const { 
+        if (arg().is(Type::Addition) || arg().is(Type::Negation)) {
+            return fmt::format("-\\left({}\\right)",arg().to_tex());  
+        }
+        return fmt::format("-{}",arg().to_tex()); 
+    }
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);
