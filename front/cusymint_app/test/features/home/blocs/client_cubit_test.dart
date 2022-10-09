@@ -4,7 +4,7 @@ import 'package:cusymint_client_mock/cusymint_client_mock.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final waitDuration = const Duration(milliseconds: 100);
+  const waitDuration = Duration(milliseconds: 100);
 
   blocTest(
     'emits [] when nothing is added',
@@ -59,29 +59,24 @@ void main() {
       isA<ClientLoading>(),
       isA<ClientSuccess>()
           .having(
-            (cs) => cs.response.inputInTex,
+            (cs) => cs.inputInTex,
             'Input in tex matches that produced by client',
             same(ResponseMockFactory.defaultResponse.inputInTex),
           )
           .having(
-            (cs) => cs.response.inputInUtf,
+            (cs) => cs.inputInUtf,
             'Input in utf matches that produced by client',
             same(ResponseMockFactory.defaultResponse.inputInUtf),
           )
           .having(
-            (cs) => cs.response.outputInTex,
+            (cs) => cs.outputInTex,
             'Output in tex matches that produced by client',
             same(ResponseMockFactory.defaultResponse.outputInTex),
           )
           .having(
-            (cs) => cs.response.outputInUtf,
+            (cs) => cs.outputInUtf,
             'Output in utf matches that produced by client',
             same(ResponseMockFactory.defaultResponse.outputInUtf),
-          )
-          .having(
-            (cs) => cs.response.hasErrors,
-            'No errors',
-            isFalse,
           ),
     ],
   );

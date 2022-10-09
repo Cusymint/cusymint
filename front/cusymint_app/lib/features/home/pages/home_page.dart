@@ -59,7 +59,10 @@ class _HomePageState extends State<HomePage> {
                 if (state is ClientLoading) const _LoadingBody(),
                 if (state is ClientSuccess)
                   _SuccessBody(
-                    response: state.response,
+                    inputInTex: state.inputInTex,
+                    inputInUtf: state.inputInUtf,
+                    outputInTex: state.outputInTex,
+                    outputInUtf: state.outputInUtf,
                   ),
                 if (state is ClientFailure)
                   _FailureBody(
@@ -75,9 +78,17 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _SuccessBody extends StatelessWidget {
-  const _SuccessBody({super.key, required this.response});
+  const _SuccessBody({
+    required this.inputInUtf,
+    required this.inputInTex,
+    required this.outputInUtf,
+    required this.outputInTex,
+  });
 
-  final Response response;
+  final String inputInUtf;
+  final String inputInTex;
+  final String outputInUtf;
+  final String outputInTex;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +99,7 @@ class _SuccessBody extends StatelessWidget {
           child: CuCard(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: TexView(response.outputInTex!, fontScale: 2),
+              child: TexView(outputInTex, fontScale: 2),
             ),
           ),
         ),
@@ -99,7 +110,6 @@ class _SuccessBody extends StatelessWidget {
 
 class _FailureBody extends StatelessWidget {
   const _FailureBody({
-    super.key,
     required this.errors,
   });
 
@@ -120,7 +130,7 @@ class _FailureBody extends StatelessWidget {
 }
 
 class _LoadingBody extends StatelessWidget {
-  const _LoadingBody({super.key});
+  const _LoadingBody();
 
   @override
   Widget build(BuildContext context) {

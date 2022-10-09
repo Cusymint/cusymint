@@ -11,7 +11,7 @@ class ClientCubit extends Cubit<ClientState> {
 
     final request = Request(integralToBeSolved);
 
-    emit(ClientLoading(request: request));
+    emit(const ClientLoading());
 
     final response = await _getResponse(request);
 
@@ -19,7 +19,6 @@ class ClientCubit extends Cubit<ClientState> {
 
     if (response.hasErrors) {
       emit(ClientFailure(
-        request: request,
         errors: response.errors.map((e) => e.errorMessage).toList(),
       ));
       return;
@@ -28,8 +27,10 @@ class ClientCubit extends Cubit<ClientState> {
     final duration = watch.elapsed;
 
     emit(ClientSuccess(
-      response: response,
-      request: request,
+      inputInTex: response.inputInTex!,
+      inputInUtf: response.inputInUtf!,
+      outputInTex: response.outputInTex!,
+      outputInUtf: response.outputInUtf!,
       duration: duration,
     ));
   }
@@ -37,6 +38,13 @@ class ClientCubit extends Cubit<ClientState> {
   Future<Response> _getResponse(Request request) async {
     try {
       final response = await client.solveIntegral(request);
+
+      if (response.inputInTex == null ||
+          response.inputInUtf == null ||
+          response.outputInTex == null ||
+          response.outputInUtf == null) {
+        throw ArgumentError('Response is missing some fields');
+      }
 
       return response;
     } catch (e) {
@@ -58,37 +66,30 @@ class ClientInitial extends ClientState {
 }
 
 class ClientLoading extends ClientState {
-  const ClientLoading({
-    required this.request,
-  });
-
-  final Request request;
+  const ClientLoading();
 }
 
 class ClientSuccess extends ClientState {
-  ClientSuccess({
+  const ClientSuccess({
+    required this.inputInUtf,
+    required this.inputInTex,
+    required this.outputInUtf,
+    required this.outputInTex,
     required this.duration,
-    required this.request,
-    required this.response,
-  }) {
-    assert(response.hasErrors == false);
-    assert(response.outputInUtf != null);
-    assert(response.outputInTex != null);
-    assert(response.inputInUtf != null);
-    assert(response.inputInTex != null);
-  }
+  });
+
+  final String inputInUtf;
+  final String inputInTex;
+  final String outputInUtf;
+  final String outputInTex;
 
   final Duration duration;
-  final Request request;
-  final Response response;
 }
 
 class ClientFailure extends ClientState {
   const ClientFailure({
-    required this.request,
     this.errors = const [],
   });
 
-  final Request request;
   final List<String> errors;
 }
