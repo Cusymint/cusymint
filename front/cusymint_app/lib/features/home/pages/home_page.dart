@@ -27,48 +27,51 @@ class _HomePageState extends State<HomePage> {
     return BlocBuilder<ClientCubit, ClientState>(
       bloc: clientCubit,
       builder: (context, state) {
-        return Scaffold(
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              clientCubit.reset();
-            },
-            child: const Icon(Icons.refresh),
-          ),
-          body: Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SizedBox(
-                    width: 400,
-                    child: CuTextField(
-                      controller: _controller,
+        return SafeArea(
+          child: Scaffold(
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                clientCubit.reset();
+              },
+              child: const Icon(Icons.refresh),
+            ),
+            body: Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                      width: 400,
+                      child: CuTextField(
+                        controller: _controller,
+                      ),
                     ),
                   ),
-                ),
-                if (state is ClientInitial)
-                  ElevatedButton(
-                    onPressed: () async {
-                      final integralToBeSolved = _controller.text;
-                      await clientCubit.solveIntegral(integralToBeSolved);
-                    },
-                    child: const Text('Solve integral'),
-                  ),
-                if (state is ClientLoading) const _LoadingBody(),
-                if (state is ClientSuccess)
-                  _SuccessBody(
-                    inputInTex: state.inputInTex,
-                    inputInUtf: state.inputInUtf,
-                    outputInTex: state.outputInTex,
-                    outputInUtf: state.outputInUtf,
-                  ),
-                if (state is ClientFailure)
-                  _FailureBody(
-                    errors: state.errors,
-                  ),
-              ],
+                  if (state is ClientInitial)
+                    ElevatedButton(
+                      onPressed: () async {
+                        final integralToBeSolved = _controller.text;
+                        await clientCubit.solveIntegral(integralToBeSolved);
+                      },
+                      child: const Text('Solve integral'),
+                    ),
+                  if (state is ClientLoading) const _LoadingBody(),
+                  if (state is ClientSuccess)
+                    _SuccessBody(
+                      inputInTex: state.inputInTex,
+                      inputInUtf: state.inputInUtf,
+                      outputInTex: state.outputInTex,
+                      outputInUtf: state.outputInUtf,
+                      duration: state.duration,
+                    ),
+                  if (state is ClientFailure)
+                    _FailureBody(
+                      errors: state.errors,
+                    ),
+                ],
+              ),
             ),
           ),
         );
@@ -77,29 +80,59 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _SuccessBody extends StatelessWidget {
+class _SuccessBody extends StatefulWidget {
   const _SuccessBody({
     required this.inputInUtf,
     required this.inputInTex,
     required this.outputInUtf,
     required this.outputInTex,
+    required this.duration,
   });
 
   final String inputInUtf;
   final String inputInTex;
   final String outputInUtf;
   final String outputInTex;
+  final Duration duration;
+
+  @override
+  State<_SuccessBody> createState() => _SuccessBodyState();
+}
+
+class _SuccessBodyState extends State<_SuccessBody> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(Strings.foundResult.tr(namedArgs: {'timeInMs': '12'})),
+        Text(
+          Strings.foundResult.tr(
+            namedArgs: {
+              'timeInMs': widget.duration.inMilliseconds.toString(),
+            },
+          ),
+        ),
         Center(
           child: CuCard(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: TexView(outputInTex, fontScale: 2),
+            child: Scrollbar(
+              thumbVisibility: true,
+              controller: _scrollController,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                controller: _scrollController,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TexView('${widget.inputInTex} = ${widget.outputInTex}',
+                      fontScale: 2),
+                ),
+              ),
             ),
           ),
         ),
