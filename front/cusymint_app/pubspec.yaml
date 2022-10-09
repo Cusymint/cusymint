@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
 
   flutter_bloc: ^8.1.1
+  provider: ^6.0.3
 
   cusymint_l10n:
     path: ../cusymint_l10n
@@ -20,6 +21,7 @@ dependencies:
 
   cusymint_ui:
     path: ../cusymint_ui
+
     
   flutter_math_fork: ^0.6.3+1
 

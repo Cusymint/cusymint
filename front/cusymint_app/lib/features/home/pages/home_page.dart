@@ -1,38 +1,44 @@
 import 'package:cusymint_app/features/home/blocs/client_cubit.dart';
 import 'package:cusymint_app/features/tex_rendering/widgets/tex_view.dart';
-import 'package:cusymint_client_mock/cusymint_client_mock.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  Widget build(BuildContext context) {
+    final clientCubit = BlocProvider.of<ClientCubit>(context);
+
+    return HomeBody(clientCubit: clientCubit);
+  }
 }
 
-class _HomePageState extends State<HomePage> {
+class HomeBody extends StatefulWidget {
+  const HomeBody({super.key, required this.clientCubit});
+
+  final ClientCubit clientCubit;
+
+  @override
+  State<HomeBody> createState() => _HomeBodyState();
+}
+
+class _HomeBodyState extends State<HomeBody> {
   final _controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final client = CusymintClientMock(
-      fakeResponse: ResponseMockFactory.defaultResponse,
-    );
-
-    final clientCubit = ClientCubit(client: client);
-
     return BlocBuilder<ClientCubit, ClientState>(
-      bloc: clientCubit,
+      bloc: widget.clientCubit,
       builder: (context, state) {
         return SafeArea(
           child: Scaffold(
             floatingActionButton: FloatingActionButton(
               onPressed: () {
-                clientCubit.reset();
+                widget.clientCubit.reset();
               },
               child: const Icon(Icons.refresh),
             ),
@@ -54,7 +60,8 @@ class _HomePageState extends State<HomePage> {
                     ElevatedButton(
                       onPressed: () async {
                         final integralToBeSolved = _controller.text;
-                        await clientCubit.solveIntegral(integralToBeSolved);
+                        await widget.clientCubit
+                            .solveIntegral(integralToBeSolved);
                       },
                       child: const Text('Solve integral'),
                     ),
@@ -171,12 +178,14 @@ class _SuccessBodyState extends State<_SuccessBody> {
   }
 
   Future<void> _copyUtfToClipboard() async {
+    // TODO: add toast
     await Clipboard.setData(
       ClipboardData(text: '${widget.inputInUtf} = ${widget.outputInUtf}'),
     );
   }
 
   Future<void> _copyTexToClipboard() async {
+    // TODO: add toast
     await Clipboard.setData(
       ClipboardData(text: '${widget.inputInTex} = ${widget.outputInTex}'),
     );

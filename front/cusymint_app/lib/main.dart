@@ -1,4 +1,5 @@
 import 'package:cusymint_app/features/home/pages/home_page.dart';
+import 'package:cusymint_app/services_provider.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:flutter/material.dart';
 
@@ -13,12 +14,14 @@ class CusymintApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      locale: context.locale,
-      supportedLocales: context.supportedLocales,
-      localizationsDelegates: context.localizationDelegates,
-      title: 'cusymint',
-      home: const HomePage(),
+    return ServicesProvider(
+      child: MaterialApp(
+        locale: context.locale,
+        supportedLocales: context.supportedLocales,
+        localizationsDelegates: context.localizationDelegates,
+        title: 'cusymint',
+        home: const HomePage(),
+      ),
     );
   }
 }
