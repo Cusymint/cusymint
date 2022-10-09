@@ -4,6 +4,7 @@ import 'package:cusymint_client_mock/cusymint_client_mock.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomePage extends StatefulWidget {
@@ -121,23 +122,68 @@ class _SuccessBodyState extends State<_SuccessBody> {
         ),
         Center(
           child: CuCard(
-            child: Scrollbar(
-              thumbVisibility: true,
-              controller: _scrollController,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                controller: _scrollController,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: TexView('${widget.inputInTex} = ${widget.outputInTex}',
-                      fontScale: 2),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Scrollbar(
+                    thumbVisibility: true,
+                    controller: _scrollController,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      controller: _scrollController,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: TexView(
+                          '${widget.inputInTex} = ${widget.outputInTex}',
+                          fontScale: 2,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                ButtonBar(
+                  alignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      onPressed: () async => await _shareUtf(),
+                      // TODO: replace with cusymint icons
+                      icon: const Icon(Icons.share),
+                    ),
+                    IconButton(
+                      onPressed: () async => await _copyTexToClipboard(),
+                      // TODO: replace with cusymint icons
+                      icon: const Icon(Icons.copy),
+                    ),
+                    IconButton(
+                      onPressed: () async => await _copyUtfToClipboard(),
+                      // TODO: replace with cusymint icons
+                      icon: const Icon(Icons.copy_sharp),
+                    ),
+                  ],
+                )
+              ],
             ),
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _copyUtfToClipboard() async {
+    await Clipboard.setData(
+      ClipboardData(text: '${widget.inputInUtf} = ${widget.outputInUtf}'),
+    );
+  }
+
+  Future<void> _copyTexToClipboard() async {
+    await Clipboard.setData(
+      ClipboardData(text: '${widget.inputInTex} = ${widget.outputInTex}'),
+    );
+  }
+
+  Future<void> _shareUtf() async {
+    // TODO: implement share
   }
 }
 
