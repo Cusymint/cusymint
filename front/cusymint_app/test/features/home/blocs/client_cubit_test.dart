@@ -111,4 +111,40 @@ void main() {
       ),
     ],
   );
+
+  blocTest(
+    'emits ClientLoading and ClientFailure on Client exception',
+    build: () {
+      final client = ExceptionThrowingClient(waitDuration: waitDuration);
+
+      final clientCubit = ClientCubit(client: client);
+
+      return clientCubit;
+    },
+    act: (ClientCubit cubit) async {
+      await cubit.solveIntegral('x');
+    },
+    wait: waitDuration + waitDuration, // race condition
+    expect: () => [
+      isA<ClientLoading>(),
+      isA<ClientFailure>().having(
+        (cf) => cf.errors,
+        'Has errors',
+        isNotEmpty,
+      ),
+    ],
+  );
+}
+
+class ExceptionThrowingClient extends Fake implements CusymintClient {
+  ExceptionThrowingClient({required this.waitDuration});
+
+  final Duration waitDuration;
+
+  @override
+  Future<Response> solveIntegral(Request request) async {
+    await Future<void>.delayed(waitDuration);
+
+    throw Exception('Fake exception');
+  }
 }
