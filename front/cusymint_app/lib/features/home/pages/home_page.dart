@@ -5,6 +5,7 @@ import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -108,7 +109,14 @@ class _SuccessBody extends StatefulWidget {
 }
 
 class _SuccessBodyState extends State<_SuccessBody> {
-  final ScrollController _scrollController = ScrollController();
+  final _scrollController = ScrollController();
+  final _fToast = FToast();
+
+  @override
+  void initState() {
+    super.initState();
+    _fToast.init(context);
+  }
 
   @override
   void dispose() {
@@ -178,14 +186,14 @@ class _SuccessBodyState extends State<_SuccessBody> {
   }
 
   Future<void> _copyUtfToClipboard() async {
-    // TODO: add toast
+    _showCopyToClipboardToast();
     await Clipboard.setData(
       ClipboardData(text: '${widget.inputInUtf} = ${widget.outputInUtf}'),
     );
   }
 
   Future<void> _copyTexToClipboard() async {
-    // TODO: add toast
+    _showCopyToClipboardToast();
     await Clipboard.setData(
       ClipboardData(text: '${widget.inputInTex} = ${widget.outputInTex}'),
     );
@@ -193,6 +201,14 @@ class _SuccessBodyState extends State<_SuccessBody> {
 
   Future<void> _shareUtf() async {
     // TODO: implement share
+  }
+
+  void _showCopyToClipboardToast() {
+    _fToast.showToast(
+      child: CuToast(message: Strings.copiedToClipboard.tr()),
+      gravity: ToastGravity.BOTTOM,
+      toastDuration: const Duration(seconds: 2),
+    );
   }
 }
 

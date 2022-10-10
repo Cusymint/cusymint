@@ -5,4 +5,5 @@ class Strings {
   static const String tryExamples = 'tryExamples';
   static const String foundResult = 'foundResult';
   static const String encounteredErrors = 'encounteredErrors';
+  static const String copiedToClipboard = 'copiedToClipboard';
 }
