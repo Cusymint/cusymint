@@ -6,21 +6,7 @@
 #include "Symbol/Symbol.cuh"
 
 namespace Sym {
-    struct HeuristicCheckResult {
-        __host__ __device__ HeuristicCheckResult(const size_t new_integrals,
-                                                 const size_t new_expressions) :
-            new_integrals(new_integrals), new_expressions(new_expressions) {}
-
-        size_t new_integrals;
-        size_t new_expressions;
-    };
-
-    using HeuristicCheck = HeuristicCheckResult (*)(const Integral* const);
-    using HeuristicApplication = void (*)(const Integral* const, Symbol* const, Symbol* const,
-                                          Symbol* const);
-
-    using KnownIntegralCheck = size_t (*)(const Integral* const);
-    using KnownIntegralTransform = void (*)(const Integral* const, Symbol* const, Symbol* const);
+    using KnownIntegralCheck = size_t (*)(const Integral* const integral);
 
     __device__ size_t is_single_variable(const Integral* const integral);
     __device__ size_t is_simple_variable_power(const Integral* const integral);
@@ -29,6 +15,9 @@ namespace Sym {
     __device__ size_t is_simple_cosine(const Integral* const integral);
     __device__ size_t is_constant(const Integral* const integral);
     __device__ size_t is_known_arctan(const Integral* const integral);
+
+    using KnownIntegralTransform = void (*)(const Integral* const integral,
+                                            Symbol* const destination, Symbol* const help_space);
 
     __device__ void integrate_single_variable(const Integral* const integral,
                                               Symbol* const destination, Symbol* const help_space);
@@ -47,12 +36,32 @@ namespace Sym {
     __device__ void integrate_arctan(const Integral* const integral, Symbol* const destination,
                                      Symbol* const help_space);
 
-    __device__ HeuristicCheckResult is_function_of_ex(const Integral* const integral);
+    struct HeuristicCheckResult {
+        __host__ __device__ HeuristicCheckResult(const size_t new_integrals,
+                                                 const size_t new_expressions) :
+            new_integrals(new_integrals), new_expressions(new_expressions) {}
 
-    __device__ void transform_function_of_ex(const Integral* const integral,
+        size_t new_integrals;
+        size_t new_expressions;
+    };
+
+    using HeuristicCheck = HeuristicCheckResult (*)(const Integral* const integral);
+
+    __device__ HeuristicCheckResult is_function_of_ex(const Integral* const integral);
+    __device__ HeuristicCheckResult is_sum(const Integral* const integral);
+
+    using HeuristicApplication = void (*)(const SubexpressionCandidate* const integral,
+                                          Symbol* const integral_dst, Symbol* const expression_dst,
+                                          const size_t expression_index, Symbol* const help_space);
+
+    __device__ void transform_function_of_ex(const SubexpressionCandidate* const integral,
                                              Symbol* const integral_dst,
                                              Symbol* const expression_dst,
+                                             const size_t expression_index,
                                              Symbol* const help_space);
+    __device__ void split_sum(const SubexpressionCandidate* const integral,
+                              Symbol* const integral_dst, Symbol* const expression_dst,
+                              const size_t expression_index, Symbol* const help_space);
 
     /*
      * @brief Tworzy symbol `Solution` i zapisuje go na `destination` razem z podstawieniami z
@@ -69,7 +78,7 @@ namespace Sym {
     // `heurisic_checks` is defined in translation unit associated with integrate.cu, but its
     // size has to be known in other translation units as well
     constexpr size_t KNOWN_INTEGRAL_COUNT = 7;
-    constexpr size_t HEURISTIC_CHECK_COUNT = 1;
+    constexpr size_t HEURISTIC_CHECK_COUNT = 2;
     constexpr size_t MAX_CHECK_COUNT =
         KNOWN_INTEGRAL_COUNT > HEURISTIC_CHECK_COUNT ? KNOWN_INTEGRAL_COUNT : HEURISTIC_CHECK_COUNT;
     constexpr size_t TRANSFORM_GROUP_SIZE = 32;
@@ -221,7 +230,7 @@ namespace Sym {
     __global__ void remove_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                                      const Util::DeviceArray<uint32_t> integrals_removability,
                                      const Util::DeviceArray<uint32_t> expressions_removability,
-                                     ExpressionArray<SubexpressionCandidate> destinations);
+                                     ExpressionArray<> destinations);
 
     /*
      * @brief Sprawdza, które heurystyki pasują do których całek oraz aktualizuje

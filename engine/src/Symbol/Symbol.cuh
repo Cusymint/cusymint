@@ -55,6 +55,9 @@ namespace Sym {
         constexpr static Sym::Type TYPE = Sym::Type::Symbol;
 
         [[nodiscard]] __host__ __device__ inline Type type() const { return unknown.type; }
+        [[nodiscard]] __host__ __device__ inline bool simplified() const {
+            return unknown.simplified;
+        }
         [[nodiscard]] __host__ __device__ inline bool is(const Type type) const {
             return unknown.type == type;
         }
@@ -78,12 +81,6 @@ namespace Sym {
         }
 
         template <class T> [[nodiscard]] __host__ __device__ inline const T* as_ptr() const {
-            if constexpr (Consts::DEBUG) {
-                if (T::TYPE != Type::Symbol && T::TYPE != type()) {
-                    Util::crash("Trying to access %s as %s", type_name(type()), type_name(T::TYPE));
-                }
-            }
-
             return reinterpret_cast<const T*>(this);
         }
 
@@ -92,6 +89,12 @@ namespace Sym {
         }
 
         template <class T> [[nodiscard]] __host__ __device__ inline const T& as() const {
+            if constexpr (Consts::DEBUG) {
+                if (T::TYPE != Type::Symbol && T::TYPE != type()) {
+                    Util::crash("Trying to access %s as %s", type_name(type()), type_name(T::TYPE));
+                }
+            }
+
             return *as_ptr<T>();
         }
 

@@ -32,6 +32,13 @@ namespace Sym {
                                               Symbol* const destination) const;
 
     /*
+     * @brief Copies the integral symbol and its substitutions to `destination`
+     *
+     * @param destination Destination of
+     */
+    __host__ __device__ void copy_without_integrand_to(Symbol* const destination) const;
+
+    /*
      * @brief Integrate `this` by substitution and save the result in `destination`.
      *
      *
@@ -48,6 +55,10 @@ namespace Sym {
     __host__ __device__ const Substitution* first_substitution() const;
     __host__ __device__ Substitution* first_substitution();
 
+    /*
+     * @brief Number of symbols between the integral symbol and the integrand (not counting either
+     * of them)
+     */
     __host__ __device__ size_t substitutions_size() const;
 
     std::string to_string() const;

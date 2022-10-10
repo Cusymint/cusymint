@@ -94,9 +94,8 @@ namespace Sym {
 
 #define DEFINE_SIMPLIFY_IN_PLACE(_name) SIMPLIFY_IN_PLACE_HEADER(_name::simplify_in_place)
 
-#define BASE_COMPARE(_name)                                                 \
-    symbol->as<_name>().type == type && symbol->as<_name>().size == size && \
-        symbol->as<_name>().simplified == simplified
+#define BASE_COMPARE(_name) \
+    symbol->type() == type && symbol->size() == size && symbol->simplified() == simplified
 
 #define ONE_ARGUMENT_OP_COMPARE(_name) true
 

@@ -55,6 +55,18 @@ namespace {
         const unsigned int previous_val = atomicExch(&var, val);
         return previous_val != val;
     }
+
+    /*
+     * @brief Gets target index from `scan` inclusive scan array at `index` index
+     */
+    __device__ uint32_t index_from_scan(const Util::DeviceArray<uint32_t>& scan,
+                                        const size_t index) {
+        if (index == 0) {
+            return 0;
+        }
+
+        return scan[index - 1];
+    }
 }
 
 namespace Sym {
@@ -75,9 +87,10 @@ namespace Sym {
                       sizeof(KnownIntegralCheck) * KNOWN_INTEGRAL_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
-    __device__ const HeuristicCheck heuristic_checks[] = {is_function_of_ex};
+    __device__ const HeuristicCheck heuristic_checks[] = {is_function_of_ex, is_sum};
 
-    __device__ const HeuristicApplication heuristic_applications[] = {transform_function_of_ex};
+    __device__ const HeuristicApplication heuristic_applications[] = {transform_function_of_ex,
+                                                                      split_sum};
 
     static_assert(sizeof(heuristic_checks) == sizeof(heuristic_applications),
                   "Different number of heuristics and applications defined");
@@ -101,9 +114,18 @@ namespace Sym {
         return {integral->integrand()->is_function_of(ex_function) ? 1UL : 0UL, 0UL};
     }
 
-    __device__ void transform_function_of_ex(const Integral* const integral,
+    __device__ HeuristicCheckResult is_sum(const Integral* const integral) {
+        if (integral->integrand()->is(Type::Addition)) {
+            return {2, 1};
+        }
+
+        return {0, 0};
+    }
+
+    __device__ void transform_function_of_ex(const SubexpressionCandidate* const integral,
                                              Symbol* const integral_dst,
                                              Symbol* const /*expression_dst*/,
+                                             const size_t /*expression_index*/,
                                              Symbol* const help_space) {
         // TODO: Move somewhere so that it's initialized only once and not every time this function
         // is called
@@ -111,8 +133,52 @@ namespace Sym {
         Symbol variable{};
         variable.variable = Variable::create();
 
-        integral->integrate_by_substitution_with_derivative(ex_function, &variable, integral_dst,
-                                                            help_space);
+        SubexpressionCandidate* new_candidate = integral_dst << SubexpressionCandidate::builder();
+        new_candidate->copy_metadata_from(*integral);
+
+        integral->arg().as<Integral>().integrate_by_substitution_with_derivative(
+            ex_function, &variable, integral_dst + 1, help_space);
+
+        new_candidate->seal();
+    }
+
+    __device__ void split_sum(const SubexpressionCandidate* const integral,
+                              Symbol* const integral_dst, Symbol* const expression_dst,
+                              const size_t expression_index, Symbol* const /*help_space*/) {
+        const auto& integrand = integral->arg().as<Integral>().integrand()->as<Addition>();
+
+        SubexpressionCandidate* candidate_expression = expression_dst
+                                                       << SubexpressionCandidate::builder();
+        candidate_expression->copy_metadata_from(*integral);
+        candidate_expression->subexpressions_left = 2;
+        Addition* addition = &candidate_expression->arg() << Addition::builder();
+        addition->arg1().init_from(SubexpressionVacancy::for_single_integral());
+        addition->seal_arg1();
+        addition->arg2().init_from(SubexpressionVacancy::for_single_integral());
+        addition->seal();
+        candidate_expression->seal();
+
+        SubexpressionCandidate* first_integral_candidate = integral_dst
+                                                           << SubexpressionCandidate::builder();
+        first_integral_candidate->vacancy_expression_idx = expression_index;
+        first_integral_candidate->vacancy_idx = 2;
+        first_integral_candidate->subexpressions_left = 0;
+        integral->arg().as<Integral>().copy_without_integrand_to(&first_integral_candidate->arg());
+        auto& first_integral = first_integral_candidate->arg().as<Integral>();
+        integrand.arg1().copy_to(first_integral.integrand());
+        first_integral.seal();
+        first_integral_candidate->seal();
+
+        SubexpressionCandidate* second_integral_candidate =
+            integral_dst + EXPRESSION_MAX_SYMBOL_COUNT << SubexpressionCandidate::builder();
+        second_integral_candidate->vacancy_expression_idx = expression_index;
+        second_integral_candidate->vacancy_idx = 3;
+        second_integral_candidate->subexpressions_left = 0;
+        integral->arg().as<Integral>().copy_without_integrand_to(&second_integral_candidate->arg());
+        auto& second_integral = second_integral_candidate->arg().as<Integral>();
+        integrand.arg2().copy_to(second_integral.integrand());
+        second_integral.seal();
+        second_integral_candidate->seal();
     }
 
     __device__ size_t is_single_variable(const Integral* const integral) {
@@ -184,7 +250,7 @@ namespace Sym {
         product->arg1().numeric_constant = NumericConstant::with_value(0.5);
         product->seal_arg1();
 
-        Power* const power = product->arg2() << Power::builder();
+        Power* const power = &product->arg2() << Power::builder();
         power->arg1().variable = Variable::create();
         power->seal_arg1();
         power->arg2().numeric_constant = NumericConstant::with_value(2.0);
@@ -205,8 +271,8 @@ namespace Sym {
         // 1/(c+1) * x^(c+1), c może być całym drzewem
         Product* const product = solution_expr << Product::builder();
 
-        Reciprocal* const reciprocal = product->arg1() << Reciprocal::builder();
-        Addition* const multiplier_addition = reciprocal->arg() << Addition::builder();
+        Reciprocal* const reciprocal = &product->arg1() << Reciprocal::builder();
+        Addition* const multiplier_addition = &reciprocal->arg() << Addition::builder();
         exponent->copy_to(&multiplier_addition->arg1());
         multiplier_addition->seal_arg1();
         multiplier_addition->arg2().numeric_constant = NumericConstant::with_value(1.0);
@@ -214,10 +280,10 @@ namespace Sym {
         reciprocal->seal();
         product->seal_arg1();
 
-        Power* const power = product->arg2() << Power::builder();
+        Power* const power = &product->arg2() << Power::builder();
         power->arg1().variable = Variable::create();
         power->seal_arg1();
-        Addition* const exponent_addition = power->arg2() << Addition::builder();
+        Addition* const exponent_addition = &power->arg2() << Addition::builder();
         exponent->copy_to(&exponent_addition->arg1());
         exponent_addition->seal_arg1();
         exponent_addition->arg2().numeric_constant = NumericConstant::with_value(1.0);
@@ -249,7 +315,7 @@ namespace Sym {
         const Symbol* const integrand = integral->integrand();
 
         Negation* const minus = solution_expr << Negation::builder();
-        Cosine* const cos = minus->arg() << Cosine::builder();
+        Cosine* const cos = &minus->arg() << Cosine::builder();
         cos->arg().variable = Variable::create();
         cos->seal();
         minus->seal();
@@ -322,31 +388,6 @@ namespace Sym {
         }
     }
 
-    __device__ void apply_transforms(const ExpressionArray<SubexpressionCandidate>& integrals,
-                                     ExpressionArray<>& destinations,
-                                     ExpressionArray<>& help_spaces,
-                                     const Util::DeviceArray<uint32_t>& applicability,
-                                     const KnownIntegralTransform* const transforms,
-                                     const size_t transform_count) {
-        const size_t thread_count = Util::thread_count();
-        const size_t thread_idx = Util::thread_idx();
-
-        const size_t trans_step = thread_count / TRANSFORM_GROUP_SIZE;
-
-        for (size_t trans_idx = thread_idx / TRANSFORM_GROUP_SIZE; trans_idx < transform_count;
-             trans_idx += trans_step) {
-            for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
-                 int_idx += TRANSFORM_GROUP_SIZE) {
-                const size_t appl_index = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
-                if (is_nonzero(appl_index, applicability)) {
-                    const size_t dest_idx = applicability[appl_index] - 1;
-                    transforms[trans_idx](&integrals[int_idx].arg().as<Integral>(),
-                                          destinations.at(dest_idx), help_spaces.at(dest_idx));
-                }
-            }
-        }
-    }
-
     __global__ void
     check_for_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                               Util::DeviceArray<uint32_t> applicability) {
@@ -379,15 +420,16 @@ namespace Sym {
              trans_idx += trans_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                const size_t appl_index = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
+                const size_t appl_idx = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
 
-                if (!is_nonzero(appl_index, applicability)) {
+                if (!is_nonzero(appl_idx, applicability)) {
                     continue;
                 }
 
-                const size_t dest_idx = expressions.size() + applicability[appl_index] - 1;
+                const size_t dest_idx =
+                    expressions.size() + index_from_scan(applicability, appl_idx);
 
-                auto* const subexpr_candidate = expressions[dest_idx]
+                auto* const subexpr_candidate = expressions.at(dest_idx)
                                                 << SubexpressionCandidate::builder();
                 subexpr_candidate->copy_metadata_from(integrals[int_idx]);
                 known_integral_applications[trans_idx](&integrals[int_idx].arg().as<Integral>(),
@@ -413,12 +455,14 @@ namespace Sym {
         // Na expr_idx = 0 jest tylko SubexpressionVacancy oryginalnej całki, więc pomijamy
         for (size_t expr_idx = thread_idx + 1; expr_idx < expressions.size();
              expr_idx += thread_count) {
-            while (expr_idx != 0) {
-                if (expressions[expr_idx].subexpression_candidate.subexpressions_left != 0) {
+            size_t current_expr_idx = expr_idx;
+            while (current_expr_idx != 0) {
+                if (expressions[current_expr_idx].subexpression_candidate.subexpressions_left !=
+                    0) {
                     break;
                 }
 
-                if (!try_set_solver_idx(expressions, expr_idx)) {
+                if (!try_set_solver_idx(expressions, current_expr_idx)) {
                     break;
                 }
 
@@ -426,7 +470,8 @@ namespace Sym {
                 // wątkiem, który tam zaczął pętlę. `try_set_solver_idx` jest jednak atomowe, więc
                 // tylko jednemu z wątków uda się ustawić `solver_idx` na kolejnym rodzicu, więc
                 // tylko jeden wątek tam przetrwa.
-                expr_idx = expressions[expr_idx].subexpression_candidate.vacancy_expression_idx;
+                current_expr_idx =
+                    expressions[current_expr_idx].subexpression_candidate.vacancy_expression_idx;
             }
         }
     }
@@ -436,12 +481,11 @@ namespace Sym {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
-        // Szukamy coraz wyżej w drzewie zależności, czy nie próbujemy rozwiązać czegoś, co zostało
-        // już rozwiązane w inny sposób.
-
-        // Na expr_idx = 0 jest tylko SubexpressionVacancy oryginalnej całki, więc pomijamy
-        for (size_t expr_idx = thread_idx + 1; expr_idx < expressions.size();
+        // Look further and further in the dependency tree and check whether we are not trying to
+        // solve something that has been solved already
+        for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
              expr_idx += thread_count) {
+            removability[expr_idx] = 1;
             size_t current_expr_idx = expr_idx;
 
             while (current_expr_idx != 0) {
@@ -518,7 +562,7 @@ namespace Sym {
     __global__ void remove_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                                      const Util::DeviceArray<uint32_t> integrals_removability,
                                      const Util::DeviceArray<uint32_t> expressions_removability,
-                                     ExpressionArray<SubexpressionCandidate> destinations) {
+                                     ExpressionArray<> destinations) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -527,10 +571,11 @@ namespace Sym {
                 continue;
             }
 
-            SubexpressionCandidate& destination = destinations[integrals_removability[int_idx] - 1];
-            integrals[int_idx].symbol()->copy_to(destination.symbol());
+            Symbol& destination = destinations[integrals_removability[int_idx] - 1];
+            integrals[int_idx].symbol()->copy_to(&destination);
 
-            size_t& vacancy_expr_idx = destination.vacancy_expression_idx;
+            size_t& vacancy_expr_idx =
+                destination.as<SubexpressionCandidate>().vacancy_expression_idx;
             vacancy_expr_idx = expressions_removability[vacancy_expr_idx] - 1;
         }
     }
@@ -600,17 +645,26 @@ namespace Sym {
              trans_idx < HEURISTIC_CHECK_COUNT; trans_idx += trans_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                const size_t appl_index = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
-                if (!is_nonzero(appl_index, new_integrals_indices)) {
+                const size_t appl_idx = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
+                if (!is_nonzero(appl_idx, new_integrals_indices)) {
                     continue;
                 }
 
-                const size_t int_dst_idx = new_integrals_indices[appl_index] - 1;
-                const size_t expr_dst_idx = new_expressions_indices[appl_index] - 1;
-                heuristic_applications[trans_idx](&integrals[int_idx].arg().as<Integral>(),
-                                                  integrals_destinations.at(int_dst_idx),
-                                                  expressions_destinations.at(expr_dst_idx),
-                                                  help_spaces.at(int_dst_idx));
+                const size_t int_dst_idx = index_from_scan(new_integrals_indices, appl_idx);
+
+                if (new_expressions_indices[appl_idx] != 0) {
+                    const size_t expr_dst_idx = expressions_destinations.size() +
+                                                index_from_scan(new_expressions_indices, appl_idx);
+                    heuristic_applications[trans_idx](integrals.at(int_idx),
+                                                      integrals_destinations.at(int_dst_idx),
+                                                      expressions_destinations.at(expr_dst_idx),
+                                                      expr_dst_idx, help_spaces.at(int_dst_idx));
+                }
+                else {
+                    heuristic_applications[trans_idx](integrals.at(int_idx),
+                                                      integrals_destinations.at(int_dst_idx),
+                                                      nullptr, 0, help_spaces.at(int_dst_idx));
+                }
             }
         }
     }
@@ -642,7 +696,7 @@ namespace Sym {
                     expressions[expr_idx][sym_idx].subexpression_vacancy;
 
                 if (vacancy.candidate_integral_count == 0 &&
-                    vacancy.candidate_expression_count == 0) {
+                    vacancy.candidate_expression_count == 0 && vacancy.is_solved == 0) {
                     is_failed = true;
                     break;
                 }
@@ -656,11 +710,15 @@ namespace Sym {
 
             while (current_expr_idx != 0) {
                 const size_t& parent_idx =
-                    expressions[expr_idx].subexpression_candidate.vacancy_expression_idx;
+                    expressions[current_expr_idx].subexpression_candidate.vacancy_expression_idx;
                 const size_t& vacancy_idx =
-                    expressions[expr_idx].subexpression_candidate.vacancy_idx;
+                    expressions[current_expr_idx].subexpression_candidate.vacancy_idx;
                 SubexpressionVacancy& parent_vacancy =
                     expressions[parent_idx][vacancy_idx].subexpression_vacancy;
+
+                if (parent_vacancy.candidate_integral_count != 0 || parent_vacancy.is_solved == 1) {
+                    break;
+                }
 
                 const size_t parent_vacancy_candidates_left =
                     atomicSub(&parent_vacancy.candidate_expression_count, 1) - 1;

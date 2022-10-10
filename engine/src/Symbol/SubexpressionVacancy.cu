@@ -27,13 +27,17 @@ namespace Sym {
         return fmt::format("\\text{{ {} }}", to_string());
     }
 
-    std::vector<Symbol> single_integral_vacancy() {
-        std::vector<Symbol> vacancy_vec(1);
-        SubexpressionVacancy& vacancy =
-            vacancy_vec.data()->init_from(SubexpressionVacancy::create());
+    __host__ __device__ SubexpressionVacancy SubexpressionVacancy::for_single_integral() {
+        SubexpressionVacancy vacancy = SubexpressionVacancy::create();
         vacancy.candidate_expression_count = 0;
         vacancy.candidate_integral_count = 1;
         vacancy.is_solved = 0;
+        return vacancy;
+    }
+
+    std::vector<Symbol> single_integral_vacancy() {
+        std::vector<Symbol> vacancy_vec(1);
+        vacancy_vec.data()->init_from(SubexpressionVacancy::for_single_integral());
         return vacancy_vec;
     }
 }

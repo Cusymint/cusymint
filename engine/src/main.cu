@@ -37,7 +37,7 @@ solve_integral(const std::vector<Sym::Symbol>& integral) {
     Util::DeviceArray<uint32_t> scan_array_1(Sym::SCAN_ARRAY_SIZE, true);
     Util::DeviceArray<uint32_t> scan_array_2(Sym::SCAN_ARRAY_SIZE, true);
 
-    for (;;) {
+    for (size_t i = 0;; ++i) {
         Sym::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
         cudaDeviceSynchronize();
 
@@ -63,12 +63,11 @@ solve_integral(const std::vector<Sym::Symbol>& integral) {
             return expressions.to_vector();
         }
 
-        scan_array_1.set_mem(1); // TODO: Causes problems when .last() is used later, should be ones
-                                 // only for expressions, zeros elsewhere
+        scan_array_1.zero_mem();
         Sym::find_redundand_expressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1);
         cudaDeviceSynchronize();
 
-        scan_array_2.zero_mem();
+        scan_array_2.zero_mem(); // TODO: Not necessary?
         Sym::find_redundand_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
                                                                    scan_array_1, scan_array_2);
         cudaDeviceSynchronize();
@@ -110,8 +109,7 @@ solve_integral(const std::vector<Sym::Symbol>& integral) {
         integrals.resize_from_device(scan_array_1.last());
         expressions.increment_size_from_device(scan_array_2.last());
 
-        scan_array_1.set_mem(1); // TODO: Causes problems when .last() is used later, should be ones
-                                 // only for expressions, zeros elsewhere
+        scan_array_1.set_mem(1);
         cudaDeviceSynchronize();
 
         Sym::propagate_failures_upwards<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1);
@@ -144,8 +142,16 @@ solve_integral(const std::vector<Sym::Symbol>& integral) {
 
         std::swap(expressions, expressions_swap);
         std::swap(integrals, integrals_swap);
-        expressions.resize_from_device(scan_array_1.last());
+
+        // How many expressions are left, cannot take scan_array_1.last() because space
+        // after last place in scan_array_1 that corresponds to an expression is occupied
+        // by ones
+        expressions.resize(scan_array_1.to_cpu(expressions_swap.size() - 1));
         integrals.resize_from_device(scan_array_2.last());
+        cudaDeviceSynchronize();
+
+        scan_array_1.zero_mem();
+        scan_array_2.zero_mem();
     }
 
     return std::nullopt;
@@ -156,10 +162,9 @@ int main() {
         fmt::print("Running in debug mode\n");
     }
 
-    std::vector<Sym::Symbol> integral =
-        /* Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))); */
-        Sym::integral(Sym::var() ^ (Sym::e() + Sym::num(10) + Sym::pi() +
-                                    Sym::cnst("phi") * Sym::num(2) + Sym::num(5)));
+    std::vector<Sym::Symbol> integral = Sym::integral(
+        (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(4)) + (Sym::var() ^ Sym::num(5)) +
+        ((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_string());
 

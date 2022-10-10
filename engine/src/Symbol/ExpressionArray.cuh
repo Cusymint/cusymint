@@ -102,6 +102,20 @@ namespace Sym {
         }
 
         /*
+         * @brief Copies the array onto the CPU and formats it as a string
+         */
+        std::string to_string() const {
+            const std::vector<std::vector<Symbol>> vec = to_vector();
+            std::string string = "{\n";
+
+            for (const auto& sym : vec) {
+                string += sym.data()->to_string() + ",\n";
+            }
+
+            return string + "}";
+        }
+
+        /*
          * @brief Liczba ciągów w tablicy
          */
         __host__ __device__ size_t size() const { return expression_count; }
