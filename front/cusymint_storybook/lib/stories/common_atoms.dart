@@ -61,5 +61,14 @@ class CommonAtoms extends StorybookPart {
             ),
           ),
         ),
+        Story(
+          name: 'Atoms/Toast',
+          builder: (context) => CuToast(
+            message: context.knobs.text(
+              label: 'Message',
+              initial: 'Hello world!',
+            ),
+          ),
+        ),
       ];
 }
