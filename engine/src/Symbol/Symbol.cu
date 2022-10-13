@@ -153,6 +153,10 @@ namespace Sym {
 
     std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
 
+    __host__ __device__ int Symbol::is_polynomial() const { return VIRTUAL_CALL(*this, is_polynomial); }
+
+    __host__ __device__ double Symbol::get_monomial_coefficient() const { return VIRTUAL_CALL(*this, get_monomial_coefficient); }
+
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {
         return VIRTUAL_CALL(sym1, compare, &sym2);
     }

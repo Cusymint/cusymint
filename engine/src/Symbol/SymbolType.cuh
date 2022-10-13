@@ -30,7 +30,9 @@ namespace Sym {
         Arcsine,
         Arccosine,
         Arctangent,
-        Arccotangent
+        Arccotangent,
+        // Polynomial
+        Polynomial
     };
 }
 

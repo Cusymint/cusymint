@@ -13,6 +13,8 @@ namespace Sym {
     __host__ __device__ NumericConstant static with_value(double value);
     DEFINE_TO_STRING(std::to_string(value));
     std::string to_tex() const;
+    DEFINE_IS_POLYNOMIAL(0)
+    DEFINE_IS_MONOMIAL(value)
     END_DECLARE_SYMBOL(NumericConstant)
 
     DECLARE_SYMBOL(KnownConstant, true)
@@ -20,6 +22,7 @@ namespace Sym {
     __host__ __device__ KnownConstant static with_value(KnownConstantValue value);
     std::string to_string() const;
     std::string to_tex() const;
+    DEFINE_IS_NOT_POLYNOMIAL // TODO: operations on non-numeric constants
     END_DECLARE_SYMBOL(KnownConstant)
 
     DECLARE_SYMBOL(UnknownConstant, true)
@@ -28,6 +31,7 @@ namespace Sym {
     static UnknownConstant create(const char* const name);
     DEFINE_TO_STRING(name)
     DEFINE_TO_TEX(name)
+    DEFINE_IS_NOT_POLYNOMIAL // TODO: operations on non-numeric constants
     END_DECLARE_SYMBOL(UnknownConstant)
 
     std::vector<Symbol> known_constant(KnownConstantValue value);

@@ -11,6 +11,9 @@ namespace Sym {
     std::string to_string() const;
     std::string to_tex() const;
 
+    __host__ __device__ int is_polynomial() const;
+    __host__ __device__ double get_monomial_coefficient() const;
+
   private:
     /*
      * @brief W drzewie mnożenia usuwa mnożenia, których jednym z argumentów jest 1.0. Mnożenie
@@ -33,6 +36,12 @@ namespace Sym {
      */
     __host__ __device__ static bool are_inverse_of_eachother(const Symbol* const expr1,
                                                              const Symbol* const expr2);
+
+    /*
+     * TODO comments
+     */
+    __host__ __device__ void try_shorten_polynomials(Symbol* const help_space);
+
     END_DECLARE_SYMBOL(Product)
 
     DECLARE_SYMBOL(Reciprocal, false)
@@ -40,6 +49,9 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+
+    DEFINE_IS_NOT_POLYNOMIAL
+
     END_DECLARE_SYMBOL(Reciprocal)
 
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);

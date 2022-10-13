@@ -19,6 +19,7 @@
 #include "Trigonometric.cuh"
 #include "Unknown.cuh"
 #include "Variable.cuh"
+#include "Polynomial.cuh"
 
 namespace Sym {
     union Symbol {
@@ -44,6 +45,7 @@ namespace Sym {
         Arccosine arccosine;
         Arctangent arctangent;
         Arccotangent arccotangent;
+        Polynomial polynomial;
 
         __host__ __device__ inline Type type() const { return unknown.type; }
         __host__ __device__ inline bool is(const Type type) const { return unknown.type == type; }
@@ -262,6 +264,16 @@ namespace Sym {
          * @brief Zwraca zapis wyrażenia w formacie TeX-a.
          */
         std::string to_tex() const;
+        
+        /*
+         * @brief Checks if `this` is a polynomial. Returns its rank if yes. Otherwise, returns `-1`. 
+         */
+        __host__ __device__ int is_polynomial() const;
+
+        /*
+         * @brief If `this` is a monomial, returns its coefficient. Otherwise, returns `NaN`.
+         */
+        __host__ __device__ double get_monomial_coefficient() const;
     };
 
     /*
@@ -330,6 +342,8 @@ namespace Sym {
             return (_instance).arctangent._member_function(__VA_ARGS__);           \
         case Type::Arccotangent:                                                   \
             return (_instance).arccotangent._member_function(__VA_ARGS__);         \
+        case Type::Polynomial:                                                     \
+            return (_instance).polynomial._member_function(__VA_ARGS__);           \
         case Type::Unknown:                                                        \
         default:                                                                   \
             return (_instance).unknown._member_function(__VA_ARGS__);              \

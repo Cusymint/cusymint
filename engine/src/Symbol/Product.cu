@@ -18,6 +18,33 @@ namespace Sym {
         eliminate_ones();
     }
 
+    __host__ __device__ void Product::try_shorten_polynomials(Symbol* const help_space) {
+        Symbol* numerator = nullptr;
+        Symbol* denominator = nullptr;
+        if (arg1().is(Type::Addition) && arg2().is(Type::Reciprocal) &&
+            arg2().reciprocal.arg().is(Type::Addition)) {
+            numerator = &arg1();
+            denominator = &arg2();
+        }
+        if (arg2().is(Type::Addition) && arg1().is(Type::Reciprocal) &&
+            arg1().reciprocal.arg().is(Type::Addition)) {
+            numerator = &arg2();
+            denominator = &arg1();
+        }
+        if (numerator == nullptr || denominator == nullptr) {
+            return;
+        }
+        int rank1 = numerator->is_polynomial();
+        int rank2 = denominator->is_polynomial();
+
+        if (rank1 < 0 || rank2 < 0 || rank1 < rank2) {
+            return;
+        }
+
+        numerator->addition.make_polynomial_in_place(rank1, help_space);
+        denominator->addition.make_polynomial_in_place(rank2, help_space);
+    }
+
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol* const expr1,
                                                                const Symbol* const expr2) {
         return expr1->is(Type::Reciprocal) &&
@@ -83,8 +110,7 @@ namespace Sym {
         if (arg2().is(Type::Negation) || arg2().is(Type::NumericConstant)) {
             cdot = " \\cdot ";
         }
-        return fmt::format(arg1_pattern + cdot + arg2_pattern, arg1().to_tex(),
-                           arg2().to_tex());
+        return fmt::format(arg1_pattern + cdot + arg2_pattern, arg1().to_tex(), arg2().to_tex());
     }
 
     __host__ __device__ void Product::eliminate_ones() {
@@ -100,6 +126,22 @@ namespace Sym {
         if (arg1().is(Type::NumericConstant) && arg1().numeric_constant.value == 1.0) {
             arg2().copy_to(this_symbol());
         }
+    }
+
+    __host__ __device__ int Product::is_polynomial() const {
+        // Checks if product is a monomial (maybe TODO check eg. (x+2)^5*(x+1)*x^2)
+        if (arg1().is(Type::Addition) || arg2().is(Type::Addition)) {
+            return -1;
+        }
+
+        int const rank1 = arg1().is_polynomial();
+        int const rank2 = arg2().is_polynomial();
+
+        return rank1 < 0 || rank2 < 0 ? -1 : (rank1 + rank2);
+    }
+
+    __host__ __device__ double Product::get_monomial_coefficient() const {
+        return arg1().get_monomial_coefficient() * arg2().get_monomial_coefficient();
     }
 
     std::string Reciprocal::to_string() const { return fmt::format("(1/{})", arg().to_string()); }

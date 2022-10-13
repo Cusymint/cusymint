@@ -11,6 +11,7 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+    DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(Sine)
 
     DECLARE_SYMBOL(Cosine, false)
@@ -18,6 +19,7 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+    DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(Cosine)
 
     DECLARE_SYMBOL(Tangent, false)
@@ -25,6 +27,7 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+    DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(Tangent)
 
     DECLARE_SYMBOL(Cotangent, false)
@@ -32,6 +35,7 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+    DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(Cotangent)
 
     std::vector<Symbol> sin(const std::vector<Symbol>& arg);

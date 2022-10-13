@@ -129,14 +129,47 @@ namespace Sym {
         return fmt::format("{}+{}", arg1().to_tex(), arg2().to_tex());
     }
 
+    __host__ __device__ int Addition::is_polynomial() const {
+        int const rank1 = arg1().is_polynomial();
+        int const rank2 = arg2().is_polynomial();
+
+        return rank1 < 0 || rank2 < 0 ? -1 : (rank1 < rank2 ? rank2 : rank1);
+    }
+
+    __host__ __device__ void Addition::make_polynomial_in_place(int rank,
+                                                                Symbol* const help_space) {
+        this_symbol()->copy_to(help_space); 
+        auto* this_poly = this_as<Polynomial>();                                                         
+        *this_poly = Polynomial::with_rank(rank);
+
+        double* coefs = this_poly->coefficients();
+
+        for (int i=0;i<=rank;++i) {
+            coefs[i] = 0;
+        }
+
+        Symbol& node = help_space->addition.arg1();
+        this_poly->coefficients()[arg2().is_polynomial()] += arg2().get_monomial_coefficient();
+        while (node.is(Type::Addition))
+        {
+            this_poly->coefficients()[node.addition.arg2().is_polynomial()] += arg2().get_monomial_coefficient();
+            node = node.addition.arg1();
+        }
+        this_poly->coefficients()[node.is_polynomial()] += node.get_monomial_coefficient();
+    }
+
     std::string Negation::to_string() const { return fmt::format("-({})", arg().to_string()); }
 
-    std::string Negation::to_tex() const { 
+    std::string Negation::to_tex() const {
         if (arg().is(Type::Addition) || arg().is(Type::Negation)) {
-            return fmt::format("-\\left({}\\right)",arg().to_tex());  
+            return fmt::format("-\\left({}\\right)", arg().to_tex());
         }
-        return fmt::format("-{}",arg().to_tex()); 
+        return fmt::format("-{}", arg().to_tex());
     }
+
+    __host__ __device__ int Negation::is_polynomial() const { return arg().is_polynomial(); }
+
+    __host__ __device__ double Negation::get_monomial_coefficient() const { return -arg().get_monomial_coefficient(); }
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);

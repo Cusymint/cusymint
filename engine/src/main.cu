@@ -10,6 +10,8 @@
 
 #include "Evaluation/Integrate.cuh"
 
+#include "Symbol/Constants.cuh"
+#include "Symbol/ExpressionArray.cuh"
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
 
@@ -39,27 +41,31 @@ void simplify_integrals(Sym::ExpressionArray<Sym::Integral>& integrals,
 std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
     fmt::print("Creating integrals\n");
     std::vector<std::vector<Sym::Symbol>> integrals{
-        Sym::substitute(Sym::integral(Sym::cos(Sym::var())), Sym::pi() * Sym::var()),
-        Sym::integral((Sym::sin(Sym::var()) ^ Sym::num(2.0)) +
-                      (Sym::num(-8) + (Sym::cos(Sym::var()) ^ Sym::num(2.0)) + Sym::num(4))),
-        Sym::integral((Sym::var() + Sym::num(1.0)) +
-                      (Sym::pi() + (Sym::e() + Sym::cos(Sym::var())))),
-        Sym::integral((Sym::var() ^ Sym::num(2.0)) ^ Sym::e()),
-        Sym::integral(Sym::num(2.0) ^ Sym::num(3.0)),
-        Sym::integral(Sym::cos(Sym::var()) ^ Sym::num(0.0)),
-        Sym::integral(Sym::cos(Sym::sin(Sym::var()))),
-        Sym::integral(Sym::e() ^ Sym::var()),
-        Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ Sym::var())),
+        // Sym::substitute(Sym::integral(Sym::cos(Sym::var())), Sym::pi() * Sym::var()),
+        // Sym::integral((Sym::sin(Sym::var()) ^ Sym::num(2.0)) +
+        //               (Sym::num(-8) + (Sym::cos(Sym::var()) ^ Sym::num(2.0)) + Sym::num(4))),
+        // Sym::integral((Sym::var() + Sym::num(1.0)) +
+        //               (Sym::pi() + (Sym::e() + Sym::cos(Sym::var())))),
+        // Sym::integral((Sym::var() ^ Sym::num(2.0)) ^ Sym::e()),
+        // Sym::integral(Sym::num(2.0) ^ Sym::num(3.0)),
+        // Sym::integral(Sym::cos(Sym::var()) ^ Sym::num(0.0)),
+        // Sym::integral(Sym::cos(Sym::sin(Sym::var()))),
+        // Sym::integral(Sym::e() ^ Sym::var()),
+        // Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ Sym::var())),
         Sym::integral(Sym::var() ^ (-Sym::num(5.0))),
         Sym::integral(Sym::var() ^ (Sym::pi() - Sym::num(1.0))),
         Sym::integral(Sym::var() ^ Sym::var()),
-        Sym::integral(Sym::pi() + Sym::e() * Sym::num(10.0)),
-        Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))),
-        Sym::integral(Sym::arccot(Sym::var())),
-        Sym::integral(Sym::num(1.0) / ((Sym::var() ^ Sym::num(2.0)) + Sym::num(1.0))),
-        Sym::integral(Sym::num(1.0) / (Sym::num(1.0) + (Sym::var() ^ Sym::num(2.0)))),
-        Sym::integral(Sym::sinh(Sym::var())),
-        Sym::integral(-Sym::num(-5.0))};
+        // Sym::integral(Sym::pi() + Sym::e() * Sym::num(10.0)),
+        // Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))),
+        // Sym::integral(Sym::arccot(Sym::var())),
+        // Sym::integral(Sym::num(1.0) / ((Sym::var() ^ Sym::num(2.0)) + Sym::num(1.0))),
+        // Sym::integral(Sym::num(1.0) / (Sym::num(1.0) + (Sym::var() ^ Sym::num(2.0)))),
+        // Sym::integral(Sym::sinh(Sym::var())),
+        Sym::integral(-Sym::num(-5.0)),
+        Sym::integral((Sym::var()^Sym::num(2))+Sym::num(5)*(Sym::var()^Sym::num(2))),
+        Sym::integral((Sym::var()^Sym::num(2))+(Sym::var()^Sym::num(3))+Sym::num(5)*(Sym::var()^Sym::num(2))),
+        Sym::integral((Sym::var()^Sym::num(2))+(Sym::var()^Sym::num(2))+Sym::num(5)*(Sym::var()^Sym::num(3))),
+        Sym::integral(Sym::num(8)*(Sym::var()^Sym::num(2))+(Sym::var()^Sym::num(2))+Sym::num(5)*(Sym::var()^Sym::num(3)))};
 
     for (const auto& integral : integrals) {
         fmt::print("{}\n", integral.data()->to_string());
@@ -155,6 +161,17 @@ void print_results_tex(const Sym::ExpressionArray<Sym::Integral> integrals) {
     fmt::print("\n");
 }
 
+void print_polynomial_ranks(const Sym::ExpressionArray<Sym::Integral> integrals) {
+    const auto h_integrals = integrals.to_vector();
+
+    fmt::print("Polynomial ranks:({}):\n", integrals.size());
+    for (size_t int_idx = 0; int_idx < integrals.size(); ++int_idx) {
+        fmt::print("{}: {}\n", int_idx, h_integrals[int_idx].data()->as<Sym::Integral>().integrand()->is_polynomial());
+    }
+
+    fmt::print("\n");
+}
+
 int main() {
     std::vector<std::vector<Sym::Symbol>> h_integrals = create_test_integrals();
 
@@ -173,6 +190,8 @@ int main() {
 
     simplify_integrals(integrals, help_spaces);
     print_results(integrals);
+
+    print_polynomial_ranks(integrals);
 
     check_and_apply_heuristics(integrals, integrals_swap, help_spaces, applicability);
     print_results(integrals);

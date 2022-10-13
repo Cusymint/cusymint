@@ -11,6 +11,7 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+    DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(Arcsine)
 
     DECLARE_SYMBOL(Arccosine, false)
@@ -18,6 +19,7 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+    DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(Arccosine)
     
     DECLARE_SYMBOL(Arctangent, false)
@@ -25,6 +27,7 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+    DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(Arctangent)
 
     DECLARE_SYMBOL(Arccotangent, false)
@@ -32,6 +35,7 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+    DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(Arccotangent)
 
     std::vector<Symbol> arcsin(const std::vector<Symbol>& arg);

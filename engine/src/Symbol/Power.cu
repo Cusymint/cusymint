@@ -1,6 +1,7 @@
 #include "Power.cuh"
 
 #include "Symbol.cuh"
+#include "Symbol/SymbolType.cuh"
 #include <fmt/core.h>
 
 namespace Sym {
@@ -55,6 +56,20 @@ namespace Sym {
             return fmt::format(R"(\left({}\right)^{{ {} }})", arg1().to_tex(), arg2().to_tex());
         }
         return fmt::format("{}^{{ {} }}", arg1().to_tex(), arg2().to_tex());
+    }
+
+    __host__ __device__ int Power::is_polynomial() const {
+        if (arg1().is(Type::Variable) && arg2().is(Type::NumericConstant)) {
+            double const rank = arg2().numeric_constant.value;
+            if (rank >= 0 && rank == abs(rank)) {
+                return static_cast<int>(rank);
+            }
+        }
+        return -1;
+    }
+
+    __host__ __device__ double Power::get_monomial_coefficient() const {
+        return is_polynomial() > 0 ? 1 : NAN;
     }
 
     std::vector<Symbol> operator^(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {

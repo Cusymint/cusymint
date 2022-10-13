@@ -1,4 +1,5 @@
 #include "Parser.cuh"
+#include <cstddef>
 #include <stdexcept>
 
 bool isFunction(Token tok) { return tok >= Token::Asin; }
@@ -99,7 +100,7 @@ SymbolicFunction Parser::function() {
                                           Sym::cos,      Sym::cosh,   Sym::coth,   /*ln*/ empty,
                                           /*log*/ empty, Sym::sin,    Sym::sinh,   /*sqrt*/ empty,
                                           Sym::tan,      Sym::tanh};
-    Token prev = tok;
+    Token const prev = tok;
     next_token();
     return functions[static_cast<int>(prev) - static_cast<int>(Token::Asin)];
 }
@@ -109,7 +110,7 @@ std::vector<Sym::Symbol> Parser::parse() {
         throw std::logic_error("Parser has already processed a string.");
     }
     next_token();
-    std::vector<Sym::Symbol> e = expr();
+    std::vector<Sym::Symbol> expression = expr();
     match_and_get_next_token(Token::End);
-    return e;
+    return expression;
 }

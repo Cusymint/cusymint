@@ -1,6 +1,7 @@
 #ifndef ADDITION_CUH
 #define ADDITION_CUH
 
+#include <cmath>
 #include <vector>
 
 #include "Macros.cuh"
@@ -10,6 +11,18 @@ namespace Sym {
     TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(Addition)
     std::string to_string() const;
     std::string to_tex() const;
+
+    __host__ __device__ int is_polynomial() const;
+    DEFINE_IS_NOT_MONOMIAL
+
+    /*
+     * @brief Inserts in-place `Polynomial` symbol from a sum (which is assumed to be a polynomial).
+     * Assumes that structure of Addition is simplified.
+     *
+     * @param rank Rank of a polynomial calculated with function `is_polynomial()` (must be positive).
+     * @param help_space A help space for the function (e.g. for creating `Polynomial` symbol).
+     */
+    __host__ __device__ void make_polynomial_in_place(int rank, Symbol* const help_space);
 
   private:
     /*
@@ -40,12 +53,15 @@ namespace Sym {
      * po wywołaniu tej funkcji wywoływać już żadnych innych funkcji składowych z Addition!
      */
     __host__ __device__ void eliminate_zeros();
+
     END_DECLARE_SYMBOL(Addition)
 
     DECLARE_SYMBOL(Negation, false)
     ONE_ARGUMENT_OP_SYMBOL
     std::string to_string() const;
     std::string to_tex() const;
+    __host__ __device__ int is_polynomial() const;
+    __host__ __device__ double get_monomial_coefficient() const;
     END_DECLARE_SYMBOL(Negation)
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);

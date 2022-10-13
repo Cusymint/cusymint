@@ -348,4 +348,12 @@ namespace Sym {
         }                                                                                                  \
     }
 
+#define DEFINE_IS_MONOMIAL(_coefficient) __host__ __device__ double get_monomial_coefficient() const { return _coefficient; }
+#define DEFINE_IS_NOT_MONOMIAL DEFINE_IS_MONOMIAL(NAN)
+
+#define DEFINE_IS_POLYNOMIAL(_rank) __host__ __device__ int is_polynomial() const { return _rank; }
+#define DEFINE_IS_NOT_POLYNOMIAL \
+    DEFINE_IS_POLYNOMIAL(-1)     \
+    DEFINE_IS_NOT_MONOMIAL
+
 #endif

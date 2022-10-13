@@ -28,6 +28,7 @@ add_executable(
   ${SYMBOL_DIR}/Solution.cu
   ${SYMBOL_DIR}/InverseTrigonometric.cu
   ${SYMBOL_DIR}/Hyperbolic.cu
+  ${SYMBOL_DIR}/Polynomial.cu
   ${EVALUATION_DIR}/Integrate.cu
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
