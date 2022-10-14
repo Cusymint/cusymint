@@ -29,11 +29,6 @@ namespace Sym {
                are_coefficients_equal(*this, symbol->polynomial);
     }
 
-    // __host__ __device__ void Polynomial::seal() {
-    //     size = 2 + sizeof(double) * (rank + 1) / sizeof(Symbol); // non-optimal (there is a
-    //     mistake - when rank is big!)
-    // }
-
     __host__ __device__ Polynomial Polynomial::with_rank(int rank) {
         return {
             .type = Type::Polynomial,
@@ -43,39 +38,62 @@ namespace Sym {
         };
     }
 
-    std::string Polynomial::to_string() const {
+    __host__ __device__ void Polynomial::divide_polynomials(Polynomial& numerator,
+                                                            Polynomial& denominator,
+                                                            Polynomial& result) {
+        for (int i = numerator.rank - denominator.rank; i >= 0; --i) {
+            double& num_first = numerator[i + denominator.rank];
+            double& res_current = result[i];
+            res_current = num_first / denominator[denominator.rank];
+            num_first = 0;
+            for (int j = denominator.rank - 1; j >= 0; --j) {
+                numerator[i + j] -= res_current * denominator[j];
+            }
+        }
+        numerator.make_proper();
+    }
+
+    __host__ __device__ void Polynomial::make_proper() {
+        int i = rank;
+        while (i >= 0 && abs(coefficients()[i--]) < Util::eps) {
+            --rank;
+        }
+        size = 2 + sizeof(double) * (rank + 1) / sizeof(Symbol);
+    }
+
+    std::string Polynomial::to_string() const { // TODO lepiej!
         std::string coefficients_str =
-            fmt::format("Poly[size={}]({}*x^({})", size, coefficients()[rank], rank);
+            fmt::format(rank == 0 ? "Poly[size={}]({}" : (rank == 1 ? "Poly[size={}]({}^x" : "Poly[size={}]({}x^({})"), size, coefficients()[rank], rank);
         for (int i = rank - 1; i > 1; --i) {
             if (coefficients()[i] != 0) {
                 coefficients_str += fmt::format("{}{}*x^({})", coefficients()[i] < 0 ? "" : "+",
                                                 coefficients()[i], i);
             }
         }
-        if (rank > 0 && coefficients()[1] != 0) {
-            coefficients_str += fmt::format("{}{}*x", coefficients()[1] < 0 ? "" : "+",
-                                                coefficients()[1]);
+        if (rank > 1 && coefficients()[1] != 0) {
+            coefficients_str +=
+                fmt::format("{}{}*x", coefficients()[1] < 0 ? "" : "+", coefficients()[1]);
         }
-        if (coefficients()[0] != 0) {
-            coefficients_str += fmt::format("{}{}", coefficients()[0] < 0 ? "" : "+",
-                                                coefficients()[0]);
+        if (rank > 0 && coefficients()[0] != 0) {
+            coefficients_str +=
+                fmt::format("{}{}", coefficients()[0] < 0 ? "" : "+", coefficients()[0]);
         }
         return coefficients_str + ")";
     }
 
-    std::string Polynomial::to_tex() const {
+    std::string Polynomial::to_tex() const { // TODO popraw!
         std::string coefficients_str = fmt::format("{}x^{{ {} }}", coefficients()[rank], rank);
         for (int i = rank - 1; i >= 0; --i) {
             coefficients_str += fmt::format("{}{}x^{{ {} }}", coefficients()[i] < 0 ? "" : "+",
                                             coefficients()[i], i);
         }
         if (rank > 0 && coefficients()[1] != 0) {
-            coefficients_str += fmt::format("{}{}x", coefficients()[1] < 0 ? "" : "+",
-                                                coefficients()[1]);
+            coefficients_str +=
+                fmt::format("{}{}x", coefficients()[1] < 0 ? "" : "+", coefficients()[1]);
         }
         if (coefficients()[0] != 0) {
-            coefficients_str += fmt::format("{}{}", coefficients()[0] < 0 ? "" : "+",
-                                                coefficients()[0]);
+            coefficients_str +=
+                fmt::format("{}{}", coefficients()[0] < 0 ? "" : "+", coefficients()[0]);
         }
         return coefficients_str;
     }

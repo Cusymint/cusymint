@@ -9,7 +9,9 @@ namespace Sym {
 
     __host__ __device__ static Polynomial with_rank(int rank);
 
-    __host__ __device__ static void divide_polynomials(Polynomial numerator, Polynomial denominator, Polynomial result);
+    __host__ __device__ static void divide_polynomials(Polynomial& numerator, Polynomial& denominator, Polynomial& result);
+
+    __host__ __device__ void make_proper();
 
     std::string to_string() const;
     std::string to_tex() const;

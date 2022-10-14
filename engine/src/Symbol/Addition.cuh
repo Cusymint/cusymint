@@ -19,10 +19,11 @@ namespace Sym {
      * @brief Inserts in-place `Polynomial` symbol from a sum (which is assumed to be a polynomial).
      * Assumes that structure of Addition is simplified.
      *
-     * @param rank Rank of a polynomial calculated with function `is_polynomial()` (must be positive).
+     * @param rank Rank of a polynomial calculated with function `is_polynomial()` (must be non-negative).
      * @param help_space A help space for the function (e.g. for creating `Polynomial` symbol).
      */
     __host__ __device__ void make_polynomial_in_place(int rank, Symbol* const help_space);
+    __host__ __device__ void make_polynomial_to(Symbol* const destination, int rank);
 
   private:
     /*

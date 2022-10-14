@@ -158,6 +158,26 @@ namespace Sym {
         this_poly->coefficients()[node.is_polynomial()] += node.get_monomial_coefficient();
     }
 
+    __host__ __device__ void Addition::make_polynomial_to(Symbol* const destination, int rank) {
+        auto* dest_poly = destination->as_ptr<Polynomial>();                                                         
+        *dest_poly = Polynomial::with_rank(rank);
+
+        double* coefs = dest_poly->coefficients();
+
+        for (int i=0;i<=rank;++i) {
+            coefs[i] = 0;
+        }
+
+        Symbol& node = arg1();
+        dest_poly->coefficients()[arg2().is_polynomial()] += arg2().get_monomial_coefficient();
+        while (node.is(Type::Addition))
+        {
+            dest_poly->coefficients()[node.addition.arg2().is_polynomial()] += arg2().get_monomial_coefficient();
+            node = node.addition.arg1();
+        }
+        dest_poly->coefficients()[node.is_polynomial()] += node.get_monomial_coefficient();
+    }
+
     std::string Negation::to_string() const { return fmt::format("-({})", arg().to_string()); }
 
     std::string Negation::to_tex() const {

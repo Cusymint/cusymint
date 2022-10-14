@@ -40,7 +40,7 @@ namespace Sym {
     /*
      * TODO comments
      */
-    __host__ __device__ void try_shorten_polynomials(Symbol* const help_space);
+    __host__ __device__ void try_simplify_polynomials(Symbol* const help_space);
 
     END_DECLARE_SYMBOL(Product)
 

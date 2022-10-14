@@ -16,33 +16,56 @@ namespace Sym {
         simplify_structure(help_space);
         simplify_pairs();
         eliminate_ones();
+
+        try_simplify_polynomials(help_space);
     }
 
-    __host__ __device__ void Product::try_shorten_polynomials(Symbol* const help_space) {
+    __host__ __device__ void Product::try_simplify_polynomials(Symbol* const help_space) {
         Symbol* numerator = nullptr;
         Symbol* denominator = nullptr;
         if (arg1().is(Type::Addition) && arg2().is(Type::Reciprocal) &&
             arg2().reciprocal.arg().is(Type::Addition)) {
             numerator = &arg1();
-            denominator = &arg2();
+            denominator = &arg2().reciprocal.arg();
         }
         if (arg2().is(Type::Addition) && arg1().is(Type::Reciprocal) &&
             arg1().reciprocal.arg().is(Type::Addition)) {
             numerator = &arg2();
-            denominator = &arg1();
+            denominator = &arg1().reciprocal.arg();
         }
         if (numerator == nullptr || denominator == nullptr) {
             return;
         }
-        int rank1 = numerator->is_polynomial();
-        int rank2 = denominator->is_polynomial();
+        int const rank1 = numerator->is_polynomial();
+        int const rank2 = denominator->is_polynomial();
 
-        if (rank1 < 0 || rank2 < 0 || rank1 < rank2) {
+        if (rank1 < 1 || rank2 < 1 || rank1 < rank2) {
             return;
         }
 
-        numerator->addition.make_polynomial_in_place(rank1, help_space);
-        denominator->addition.make_polynomial_in_place(rank2, help_space);
+        //numerator->addition.make_polynomial_in_place(rank1, help_space);
+        //denominator->addition.make_polynomial_in_place(rank2, help_space);
+        auto* poly1 = help_space;
+        numerator->addition.make_polynomial_to(poly1, rank1);
+
+        auto* poly2 = (poly1 + poly1->size());
+        denominator->addition.make_polynomial_to(poly2, rank2);
+
+        auto* result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
+        Polynomial::divide_polynomials(poly1->as<Polynomial>(), poly2->as<Polynomial>(), *result);
+
+        // TODO larger sizes
+        if (poly1->as<Polynomial>().rank < 0 && size >= result->size) { // zero polynomial
+            result->this_symbol()->copy_to(this_symbol());
+            return;
+        }
+        if (size >= poly1->size() + poly2->size() + result->size + 3) {
+            Symbol* reciprocal = result->this_symbol()+result->size;
+            Reciprocal::create(poly2,reciprocal);
+            Symbol* product = reciprocal+reciprocal->size();
+            Product::create(poly1,reciprocal,product);
+            Addition::create(result->this_symbol(),product,this_symbol());
+        }
     }
 
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol* const expr1,

@@ -14,6 +14,7 @@
 #include "Symbol/ExpressionArray.cuh"
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Symbol/Variable.cuh"
 
 static constexpr size_t BLOCK_SIZE = 1024;
 static constexpr size_t BLOCK_COUNT = 32;
@@ -62,10 +63,11 @@ std::vector<std::vector<Sym::Symbol>> create_test_integrals() {
         // Sym::integral(Sym::num(1.0) / (Sym::num(1.0) + (Sym::var() ^ Sym::num(2.0)))),
         // Sym::integral(Sym::sinh(Sym::var())),
         Sym::integral(-Sym::num(-5.0)),
-        Sym::integral((Sym::var()^Sym::num(2))+Sym::num(5)*(Sym::var()^Sym::num(2))),
-        Sym::integral((Sym::var()^Sym::num(2))+(Sym::var()^Sym::num(3))+Sym::num(5)*(Sym::var()^Sym::num(2))),
-        Sym::integral((Sym::var()^Sym::num(2))+(Sym::var()^Sym::num(2))+Sym::num(5)*(Sym::var()^Sym::num(3))),
-        Sym::integral(Sym::num(8)*(Sym::var()^Sym::num(2))+(Sym::var()^Sym::num(2))+Sym::num(5)*(Sym::var()^Sym::num(3)))};
+        Sym::integral(((Sym::var()^Sym::num(10))-Sym::num(3))/(Sym::var()+Sym::num(1))),
+        // Sym::integral((Sym::var()^Sym::num(2))+(Sym::var()^Sym::num(3))+Sym::num(5)*(Sym::var()^Sym::num(2))),
+        // Sym::integral((Sym::var()^Sym::num(2))+(Sym::var()^Sym::num(2))+Sym::num(5)*(Sym::var()^Sym::num(3))),
+        // Sym::integral(Sym::num(8)*(Sym::var()^Sym::num(2))+(Sym::var()^Sym::num(2))+Sym::num(5)*(Sym::var()^Sym::num(3)))
+        };
 
     for (const auto& integral : integrals) {
         fmt::print("{}\n", integral.data()->to_string());

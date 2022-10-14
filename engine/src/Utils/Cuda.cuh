@@ -5,6 +5,8 @@
 #include <cstddef>
 
 namespace Util {
+    constexpr double eps = 1e-10;
+
     __device__ inline size_t thread_count() { return gridDim.x * blockDim.x; }
     __device__ inline size_t thread_idx() { return threadIdx.x + blockDim.x * blockIdx.x; }
 
