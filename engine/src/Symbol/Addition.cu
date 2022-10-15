@@ -119,7 +119,7 @@ namespace Sym {
 
     std::string Addition::to_tex() const {
         if (arg2().is(Type::Negation)) {
-            return fmt::format("{}-{}", arg1().to_tex(), arg2().negation.arg().to_tex());
+            return fmt::format("{}{}", arg1().to_tex(), arg2().negation.to_tex());
         }
 
         if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value < 0.0) {
