@@ -309,6 +309,18 @@ namespace Sym {
     find_redundand_integrals(const ExpressionArray<> integrals,
                              const Util::DeviceArray<uint32_t> expressions_removability,
                              Util::DeviceArray<uint32_t> integrals_removability);
+
+    /*
+     * @brief Solves an integral and returns the result
+     *
+     * @param integral Vector of symbols with the integral, the first symbol should be
+     * `Sym::Integral`
+     *
+     * @return `std::nullopt` if no result has been found, vector of vectors with the solution tree
+     * otherwise
+     */
+    std::optional<std::vector<std::vector<Sym::Symbol>>>
+    solve_integral(const std::vector<Sym::Symbol>& integral);
 }
 
 #endif
