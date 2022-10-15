@@ -1,6 +1,8 @@
 #ifndef SUBEXPRESSION_VACANCY_CUH
 #define SUBEXPRESSION_VACANCY_CUH
 
+#include <vector>
+
 #include "Macros.cuh"
 
 namespace Sym {
