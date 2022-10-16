@@ -33,8 +33,11 @@ class CuColors {
     );
   }
 
+  /// The main color palette of the app.
+  ///
+  /// Use instead of directly using constructors in case
+  /// of a need to add dark mode support.
   static CuColors of(BuildContext context) {
-    // TODO: implement using InheritedWidget
     return CuColors.light();
   }
 

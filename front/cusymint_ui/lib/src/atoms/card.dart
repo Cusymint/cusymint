@@ -1,3 +1,4 @@
+import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
 
 class CuCard extends StatelessWidget {
@@ -7,8 +8,10 @@ class CuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: apply app style
+    final colors = CuColors.of(context);
+
     return Card(
+      color: colors.mintLight,
       child: child,
     );
   }

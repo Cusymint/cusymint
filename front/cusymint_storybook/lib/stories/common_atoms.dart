@@ -15,7 +15,7 @@ class CommonAtoms extends StorybookPart {
             height: 100,
             child: CuCard(
               child: Center(
-                child: CuText('Hello world!'),
+                child: CuText.bold14('Hello world!'),
               ),
             ),
           ),
@@ -54,12 +54,22 @@ class CommonAtoms extends StorybookPart {
         ),
         Story(
           name: 'Atoms/Text',
-          builder: (context) => CuText(
-            context.knobs.text(
+          builder: (context) {
+            final text = context.knobs.text(
               label: 'Text',
               initial: 'Hello world!',
-            ),
-          ),
+            );
+
+            return context.knobs.options(
+              label: 'Type',
+              initial: CuText(text),
+              options: [
+                Option(label: 'medium 14', value: CuText.med14(text)),
+                Option(label: 'bold 14', value: CuText.bold14(text)),
+                Option(label: 'medium 24', value: CuText.med24(text)),
+              ],
+            );
+          },
         ),
         Story(
           name: 'Atoms/Toast',
