@@ -24,8 +24,16 @@ class CuToast extends StatelessWidget {
       decoration: BoxDecoration(
         color: _getColor(context),
         borderRadius: BorderRadius.circular(8.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            spreadRadius: 0,
+            blurRadius: 4,
+            offset: const Offset(8, 8),
+          ),
+        ],
       ),
-      child: CuText(message),
+      child: CuText.bold14(message),
     );
   }
 
