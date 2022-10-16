@@ -63,12 +63,19 @@ class CommonAtoms extends StorybookPart {
         ),
         Story(
           name: 'Atoms/Toast',
-          builder: (context) => CuToast(
-            message: context.knobs.text(
+          builder: (context) {
+            final bool isError = context.knobs.boolean(
+              label: 'Is error',
+              initial: false,
+            );
+            final String message = context.knobs.text(
               label: 'Message',
               initial: 'Hello world!',
-            ),
-          ),
+            );
+            return isError
+                ? CuToast.error(message: message)
+                : CuToast.success(message: message);
+          },
         ),
       ];
 }
