@@ -1,26 +1,30 @@
-import 'package:cusymint_app/features/home/pages/home_page.dart';
 import 'package:cusymint_app/services_provider.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:flutter/material.dart';
 
+import 'features/navigation/app_router.gr.dart';
+
 void main() async {
   await CuL10n.ensureInitialized();
 
-  runApp(const CuL10n(child: CusymintApp()));
+  runApp(CuL10n(child: CusymintApp()));
 }
 
 class CusymintApp extends StatelessWidget {
-  const CusymintApp({super.key});
+  CusymintApp({super.key});
+
+  final _appRouter = AppRouter();
 
   @override
   Widget build(BuildContext context) {
     return ServicesProvider(
-      child: MaterialApp(
+      child: MaterialApp.router(
         locale: context.locale,
         supportedLocales: context.supportedLocales,
         localizationsDelegates: context.localizationDelegates,
         title: 'cusymint',
-        home: const HomePage(),
+        routerDelegate: _appRouter.delegate(),
+        routeInformationParser: _appRouter.defaultRouteParser(),
       ),
     );
   }
