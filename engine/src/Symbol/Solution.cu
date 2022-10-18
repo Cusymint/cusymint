@@ -36,7 +36,7 @@ namespace Sym {
     __host__ __device__ void Solution::seal_no_substitutions() { seal_substitutions(0, 0); }
 
     __host__ __device__ void Solution::seal_single_substitution() {
-        seal_substitutions(1, (Symbol::from(this) + expression_offset)->size());
+        seal_substitutions(1, (symbol() + expression_offset)->size());
     }
 
     __host__ __device__ void Solution::seal_substitutions(const size_t count, const size_t size) {
@@ -46,20 +46,18 @@ namespace Sym {
 
     __host__ __device__ void Solution::seal() { size = expression_offset + expression()->size(); }
 
-    __host__ __device__ Symbol* Solution::expression() {
-        return Symbol::from(this) + expression_offset;
-    }
+    __host__ __device__ Symbol* Solution::expression() { return symbol() + expression_offset; }
 
     __host__ __device__ const Symbol* Solution::expression() const {
-        return Symbol::from(this) + expression_offset;
+        return symbol() + expression_offset;
     }
 
     __host__ __device__ const Substitution* Solution::first_substitution() const {
-        return &Symbol::from(this)->child()->substitution;
+        return &symbol()->child()->substitution;
     }
 
     __host__ __device__ Substitution* Solution::first_substitution() {
-        return &Symbol::from(this)->child()->substitution;
+        return &symbol()->child()->substitution;
     }
 
     __host__ __device__ size_t Solution::substitutions_size() const {
@@ -73,7 +71,8 @@ namespace Sym {
         if (substitution_count != 0) {
             expression_copy.data()->substitute_variable_with_nth_substitution_name(
                 substitution_count - 1);
-            return fmt::format("Solution: {}, {}", expression_copy.data()->to_string(), first_substitution()->to_string());
+            return fmt::format("Solution: {}, {}", expression_copy.data()->to_string(),
+                               first_substitution()->to_string());
         }
 
         return fmt::format("Solution: {}", expression_copy.data()->to_string());
@@ -86,7 +85,8 @@ namespace Sym {
         if (substitution_count != 0) {
             expression_copy.data()->substitute_variable_with_nth_substitution_name(
                 substitution_count - 1);
-            return fmt::format(R"(\text{{Solution: }} {}, \quad {})", expression_copy.data()->to_tex(), first_substitution()->to_tex());
+            return fmt::format(R"(\text{{Solution: }} {}, \quad {})",
+                               expression_copy.data()->to_tex(), first_substitution()->to_tex());
         }
 
         return fmt::format(R"(\text{{Solution: }} {})", expression_copy.data()->to_tex());

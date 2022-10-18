@@ -19,7 +19,7 @@ namespace Sym {
     std::string to_string() const;
     std::string to_tex() const;
     END_DECLARE_SYMBOL(Arccosine)
-    
+
     DECLARE_SYMBOL(Arctangent, false)
     ONE_ARGUMENT_OP_SYMBOL
 

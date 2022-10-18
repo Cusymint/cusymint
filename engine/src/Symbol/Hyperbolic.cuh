@@ -1,8 +1,8 @@
 #ifndef HYPERBOLIC_H
 #define HYPERBOLIC_H
 
-#include <vector>
 #include "Macros.cuh"
+#include <vector>
 
 namespace Sym {
     std::vector<Symbol> sinh(const std::vector<Symbol>& arg);

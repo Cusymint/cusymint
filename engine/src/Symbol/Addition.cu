@@ -78,12 +78,12 @@ namespace Sym {
         }
 
         if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value == 0.0) {
-            arg1().copy_to(this_symbol());
+            arg1().copy_to(symbol());
             return;
         }
 
         if (arg1().is(Type::NumericConstant) && arg1().numeric_constant.value == 0.0) {
-            arg2().copy_to(this_symbol());
+            arg2().copy_to(symbol());
         }
     }
 
@@ -95,13 +95,12 @@ namespace Sym {
         arg().simplify_in_place(help_space);
 
         if (arg().is(Type::Negation)) {
-            arg().negation.arg().copy_to(this_symbol());
+            arg().negation.arg().copy_to(symbol());
             return;
         }
 
         if (arg().is(Type::NumericConstant)) {
-            *this_as<NumericConstant>() =
-                NumericConstant::with_value(-arg().numeric_constant.value);
+            *as<NumericConstant>() = NumericConstant::with_value(-arg().numeric_constant.value);
         }
     }
 

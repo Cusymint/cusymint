@@ -3,6 +3,7 @@
 
 #include "Symbol.cuh"
 
+#include "Utils/CompileConstants.cuh"
 #include "Utils/DeviceArray.cuh"
 
 namespace Sym {
@@ -41,7 +42,19 @@ namespace Sym {
             expression_capacity(other.expression_capacity),
             expression_count(other.expression_count) {}
 
+        template <class U>
+        ExpressionArray(ExpressionArray<U>&& other) // NOLINT(google-explicit-constructor)
+            :
+            data(std::forward(other.data)),
+            expression_size(other.expression_size),
+            expression_capacity(other.expression_capacity),
+            expression_count(other.expression_count) {}
+
         template <class U> ExpressionArray& operator=(const ExpressionArray<U>& other) {
+            if (&other == this) {
+                return *this;
+            }
+
             data = other.data;
             expression_size = other.expression_size;
             expression_count = other.expression_count;
@@ -67,14 +80,39 @@ namespace Sym {
          */
         std::vector<std::vector<Symbol>> to_vector() const {
             std::vector<std::vector<Symbol>> expressions;
+            expressions.reserve(expression_count);
 
             for (size_t expr_idx = 0; expr_idx < expression_count; ++expr_idx) {
-                expressions.emplace_back(expression_size);
-                cudaMemcpy(expressions[expr_idx].data(), (*this)[expr_idx],
-                           expression_size * sizeof(Symbol), cudaMemcpyDeviceToHost);
+                expressions.emplace_back(to_vector(expr_idx));
             }
 
             return expressions;
+        }
+
+        /*
+         * @brief Kopiuje idx-te wyrażenie do tablicy vectorów
+         */
+        std::vector<Symbol> to_vector(const size_t idx) const {
+            std::vector<Symbol> expression(expression_size);
+
+            cudaMemcpy(expression.data(), at(idx), expression_size * sizeof(Symbol),
+                       cudaMemcpyDeviceToHost);
+            expression.resize(expression.front().size());
+            return expression;
+        }
+
+        /*
+         * @brief Copies the array onto the CPU and formats it as a string
+         */
+        std::string to_string() const {
+            const std::vector<std::vector<Symbol>> vec = to_vector();
+            std::string string = "{\n";
+
+            for (const auto& sym : vec) {
+                string += sym.data()->to_string() + ",\n";
+            }
+
+            return string + "}";
         }
 
         /*
@@ -102,9 +140,22 @@ namespace Sym {
          *
          * @param new_expression_count Wskaźnik do nowej liczby wyrażeń.
          */
-        inline void resize_from_device(const size_t* const new_expression_count) {
-            cudaMemcpy(&expression_count, new_expression_count, sizeof(size_t),
-                       cudaMemcpyDeviceToHost);
+        template <class U> inline void resize_from_device(const U* const new_expression_count) {
+            U new_count;
+            cudaMemcpy(&new_count, new_expression_count, sizeof(U), cudaMemcpyDeviceToHost);
+            expression_count = new_count;
+        }
+
+        /*
+         * @brief Dodaje wartość z GPU do liczby wyrażeń
+         *
+         * @param expression_count_increment Wskaźnik do nowej liczby wyrażeń.
+         */
+        template <class U>
+        void increment_size_from_device(const U* const expression_count_increment) {
+            U increment;
+            cudaMemcpy(&increment, expression_count_increment, sizeof(U), cudaMemcpyDeviceToHost);
+            expression_count += increment;
         }
 
         /*
@@ -115,15 +166,35 @@ namespace Sym {
         /*
          * @brief Wskaźnik do idx-tego ciągu symboli
          */
-        __host__ __device__ const T* operator[](const size_t idx) const {
+        __host__ __device__ const T* at(const size_t idx) const {
+            if constexpr (Consts::DEBUG) {
+                if (idx > expression_capacity) {
+                    Util::crash("Trying to access expression %lu of an ExpressionArray with "
+                                "capacity of %lu",
+                                idx, expression_capacity);
+                }
+            }
+
             return data.at(expression_size * idx)->as_ptr<T>();
         }
 
         /*
          * @brief Wskaźnik do idx-tego ciągu symboli
          */
-        __host__ __device__ T* operator[](const size_t idx) {
-            return const_cast<T*>((*const_cast<const ExpressionArray<T>*>(this))[idx]);
+        __host__ __device__ T* at(const size_t idx) {
+            return const_cast<T*>(const_cast<const ExpressionArray<T>*>(this)->at(idx));
+        }
+
+        /*
+         * @brief Wskaźnik do idx-tego ciągu symboli
+         */
+        __host__ __device__ const T& operator[](const size_t idx) const { return *at(idx); }
+
+        /*
+         * @brief Wskaźnik do idx-tego ciągu symboli
+         */
+        __host__ __device__ T& operator[](const size_t idx) {
+            return const_cast<T&>((*const_cast<const ExpressionArray<T>*>(this))[idx]);
         }
     };
 }

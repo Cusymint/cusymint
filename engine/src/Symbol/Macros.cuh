@@ -11,6 +11,8 @@
 #include "Utils/Cuda.cuh"
 
 namespace Sym {
+    static constexpr size_t BUILDER_SIZE = std::numeric_limits<size_t>::max();
+
     union Symbol;
 }
 
@@ -22,51 +24,52 @@ namespace Sym {
 #define SIMPLIFY_IN_PLACE_HEADER(_simplify_in_place) \
     __host__ __device__ void _simplify_in_place(Symbol* const help_space)
 
-#define DECLARE_SYMBOL(_name, _simple)                                           \
-    struct _name {                                                               \
-        constexpr static Sym::Type TYPE = Sym::Type::_name;                      \
-        Sym::Type type;                                                          \
-        size_t size;                                                             \
-        bool simplified;                                                         \
-                                                                                 \
-        __host__ __device__ static _name builder() {                             \
-            _name symbol{};                                                      \
-            symbol.type = Sym::Type::_name;                                      \
-            symbol.simplified = _simple;                                         \
-            return symbol;                                                       \
-        }                                                                        \
-                                                                                 \
-        __host__ __device__ void seal();                                         \
-                                                                                 \
-        __host__ __device__ static _name create() {                              \
-            return {                                                             \
-                .type = Sym::Type::_name,                                        \
-                .size = 1,                                                       \
-                .simplified = _simple,                                           \
-            };                                                                   \
-        }                                                                        \
-                                                                                 \
-        __host__ __device__ void copy_single_to(Symbol* const dst) const {       \
-            Util::copy_mem(dst, this, sizeof(_name));                            \
-        }                                                                        \
-        __host__ __device__ inline const Symbol* this_symbol() const {           \
-            return reinterpret_cast<const Symbol*>(this);                        \
-        }                                                                        \
-                                                                                 \
-        __host__ __device__ inline Symbol* this_symbol() {                       \
-            return reinterpret_cast<Symbol*>(this);                              \
-        }                                                                        \
-                                                                                 \
-        template <class T> __host__ __device__ inline const T* this_as() const { \
-            return reinterpret_cast<const T*>(this);                             \
-        }                                                                        \
-                                                                                 \
-        template <class T> __host__ __device__ inline T* this_as() {             \
-            return reinterpret_cast<T*>(this);                                   \
-        }                                                                        \
-                                                                                 \
-        COMPARE_HEADER(compare);                                                 \
-        COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                         \
+#define DECLARE_SYMBOL(_name, _simple)                                            \
+    struct _name {                                                                \
+        constexpr static Sym::Type TYPE = Sym::Type::_name;                       \
+        Sym::Type type;                                                           \
+        size_t size;                                                              \
+        bool simplified;                                                          \
+                                                                                  \
+        __host__ __device__ static _name builder() {                              \
+            return {                                                              \
+                .type = Sym::Type::_name,                                         \
+                .size = BUILDER_SIZE,                                             \
+                .simplified = _simple,                                            \
+            };                                                                    \
+        }                                                                         \
+                                                                                  \
+        __host__ __device__ void seal();                                          \
+                                                                                  \
+        __host__ __device__ static _name create() {                               \
+            return {                                                              \
+                .type = Sym::Type::_name,                                         \
+                .size = 1,                                                        \
+                .simplified = _simple,                                            \
+            };                                                                    \
+        }                                                                         \
+                                                                                  \
+        __host__ __device__ void copy_single_to(Symbol* const dst) const {        \
+            Util::copy_mem(dst, this, sizeof(_name));                             \
+        }                                                                         \
+        __host__ __device__ inline const Symbol* symbol() const {                 \
+            return reinterpret_cast<const Symbol*>(this);                         \
+        }                                                                         \
+                                                                                  \
+        __host__ __device__ inline Symbol* symbol() {                             \
+            return const_cast<Symbol*>(const_cast<const _name*>(this)->symbol()); \
+        }                                                                         \
+                                                                                  \
+        template <class T> __host__ __device__ inline const T* as() const {       \
+            return reinterpret_cast<const T*>(this);                              \
+        }                                                                         \
+                                                                                  \
+        template <class T> __host__ __device__ inline T* as() {                   \
+            return const_cast<T*>(const_cast<const _name*>(this)->as<T>());       \
+        }                                                                         \
+                                                                                  \
+        COMPARE_HEADER(compare);                                                  \
+        COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                          \
         SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.
@@ -91,9 +94,8 @@ namespace Sym {
 
 #define DEFINE_SIMPLIFY_IN_PLACE(_name) SIMPLIFY_IN_PLACE_HEADER(_name::simplify_in_place)
 
-#define BASE_COMPARE(_name)                                                 \
-    symbol->as<_name>().type == type && symbol->as<_name>().size == size && \
-        symbol->as<_name>().simplified == simplified
+#define BASE_COMPARE(_name) \
+    symbol->type() == type && symbol->size() == size && symbol->simplified() == simplified
 
 #define ONE_ARGUMENT_OP_COMPARE(_name) true
 
@@ -109,10 +111,10 @@ namespace Sym {
     DEFINE_COMPARE(_name) { return BASE_COMPARE(_name) && TWO_ARGUMENT_OP_COMPARE(_name); }
 
 #define DEFINE_TO_STRING(_str) \
-    std::string to_string() const { return _str; }
+    [[nodiscard]] std::string to_string() const { return _str; }
 
 #define DEFINE_TO_TEX(_str) \
-    std::string to_tex() const { return _str; }
+    [[nodiscard]] std::string to_tex() const { return _str; }
 
 #define DEFINE_COMPRESS_REVERSE_TO(_name) COMPRESS_REVERSE_TO_HEADER(_name::compress_reverse_to)
 
@@ -126,39 +128,37 @@ namespace Sym {
     DEFINE_COMPRESS_REVERSE_TO(_name) {                                     \
         const size_t new_arg_size = arg().compress_reverse_to(destination); \
         copy_single_to(destination + new_arg_size);                         \
-        destination[new_arg_size].unknown.size = new_arg_size + 1;          \
+        destination[new_arg_size].size() = new_arg_size + 1;                \
         return new_arg_size + 1;                                            \
     }
 
-#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                     \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                       \
-        const size_t new_arg2_size = arg2().compress_reverse_to(destination);                 \
-        const size_t new_arg1_size = arg1().compress_reverse_to(destination + new_arg2_size); \
-                                                                                              \
-        copy_single_to(destination + new_arg1_size + new_arg2_size);                          \
-        destination[new_arg1_size + new_arg2_size].unknown.size =                             \
-            new_arg1_size + new_arg2_size + 1;                                                \
-        (destination + new_arg1_size + new_arg2_size)->as<_name>().second_arg_offset =        \
-            new_arg1_size + 1;                                                                \
-                                                                                              \
-        return new_arg1_size + new_arg2_size + 1;                                             \
+#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                      \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                        \
+        const size_t new_arg2_size = arg2().compress_reverse_to(destination);                  \
+        const size_t new_arg1_size = arg1().compress_reverse_to(destination + new_arg2_size);  \
+                                                                                               \
+        copy_single_to(destination + new_arg1_size + new_arg2_size);                           \
+        destination[new_arg1_size + new_arg2_size].size() = new_arg1_size + new_arg2_size + 1; \
+        (destination + new_arg1_size + new_arg2_size)->as<_name>().second_arg_offset =         \
+            new_arg1_size + 1;                                                                 \
+                                                                                               \
+        return new_arg1_size + new_arg2_size + 1;                                              \
     }
 
-#define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                              \
-        printf("ERROR: compress_reverse_to used on unsupported type: %s\n", #_name); \
-        Util::crash("");                                                             \
-        return 0;                                                                    \
+#define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                     \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                   \
+        Util::crash("ERROR: compress_reverse_to used on unsupported type: %s\n", #_name); \
+        return 0;                                                                         \
     }
 
 #define DEFINE_INTO_DESTINATION_OPERATOR(_name)                                        \
     __host__ __device__ _name* operator<<(Symbol* const destination, _name&& target) { \
-        destination->as<_name>() = target;                                             \
+        destination->init_from(target);                                                \
         return &destination->as<_name>();                                              \
     }                                                                                  \
                                                                                        \
     __host__ __device__ _name* operator<<(Symbol& destination, _name&& target) {       \
-        destination.as<_name>() = target;                                              \
+        destination.init_from(target);                                                 \
         return &destination.as<_name>();                                               \
     }
 
@@ -320,7 +320,7 @@ namespace Sym {
         compress_reverse_to(resized_reversed_this);                                                        \
                                                                                                            \
         /* Zmiany w strukturze nie zmieniają całkowitego rozmiaru `this` */                              \
-        Symbol::copy_and_reverse_symbol_sequence(this_symbol(), resized_reversed_this, size);              \
+        Symbol::copy_and_reverse_symbol_sequence(symbol(), resized_reversed_this, size);                   \
         right_copy->copy_to(last_left);                                                                    \
         last_left_copy->copy_to(&arg2());                                                                  \
     }                                                                                                      \
