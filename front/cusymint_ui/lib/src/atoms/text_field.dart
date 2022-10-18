@@ -25,28 +25,31 @@ class CuTextField extends StatelessWidget {
 
     // TODO: fix icon colors
     // TODO: add shadow
-    return TextField(
-      controller: controller,
-      onTap: onTap,
-      onChanged: onChanged,
-      style: TextStyle(
-        color: colors.black,
-        fontSize: 18.0,
-      ),
-      decoration: InputDecoration(
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
-        prefixIconColor: colors.mintDark,
-        suffixIconColor: colors.mintDark,
-        label: label,
-        border: _CuInputBorder(color: colors.mintDark),
-        enabledBorder: _CuInputBorder(color: colors.mintDark),
-        focusedBorder: _CuInputBorder(color: colors.mintHeavyish),
-        errorBorder: _CuInputBorder(color: colors.errorColor),
-        focusColor: colors.mintDark,
-        filled: true,
-        fillColor: colors.mintLight,
-        iconColor: colors.mintDark,
+    return Material(
+      type: MaterialType.transparency,
+      child: TextField(
+        controller: controller,
+        onTap: onTap,
+        onChanged: onChanged,
+        style: TextStyle(
+          color: colors.black,
+          fontSize: 18.0,
+        ),
+        decoration: InputDecoration(
+          prefixIcon: prefixIcon,
+          suffixIcon: suffixIcon,
+          prefixIconColor: colors.mintDark,
+          suffixIconColor: colors.mintDark,
+          label: label,
+          border: _CuInputBorder(color: colors.mintDark),
+          enabledBorder: _CuInputBorder(color: colors.mintDark),
+          focusedBorder: _CuInputBorder(color: colors.mintHeavyish),
+          errorBorder: _CuInputBorder(color: colors.errorColor),
+          focusColor: colors.mintDark,
+          filled: true,
+          fillColor: colors.mintLight,
+          iconColor: colors.mintDark,
+        ),
       ),
     );
   }

@@ -46,21 +46,24 @@ class _HomeBodyState extends State<HomeBody> {
                 children: [
                   const Padding(
                     padding: EdgeInsets.fromLTRB(12, 12, 12, 0),
-                    child: CuLogo(),
+                    child: Hero(tag: 'logo', child: CuLogo()),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: SizedBox(
                       width: 400,
-                      child: CuTextField(
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            _controller.clear();
-                            widget.clientCubit.reset();
-                          },
-                          icon: const Icon(Icons.clear),
+                      child: Hero(
+                        tag: 'input',
+                        child: CuTextField(
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              _controller.clear();
+                              widget.clientCubit.reset();
+                            },
+                            icon: const Icon(Icons.clear),
+                          ),
+                          controller: _controller,
                         ),
-                        controller: _controller,
                       ),
                     ),
                   ),
