@@ -39,12 +39,6 @@ class _HomeBodyState extends State<HomeBody> {
         return SafeArea(
           child: Scaffold(
             backgroundColor: CuColors.of(context).mint,
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                widget.clientCubit.reset();
-              },
-              child: const Icon(Icons.refresh),
-            ),
             body: Center(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -59,6 +53,13 @@ class _HomeBodyState extends State<HomeBody> {
                     child: SizedBox(
                       width: 400,
                       child: CuTextField(
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            _controller.clear();
+                            widget.clientCubit.reset();
+                          },
+                          icon: const Icon(Icons.clear),
+                        ),
                         controller: _controller,
                       ),
                     ),

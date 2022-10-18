@@ -24,6 +24,7 @@ class CuTextField extends StatelessWidget {
     final colors = CuColors.of(context);
 
     // TODO: fix icon colors
+    // TODO: add shadow
     return TextField(
       controller: controller,
       onTap: onTap,
