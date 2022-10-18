@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:cusymint_app/features/navigation/app_router.gr.dart';
+import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -22,7 +23,7 @@ class WelcomePage extends StatelessWidget {
                   children: [
                     const Hero(tag: 'logo', child: CuLogo()),
                     CuText.bold14(
-                      'Cuda symbolic integration',
+                      Strings.subtitle.tr(),
                       color: CuColors.of(context).white,
                     ),
                   ],

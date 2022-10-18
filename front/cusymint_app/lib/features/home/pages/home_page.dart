@@ -74,7 +74,7 @@ class _HomeBodyState extends State<HomeBody> {
                         await widget.clientCubit
                             .solveIntegral(integralToBeSolved);
                       },
-                      child: const Text('Solve integral'),
+                      child: CuText(Strings.solve.tr()),
                     ),
                   if (state is ClientLoading) const _LoadingBody(),
                   if (state is ClientSuccess)

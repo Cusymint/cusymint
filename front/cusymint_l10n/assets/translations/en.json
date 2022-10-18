@@ -3,5 +3,7 @@
    "tryExamples": "Or try one of these examples",
    "foundResult": "Found result in {timeInMs} ms",
    "encounteredErrors": "Encountered errors:",
-   "copiedToClipboard": "Copied to clipboard"
+   "copiedToClipboard": "Copied to clipboard",
+   "subtitle": "Cuda symbolic integration",
+   "solve": "Solve"
 }
