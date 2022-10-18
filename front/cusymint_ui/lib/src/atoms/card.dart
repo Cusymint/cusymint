@@ -11,6 +11,7 @@ class CuCard extends StatelessWidget {
     final colors = CuColors.of(context);
 
     return Card(
+      elevation: 8,
       color: colors.mintLight,
       child: child,
     );
