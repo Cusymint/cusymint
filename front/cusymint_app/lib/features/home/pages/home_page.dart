@@ -68,13 +68,13 @@ class _HomeBodyState extends State<HomeBody> {
                     ),
                   ),
                   if (state is ClientInitial)
-                    ElevatedButton(
+                    CuElevatedButton(
                       onPressed: () async {
                         final integralToBeSolved = _controller.text;
                         await widget.clientCubit
                             .solveIntegral(integralToBeSolved);
                       },
-                      child: CuText(Strings.solve.tr()),
+                      text: Strings.solve.tr(),
                     ),
                   if (state is ClientLoading) const _LoadingBody(),
                   if (state is ClientSuccess)

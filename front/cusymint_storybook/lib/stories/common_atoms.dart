@@ -1,3 +1,5 @@
+import 'dart:js';
+
 import 'package:cusymint_storybook/storybook_part.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
@@ -87,5 +89,18 @@ class CommonAtoms extends StorybookPart {
                 : CuToast.success(message: message);
           },
         ),
+        Story(
+            name: 'Atoms/ElevatedButton',
+            builder: (context) {
+              final text = context.knobs.text(
+                label: 'Text',
+                initial: 'Solve',
+              );
+
+              return CuElevatedButton(
+                text: text,
+                onPressed: () {},
+              );
+            })
       ];
 }
