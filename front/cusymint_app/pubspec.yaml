@@ -14,6 +14,7 @@ dependencies:
   flutter_math_fork: ^0.6.3+1
   fluttertoast: ^8.0.9
   provider: ^6.0.3
+  share_plus: ^6.0.0
 
   cusymint_l10n:
     path: ../cusymint_l10n

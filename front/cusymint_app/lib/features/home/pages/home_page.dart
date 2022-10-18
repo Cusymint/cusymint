@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:share_plus/share_plus.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -37,6 +38,7 @@ class _HomeBodyState extends State<HomeBody> {
       builder: (context, state) {
         return SafeArea(
           child: Scaffold(
+            backgroundColor: CuColors.of(context).mint,
             floatingActionButton: FloatingActionButton(
               onPressed: () {
                 widget.clientCubit.reset();
@@ -48,6 +50,10 @@ class _HomeBodyState extends State<HomeBody> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisSize: MainAxisSize.max,
                 children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(12, 12, 12, 0),
+                    child: CuLogo(),
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: SizedBox(
@@ -200,12 +206,12 @@ class _SuccessBodyState extends State<_SuccessBody> {
   }
 
   Future<void> _shareUtf() async {
-    // TODO: implement share
+    await Share.share('${widget.inputInUtf} = ${widget.outputInUtf}');
   }
 
   void _showCopyToClipboardToast() {
     _fToast.showToast(
-      child: CuToast(message: Strings.copiedToClipboard.tr()),
+      child: CuToast.success(message: Strings.copiedToClipboard.tr()),
       gravity: ToastGravity.BOTTOM,
       toastDuration: const Duration(seconds: 2),
     );
