@@ -1,13 +1,9 @@
-ENV CUDA_VERSION="11.8.0"
-ENV UBUNTU_VERSION="22.04"
-
-FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION} AS base
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04 AS base
 WORKDIR /cusymint
 
 COPY . ./engine-src
 
-RUN apt update
-RUN apt install -y libfmt-dev
+RUN apt-get update && apt-get install -y libfmt-dev cmake
 
 RUN cmake -S engine-src -B build -DCMAKE_BUILD_TYPE=Release
-RUN cmake --build build --target install
+RUN cmake --build build
