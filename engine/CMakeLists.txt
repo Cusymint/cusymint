@@ -31,6 +31,7 @@ add_executable(
   ${SYMBOL_DIR}/SubexpressionCandidate.cu
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
   ${EVALUATION_DIR}/Integrate.cu
+  ${EVALUATION_DIR}/StaticFunctions.cu
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
 

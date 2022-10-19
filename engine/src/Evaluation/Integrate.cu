@@ -3,6 +3,8 @@
 #include <thrust/execution_policy.h>
 #include <thrust/scan.h>
 
+#include "StaticFunctions.cuh"
+
 #include "Utils/Cuda.cuh"
 
 namespace {
@@ -73,20 +75,20 @@ namespace {
 }
 
 namespace Sym {
-    __device__ const KnownIntegralCheck known_integral_checks[] = {
+    __device__ const KnownIntegralCheck KNOWN_INTEGRAL_CHECKS[] = {
         is_single_variable, is_simple_variable_power, is_variable_exponent,
         is_simple_sine,     is_simple_cosine,         is_constant,
         is_known_arctan};
 
-    __device__ const KnownIntegralTransform known_integral_applications[] = {
+    __device__ const KnownIntegralTransform KNOWN_INTEGRAL_APPLICATIONS[] = {
         integrate_single_variable, integrate_simple_variable_power, integrate_variable_exponent,
         integrate_simple_sine,     integrate_simple_cosine,         integrate_constant,
         integrate_arctan};
 
-    static_assert(sizeof(known_integral_applications) == sizeof(known_integral_checks),
+    static_assert(sizeof(KNOWN_INTEGRAL_APPLICATIONS) == sizeof(KNOWN_INTEGRAL_CHECKS),
                   "Different number of heuristics and applications defined");
 
-    static_assert(sizeof(known_integral_checks) ==
+    static_assert(sizeof(KNOWN_INTEGRAL_CHECKS) ==
                       sizeof(KnownIntegralCheck) * KNOWN_INTEGRAL_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
@@ -101,20 +103,8 @@ namespace Sym {
     static_assert(sizeof(heuristic_checks) == sizeof(KnownIntegralCheck) * HEURISTIC_CHECK_COUNT,
                   "HEURISTIC_CHECK_COUNT is not equal to number of heuristic checks");
 
-    __device__ Symbol ex_function[3];
-    __device__ void init_ex_function() {
-        Power* const power = ex_function << Power::builder();
-        power->arg1().known_constant = KnownConstant::with_value(KnownConstantValue::E);
-        power->seal_arg1();
-        power->arg2().variable = Variable::create();
-        power->seal();
-    }
-
     __device__ HeuristicCheckResult is_function_of_ex(const Integral* const integral) {
-        // TODO: Move somewhere so that it's initialized only once and not every time this function
-        // is called
-        init_ex_function();
-        return {integral->integrand()->is_function_of(ex_function) ? 1UL : 0UL, 0UL};
+        return {integral->integrand()->is_function_of(e_to_x()) ? 1UL : 0UL, 0UL};
     }
 
     __device__ HeuristicCheckResult is_sum(const Integral* const integral) {
@@ -130,9 +120,6 @@ namespace Sym {
                                              Symbol* const /*expression_dst*/,
                                              const size_t /*expression_index*/,
                                              Symbol* const help_space) {
-        // TODO: Move somewhere so that it's initialized only once and not every time this function
-        // is called
-        init_ex_function();
         Symbol variable{};
         variable.variable = Variable::create();
 
@@ -140,7 +127,7 @@ namespace Sym {
         new_candidate->copy_metadata_from(*integral);
 
         integral->arg().as<Integral>().integrate_by_substitution_with_derivative(
-            ex_function, &variable, integral_dst + 1, help_space);
+            e_to_x(), &variable, integral_dst + 1, help_space);
 
         new_candidate->seal();
     }
@@ -405,7 +392,7 @@ namespace Sym {
                  int_idx += TRANSFORM_GROUP_SIZE) {
                 size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
                 applicability[appl_idx] =
-                    known_integral_checks[check_idx](&integrals[int_idx].arg().as<Integral>());
+                    KNOWN_INTEGRAL_CHECKS[check_idx](&integrals[int_idx].arg().as<Integral>());
             }
         }
     }
@@ -435,7 +422,7 @@ namespace Sym {
                 auto* const subexpr_candidate = expressions.at(dest_idx)
                                                 << SubexpressionCandidate::builder();
                 subexpr_candidate->copy_metadata_from(integrals[int_idx]);
-                known_integral_applications[trans_idx](&integrals[int_idx].arg().as<Integral>(),
+                KNOWN_INTEGRAL_APPLICATIONS[trans_idx](&integrals[int_idx].arg().as<Integral>(),
                                                        &subexpr_candidate->arg(),
                                                        help_spaces.at(dest_idx));
                 subexpr_candidate->seal();

@@ -8,6 +8,7 @@
 #include <fmt/core.h>
 
 #include "Evaluation/Integrate.cuh"
+#include "Evaluation/StaticFunctions.cuh"
 
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
@@ -18,6 +19,8 @@ int main() {
     if constexpr (Consts::DEBUG) {
         fmt::print("Running in debug mode\n");
     }
+
+    Sym::init_static_functions();
 
     std::vector<Sym::Symbol> integral = Sym::integral(
         (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(4)) + (Sym::var() ^ Sym::num(5)) +
