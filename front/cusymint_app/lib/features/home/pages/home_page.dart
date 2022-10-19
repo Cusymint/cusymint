@@ -60,7 +60,10 @@ class _HomeBodyState extends State<HomeBody> {
                               _controller.clear();
                               widget.clientCubit.reset();
                             },
-                            icon: const Icon(Icons.clear),
+                            icon: Icon(
+                              Icons.clear,
+                              color: CuColors.of(context).mintDark,
+                            ),
                           ),
                           controller: _controller,
                         ),

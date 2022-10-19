@@ -23,7 +23,6 @@ class CuTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = CuColors.of(context);
 
-    // TODO: fix icon colors
     // TODO: add shadow
     return Material(
       type: MaterialType.transparency,
@@ -41,9 +40,9 @@ class CuTextField extends StatelessWidget {
           prefixIconColor: colors.mintDark,
           suffixIconColor: colors.mintDark,
           label: label,
-          border: _CuInputBorder(color: colors.mintDark),
-          enabledBorder: _CuInputBorder(color: colors.mintDark),
-          focusedBorder: _CuInputBorder(color: colors.mintHeavyish),
+          border: _CuInputBorder(color: colors.mintHeavyish),
+          enabledBorder: _CuInputBorder(color: colors.mintHeavyish),
+          focusedBorder: _CuInputBorder(color: colors.mintDark),
           errorBorder: _CuInputBorder(color: colors.errorColor),
           focusColor: colors.mintDark,
           filled: true,

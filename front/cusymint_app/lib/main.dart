@@ -1,5 +1,6 @@
 import 'package:cusymint_app/services_provider.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
+import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
 
 import 'features/navigation/app_router.gr.dart';
@@ -20,6 +21,7 @@ class CusymintApp extends StatelessWidget {
     return ServicesProvider(
       child: MaterialApp.router(
         locale: context.locale,
+        theme: CuTheme.of(context),
         supportedLocales: context.supportedLocales,
         localizationsDelegates: context.localizationDelegates,
         title: 'cusymint',

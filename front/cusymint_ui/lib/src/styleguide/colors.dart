@@ -7,6 +7,7 @@ class CuColor extends Color {
 class CuColors {
   CuColors({
     required this.mint,
+    required this.materialMint,
     required this.mintLight,
     required this.mintDark,
     required this.mintHeavyish,
@@ -30,6 +31,21 @@ class CuColors {
       textBlack: CuColor(0xFF000000),
       white: CuColor(0xFFFFFFFF),
       black: CuColor(0xFF000000),
+      materialMint: MaterialColor(
+        0xFF002F20,
+        <int, Color>{
+          50: CuColor(0xFFE2F2ED),
+          100: CuColor(0xFFB9DED2),
+          200: CuColor(0xFF8dcab6),
+          300: CuColor(0xFF64b49a),
+          400: CuColor(0xFF4aa487),
+          500: CuColor(0xFF3b9475),
+          600: CuColor(0xFF368769),
+          700: CuColor(0xFF30775B),
+          800: CuColor(0xFF29674E),
+          900: CuColor(0xFF1e4b35),
+        },
+      ),
     );
   }
 
@@ -52,6 +68,7 @@ class CuColors {
   final CuColor mintDark;
   final CuColor mintHeavyish;
   final CuColor mintGray;
+  final MaterialColor materialMint;
 
   final CuColor errorColor;
 }
