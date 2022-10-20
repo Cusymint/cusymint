@@ -592,15 +592,14 @@ namespace Sym {
                 if (new_expressions_indices[appl_idx] != 0) {
                     const size_t expr_dst_idx = expressions_destinations.size() +
                                                 index_from_scan(new_expressions_indices, appl_idx);
-                    Heuristic::APPLICATIONS[trans_idx](integrals.at(int_idx),
-                                                       integrals_destinations.at(int_dst_idx),
-                                                       expressions_destinations.at(expr_dst_idx),
-                                                       expr_dst_idx, help_spaces.at(int_dst_idx));
+                    Heuristic::APPLICATIONS[trans_idx](
+                        integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
+                        expressions_destinations.iterator(expr_dst_idx), help_spaces[int_dst_idx]);
                 }
                 else {
-                    Heuristic::APPLICATIONS[trans_idx](integrals.at(int_idx),
-                                                       integrals_destinations.at(int_dst_idx),
-                                                       nullptr, 0, help_spaces.at(int_dst_idx));
+                    Heuristic::APPLICATIONS[trans_idx](
+                        integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
+                        ExpressionArray<>::Iterator::Null(), help_spaces[int_dst_idx]);
                 }
             }
         }

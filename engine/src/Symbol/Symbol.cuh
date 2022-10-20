@@ -120,7 +120,7 @@ namespace Sym {
         }
 
         /*
-         * @brief Zwraca wskaźnik na n-ty element za `this`
+         * @brief Pointer to the nth element after `this`
          */
         __host__ __device__ inline Symbol* at(const size_t idx) {
             return const_cast<Symbol*>(const_cast<const Symbol*>(this)->at(idx));

@@ -5,10 +5,9 @@
 
 namespace Sym::Heuristic {
     __device__ CheckResult is_function_of_ex(const Integral* const integral);
-    __device__ void transform_function_of_ex(const SubexpressionCandidate* const integral,
-                                             Symbol* const integral_dst,
-                                             Symbol* const /*expression_dst*/,
-                                             const size_t /*expression_index*/,
-                                             Symbol* const help_space);
+    __device__ void transform_function_of_ex(const SubexpressionCandidate& integral,
+                                             const ExpressionArray<>::Iterator& integral_dst,
+                                             const ExpressionArray<>::Iterator& expression_dst,
+                                             Symbol& help_space);
 }
 #endif
