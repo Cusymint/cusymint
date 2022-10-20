@@ -304,8 +304,8 @@ namespace Sym {
         };
 
         constexpr size_t KNOWN_INTEGRAL_COUNT =
-            Util::ensure_same<Util::array_len(KNOWN_INTEGRAL_CHECKS),
-                              Util::array_len(KNOWN_INTEGRAL_APPLICATIONS)>();
+            Util::ensure_same_v<Util::array_len(KNOWN_INTEGRAL_CHECKS),
+                                Util::array_len(KNOWN_INTEGRAL_APPLICATIONS)>;
 
     }
 

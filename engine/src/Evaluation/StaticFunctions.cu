@@ -48,8 +48,8 @@ namespace Sym::Static {
         };
 
         constexpr size_t STATIC_FUNCTION_COUNT =
-            Util::ensure_same<Util::array_len(STATIC_FUNCTIONS),
-                              Util::array_len(STATIC_FUNCTIONS_INITIALIZERS)>();
+            Util::ensure_same_v<Util::array_len(STATIC_FUNCTIONS),
+                                Util::array_len(STATIC_FUNCTIONS_INITIALIZERS)>;
 
         __global__ void init_static_functions_kernel() {
             const size_t thread_idx = Util::thread_idx();

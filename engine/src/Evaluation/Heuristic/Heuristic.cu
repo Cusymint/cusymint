@@ -23,5 +23,5 @@ namespace Sym::Heuristic {
     __device__
 #endif
         const size_t COUNT =
-            Util::ensure_same<Util::array_len(CHECKS), Util::array_len(APPLICATIONS)>();
+            Util::ensure_same_v<Util::array_len(CHECKS), Util::array_len(APPLICATIONS)>;
 }

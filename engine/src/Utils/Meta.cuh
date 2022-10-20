@@ -6,11 +6,15 @@ namespace Util {
         return N;
     }
 
-    template <auto first, decltype(first) second> constexpr auto ensure_same() noexcept {
+    template <auto first, decltype(first) second> struct EnsureSame {
         static_assert(std::is_integral_v<decltype(first)>);
         static_assert(first == second, "Different values provided to ensure_same");
-        return first;
-    }
+
+        const static decltype(first) value = first;
+    };
+
+    template <auto first, decltype(first) second>
+    constexpr auto ensure_same_v = EnsureSame<first, second>::value;
 }
 
 #endif
