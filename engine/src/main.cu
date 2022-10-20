@@ -20,7 +20,7 @@ int main() {
         fmt::print("Running in debug mode\n");
     }
 
-    Sym::init_static_functions();
+    Sym::Static::init_functions();
 
     std::vector<Sym::Symbol> integral = Sym::integral(
         (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(4)) + (Sym::var() ^ Sym::num(5)) +

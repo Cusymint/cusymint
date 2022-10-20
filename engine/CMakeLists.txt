@@ -32,6 +32,9 @@ add_executable(
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
   ${EVALUATION_DIR}/Integrate.cu
   ${EVALUATION_DIR}/StaticFunctions.cu
+  ${EVALUATION_DIR}/Heuristic/Heuristic.cu
+  ${EVALUATION_DIR}/Heuristic/SplitSum.cu
+  ${EVALUATION_DIR}/Heuristic/SubstituteEToX.cu
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
 
