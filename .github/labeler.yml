@@ -5,6 +5,5 @@ engine:
   - engine/**/*
 
 devops:
-  - .github/**/*
-  - '*'
-  - '!.gitignore'
+  - any: [ '.github/**/*', '*']
+    all: ['!.gitignore']
