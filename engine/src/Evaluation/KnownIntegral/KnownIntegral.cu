@@ -27,13 +27,13 @@ namespace Sym::KnownIntegral {
         const size_t COUNT =
             Util::ensure_same_v<Util::array_len(CHECKS), Util::array_len(APPLICATIONS)>;
 
-    __device__ Symbol* prepare_solution(const Integral* const integral, Symbol* const destination) {
+    __device__ Symbol& prepare_solution(const Integral& integral, Symbol& destination) {
         Solution* const solution = destination << Solution::builder();
         Symbol::copy_symbol_sequence(Symbol::from(solution->first_substitution()),
-                                     Symbol::from(integral->first_substitution()),
-                                     integral->substitutions_size());
-        solution->seal_substitutions(integral->substitution_count, integral->substitutions_size());
+                                     Symbol::from(integral.first_substitution()),
+                                     integral.substitutions_size());
+        solution->seal_substitutions(integral.substitution_count, integral.substitutions_size());
 
-        return solution->expression();
+        return *solution->expression();
     }
 }

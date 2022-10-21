@@ -113,7 +113,7 @@ namespace Sym {
                  int_idx += TRANSFORM_GROUP_SIZE) {
                 size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
                 applicability[appl_idx] =
-                    KnownIntegral::CHECKS[check_idx](&integrals[int_idx].arg().as<Integral>());
+                    KnownIntegral::CHECKS[check_idx](integrals[int_idx].arg().as<Integral>());
             }
         }
     }
@@ -143,9 +143,9 @@ namespace Sym {
                 auto* const subexpr_candidate = expressions.at(dest_idx)
                                                 << SubexpressionCandidate::builder();
                 subexpr_candidate->copy_metadata_from(integrals[int_idx]);
-                KnownIntegral::APPLICATIONS[trans_idx](&integrals[int_idx].arg().as<Integral>(),
-                                                       &subexpr_candidate->arg(),
-                                                       help_spaces.at(dest_idx));
+                KnownIntegral::APPLICATIONS[trans_idx](integrals[int_idx].arg().as<Integral>(),
+                                                       subexpr_candidate->arg(),
+                                                       help_spaces[dest_idx]);
                 subexpr_candidate->seal();
 
                 try_set_solver_idx(expressions, dest_idx);
@@ -319,7 +319,7 @@ namespace Sym {
                  int_idx += TRANSFORM_GROUP_SIZE) {
                 size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
                 Heuristic::CheckResult result =
-                    Heuristic::CHECKS[check_idx](&integrals[int_idx].arg().as<Integral>());
+                    Heuristic::CHECKS[check_idx](integrals[int_idx].arg().as<Integral>());
                 new_integrals_flags[appl_idx] = result.new_integrals;
                 new_expressions_flags[appl_idx] = result.new_expressions;
 

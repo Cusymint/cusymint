@@ -4,9 +4,8 @@
 #include "Symbol/Symbol.cuh"
 
 namespace Sym::KnownIntegral {
-    using Check = size_t (*)(const Integral* const integral);
-    using Application = void (*)(const Integral* const integral, Symbol* const destination,
-                                 Symbol* const help_space);
+    using Check = size_t (*)(const Integral& integral);
+    using Application = void (*)(const Integral& integral, Symbol& destination, Symbol& help_space);
 
     extern __device__ const Check CHECKS[];
     extern __device__ const Application APPLICATIONS[];
@@ -25,7 +24,7 @@ namespace Sym::KnownIntegral {
      *
      * @return Pointer to the symbol behind the last substitution in the result
      */
-    __device__ Symbol* prepare_solution(const Integral* const integral, Symbol* const destination);
+    __device__ Symbol& prepare_solution(const Integral& integral, Symbol& destination);
 }
 
 #endif

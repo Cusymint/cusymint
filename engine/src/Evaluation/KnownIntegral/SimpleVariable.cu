@@ -3,14 +3,13 @@
 #include "Symbol/Symbol.cuh"
 
 namespace Sym::KnownIntegral {
-    __device__ size_t is_simple_variable(const Integral* const integral) {
-        return integral->integrand()->is(Type::Variable) ? 1 : 0;
+    __device__ size_t is_simple_variable(const Integral& integral) {
+        return integral.integrand()->is(Type::Variable) ? 1 : 0;
     }
 
-    __device__ void integrate_simple_variable(const Integral* const integral,
-                                              Symbol* const destination,
-                                              Symbol* const /*help_space*/) {
-        Symbol* const solution_expr = prepare_solution(integral, destination);
+    __device__ void integrate_simple_variable(const Integral& integral, Symbol& destination,
+                                              Symbol& /*help_space*/) {
+        Symbol& solution_expr = prepare_solution(integral, destination);
 
         Product* const product = solution_expr << Product::builder();
         product->arg1().numeric_constant = NumericConstant::with_value(0.5);
@@ -23,6 +22,6 @@ namespace Sym::KnownIntegral {
         power->seal();
         product->seal();
 
-        destination->solution.seal();
+        destination.solution.seal();
     }
 }

@@ -3,8 +3,8 @@
 #include "Evaluation/StaticFunctions.cuh"
 
 namespace Sym::Heuristic {
-    __device__ CheckResult is_function_of_ex(const Integral* const integral) {
-        return {integral->integrand()->is_function_of(Static::e_to_x()) ? 1UL : 0UL, 0UL};
+    __device__ CheckResult is_function_of_ex(const Integral& integral) {
+        return {integral.integrand()->is_function_of(Static::e_to_x()) ? 1UL : 0UL, 0UL};
     }
 
     __device__ void transform_function_of_ex(const SubexpressionCandidate& integral,

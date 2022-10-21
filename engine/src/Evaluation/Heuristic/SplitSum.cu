@@ -1,8 +1,8 @@
 #include "SplitSum.cuh"
 
 namespace Sym::Heuristic {
-    __device__ CheckResult is_sum(const Integral* const integral) {
-        if (integral->integrand()->is(Type::Addition)) {
+    __device__ CheckResult is_sum(const Integral& integral) {
+        if (integral.integrand()->is(Type::Addition)) {
             return {2, 1};
         }
 
