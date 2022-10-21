@@ -14,7 +14,6 @@ namespace Sym::Heuristic {
     };
 
     using Check = CheckResult (*)(const Integral* const integral);
-
     using Application = void (*)(const SubexpressionCandidate& integral,
                                  const ExpressionArray<>::Iterator& integral_dst,
                                  const ExpressionArray<>::Iterator& expression_dst,

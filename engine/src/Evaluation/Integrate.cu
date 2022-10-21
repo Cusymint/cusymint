@@ -4,6 +4,7 @@
 #include <thrust/scan.h>
 
 #include "Heuristic/Heuristic.cuh"
+#include "KnownIntegral/KnownIntegral.cuh"
 #include "StaticFunctions.cuh"
 
 #include "Utils/Cuda.cuh"
@@ -80,233 +81,6 @@ namespace Sym {
 
             return scan[index - 1];
         }
-
-        using KnownIntegralCheck = size_t (*)(const Integral* const integral);
-
-        using KnownIntegralTransform = void (*)(const Integral* const integral,
-                                                Symbol* const destination,
-                                                Symbol* const help_space);
-
-        __device__ size_t is_single_variable(const Integral* const integral) {
-            return integral->integrand()->is(Type::Variable) ? 1 : 0;
-        }
-
-        __device__ size_t is_simple_variable_power(const Integral* const integral) {
-            const Symbol* const integrand = integral->integrand();
-            if (!integrand[0].is(Type::Power) || !integrand[1].is(Type::Variable)) {
-                return 0;
-            }
-
-            if (integrand[2].is(Type::NumericConstant) &&
-                integrand[2].as<NumericConstant>().value == -1.0) {
-                return 0;
-            }
-
-            return integrand[2].is_constant() ? 1 : 0;
-        }
-        __device__ size_t is_variable_exponent(const Integral* const integral) {
-            const Symbol* const integrand = integral->integrand();
-            return integrand[0].is(Type::Power) && integrand[1].is(Type::KnownConstant) &&
-                           integrand[1].as<KnownConstant>().value == KnownConstantValue::E &&
-                           integrand[2].is(Type::Variable)
-                       ? 1
-                       : 0;
-        }
-        __device__ size_t is_simple_sine(const Integral* const integral) {
-            const Symbol* const integrand = integral->integrand();
-            return integrand[0].is(Type::Sine) && integrand[1].is(Type::Variable) ? 1 : 0;
-        }
-
-        __device__ size_t is_simple_cosine(const Integral* const integral) {
-            const Symbol* const integrand = integral->integrand();
-            return integrand[0].is(Type::Cosine) && integrand[1].is(Type::Variable) ? 1 : 0;
-        }
-
-        __device__ size_t is_constant(const Integral* const integral) {
-            const Symbol* const integrand = integral->integrand();
-            return integrand->is_constant() ? 1 : 0;
-        }
-
-        __device__ size_t is_known_arctan(const Integral* const integral) {
-            const Symbol* const integrand = integral->integrand();
-            // 1/(x^2+1) or 1/(1+x^2)
-            return integrand[0].is(Type::Product) && integrand[1].is(Type::NumericConstant) &&
-                           integrand[1].numeric_constant.value == 1.0 &&
-                           integrand[2].is(Type::Reciprocal) && integrand[3].is(Type::Addition) &&
-                           ((integrand[4].is(Type::Power) && integrand[5].is(Type::Variable) &&
-                             integrand[6].is(Type::NumericConstant) &&
-                             integrand[6].numeric_constant.value == 2.0 &&
-                             integrand[7].is(Type::NumericConstant) &&
-                             integrand[7].numeric_constant.value == 1.0) ||
-                            (integrand[4].is(Type::NumericConstant) &&
-                             integrand[4].numeric_constant.value == 1.0 &&
-                             integrand[5].is(Type::Power) && integrand[6].is(Type::Variable) &&
-                             integrand[7].is(Type::NumericConstant) &&
-                             integrand[7].numeric_constant.value == 2.0))
-                       ? 1
-                       : 0;
-        }
-
-        /*
-         * @brief Creates `Solution` and writes it to `destination` together with substitutions from
-         * `integral`
-         *
-         * @param integral Integral from which substitutions are to be copied
-         * @param destination Result destination
-         *
-         * @return Pointer to the symbol behind the last substitution in the result
-         */
-        __device__ Symbol* prepare_solution(const Integral* const integral,
-                                            Symbol* const destination) {
-            Solution* const solution = destination << Solution::builder();
-            Symbol::copy_symbol_sequence(Symbol::from(solution->first_substitution()),
-                                         Symbol::from(integral->first_substitution()),
-                                         integral->substitutions_size());
-            solution->seal_substitutions(integral->substitution_count,
-                                         integral->substitutions_size());
-
-            return solution->expression();
-        }
-
-        __device__ void integrate_single_variable(const Integral* const integral,
-                                                  Symbol* const destination,
-                                                  Symbol* const /*help_space*/) {
-            Symbol* const solution_expr = prepare_solution(integral, destination);
-
-            Product* const product = solution_expr << Product::builder();
-            product->arg1().numeric_constant = NumericConstant::with_value(0.5);
-            product->seal_arg1();
-
-            Power* const power = &product->arg2() << Power::builder();
-            power->arg1().variable = Variable::create();
-            power->seal_arg1();
-            power->arg2().numeric_constant = NumericConstant::with_value(2.0);
-            power->seal();
-            product->seal();
-
-            destination->solution.seal();
-        }
-
-        __device__ void integrate_simple_variable_power(const Integral* const integral,
-                                                        Symbol* const destination,
-                                                        Symbol* const /*help_space*/) {
-            const Symbol* const integrand = integral->integrand();
-
-            Symbol* const solution_expr = prepare_solution(integral, destination);
-            const Symbol* const exponent = &integral->integrand()->power.arg2();
-
-            // 1/(c+1) * x^(c+1), c może być całym drzewem
-            Product* const product = solution_expr << Product::builder();
-
-            Reciprocal* const reciprocal = &product->arg1() << Reciprocal::builder();
-            Addition* const multiplier_addition = &reciprocal->arg() << Addition::builder();
-            exponent->copy_to(&multiplier_addition->arg1());
-            multiplier_addition->seal_arg1();
-            multiplier_addition->arg2().numeric_constant = NumericConstant::with_value(1.0);
-            multiplier_addition->seal();
-            reciprocal->seal();
-            product->seal_arg1();
-
-            Power* const power = &product->arg2() << Power::builder();
-            power->arg1().variable = Variable::create();
-            power->seal_arg1();
-            Addition* const exponent_addition = &power->arg2() << Addition::builder();
-            exponent->copy_to(&exponent_addition->arg1());
-            exponent_addition->seal_arg1();
-            exponent_addition->arg2().numeric_constant = NumericConstant::with_value(1.0);
-            exponent_addition->seal();
-            power->seal();
-            product->seal();
-
-            destination->solution.seal();
-        }
-
-        __device__ void integrate_variable_exponent(const Integral* const integral,
-                                                    Symbol* const destination,
-                                                    Symbol* const /*help_space*/) {
-            Symbol* const solution_expr = prepare_solution(integral, destination);
-            const Symbol* const integrand = integral->integrand();
-
-            Power* const power = solution_expr << Power::builder();
-            power->arg1().known_constant = KnownConstant::with_value(KnownConstantValue::E);
-            power->seal_arg1();
-            power->arg2().variable = Variable::create();
-            power->seal();
-
-            destination->solution.seal();
-        }
-
-        __device__ void integrate_simple_sine(const Integral* const integral,
-                                              Symbol* const destination,
-                                              Symbol* const /*help_space*/) {
-            Symbol* const solution_expr = prepare_solution(integral, destination);
-            const Symbol* const integrand = integral->integrand();
-
-            Negation* const minus = solution_expr << Negation::builder();
-            Cosine* const cos = &minus->arg() << Cosine::builder();
-            cos->arg().variable = Variable::create();
-            cos->seal();
-            minus->seal();
-
-            destination->solution.seal();
-        }
-
-        __device__ void integrate_simple_cosine(const Integral* const integral,
-                                                Symbol* const destination,
-                                                Symbol* const /*help_space*/) {
-            Symbol* const solution_expr = prepare_solution(integral, destination);
-            const Symbol* const integrand = integral->integrand();
-
-            Sine* const sine = solution_expr << Sine::builder();
-            sine->arg().variable = Variable::create();
-            sine->seal();
-
-            destination->solution.seal();
-        }
-
-        __device__ void integrate_constant(const Integral* const integral,
-                                           Symbol* const destination,
-                                           Symbol* const /*help_space*/) {
-            const Symbol* const integrand = integral->integrand();
-            Symbol* const solution_expr = prepare_solution(integral, destination);
-
-            Product* const product = solution_expr << Product::builder();
-            product->arg1().variable = Variable::create();
-            product->seal_arg1();
-            integrand->copy_to(&product->arg2());
-            product->seal();
-
-            destination->solution.seal();
-        }
-
-        __device__ void integrate_arctan(const Integral* const integral, Symbol* const destination,
-                                         Symbol* const /*help_space*/) {
-            const Symbol* const integrand = integral->integrand();
-            Symbol* const solution_expr = prepare_solution(integral, destination);
-
-            Arctangent* const arctangent = solution_expr << Arctangent::builder();
-            arctangent->arg().variable = Variable::create();
-            arctangent->seal();
-
-            destination->solution.seal();
-        }
-
-        __device__ const KnownIntegralCheck KNOWN_INTEGRAL_CHECKS[] = {
-            is_single_variable, is_simple_variable_power, is_variable_exponent,
-            is_simple_sine,     is_simple_cosine,         is_constant,
-            is_known_arctan,
-        };
-
-        __device__ const KnownIntegralTransform KNOWN_INTEGRAL_APPLICATIONS[] = {
-            integrate_single_variable, integrate_simple_variable_power, integrate_variable_exponent,
-            integrate_simple_sine,     integrate_simple_cosine,         integrate_constant,
-            integrate_arctan,
-        };
-
-        constexpr size_t KNOWN_INTEGRAL_COUNT =
-            Util::ensure_same_v<Util::array_len(KNOWN_INTEGRAL_CHECKS),
-                                Util::array_len(KNOWN_INTEGRAL_APPLICATIONS)>;
-
     }
 
     __device__ bool is_nonzero(const size_t index,
@@ -333,13 +107,13 @@ namespace Sym {
 
         const size_t check_step = thread_count / TRANSFORM_GROUP_SIZE;
 
-        for (size_t check_idx = thread_idx / TRANSFORM_GROUP_SIZE; check_idx < KNOWN_INTEGRAL_COUNT;
+        for (size_t check_idx = thread_idx / TRANSFORM_GROUP_SIZE; check_idx < KnownIntegral::COUNT;
              check_idx += check_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
                 size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
                 applicability[appl_idx] =
-                    KNOWN_INTEGRAL_CHECKS[check_idx](&integrals[int_idx].arg().as<Integral>());
+                    KnownIntegral::CHECKS[check_idx](&integrals[int_idx].arg().as<Integral>());
             }
         }
     }
@@ -353,7 +127,7 @@ namespace Sym {
 
         const size_t trans_step = thread_count / TRANSFORM_GROUP_SIZE;
 
-        for (size_t trans_idx = thread_idx / TRANSFORM_GROUP_SIZE; trans_idx < KNOWN_INTEGRAL_COUNT;
+        for (size_t trans_idx = thread_idx / TRANSFORM_GROUP_SIZE; trans_idx < KnownIntegral::COUNT;
              trans_idx += trans_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
@@ -369,7 +143,7 @@ namespace Sym {
                 auto* const subexpr_candidate = expressions.at(dest_idx)
                                                 << SubexpressionCandidate::builder();
                 subexpr_candidate->copy_metadata_from(integrals[int_idx]);
-                KNOWN_INTEGRAL_APPLICATIONS[trans_idx](&integrals[int_idx].arg().as<Integral>(),
+                KnownIntegral::APPLICATIONS[trans_idx](&integrals[int_idx].arg().as<Integral>(),
                                                        &subexpr_candidate->arg(),
                                                        help_spaces.at(dest_idx));
                 subexpr_candidate->seal();
@@ -713,7 +487,7 @@ namespace Sym {
         static constexpr size_t BLOCK_SIZE = 512;
         static constexpr size_t BLOCK_COUNT = 32;
         const size_t MAX_CHECK_COUNT =
-            KNOWN_INTEGRAL_COUNT > Heuristic::COUNT ? KNOWN_INTEGRAL_COUNT : Heuristic::COUNT;
+            KnownIntegral::COUNT > Heuristic::COUNT ? KnownIntegral::COUNT : Heuristic::COUNT;
         const size_t SCAN_ARRAY_SIZE = MAX_CHECK_COUNT * MAX_EXPRESSION_COUNT;
 
         ExpressionArray<> expressions({single_integral_vacancy()}, EXPRESSION_MAX_SYMBOL_COUNT,

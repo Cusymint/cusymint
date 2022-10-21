@@ -2,7 +2,7 @@
 #define META_CUH
 
 namespace Util {
-    template <class T, size_t N> constexpr size_t array_len(const T (&array)[N]) noexcept {
+    template <class T, size_t N> constexpr size_t array_len(const T (&/*array*/)[N]) noexcept {
         return N;
     }
 
