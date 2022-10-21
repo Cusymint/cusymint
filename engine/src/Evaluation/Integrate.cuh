@@ -1,6 +1,8 @@
 #ifndef INTEGRATE_CUH
 #define INTEGRATE_CUH
 
+#include <optional>
+
 #include "Symbol/ExpressionArray.cuh"
 
 #include "Symbol/Symbol.cuh"
