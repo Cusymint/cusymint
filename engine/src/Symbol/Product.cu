@@ -56,15 +56,15 @@ namespace Sym {
 
         // TODO larger sizes
         if (poly1->as<Polynomial>().rank < 0 && size >= result->size) { // zero polynomial
-            result->this_symbol()->copy_to(this_symbol());
+            result->symbol()->copy_to(symbol());
             return;
         }
         if (size >= poly1->size() + poly2->size() + result->size + 3) {
-            Symbol* reciprocal = result->this_symbol()+result->size;
+            Symbol* reciprocal = result->symbol()+result->size;
             Reciprocal::create(poly2,reciprocal);
             Symbol* product = reciprocal+reciprocal->size();
             Product::create(poly1,reciprocal,product);
-            Addition::create(result->this_symbol(),product,this_symbol());
+            Addition::create(result->symbol(),product,symbol());
         }
     }
 
