@@ -1,4 +1,5 @@
 #include "Parser.cuh"
+#include "Symbol/Symbol.cuh"
 #include <stdexcept>
 
 bool isFunction(Token tok) { return tok >= Token::Asin; }
@@ -21,7 +22,8 @@ void Parser::match_and_get_next_token(Token token) {
 std::vector<Sym::Symbol> Parser::expr() {
     std::vector<Sym::Symbol> sum = term();
     while (tok == Token::Plus || tok == Token::Minus) {
-        SymbolicOperator oper = tok == Token::Plus ? Sym::operator+ : static_cast<SymbolicOperator>(Sym::operator-);
+        SymbolicOperator oper =
+            tok == Token::Plus ? Sym::operator+ : static_cast<SymbolicOperator>(Sym::operator-);
         next_token();
         sum = oper(sum, term());
     }
@@ -49,6 +51,7 @@ std::vector<Sym::Symbol> Parser::factor() {
 
 std::vector<Sym::Symbol> Parser::power_arg() {
     std::vector<Sym::Symbol> internal_expression;
+    std::vector<Sym::Symbol> base_expression;
     std::string prev_text;
     switch (tok) {
     case Token::Integer:
@@ -77,6 +80,14 @@ std::vector<Sym::Symbol> Parser::power_arg() {
     case Token::Minus:
         next_token(); // -
         return -power_arg();
+    case Token::Log:
+        next_token(); // log
+        match_and_get_next_token(Token::Underscore); // _
+        base_expression = power_arg();
+        match_and_get_next_token(Token::OpenBrace); // (
+        internal_expression = expr();
+        match_and_get_next_token(Token::CloseBrace); // )
+        return Sym::log(base_expression, internal_expression);
     default:
         if (isFunction(tok)) {
             SymbolicFunction func = function();
@@ -95,11 +106,10 @@ std::vector<Sym::Symbol> Parser::power_arg() {
 
 SymbolicFunction Parser::function() {
     const SymbolicFunction empty = [](const std::vector<Sym::Symbol>& symbol) { return symbol; };
-    const SymbolicFunction functions[] = {Sym::arcsin,   Sym::arccos, Sym::arctan, Sym::arccot,
-                                          Sym::cos,      Sym::cosh,   Sym::coth,   /*ln*/ empty,
-                                          /*log*/ empty, Sym::sin,    Sym::sinh,   /*sqrt*/ empty,
-                                          Sym::tan,      Sym::tanh};
-    Token prev = tok;
+    const SymbolicFunction functions[] = {
+        Sym::arcsin, Sym::arccos, Sym::arctan, Sym::arccot, Sym::cos,  Sym::cot, Sym::cosh, Sym::coth,
+        Sym::sin,    Sym::sinh,   Sym::sqrt,   Sym::tan,    Sym::tanh, Sym::ln};
+    Token const prev = tok;
     next_token();
     return functions[static_cast<int>(prev) - static_cast<int>(Token::Asin)];
 }
@@ -109,7 +119,13 @@ std::vector<Sym::Symbol> Parser::parse() {
         throw std::logic_error("Parser has already processed a string.");
     }
     next_token();
-    std::vector<Sym::Symbol> e = expr();
+    std::vector<Sym::Symbol> expression = expr();
     match_and_get_next_token(Token::End);
-    return e;
+    return expression;
+}
+
+std::vector<Sym::Symbol> parse_function(std::string text) {
+    Scanner scanner(text);
+    Parser parser(&scanner);
+    return parser.parse();
 }

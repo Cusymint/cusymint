@@ -21,6 +21,7 @@
 #include "Trigonometric.cuh"
 #include "Unknown.cuh"
 #include "Variable.cuh"
+#include "Logarithm.cuh"
 
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
@@ -51,6 +52,7 @@ namespace Sym {
         Arccosine arccosine;
         Arctangent arctangent;
         Arccotangent arccotangent;
+        Logarithm logarithm;
 
         constexpr static Sym::Type TYPE = Sym::Type::Symbol;
 
@@ -426,6 +428,8 @@ namespace Sym {
             return (_instance).arctangent._member_function(__VA_ARGS__);                   \
         case Type::Arccotangent:                                                           \
             return (_instance).arccotangent._member_function(__VA_ARGS__);                 \
+        case Type::Logarithm:                                                              \
+            return (_instance).logarithm._member_function(__VA_ARGS__);                    \
         case Type::Unknown:                                                                \
             return (_instance).unknown._member_function(__VA_ARGS__);                      \
         }                                                                                  \

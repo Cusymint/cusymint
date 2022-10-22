@@ -62,13 +62,15 @@ namespace Sym {
 
     std::string Product::to_tex() const {
         if (arg1().is(Type::Reciprocal)) {
-            return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg2().to_tex(),
-                               arg1().reciprocal.arg().to_tex());
+            return fraction_to_tex(arg2(), arg1().reciprocal.arg());
+            //return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg2().to_tex(),
+            //                   arg1().reciprocal.arg().to_tex());
         }
 
         if (arg2().is(Type::Reciprocal)) {
-            return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg1().to_tex(),
-                               arg2().reciprocal.arg().to_tex());
+            return fraction_to_tex(arg1(), arg2().reciprocal.arg());
+            //return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg1().to_tex(),
+            //                   arg2().reciprocal.arg().to_tex());
         }
 
         std::string arg1_pattern = "{}";
@@ -85,6 +87,13 @@ namespace Sym {
         }
         return fmt::format(arg1_pattern + cdot + arg2_pattern, arg1().to_tex(),
                            arg2().to_tex());
+    }
+
+    std::string Product::fraction_to_tex(const Symbol& numerator, const Symbol& denominator) const {
+        if (numerator.is(Type::Logarithm) && denominator.is(Type::Logarithm)) {
+            return fmt::format(R"(\log_{{ {} }}\left({}\right))", denominator.logarithm.arg().to_tex(), numerator.logarithm.arg().to_tex());
+        }
+        return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(), denominator.to_tex());
     }
 
     __host__ __device__ void Product::eliminate_ones() {

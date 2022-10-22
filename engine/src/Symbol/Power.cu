@@ -1,6 +1,7 @@
 #include "Power.cuh"
 
 #include "Symbol.cuh"
+#include "Symbol/Constants.cuh"
 #include <fmt/core.h>
 
 namespace Sym {
@@ -50,6 +51,9 @@ namespace Sym {
     }
 
     std::string Power::to_tex() const {
+        if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value == 0.5) {
+            return fmt::format("\\sqrt{{ {} }}", arg1().to_tex());
+        }
         if (arg1().is(Type::Addition) || arg1().is(Type::Product) || arg1().is(Type::Negation) ||
             arg1().is(Type::Reciprocal) || arg1().is(Type::Power)) {
             return fmt::format(R"(\left({}\right)^{{ {} }})", arg1().to_tex(), arg2().to_tex());
@@ -61,5 +65,9 @@ namespace Sym {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);
         Power::create(lhs.data(), rhs.data(), res.data());
         return res;
+    }
+
+    std::vector<Symbol> sqrt(const std::vector<Symbol>& arg) {
+        return arg ^ Sym::num(0.5);
     }
 }

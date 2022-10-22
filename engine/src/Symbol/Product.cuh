@@ -33,6 +33,8 @@ namespace Sym {
      */
     __host__ __device__ static bool are_inverse_of_eachother(const Symbol* const expr1,
                                                              const Symbol* const expr2);
+
+    std::string fraction_to_tex(const Symbol& numerator, const Symbol& denominator) const;
     END_DECLARE_SYMBOL(Product)
 
     DECLARE_SYMBOL(Reciprocal, false)
