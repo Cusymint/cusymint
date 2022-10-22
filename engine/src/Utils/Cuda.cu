@@ -2,12 +2,7 @@
 
 #include <cstdint>
 
-#include <iostream>
-#include <memory>
-
 namespace Util {
-    // TODO: Sprawdzać alignment w funkcjach operujących na pamięci
-
     __host__ __device__ bool compare_mem(const void* const mem1, const void* const mem2,
                                          const size_t n) {
         const auto* const p1_8 = reinterpret_cast<const uint8_t*>(mem1);
@@ -40,11 +35,5 @@ namespace Util {
             p1_8[i] = p2_8[i];
             p2_8[i] = temp;
         }
-    }
-
-    __host__ __device__ void crash(const char* const message) {
-        printf("\n");
-        printf("%s\n", message);
-        assert(false);
     }
 }

@@ -57,7 +57,7 @@ namespace Sym {
     __host__ __device__ void
     Integral::copy_substitutions_with_an_additional_one(const Symbol* const substitution_expr,
                                                         Symbol* const destination) const {
-        Symbol::copy_symbol_sequence(destination, this_symbol(), integrand_offset);
+        Symbol::copy_symbol_sequence(destination, symbol(), integrand_offset);
 
         Symbol* const new_substitution = destination + integrand_offset;
         Substitution::create(substitution_expr, new_substitution, substitution_count);
@@ -65,6 +65,10 @@ namespace Sym {
         destination->integral.substitution_count += 1;
         destination->integral.integrand_offset += new_substitution->size();
         destination->integral.size += new_substitution->size();
+    }
+
+    __host__ __device__ void Integral::copy_without_integrand_to(Symbol* const destination) const {
+        Symbol::copy_symbol_sequence(destination, symbol(), 1 + substitutions_size());
     }
 
     __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
@@ -118,8 +122,9 @@ namespace Sym {
         }
 
         last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
-        integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count - 1);
-        
+        integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count -
+                                                                              1);
+
         return fmt::format("∫{}d{}, {}", integrand_copy.data()->to_string(), last_substitution_name,
                            first_substitution()->to_string());
     }
@@ -135,10 +140,11 @@ namespace Sym {
         }
 
         last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
-        integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count - 1);
-        
-        return fmt::format(R"(\int {}\text{{d}}{},\quad {})", integrand_copy.data()->to_tex(), last_substitution_name,
-                           first_substitution()->to_tex());
+        integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count -
+                                                                              1);
+
+        return fmt::format(R"(\int {}\text{{d}}{},\quad {})", integrand_copy.data()->to_tex(),
+                           last_substitution_name, first_substitution()->to_tex());
     }
 
     std::vector<Symbol> integral(const std::vector<Symbol>& arg) {

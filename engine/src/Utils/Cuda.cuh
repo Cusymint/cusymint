@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstdio>
 
 namespace Util {
     constexpr double eps = 1e-10;
@@ -41,11 +42,19 @@ namespace Util {
     __host__ __device__ void swap_mem(void* const mem1, void* const mem2, const size_t n);
 
     /*
-     * @brief Crashuje program w przypadku nieodwracalny błędów.
+     * @brief Crashes the program in case of irreversible errors
      *
-     * @param message Wiadomość wypisywania na stdout.
+     * @param head Format string, same syntax as first argument of printf
+     * @param tail Arguments used by the format string, same format as that of printf
      */
-    __host__ __device__ void crash(const char* const message);
+
+    template <class T, class... Types>
+    __host__ __device__ void crash(T head, Types... tail) {
+        printf("\n[ERROR]: ");
+        printf(head, tail...);
+        printf("\n");
+        assert(false);
+    }
 }
 
 #endif

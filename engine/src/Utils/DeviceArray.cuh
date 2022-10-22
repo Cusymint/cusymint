@@ -4,15 +4,31 @@
 #include <type_traits>
 #include <vector>
 
+#include "CompileConstants.cuh"
 #include "Cuda.cuh"
 
 namespace Util {
+    template <class T> class DeviceArray;
+
+    /*
+     * @brief Sets all elements of `array` to `val` in parallel
+     */
+    template <class T> __global__ void _set_mem(DeviceArray<T> array, const T val) {
+        const size_t idx = Util::thread_idx();
+
+        if (idx < array.size()) {
+            array[idx] = val;
+        }
+    }
+
     /*
      * @brief Klasa ułatwiająca korzystanie z pamięci CUDA.
      * Właścicielem pamięci jest tylko tablica alokująca pamięć. Wszystkie kopie tylko kopiują
      * wskaźnik (rozwiązanie ze względu na przekazywanie elementów tej klasy do kerneli CUDA)
      */
     template <class T> class DeviceArray {
+        static constexpr size_t SET_MEM_BLOCK_SIZE = 1024;
+
         // Liczba elementów T w tablicy
         size_t data_size = 0;
         T* data_ptr = nullptr;
@@ -98,7 +114,7 @@ namespace Util {
         }
 
         /*
-         * @brief Tworzy std::vector i kopiuje do niego swoją zawartość
+         * @brief Creates std::vector with contets of the array
          */
         std::vector<T> to_vector() const {
             std::vector<T> vector(data_size);
@@ -106,12 +122,47 @@ namespace Util {
             return vector;
         }
 
+        /*
+         * @brief Copies one value from the array to the cpu
+         *
+         * @param idx Index from which to copy the value
+         *
+         * @param copied value
+         */
+        T to_cpu(const size_t idx) const {
+            T value;
+            cudaMemcpy(&value, at(idx), sizeof(T), cudaMemcpyDeviceToHost);
+            return value;
+        }
+
+        /*
+         * @brief Zeros the array
+         */
         inline void zero_mem() { cudaMemset(data_ptr, 0, size_in_bytes()); }
 
         /*
-         * @brief Rozmiar tablicy
+         * @brief Sets value of all elements without synchronizing the device
+         *
+         * @param val Value to assign to each element
          */
-        __host__ __device__ inline size_t size() const { return data_size; }
+        void set_mem_async(const T& val) {
+            if (size() == 0) {
+                return;
+            }
+
+            const size_t block_count = (size() - 1) / (SET_MEM_BLOCK_SIZE) + 1;
+            _set_mem<<<block_count, SET_MEM_BLOCK_SIZE>>>(*this, val);
+        }
+
+        /*
+         * @brief Sets value of all elements and synchronizes the device
+         *
+         * @param val Value to assign to each element
+         */
+        void set_mem(const T& val) {
+            set_mem_async(val);
+            cudaDeviceSynchronize();
+        }
 
         /*
          * @brief Rozmiar tablicy w bajtach
@@ -119,9 +170,9 @@ namespace Util {
         __host__ __device__ inline size_t size_in_bytes() const { return sizeof(T) * data_size; }
 
         /*
-         * @brief Wskaźnik do pamięci tablicy
+         * @brief Rozmiar tablicy
          */
-        __host__ __device__ inline T* data() { return data_ptr; }
+        __host__ __device__ inline size_t size() const { return data_size; }
 
         /*
          * @brief Wskaźnik do pamięci tablicy
@@ -129,9 +180,11 @@ namespace Util {
         __host__ __device__ inline const T* data() const { return data_ptr; }
 
         /*
-         * @brief Wskaźnik do elementu o jeden za tablicą
+         * @brief Wskaźnik do pamięci tablicy
          */
-        __host__ __device__ inline T* end() { return const_cast<T*>(cend()); }
+        __host__ __device__ inline T* data() {
+            return const_cast<T*>(const_cast<const DeviceArray<T>*>(this)->data());
+        }
 
         /*
          * @brief Stały wskaźnik do elementu o jeden za tablicą
@@ -139,37 +192,59 @@ namespace Util {
         __host__ __device__ inline const T* cend() const { return data_ptr + data_size; }
 
         /*
+         * @brief Wskaźnik do elementu o jeden za tablicą
+         */
+        __host__ __device__ inline T* end() { return const_cast<T*>(cend()); }
+
+        /*
+         * @brief Stały wskaźnik do pierwszego elementu tablicy
+         */
+        __host__ __device__ inline const T* cbegin() const { return data(); }
+
+        /*
          * @brief Wskaźnik do pierwszego elementu tablicy
          */
         __host__ __device__ inline T* begin() { return const_cast<T*>(cbegin()); }
 
         /*
-         * @brief Stały wskaźnik do pierwszego elementu tablicy
+         * @brief Wskaźnik do idx-tego elementu tablicy
          */
-        __host__ __device__ inline const T* cbegin() const { return data_ptr; }
+        __host__ __device__ inline const T* at(const size_t idx) const {
+            if constexpr (Consts::DEBUG) {
+                if (idx > data_size) {
+                    crash("Trying to access element %lu of an array of %lu elements", idx,
+                          data_size);
+                }
 
-        /*
-         * @brief Referencja do idx-tego elementu tablicy
-         */
-        __device__ inline T& operator[](const size_t idx) { return data_ptr[idx]; }
+                if (data_ptr == nullptr) {
+                    crash("Trying to index an array that does not point to any data.");
+                }
+            }
 
-        /*
-         * @brief Referencja do idx-tego elementu tablicy
-         */
-        __device__ inline const T& operator[](const size_t idx) const { return data_ptr[idx]; }
+            return data_ptr + idx;
+        }
 
         /*
          * @brief Wskaźnik do idx-tego elementu tablicy
          */
-        __host__ __device__ inline T* at(const size_t idx) { return data_ptr + idx; }
+        __host__ __device__ inline T* at(const size_t idx) {
+            return const_cast<T*>(const_cast<const DeviceArray<T>*>(this)->at(idx));
+        }
 
         /*
-         * @brief Wskaźnik do idx-tego elementu tablicy
+         * @brief Referencja do idx-tego elementu tablicy
          */
-        __host__ __device__ inline const T* at(const size_t idx) const { return data_ptr + idx; }
+        __device__ inline const T& operator[](const size_t idx) const { return *at(idx); }
 
         /*
-         * @brief Wskaźnik do ostatniego elementu tablicy
+         * @brief Reference to the idx-th element of the array
+         */
+        __device__ inline T& operator[](const size_t idx) {
+            return const_cast<T&>(const_cast<const DeviceArray<T>&>(*this)[idx]);
+        }
+
+        /*
+         * @brief Pointer to the last element of the array
          */
         inline T* last() { return at(data_size - 1); }
 

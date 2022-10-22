@@ -21,7 +21,7 @@ namespace Sym {
     std::string to_tex() const;
     DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(Arccosine)
-    
+
     DECLARE_SYMBOL(Arctangent, false)
     ONE_ARGUMENT_OP_SYMBOL
 
