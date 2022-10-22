@@ -6,7 +6,7 @@
 
 namespace Sym {
     DEFINE_COMPRESS_REVERSE_TO(Polynomial) {
-        Symbol::copy_and_reverse_symbol_sequence(destination, this_symbol(), size);
+        Symbol::copy_and_reverse_symbol_sequence(destination, symbol(), size);
         return size;
     }
 

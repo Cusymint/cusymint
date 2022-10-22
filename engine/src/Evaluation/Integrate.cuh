@@ -4,6 +4,7 @@
 #include "Symbol/ExpressionArray.cuh"
 
 #include "Symbol/Symbol.cuh"
+#include <optional>
 
 namespace Sym {
     using KnownIntegralCheck = size_t (*)(const Integral* const integral);

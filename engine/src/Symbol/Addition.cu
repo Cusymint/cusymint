@@ -137,8 +137,8 @@ namespace Sym {
 
     __host__ __device__ void Addition::make_polynomial_in_place(int rank,
                                                                 Symbol* const help_space) {
-        this_symbol()->copy_to(help_space); 
-        auto* this_poly = this_as<Polynomial>();                                                         
+        symbol()->copy_to(help_space); 
+        auto* this_poly = as<Polynomial>();                                                         
         *this_poly = Polynomial::with_rank(rank);
 
         double* coefs = this_poly->coefficients();
