@@ -120,7 +120,7 @@ namespace Sym {
         }
 
         /*
-         * @brief Zwraca wskaźnik na n-ty element za `this`
+         * @brief Pointer to the nth element after `this`
          */
         __host__ __device__ inline Symbol* at(const size_t idx) {
             return const_cast<Symbol*>(const_cast<const Symbol*>(this)->at(idx));
@@ -239,7 +239,7 @@ namespace Sym {
          * also when `this` is constant. Although formally not correct, it isn't very usefull to
          * consider constant expressions as functions
          */
-        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* expression) const;
+        [[nodiscard]] __host__ __device__ bool is_function_of(const Symbol* const expression) const;
 
         /*
          * @brief Replaces every occurence of `expr` (which has to contain a variable) in `this`

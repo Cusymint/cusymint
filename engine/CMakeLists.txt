@@ -31,6 +31,17 @@ add_executable(
   ${SYMBOL_DIR}/SubexpressionCandidate.cu
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
   ${EVALUATION_DIR}/Integrate.cu
+  ${EVALUATION_DIR}/StaticFunctions.cu
+  ${EVALUATION_DIR}/Heuristic/Heuristic.cu
+  ${EVALUATION_DIR}/Heuristic/SplitSum.cu
+  ${EVALUATION_DIR}/Heuristic/SubstituteEToX.cu
+  ${EVALUATION_DIR}/KnownIntegral/KnownIntegral.cu
+  ${EVALUATION_DIR}/KnownIntegral/ConstantIntegral.cu
+  ${EVALUATION_DIR}/KnownIntegral/PowerFunction.cu
+  ${EVALUATION_DIR}/KnownIntegral/SimpleSineCosine.cu
+  ${EVALUATION_DIR}/KnownIntegral/SimpleExponent.cu
+  ${EVALUATION_DIR}/KnownIntegral/SimpleVariable.cu
+  ${EVALUATION_DIR}/KnownIntegral/SimpleArctan.cu
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
 

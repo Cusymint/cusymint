@@ -1,92 +1,13 @@
 #ifndef INTEGRATE_CUH
 #define INTEGRATE_CUH
 
+#include <optional>
+
 #include "Symbol/ExpressionArray.cuh"
 
 #include "Symbol/Symbol.cuh"
 
 namespace Sym {
-    using KnownIntegralCheck = size_t (*)(const Integral* const integral);
-
-    __device__ size_t is_single_variable(const Integral* const integral);
-    __device__ size_t is_simple_variable_power(const Integral* const integral);
-    __device__ size_t is_variable_exponent(const Integral* const integral);
-    __device__ size_t is_simple_sine(const Integral* const integral);
-    __device__ size_t is_simple_cosine(const Integral* const integral);
-    __device__ size_t is_constant(const Integral* const integral);
-    __device__ size_t is_known_arctan(const Integral* const integral);
-
-    using KnownIntegralTransform = void (*)(const Integral* const integral,
-                                            Symbol* const destination, Symbol* const help_space);
-
-    __device__ void integrate_single_variable(const Integral* const integral,
-                                              Symbol* const destination, Symbol* const help_space);
-    __device__ void integrate_simple_variable_power(const Integral* const integral,
-                                                    Symbol* const destination,
-                                                    Symbol* const help_space);
-    __device__ void integrate_variable_exponent(const Integral* const integral,
-                                                Symbol* const destination,
-                                                Symbol* const help_space);
-    __device__ void integrate_simple_sine(const Integral* const integral, Symbol* const destination,
-                                          Symbol* const help_space);
-    __device__ void integrate_simple_cosine(const Integral* const integral,
-                                            Symbol* const destination, Symbol* const help_space);
-    __device__ void integrate_constant(const Integral* const integral, Symbol* const destination,
-                                       Symbol* const help_space);
-    __device__ void integrate_arctan(const Integral* const integral, Symbol* const destination,
-                                     Symbol* const help_space);
-
-    struct HeuristicCheckResult {
-        __host__ __device__ HeuristicCheckResult(const size_t new_integrals,
-                                                 const size_t new_expressions) :
-            new_integrals(new_integrals), new_expressions(new_expressions) {}
-
-        size_t new_integrals;
-        size_t new_expressions;
-    };
-
-    using HeuristicCheck = HeuristicCheckResult (*)(const Integral* const integral);
-
-    __device__ HeuristicCheckResult is_function_of_ex(const Integral* const integral);
-    __device__ HeuristicCheckResult is_sum(const Integral* const integral);
-
-    using HeuristicApplication = void (*)(const SubexpressionCandidate* const integral,
-                                          Symbol* const integral_dst, Symbol* const expression_dst,
-                                          const size_t expression_index, Symbol* const help_space);
-
-    __device__ void transform_function_of_ex(const SubexpressionCandidate* const integral,
-                                             Symbol* const integral_dst,
-                                             Symbol* const expression_dst,
-                                             const size_t expression_index,
-                                             Symbol* const help_space);
-    __device__ void split_sum(const SubexpressionCandidate* const integral,
-                              Symbol* const integral_dst, Symbol* const expression_dst,
-                              const size_t expression_index, Symbol* const help_space);
-
-    /*
-     * @brief Tworzy symbol `Solution` i zapisuje go na `destination` razem z podstawieniami z
-     * `integral`
-     *
-     * @param integral Całka z której skopiowane mają być podstawienia
-     * @param destination Miejsce do zapisania wyniku
-     *
-     * @return Wskaźnik na symbol za ostatnim podstawieniem
-     */
-    __device__ Symbol* prepare_solution(const Integral* const integral, Symbol* const destination);
-
-    // HEURISTIC_CHECK_COUNT cannot be defined as sizeof(heurisic_checks) because
-    // `heurisic_checks` is defined in translation unit associated with integrate.cu, but its
-    // size has to be known in other translation units as well
-    constexpr size_t KNOWN_INTEGRAL_COUNT = 7;
-    constexpr size_t HEURISTIC_CHECK_COUNT = 2;
-    constexpr size_t MAX_CHECK_COUNT =
-        KNOWN_INTEGRAL_COUNT > HEURISTIC_CHECK_COUNT ? KNOWN_INTEGRAL_COUNT : HEURISTIC_CHECK_COUNT;
-    constexpr size_t TRANSFORM_GROUP_SIZE = 32;
-    constexpr size_t MAX_EXPRESSION_COUNT = 256;
-    constexpr size_t EXPRESSION_MAX_SYMBOL_COUNT = 256;
-    constexpr size_t SCAN_ARRAY_SIZE = MAX_CHECK_COUNT * MAX_EXPRESSION_COUNT;
-    constexpr size_t INTEGRAL_ARRAY_SIZE = MAX_EXPRESSION_COUNT * EXPRESSION_MAX_SYMBOL_COUNT;
-
     /*
      * @brief Checks if inclusive_scan[index] is signaling a zero-sized element
      *
