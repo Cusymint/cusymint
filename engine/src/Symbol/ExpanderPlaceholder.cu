@@ -7,6 +7,7 @@ namespace Sym {
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(ExpanderPlaceholder)
     DEFINE_SIMPLE_COMPARE(ExpanderPlaceholder)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(ExpanderPlaceholder)
+    DEFINE_INVALID_IS_FUNCTION_OF(ExpanderPlaceholder) // NOLINT
 
     __host__ __device__ ExpanderPlaceholder ExpanderPlaceholder::with_size(size_t size) {
         return {

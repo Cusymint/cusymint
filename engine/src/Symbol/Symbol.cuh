@@ -25,6 +25,70 @@
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
 
+// Also works when `_member_function` returns void
+#define VIRTUAL_CALL(_instance, _member_function, ...)                                     \
+    (([&]() {                                                                              \
+        switch ((_instance).unknown.type) {                                                \
+        case Type::Symbol:                                                                 \
+            Util::crash("Trying to access a virtual function (%s) on a pure Symbol",       \
+                        #_member_function);                                                \
+            break;                                                                         \
+        case Type::Variable:                                                               \
+            return (_instance).variable._member_function(__VA_ARGS__);                     \
+        case Type::NumericConstant:                                                        \
+            return (_instance).numeric_constant._member_function(__VA_ARGS__);             \
+        case Type::KnownConstant:                                                          \
+            return (_instance).known_constant._member_function(__VA_ARGS__);               \
+        case Type::UnknownConstant:                                                        \
+            return (_instance).unknown_constant._member_function(__VA_ARGS__);             \
+        case Type::ExpanderPlaceholder:                                                    \
+            return (_instance).expander_placeholder._member_function(__VA_ARGS__);         \
+        case Type::SubexpressionCandidate:                                                 \
+            return (_instance).subexpression_candidate._member_function(__VA_ARGS__);      \
+        case Type::SubexpressionVacancy:                                                   \
+            return (_instance).subexpression_vacancy._member_function(__VA_ARGS__);        \
+        case Type::Integral:                                                               \
+            return (_instance).integral._member_function(__VA_ARGS__);                     \
+        case Type::Solution:                                                               \
+            return (_instance).solution._member_function(__VA_ARGS__);                     \
+        case Type::Substitution:                                                           \
+            return (_instance).substitution._member_function(__VA_ARGS__);                 \
+        case Type::Addition:                                                               \
+            return (_instance).addition._member_function(__VA_ARGS__);                     \
+        case Type::Negation:                                                               \
+            return (_instance).negation._member_function(__VA_ARGS__);                     \
+        case Type::Product:                                                                \
+            return (_instance).product._member_function(__VA_ARGS__);                      \
+        case Type::Reciprocal:                                                             \
+            return (_instance).reciprocal._member_function(__VA_ARGS__);                   \
+        case Type::Power:                                                                  \
+            return (_instance).power._member_function(__VA_ARGS__);                        \
+        case Type::Sine:                                                                   \
+            return (_instance).sine._member_function(__VA_ARGS__);                         \
+        case Type::Cosine:                                                                 \
+            return (_instance).cosine._member_function(__VA_ARGS__);                       \
+        case Type::Tangent:                                                                \
+            return (_instance).tangent._member_function(__VA_ARGS__);                      \
+        case Type::Cotangent:                                                              \
+            return (_instance).cotangent._member_function(__VA_ARGS__);                    \
+        case Type::Arcsine:                                                                \
+            return (_instance).arcsine._member_function(__VA_ARGS__);                      \
+        case Type::Arccosine:                                                              \
+            return (_instance).arccosine._member_function(__VA_ARGS__);                    \
+        case Type::Arctangent:                                                             \
+            return (_instance).arctangent._member_function(__VA_ARGS__);                   \
+        case Type::Arccotangent:                                                           \
+            return (_instance).arccotangent._member_function(__VA_ARGS__);                 \
+        case Type::Unknown:                                                                \
+            return (_instance).unknown._member_function(__VA_ARGS__);                      \
+        }                                                                                  \
+                                                                                           \
+        Util::crash("Trying to access a virtual function (%s) on an invalid type",         \
+                    #_member_function);                                                    \
+        /* To avoid warnings about missing return, it is not going to be called anyways */ \
+        return (_instance).unknown._member_function(__VA_ARGS__);                          \
+    })())
+
 namespace Sym {
     union Symbol {
         Unknown unknown;
@@ -58,9 +122,14 @@ namespace Sym {
         [[nodiscard]] __host__ __device__ inline bool simplified() const {
             return unknown.simplified;
         }
-        [[nodiscard]] __host__ __device__ inline bool is(const Type type) const {
-            return unknown.type == type;
+        [[nodiscard]] __host__ __device__ inline bool is(const Type other_type) const {
+            return type() == other_type;
         }
+
+        template <class T> [[nodiscard]] __host__ __device__ inline bool is() const {
+            return type() == T::TYPE;
+        }
+
         [[nodiscard]] __host__ __device__ inline size_t& size() { return unknown.size; }
         [[nodiscard]] __host__ __device__ inline size_t size() const { return unknown.size; }
 
@@ -105,7 +174,7 @@ namespace Sym {
         /*
          * @brief Zwraca wskaźnik na n-ty element za `this`
          */
-        __host__ __device__ const inline Symbol* at(const size_t idx) const {
+        [[nodiscard]] __host__ __device__ const inline Symbol* at(const size_t idx) const {
             if constexpr (Consts::DEBUG) {
                 // If `this` is under construction, we allow access to symbols after it without
                 // checks
@@ -122,33 +191,33 @@ namespace Sym {
         /*
          * @brief Pointer to the nth element after `this`
          */
-        __host__ __device__ inline Symbol* at(const size_t idx) {
+        [[nodiscard]] __host__ __device__ inline Symbol* at(const size_t idx) {
             return const_cast<Symbol*>(const_cast<const Symbol*>(this)->at(idx));
         }
 
         /*
          * @brief Zwraca n-ty element za `this`
          */
-        __host__ __device__ inline const Symbol& operator[](const size_t idx) const {
+        [[nodiscard]] __host__ __device__ inline const Symbol& operator[](const size_t idx) const {
             return *at(idx);
         }
 
         /*
          * @brief Zwraca n-ty element za `this`
          */
-        __host__ __device__ inline Symbol& operator[](const size_t idx) {
+        [[nodiscard]] __host__ __device__ inline Symbol& operator[](const size_t idx) {
             return *const_cast<Symbol*>(&(*const_cast<const Symbol*>(this))[idx]);
         }
 
         /*
          * @brief Zwraca wskaźnik na symbol bezpośrednio za `this`
          */
-        __host__ __device__ inline const Symbol* child() const { return at(1); }
+        [[nodiscard]] __host__ __device__ inline const Symbol* child() const { return at(1); }
 
         /*
          * @brief Zwraca wskaźnik na symbol bezpośrednio za `this`
          */
-        __host__ __device__ inline Symbol* child() {
+        [[nodiscard]] __host__ __device__ inline Symbol* child() {
             return const_cast<Symbol*>(const_cast<const Symbol*>(this)->child());
         }
 
@@ -230,28 +299,45 @@ namespace Sym {
         [[nodiscard]] __host__ __device__ ssize_t first_var_occurence() const;
 
         /*
-         * @brief Checks if variables in `this` are only part of expression `expression`
+         * @brief Checks if `this` expression is a function of expressions in `expressions`.
+         * More formally, if `this` is expressed as `f(x)` and expressions in `expressions` are
+         * expressed as `g1(x), g2(x), ..., gn(x)`, this function checks if there exists a function
+         * `h(x1, x2, ..., xn)`, such that `f(x) = h(g1(x), g2(x), ..., gn(x))`.
          *
-         * @param expression Expression with variable to compare against every occurence of
-         * variables in `this`.
+         * @param expressions Expressions to check
          *
-         * @return `true` if `this` is a function of `expression`, false otherwise. Returns false
-         * also when `this` is constant. Although formally not correct, it isn't very usefull to
-         * consider constant expressions as functions
+         * @return `true` if `this` is a function of `expressions`, false otherwise. Returns false
+         * also when `this` is constant. In particular, it returns true if `this` is a constant
+         * expression
          */
-        [[nodiscard]] __host__ __device__ bool is_function_of(const Symbol* const expression) const;
+        template <class... Args, std::enable_if_t<(std::is_same_v<Args, Symbol> && ...), int> = 0>
+        [[nodiscard]] __host__ __device__ bool is_function_of(const Args&... expressions) const {
+            const Symbol* const expression_array[] = {&expressions...};
+            return VIRTUAL_CALL(*this, is_function_of, expression_array, sizeof...(Args));
+        }
+
+        /*
+         * @brief Another version of `is_function_of` that is the same as the functions defined in
+         * concrete symbols. It should be called only when the templated version cannot be used.
+         *
+         * @param expressions Array of pointers to expressions to check
+         * @param expression_count Number of expressions in `expressions`
+         *
+         * @return Same as in the other function
+         */
+        __host__ __device__ bool is_function_of(const Symbol* const* const expressions,
+                                                const size_t expression_count) const;
 
         /*
          * @brief Replaces every occurence of `expr` (which has to contain a variable) in `this`
-         * with variable and copies the result to `destination`. If size of `expr` is larger than 1,
-         * holes are left where symbols were before.
+         * with variable and copies the result to `destination`. If size of `expr` is larger
+         * than 1, holes are left where symbols were before.
          *
          * @param destination Destination of copy
          * @param expr Expression to replace in `this`. Has to contain a variable.
          */
-        __host__ __device__ void
-        substitute_with_var_with_holes(Symbol* const destination,
-                                       const Symbol* const expression) const;
+        __host__ __device__ void substitute_with_var_with_holes(Symbol& destination,
+                                                                const Symbol& expression) const;
 
         /*
          * @brief Removes holes from symbol tree and copies it in reverse order to `destination`.
@@ -371,70 +457,6 @@ namespace Sym {
      * @return `true` jeśli symbole nie są równe, `false` jeśli są
      */
     __host__ __device__ bool operator!=(const Symbol& sym1, const Symbol& sym2);
-
-// Co ciekawe, działa też kiedy `_member_function` zwraca `void`
-#define VIRTUAL_CALL(_instance, _member_function, ...)                                     \
-    (([&]() {                                                                              \
-        switch ((_instance).unknown.type) {                                                \
-        case Type::Symbol:                                                                 \
-            Util::crash("Trying to access a virtual function (%s) on a pure Symbol",       \
-                        #_member_function);                                                \
-            break;                                                                         \
-        case Type::Variable:                                                               \
-            return (_instance).variable._member_function(__VA_ARGS__);                     \
-        case Type::NumericConstant:                                                        \
-            return (_instance).numeric_constant._member_function(__VA_ARGS__);             \
-        case Type::KnownConstant:                                                          \
-            return (_instance).known_constant._member_function(__VA_ARGS__);               \
-        case Type::UnknownConstant:                                                        \
-            return (_instance).unknown_constant._member_function(__VA_ARGS__);             \
-        case Type::ExpanderPlaceholder:                                                    \
-            return (_instance).expander_placeholder._member_function(__VA_ARGS__);         \
-        case Type::SubexpressionCandidate:                                                 \
-            return (_instance).subexpression_candidate._member_function(__VA_ARGS__);      \
-        case Type::SubexpressionVacancy:                                                   \
-            return (_instance).subexpression_vacancy._member_function(__VA_ARGS__);        \
-        case Type::Integral:                                                               \
-            return (_instance).integral._member_function(__VA_ARGS__);                     \
-        case Type::Solution:                                                               \
-            return (_instance).solution._member_function(__VA_ARGS__);                     \
-        case Type::Substitution:                                                           \
-            return (_instance).substitution._member_function(__VA_ARGS__);                 \
-        case Type::Addition:                                                               \
-            return (_instance).addition._member_function(__VA_ARGS__);                     \
-        case Type::Negation:                                                               \
-            return (_instance).negation._member_function(__VA_ARGS__);                     \
-        case Type::Product:                                                                \
-            return (_instance).product._member_function(__VA_ARGS__);                      \
-        case Type::Reciprocal:                                                             \
-            return (_instance).reciprocal._member_function(__VA_ARGS__);                   \
-        case Type::Power:                                                                  \
-            return (_instance).power._member_function(__VA_ARGS__);                        \
-        case Type::Sine:                                                                   \
-            return (_instance).sine._member_function(__VA_ARGS__);                         \
-        case Type::Cosine:                                                                 \
-            return (_instance).cosine._member_function(__VA_ARGS__);                       \
-        case Type::Tangent:                                                                \
-            return (_instance).tangent._member_function(__VA_ARGS__);                      \
-        case Type::Cotangent:                                                              \
-            return (_instance).cotangent._member_function(__VA_ARGS__);                    \
-        case Type::Arcsine:                                                                \
-            return (_instance).arcsine._member_function(__VA_ARGS__);                      \
-        case Type::Arccosine:                                                              \
-            return (_instance).arccosine._member_function(__VA_ARGS__);                    \
-        case Type::Arctangent:                                                             \
-            return (_instance).arctangent._member_function(__VA_ARGS__);                   \
-        case Type::Arccotangent:                                                           \
-            return (_instance).arccotangent._member_function(__VA_ARGS__);                 \
-        case Type::Unknown:                                                                \
-            return (_instance).unknown._member_function(__VA_ARGS__);                      \
-        }                                                                                  \
-                                                                                           \
-        Util::crash("Trying to access a virtual function (%s) on an invalid type",         \
-                    #_member_function);                                                    \
-        /* To avoid warnings about missing return, it is not going to be called anyways */ \
-        return (_instance).unknown._member_function(__VA_ARGS__);                          \
-    })())
 }
 
 #endif

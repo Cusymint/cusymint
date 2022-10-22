@@ -20,6 +20,27 @@ namespace Sym {
         eliminate_zeros();
     }
 
+    DEFINE_IS_FUNCTION_OF(Addition) {
+        for (size_t i = 0; i < expression_count; ++i) {
+            if (!expressions[i]->is(Type::Addition)) {
+                continue;
+            }
+
+            const auto& addition_expression = expressions[i]->as<Addition>();
+
+            // TODO: In the future, this should look for correspondences in the addition tree of
+            // arg1() and arg2() (See the comment in the same function for Power symbol).
+            // Although in this case, this might not be important, as checking whether something is
+            // a function of `f(x)+g(x)` is quite rare
+            if (arg1() == addition_expression.arg1() && arg2() == addition_expression.arg2()) {
+                return true;
+            }
+        }
+
+        return arg1().is_function_of(expressions, expression_count) &&
+               arg2().is_function_of(expressions, expression_count);
+    }
+
     __host__ __device__ bool Addition::is_sine_cosine_squared_sum(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
         bool is_expr1_sine_squared = expr1->is(Type::Power) && expr1->power.arg1().is(Type::Sine) &&
@@ -90,6 +111,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Negation)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Negation)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Negation)
+    DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Negation)
 
     DEFINE_SIMPLIFY_IN_PLACE(Negation) {
         arg().simplify_in_place(help_space);
@@ -130,11 +152,11 @@ namespace Sym {
 
     std::string Negation::to_string() const { return fmt::format("-({})", arg().to_string()); }
 
-    std::string Negation::to_tex() const { 
+    std::string Negation::to_tex() const {
         if (arg().is(Type::Addition) || arg().is(Type::Negation)) {
-            return fmt::format("-\\left({}\\right)",arg().to_tex());  
+            return fmt::format("-\\left({}\\right)", arg().to_tex());
         }
-        return fmt::format("-{}",arg().to_tex()); 
+        return fmt::format("-{}", arg().to_tex());
     }
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {

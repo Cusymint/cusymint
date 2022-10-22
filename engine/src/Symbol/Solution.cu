@@ -33,6 +33,10 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Solution) { expression()->simplify_in_place(help_space); }
 
+    DEFINE_IS_FUNCTION_OF(Solution) {
+        return expression()->is_function_of(expressions, expression_count);
+    } // NOLINT
+
     __host__ __device__ void Solution::seal_no_substitutions() { seal_substitutions(0, 0); }
 
     __host__ __device__ void Solution::seal_single_substitution() {

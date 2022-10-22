@@ -24,7 +24,8 @@ int main() {
 
     std::vector<Sym::Symbol> integral = Sym::integral(
         (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(4)) + (Sym::var() ^ Sym::num(5)) +
-        ((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))));
+        ((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))) +
+        (Sym::e() ^ Sym::var()) * Sym::sin(Sym::e() ^ Sym::var()));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_string());
 

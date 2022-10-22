@@ -45,6 +45,26 @@ namespace Sym {
         }
     }
 
+    DEFINE_IS_FUNCTION_OF(Power) {
+        for (size_t i = 0; i < expression_count; ++i) {
+            if (!expressions[i]->is(Type::Power)) {
+                continue;
+            }
+
+            const auto& power_expression = expressions[i]->as<Power>();
+
+            // TODO: In the future, this should look for correspondences in the product tree of
+            // arg1(). For example, if `this` is `e^(pi*x*2*sin(x))`, then this function should
+            // return true when `power_expression` is `e^(sin(x)*x)`.
+            if (arg1() == power_expression.arg1() && arg2() == power_expression.arg2()) {
+                return true;
+            }
+        }
+
+        return arg1().is_function_of(expressions, expression_count) &&
+               arg2().is_function_of(expressions, expression_count);
+    }
+
     std::string Power::to_string() const {
         return fmt::format("({}^{})", arg1().to_string(), arg2().to_string());
     }

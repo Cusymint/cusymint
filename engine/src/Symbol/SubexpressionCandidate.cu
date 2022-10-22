@@ -9,6 +9,10 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(SubexpressionCandidate) { arg().simplify_in_place(help_space); }
 
+    DEFINE_IS_FUNCTION_OF(SubexpressionCandidate) {
+        return arg().is_function_of(expressions, expression_count);
+    }
+
     [[nodiscard]] std::string SubexpressionCandidate::to_string() const {
         return "SubexpressionCandidate{(" + std::to_string(vacancy_expression_idx) + ", " +
                std::to_string(vacancy_idx) + "), (" + arg().to_string() + ")}";
