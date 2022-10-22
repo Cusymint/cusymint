@@ -9,4 +9,4 @@ RUN apt-get update && apt-get install -y \
     libgtest-dev
 
 RUN cmake -S engine-src -B build -DCMAKE_BUILD_TYPE=Release
-RUN cmake --build build
+RUN cmake --build build -j13
