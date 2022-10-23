@@ -19,7 +19,9 @@ std::vector<Sym::Symbol> parse_function(std::string text);
 // expr -> term { addop term }					        left-associative
 // term -> factor { mulop factor }				      left-associative
 // factor -> power_arg | power_arg ^ factor		  right-associative
-// power_arg -> num | const | var | ( expr ) | function ( expr ) | log '_' power_arg ( expr )
+// power_arg -> num | const | var | ( expr ) | log '_' power_arg ( expr ) | function ( expr )
+// function -> arcsin | arccos | arctg | arctan | arcctg | arccot | cos | ctg | cot | cosh | 
+//             ctgh | coth | sin | sinh | sqrt | tg | tan | tgh | tanh | ln
 //
 class Parser {
   private:
