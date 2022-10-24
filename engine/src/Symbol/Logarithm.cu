@@ -27,9 +27,9 @@ namespace Sym {
             // change types of 2 first symbols, size of the second and add second_arg_offset
             // to new Product symbol.
             arg().power.type = Type::Logarithm;
-            arg().logarithm.size = 1 + arg().power.arg1().size();
+            arg().as<Logarithm>().seal();
             this->type = Type::Product;
-            this->as<Product>()->second_arg_offset = 1 + arg().logarithm.size;
+            this->as<Product>().seal();
         }
     }
 
