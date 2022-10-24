@@ -105,7 +105,6 @@ std::vector<Sym::Symbol> Parser::power_arg() {
 }
 
 SymbolicFunction Parser::function() {
-    const SymbolicFunction empty = [](const std::vector<Sym::Symbol>& symbol) { return symbol; };
     const SymbolicFunction functions[] = {
         Sym::arcsin, Sym::arccos, Sym::arctan, Sym::arccot, Sym::cos,  Sym::cot, Sym::cosh, Sym::coth,
         Sym::sin,    Sym::sinh,   Sym::sqrt,   Sym::tan,    Sym::tanh, Sym::ln};
