@@ -3,8 +3,10 @@ import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:storybook_flutter/storybook_flutter.dart';
 
-void main() {
-  runApp(CusymintStorybook());
+void main() async {
+  await CuL10n.ensureInitialized();
+
+  runApp(CuL10n(child: CusymintStorybook()));
 }
 
 class CusymintStorybook extends StatelessWidget {
