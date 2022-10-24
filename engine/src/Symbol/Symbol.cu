@@ -42,7 +42,7 @@ namespace Sym {
     }
 
     __host__ __device__ void Symbol::copy_single_to(Symbol* const destination) const {
-        VIRTUAL_CALL(*this, copy_single_to, destination);
+        Util::copy_mem(destination, this, sizeof(Symbol));                                
     }
 
     __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {

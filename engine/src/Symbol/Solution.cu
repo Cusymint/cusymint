@@ -18,7 +18,7 @@ namespace Sym {
 
         size_t integral_offset = new_expression_size + new_substitutions_size;
 
-        copy_single_to(destination + integral_offset);
+        symbol()->copy_single_to(destination + integral_offset);
         destination[integral_offset].integral.size = integral_offset + 1;
         destination[integral_offset].integral.integrand_offset = new_substitutions_size + 1;
 
