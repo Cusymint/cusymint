@@ -69,7 +69,7 @@ namespace Sym {
         return -1;
     }
 
-    __host__ __device__ bool Symbol::is_function_of(Symbol* expression) const {
+    __host__ __device__ bool Symbol::is_function_of(const Symbol* const expression) const {
         if (is_constant()) {
             return false;
         }

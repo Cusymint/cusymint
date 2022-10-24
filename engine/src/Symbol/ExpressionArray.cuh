@@ -76,9 +76,128 @@ namespace Sym {
         }
 
         /*
+         * @brief Iterator to an expression in an `ExpressionArray`
+         */
+        template <class U> class GenericIterator {
+            U* array;
+            size_t index_;
+
+            __host__ __device__ GenericIterator() : array(nullptr), index_(0) {}
+
+          public:
+            __host__ __device__ GenericIterator(U& array, const size_t index) :
+                array(&array), index_(index) {
+                if constexpr (Consts::DEBUG) {
+                    if (index > array.expression_capacity) {
+                        Util::crash("Trying to create an iterator to an ExpressionArray past the "
+                                    "allocated memory");
+                    }
+                }
+            }
+
+            __host__ __device__ static GenericIterator Null() { return GenericIterator(); };
+
+            [[nodiscard]] __host__ __device__ size_t index() const {
+                if constexpr (Consts::DEBUG) {
+                    if (array == nullptr) {
+                        Util::crash("Trying to access the index of a null iterator");
+                    }
+                }
+
+                return index_;
+            }
+
+            /*
+             * @brief Expression pointed to by the iterator
+             */
+            __host__ __device__ T& operator*() const {
+                if constexpr (Consts::DEBUG) {
+                    if (array == nullptr) {
+                        Util::crash("Trying to access a null iterator");
+                    }
+                }
+
+                return array->operator[](index_);
+            };
+
+            /*
+             * @brief Accesses the element pointed to by the iterator
+             */
+            __host__ __device__ Symbol* operator->() const { return array->at(index_); }
+
+            /*
+             * @brief Creates a new iterator offset by `offset` expressions
+             */
+            __host__ __device__ GenericIterator operator+(const ssize_t offset) const {
+                if constexpr (Consts::DEBUG) {
+                    if (array == nullptr) {
+                        Util::crash("Trying to offset a null iterator");
+                    }
+                }
+
+                return GenericIterator(*array, index_ + offset);
+            }
+
+            /*
+             * @brief Creates a new iterator offset by `-offset` expressions
+             */
+            __host__ __device__ GenericIterator operator-(const ssize_t offset) const {
+                return *this + (-offset);
+            }
+
+            /*
+             * @brief Offsets the iterator by `offset`;
+             */
+            __host__ __device__ GenericIterator operator+=(const ssize_t offset) {
+                if constexpr (Consts::DEBUG) {
+                    if (index_ + offset > array->expression_capacity() || -offset > index_) {
+                        Util::crash("Trying to offset an iterator outside of owned memory (%lu + "
+                                    "%l -> %lu)",
+                                    index_, offset, index_ + offset);
+                    }
+                }
+
+                index_ += offset;
+                return *this;
+            }
+
+            /*
+             * @brief Offsets the iterator by `-offset`;
+             */
+            __host__ __device__ GenericIterator operator-=(const ssize_t offset) {
+                return *this += -offset;
+            }
+
+            /*
+             * @brief Offsets the iterator by `1`;
+             */
+            __host__ __device__ GenericIterator operator++() { return *this += 1; }
+
+            /*
+             * @brief Offsets the iterator by `-1`;
+             */
+            __host__ __device__ GenericIterator operator--() { return *this -= 1; }
+        };
+
+        using Iterator = GenericIterator<ExpressionArray>;
+        using ConstIterator = GenericIterator<const ExpressionArray>;
+
+        /*
+         * @brief Constructs an iterator pointing to the index-th expression
+         */
+        __host__ __device__ Iterator iterator(const size_t index) { return Iterator(*this, index); }
+
+        /*
+         * @brief Constructs a const iterator pointing to the index-th expression
+         */
+        __host__ __device__ ConstIterator const_iterator(const size_t index) const {
+            return ConstIterator(*this, index);
+        }
+
+        /*
          * @brief Kopiuje dane tablicy do vectora vectorów
          */
-        std::vector<std::vector<Symbol>> to_vector() const {
+        [[nodiscard]] std::vector<std::vector<Symbol>> to_vector() const {
             std::vector<std::vector<Symbol>> expressions;
             expressions.reserve(expression_count);
 
@@ -92,7 +211,7 @@ namespace Sym {
         /*
          * @brief Kopiuje idx-te wyrażenie do tablicy vectorów
          */
-        std::vector<Symbol> to_vector(const size_t idx) const {
+        [[nodiscard]] std::vector<Symbol> to_vector(const size_t idx) const {
             std::vector<Symbol> expression(expression_size);
 
             cudaMemcpy(expression.data(), at(idx), expression_size * sizeof(Symbol),
@@ -104,7 +223,7 @@ namespace Sym {
         /*
          * @brief Copies the array onto the CPU and formats it as a string
          */
-        std::string to_string() const {
+        [[nodiscard]] std::string to_string() const {
             const std::vector<std::vector<Symbol>> vec = to_vector();
             std::string string = "{\n";
 
@@ -118,12 +237,12 @@ namespace Sym {
         /*
          * @brief Liczba ciągów w tablicy
          */
-        __host__ __device__ size_t size() const { return expression_count; }
+        [[nodiscard]] __host__ __device__ size_t size() const { return expression_count; }
 
         /*
          * @brief Pojemność tablicy
          */
-        __host__ __device__ size_t capacity() const { return expression_capacity; }
+        [[nodiscard]] __host__ __device__ size_t capacity() const { return expression_capacity; }
 
         /*
          * @brief Zmienia liczbę wyrażeń.
@@ -161,7 +280,9 @@ namespace Sym {
         /*
          * @brief Maksymalny rozmiar wyrażenia
          */
-        __host__ __device__ size_t expression_max_size() const { return expression_size; }
+        [[nodiscard]] __host__ __device__ size_t expression_max_size() const {
+            return expression_size;
+        }
 
         /*
          * @brief Wskaźnik do idx-tego ciągu symboli

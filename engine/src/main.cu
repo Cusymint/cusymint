@@ -8,6 +8,7 @@
 #include <fmt/core.h>
 
 #include "Evaluation/Integrate.cuh"
+#include "Evaluation/StaticFunctions.cuh"
 
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
@@ -20,6 +21,8 @@ int main() {
     if constexpr (Consts::DEBUG) {
         fmt::print("Running in debug mode\n");
     }
+
+    Sym::Static::init_functions();
 
     auto integral = Sym::integral(parse_function("x^2+x^4+e^(ln(x)*5)+2^(x/ln(2))*e^e^x"));
 
