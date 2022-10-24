@@ -30,7 +30,6 @@ namespace Sym {
             arg().as<Logarithm>().seal();
             this->type = Type::Product;
             this->as<Product>()->seal_arg1();
-            symbol();
         }
     }
 
