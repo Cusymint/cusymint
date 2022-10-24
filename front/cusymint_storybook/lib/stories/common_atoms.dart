@@ -37,25 +37,18 @@ class CommonAtoms extends StorybookPart {
           name: 'Atoms/TextField',
           builder: (context) => SizedBox(
             width: 350,
-            child: Theme(
-              data: CuTheme.of(context),
-              child: Scaffold(
-                body: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: CuTextField(
-                      prefixIcon: context.knobs.nullable.options(
-                        label: 'PrefixIcon',
-                        initial: const Icon(Icons.ac_unit),
-                        options: [],
-                      ),
-                      suffixIcon: context.knobs.nullable.options(
-                        label: 'SuffixIcon',
-                        initial: const Icon(
-                          Icons.close,
-                        ),
-                      ),
-                    ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CuTextField(
+                prefixIcon: context.knobs.nullable.options(
+                  label: 'PrefixIcon',
+                  initial: const Icon(Icons.ac_unit),
+                  options: [],
+                ),
+                suffixIcon: context.knobs.nullable.options(
+                  label: 'SuffixIcon',
+                  initial: const Icon(
+                    Icons.close,
                   ),
                 ),
               ),

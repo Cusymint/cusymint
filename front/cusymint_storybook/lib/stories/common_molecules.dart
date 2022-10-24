@@ -37,5 +37,32 @@ class CommonMolecules extends StorybookPart {
             ),
           ),
         ),
+        Story(
+          name: 'Molecules/Scaffold',
+          builder: (context) {
+            final displayAppBar = context.knobs.boolean(
+              label: 'Display app bar',
+              initial: true,
+            );
+
+            final displayMenuButton = context.knobs.boolean(
+              label: 'Display menu button',
+              initial: true,
+            );
+
+            final appBar = displayAppBar
+                ? CuAppBar(
+                    onMenuPressed: displayMenuButton ? () {} : null,
+                  )
+                : null;
+
+            return CuScaffold(
+              appBar: appBar,
+              body: const Center(
+                child: CuText.bold14('Hello world!'),
+              ),
+            );
+          },
+        ),
       ];
 }

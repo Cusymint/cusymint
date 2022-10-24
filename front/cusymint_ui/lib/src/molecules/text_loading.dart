@@ -41,7 +41,7 @@ class _CuTextLoadingState extends State<CuTextLoading>
     );
 
     _dotsAnimation = IntTween(
-      begin: 0,
+      begin: 1,
       end: 3,
     ).animate(_controller);
 
