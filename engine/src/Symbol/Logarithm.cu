@@ -29,7 +29,8 @@ namespace Sym {
             arg().power.type = Type::Logarithm;
             arg().as<Logarithm>().seal();
             this->type = Type::Product;
-            this->as<Product>().seal();
+            this->as<Product>()->seal_arg1();
+            symbol();
         }
     }
 

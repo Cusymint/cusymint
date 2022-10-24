@@ -12,7 +12,7 @@ namespace Sym {
 
     DEFINE_COMPRESS_REVERSE_TO(Substitution) {
         size_t new_expression_size = expression()->compress_reverse_to(destination);
-        copy_single_to(destination + new_expression_size);
+        symbol()->copy_single_to(destination + new_expression_size);
         destination[new_expression_size].substitution.size = new_expression_size + 1;
         return new_expression_size + 1;
     }

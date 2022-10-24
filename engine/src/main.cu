@@ -21,10 +21,7 @@ int main() {
         fmt::print("Running in debug mode\n");
     }
 
-    auto integral = Sym::integral(parse_function("x^2+x^4+x^5+log_c(c^e^x)*e^e^x"));
-    // std::vector<Sym::Symbol> integral = Sym::integral(
-    //     (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(4)) + (Sym::var() ^ Sym::num(5)) +
-    //     ((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))));
+    auto integral = Sym::integral(parse_function("x^2+x^4+e^(ln(x)*5)+2^(x/ln(2))*e^e^x"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
