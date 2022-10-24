@@ -63,14 +63,10 @@ namespace Sym {
     std::string Product::to_tex() const {
         if (arg1().is(Type::Reciprocal)) {
             return fraction_to_tex(arg2(), arg1().reciprocal.arg());
-            //return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg2().to_tex(),
-            //                   arg1().reciprocal.arg().to_tex());
         }
 
         if (arg2().is(Type::Reciprocal)) {
             return fraction_to_tex(arg1(), arg2().reciprocal.arg());
-            //return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg1().to_tex(),
-            //                   arg2().reciprocal.arg().to_tex());
         }
 
         std::string arg1_pattern = "{}";
