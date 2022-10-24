@@ -28,5 +28,14 @@ class CommonMolecules extends StorybookPart {
             ),
           ),
         ),
+        Story(
+          name: 'Molecules/TextLoading',
+          builder: (context) => CuTextLoading.med14(
+            context.knobs.text(
+              label: 'Text',
+              initial: 'Loading',
+            ),
+          ),
+        ),
       ];
 }
