@@ -8,4 +8,6 @@ class Strings {
   static const String copiedToClipboard = 'copiedToClipboard';
   static const String subtitle = 'subtitle';
   static const String solve = 'solve';
+  static const String interpreting = 'interpreting';
+  static const String retry = 'retry';
 }

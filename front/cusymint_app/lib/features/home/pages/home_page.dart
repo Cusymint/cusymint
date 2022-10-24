@@ -54,18 +54,23 @@ class _HomeBodyState extends State<HomeBody> {
                       width: 400,
                       child: Hero(
                         tag: 'input',
-                        child: CuTextField(
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              _controller.clear();
-                              widget.clientCubit.reset();
-                            },
-                            icon: Icon(
-                              Icons.clear,
-                              color: CuColors.of(context).mintDark,
+                        child: Column(
+                          children: [
+                            CuText.med14(Strings.enterIntegral.tr()),
+                            CuTextField(
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  _controller.clear();
+                                  widget.clientCubit.reset();
+                                },
+                                icon: Icon(
+                                  Icons.clear,
+                                  color: CuColors.of(context).mintDark,
+                                ),
+                              ),
+                              controller: _controller,
                             ),
-                          ),
-                          controller: _controller,
+                          ],
                         ),
                       ),
                     ),
@@ -236,10 +241,10 @@ class _FailureBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        for (final error in errors) Text(error),
-        ElevatedButton(
+        for (final error in errors) CuText.med14(error),
+        CuElevatedButton(
           onPressed: () => context.read<ClientCubit>().reset(),
-          child: const Text('Reset'),
+          text: Strings.retry.tr(),
         ),
       ],
     );
@@ -251,6 +256,7 @@ class _LoadingBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CircularProgressIndicator();
+    // TODO: add dots animation
+    return CuText.med14(Strings.interpreting.tr());
   }
 }

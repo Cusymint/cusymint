@@ -1,9 +1,11 @@
 {
-    "enterIntegral": "Wpisz całkę",
+    "enterIntegral": "Wpisz tutaj całkę",
     "tryExamples": "Lub spróbuj przykładów",
     "foundResult": "Znaleziono wynik w {timeInMs} ms",
     "encounteredErrors": "Wystąpiły błędy:",
     "copiedToClipboard": "Skopiowano do schowka",
     "subtitle": "Symboliczne całkowanie na Cuda",
-    "solve": "Rozwiąż"
+    "solve": "Rozwiąż",
+    "interpreting": "Interpretowanie",
+    "retry": "Spróbuj ponownie"
 }
