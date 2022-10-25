@@ -2,6 +2,8 @@ import 'package:cusymint_storybook/stories/stories.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:storybook_flutter/storybook_flutter.dart';
+// ignore: depend_on_referenced_packages
+import 'package:easy_localization/easy_localization.dart';
 
 void main() async {
   await CuL10n.ensureInitialized();
@@ -17,13 +19,16 @@ class CusymintStorybook extends StatelessWidget {
     knobsSidePanel: true,
   );
 
-  Widget _cusymintWrapper(context, child) => MaterialApp(
+  Widget _cusymintWrapper(BuildContext context, Widget? child) => MaterialApp(
         title: 'cusymint',
         debugShowCheckedModeBanner: false,
         useInheritedMediaQuery: true,
         theme: CuTheme.of(context),
         // no dark theme exists for cusymint
         darkTheme: CuTheme.of(context),
+        locale: context.locale,
+        supportedLocales: context.supportedLocales,
+        localizationsDelegates: context.localizationDelegates,
         home: Scaffold(body: Center(child: child)),
       );
 

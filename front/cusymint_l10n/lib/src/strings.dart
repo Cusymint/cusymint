@@ -10,4 +10,7 @@ class Strings {
   static const String solve = 'solve';
   static const String interpreting = 'interpreting';
   static const String retry = 'retry';
+  static const String home = 'home';
+  static const String settings = 'settings';
+  static const String about = 'about';
 }
