@@ -13,6 +13,8 @@
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
 
+#include "Parser/Parser.cuh"
+
 #include "Utils/CompileConstants.cuh"
 
 int main() {
@@ -22,12 +24,9 @@ int main() {
 
     Sym::Static::init_functions();
 
-    std::vector<Sym::Symbol> integral = Sym::integral(
-        (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(4)) + (Sym::var() ^ Sym::num(5)) +
-        ((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))) +
-        (Sym::e() ^ Sym::var()) * Sym::sin(Sym::e() ^ Sym::var()));
+    const auto integral = Sym::integral(parse_function("x^2+x^4+e^(ln(x)*5)+2^(x/ln(2))*e^e^x"));
 
-    fmt::print("Trying to solve an integral: {}\n", integral.data()->to_string());
+    fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
     std::optional<std::vector<std::vector<Sym::Symbol>>> solution = Sym::solve_integral(integral);
 

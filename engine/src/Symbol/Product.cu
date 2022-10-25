@@ -4,6 +4,17 @@
 #include "Symbol/TreeIterator.cuh"
 #include <fmt/core.h>
 
+namespace {
+    std::string fraction_to_tex(const Sym::Symbol& numerator, const Sym::Symbol& denominator) {
+        if (numerator.is(Sym::Type::Logarithm) && denominator.is(Sym::Type::Logarithm)) {
+            return fmt::format(R"(\log_{{ {} }}\left({}\right))",
+                               denominator.logarithm.arg().to_tex(),
+                               numerator.logarithm.arg().to_tex());
+        }
+        return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(), denominator.to_tex());
+    }
+}
+
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Product)
     DEFINE_SIMPLE_TWO_ARGUMENT_OP_COMPARE(Product)
@@ -81,13 +92,11 @@ namespace Sym {
 
     std::string Product::to_tex() const {
         if (arg1().is(Type::Reciprocal)) {
-            return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg2().to_tex(),
-                               arg1().reciprocal.arg().to_tex());
+            return fraction_to_tex(arg2(), arg1().reciprocal.arg());
         }
 
         if (arg2().is(Type::Reciprocal)) {
-            return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg1().to_tex(),
-                               arg2().reciprocal.arg().to_tex());
+            return fraction_to_tex(arg1(), arg2().reciprocal.arg());
         }
 
         std::string arg1_pattern = "{}";

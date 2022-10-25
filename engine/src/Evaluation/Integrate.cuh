@@ -7,6 +7,8 @@
 
 #include "Symbol/Symbol.cuh"
 
+#include <optional>
+
 namespace Sym {
     /*
      * @brief Checks if inclusive_scan[index] is signaling a zero-sized element
