@@ -40,6 +40,7 @@ class CusymintStorybook extends StatelessWidget {
         ...const CommonAtoms().stories,
         ...const CommonMolecules().stories,
         ...const CommonOrganisms().stories,
+        ...const MainFlowStories().stories,
       ],
     );
   }

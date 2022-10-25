@@ -1,8 +1,8 @@
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 
-class ResultView extends StatefulWidget {
-  const ResultView({
+class CuResultView extends StatefulWidget {
+  const CuResultView({
     super.key,
     required this.child,
     required this.shareUtf,
@@ -18,10 +18,10 @@ class ResultView extends StatefulWidget {
   final VoidCallback copyUtfToClipboard;
 
   @override
-  State<ResultView> createState() => _ResultViewState();
+  State<CuResultView> createState() => _CuResultViewState();
 }
 
-class _ResultViewState extends State<ResultView> {
+class _CuResultViewState extends State<CuResultView> {
   final _scrollController = ScrollController();
 
   @override
@@ -44,10 +44,10 @@ class _ResultViewState extends State<ResultView> {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Scrollbar(
                   thumbVisibility: true,
-                  //controller: _scrollController,
+                  controller: _scrollController,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    //controller: _scrollController,
+                    controller: _scrollController,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: widget.child,
