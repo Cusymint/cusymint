@@ -1,5 +1,4 @@
 import 'package:cusymint_ui/cusymint_ui.dart';
-import 'package:flutter/material.dart';
 
 class CuElevatedButton extends StatelessWidget {
   const CuElevatedButton({

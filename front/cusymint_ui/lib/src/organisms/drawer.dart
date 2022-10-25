@@ -1,6 +1,5 @@
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
-import 'package:flutter/material.dart';
 
 class CuDrawer extends StatelessWidget {
   const CuDrawer({

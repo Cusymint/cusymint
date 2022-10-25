@@ -10,5 +10,7 @@
    "retry": "Retry",
    "home": "Home",
    "settings": "Settings",
-   "about": "About"
+   "about": "About",
+   "interpretedAs": "Interpreted as",
+   "calculating": "Calculating result"
 }

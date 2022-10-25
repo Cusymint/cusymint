@@ -13,4 +13,6 @@ class Strings {
   static const String home = 'home';
   static const String settings = 'settings';
   static const String about = 'about';
+  static const String interpretedAs = 'interpretedAs';
+  static const String calculating = 'calculating';
 }

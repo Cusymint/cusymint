@@ -10,5 +10,7 @@
     "retry": "Spróbuj ponownie",
     "home": "Strona główna",
     "about": "O projekcie",
-    "settings": "Ustawienia"
+    "settings": "Ustawienia",
+    "interpretedAs": "Zinterpretowano jako",
+    "calculating": "Obliczanie"
 }

@@ -1,6 +1,5 @@
 import 'package:cusymint_storybook/stories/stories.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
-import 'package:flutter/material.dart';
 import 'package:storybook_flutter/storybook_flutter.dart';
 // ignore: depend_on_referenced_packages
 import 'package:easy_localization/easy_localization.dart';

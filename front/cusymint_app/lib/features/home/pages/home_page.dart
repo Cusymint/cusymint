@@ -2,7 +2,6 @@ import 'package:cusymint_app/features/home/blocs/client_cubit.dart';
 import 'package:cusymint_app/features/tex_rendering/widgets/tex_view.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
