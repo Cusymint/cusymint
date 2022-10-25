@@ -32,7 +32,11 @@ class CommonMolecules extends StorybookPart {
           name: 'Molecules/Drawer',
           builder: (context) => CuScaffold(
             body: const Center(child: CuText('Drawer')),
-            drawer: const CuDrawer(),
+            drawer: CuDrawer(
+              onAboutPressed: () {},
+              onHomePressed: () {},
+              onSettingsPressed: () {},
+            ),
             appBar: CuAppBar(),
           ),
         ),
