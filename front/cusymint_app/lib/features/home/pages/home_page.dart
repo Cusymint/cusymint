@@ -35,69 +35,74 @@ class _HomeBodyState extends State<HomeBody> {
     return BlocBuilder<ClientCubit, ClientState>(
       bloc: widget.clientCubit,
       builder: (context, state) {
-        return SafeArea(
-          child: Scaffold(
-            backgroundColor: CuColors.of(context).mint,
-            body: Center(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(12, 12, 12, 0),
-                    child: Hero(tag: 'logo', child: CuLogo()),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SizedBox(
-                      width: 400,
-                      child: Hero(
-                        tag: 'input',
-                        child: Column(
-                          children: [
-                            CuText.med14(Strings.enterIntegral.tr()),
-                            CuTextField(
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  _controller.clear();
-                                  widget.clientCubit.reset();
-                                },
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: CuColors.of(context).mintDark,
-                                ),
+        return CuScaffold(
+          drawer: CuDrawer(
+            onAboutPressed: () {},
+            onHomePressed: () {},
+            onSettingsPressed: () {},
+          ),
+          appBar: CuAppBar(),
+          body: Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SizedBox(
+                    width: 400,
+                    child: Hero(
+                      tag: 'input',
+                      child: Column(
+                        children: [
+                          CuText.med14(Strings.enterIntegral.tr()),
+                          CuTextField(
+                            onSubmitted: (submittedText) {
+                              widget.clientCubit.solveIntegral(submittedText);
+                            },
+                            prefixIcon: IconButton(
+                              onPressed: () {
+                                _controller.clear();
+                                widget.clientCubit.reset();
+                              },
+                              icon: Icon(
+                                Icons.clear,
+                                color: CuColors.of(context).mintDark,
                               ),
-                              controller: _controller,
                             ),
-                          ],
-                        ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                if (_controller.text.isNotEmpty) {
+                                  widget.clientCubit
+                                      .solveIntegral(_controller.text);
+                                }
+                              },
+                              icon: Icon(
+                                Icons.send,
+                                color: CuColors.of(context).mintDark,
+                              ),
+                            ),
+                            controller: _controller,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  if (state is ClientInitial)
-                    CuElevatedButton(
-                      onPressed: () async {
-                        final integralToBeSolved = _controller.text;
-                        await widget.clientCubit
-                            .solveIntegral(integralToBeSolved);
-                      },
-                      text: Strings.solve.tr(),
-                    ),
-                  if (state is ClientLoading) const _LoadingBody(),
-                  if (state is ClientSuccess)
-                    _SuccessBody(
-                      inputInTex: state.inputInTex,
-                      inputInUtf: state.inputInUtf,
-                      outputInTex: state.outputInTex,
-                      outputInUtf: state.outputInUtf,
-                      duration: state.duration,
-                    ),
-                  if (state is ClientFailure)
-                    _FailureBody(
-                      errors: state.errors,
-                    ),
-                ],
-              ),
+                ),
+                if (state is ClientLoading) const CuInterpretingView(),
+                if (state is ClientSuccess)
+                  _SuccessBody(
+                    inputInTex: state.inputInTex,
+                    inputInUtf: state.inputInUtf,
+                    outputInTex: state.outputInTex,
+                    outputInUtf: state.outputInUtf,
+                    duration: state.duration,
+                  ),
+                if (state is ClientFailure)
+                  _FailureBody(
+                    errors: state.errors,
+                  ),
+              ],
             ),
           ),
         );
@@ -247,15 +252,5 @@ class _FailureBody extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-class _LoadingBody extends StatelessWidget {
-  const _LoadingBody();
-
-  @override
-  Widget build(BuildContext context) {
-    // TODO: add dots animation
-    return CuText.med14(Strings.interpreting.tr());
   }
 }

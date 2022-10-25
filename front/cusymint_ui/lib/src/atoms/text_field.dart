@@ -10,11 +10,13 @@ class CuTextField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.label,
+    this.onSubmitted,
   });
 
   final TextEditingController? controller;
   final VoidCallback? onTap;
   final void Function(String newText)? onChanged;
+  final void Function(String submittedText)? onSubmitted;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final Widget? label;
@@ -29,6 +31,7 @@ class CuTextField extends StatelessWidget {
         controller: controller,
         onTap: onTap,
         onChanged: onChanged,
+        onSubmitted: onSubmitted,
         style: TextStyle(
           color: colors.black,
           fontSize: 18.0,

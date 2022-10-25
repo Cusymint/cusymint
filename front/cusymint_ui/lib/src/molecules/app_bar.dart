@@ -6,7 +6,7 @@ class CuAppBar extends AppBar {
     super.key,
   }) : super(
           // TODO: Fix sizing, logo is larger than IconButton
-          title: const CuLogo(),
+          title: const Hero(tag: 'logo', child: CuLogo()),
           centerTitle: true,
           actions: [
             if (onMenuPressed != null)
