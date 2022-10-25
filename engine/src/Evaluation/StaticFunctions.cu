@@ -61,13 +61,13 @@ namespace Sym::Static {
         };
     };
 
-    __device__ const Symbol* identity() { return IDENTITY; }
+    __device__ const Symbol& identity() { return *IDENTITY; }
 
-    __device__ const Symbol* sin_x() { return SIN_X; }
+    __device__ const Symbol& sin_x() { return *SIN_X; }
 
-    __device__ const Symbol* cos_x() { return COS_X; }
+    __device__ const Symbol& cos_x() { return *COS_X; }
 
-    __device__ const Symbol* e_to_x() { return E_TO_X; }
+    __device__ const Symbol& e_to_x() { return *E_TO_X; }
 
     void init_functions() {
         static constexpr size_t BLOCK_SIZE = 1024;

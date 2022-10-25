@@ -9,7 +9,7 @@ namespace Sym {
     DECLARE_SYMBOL(SubexpressionVacancy, true)
     unsigned int candidate_integral_count;
     unsigned int candidate_expression_count;
-    int is_solved; // Nie `bool`, bo nie ma implementacji atomicCAS dla `bool` w CUDA
+    int is_solved; // Not `bool` because there is no implementation of `atomicCAS in CUDA
     size_t solver_idx;
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;

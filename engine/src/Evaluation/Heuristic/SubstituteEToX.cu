@@ -15,7 +15,7 @@ namespace Sym::Heuristic {
         new_candidate->copy_metadata_from(integral);
 
         integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-            Static::e_to_x(), Static::identity(), integral_dst->at(1), &help_space);
+            Static::e_to_x(), Static::identity(), *integral_dst->child(), help_space);
 
         new_candidate->seal();
     }

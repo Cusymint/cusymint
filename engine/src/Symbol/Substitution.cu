@@ -35,6 +35,10 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Substitution) { expression()->simplify_in_place(help_space); }
 
+    DEFINE_IS_FUNCTION_OF(Substitution) {
+        return expression()->is_function_of(expressions, expression_count);
+    } // NOLINT
+
     const char* const Substitution::SUBSTITUTION_NAMES[] = {"u", "v", "w", "t"};
     const size_t Substitution::SUBSTITUTION_NAME_COUNT =
         sizeof(Substitution::SUBSTITUTION_NAMES) / sizeof(Substitution::SUBSTITUTION_NAMES[0]);
@@ -77,7 +81,8 @@ namespace Sym {
 
     std::string Substitution::to_string_this() const {
         std::vector<Symbol> expr_with_const = expression_with_constant();
-        return fmt::format("{} = {}", nth_substitution_name(substitution_idx), expr_with_const.data()->to_string());
+        return fmt::format("{} = {}", nth_substitution_name(substitution_idx),
+                           expr_with_const.data()->to_string());
     }
 
     std::string Substitution::to_string() const {
@@ -90,7 +95,8 @@ namespace Sym {
 
     std::string Substitution::to_tex_this() const {
         std::vector<Symbol> expr_with_const = expression_with_constant();
-        return fmt::format("{} = {}", nth_substitution_name(substitution_idx), expr_with_const.data()->to_tex());
+        return fmt::format("{} = {}", nth_substitution_name(substitution_idx),
+                           expr_with_const.data()->to_tex());
     }
 
     std::string Substitution::to_tex() const {

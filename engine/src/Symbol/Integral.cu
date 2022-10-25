@@ -33,6 +33,10 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Integral) { integrand()->simplify_in_place(help_space); }
 
+    DEFINE_IS_FUNCTION_OF(Integral) {
+        return integrand()->is_function_of(expressions, expression_count);
+    } // NOLINT
+
     __host__ __device__ void Integral::seal_no_substitutions() { seal_substitutions(0, 0); }
 
     __host__ __device__ void Integral::seal_single_substitution() {
@@ -72,30 +76,30 @@ namespace Sym {
     }
 
     __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
-        const Symbol* const substitution, const Symbol* const derivative, Symbol* const destination,
-        Symbol* const help_space) const {
+        const Symbol& substitution, const Symbol& derivative, Symbol& destination,
+        Symbol& help_space) const {
         integrand()->substitute_with_var_with_holes(destination, substitution);
-        size_t new_incomplete_integrand_size = destination->compress_reverse_to(help_space);
-        Symbol::reverse_symbol_sequence(help_space, new_incomplete_integrand_size);
+        size_t new_incomplete_integrand_size = destination.compress_reverse_to(&help_space);
+        Symbol::reverse_symbol_sequence(&help_space, new_incomplete_integrand_size);
 
         // Teraz w `help_space` jest docelowa funkcja podcałkowa, ale jeszcze bez mnożenia przez
         // pochodną. W `destination` są niepotrzebne dane.
 
         const auto old_integrand_size = static_cast<ssize_t>(integrand()->size());
         const auto new_integrand_size =
-            static_cast<ssize_t>(new_incomplete_integrand_size + 2 + derivative->size());
+            static_cast<ssize_t>(new_incomplete_integrand_size + 2 + derivative.size());
         const ssize_t size_diff = new_integrand_size - old_integrand_size;
 
-        copy_substitutions_with_an_additional_one(substitution, destination);
+        copy_substitutions_with_an_additional_one(&substitution, &destination);
 
-        destination->size() += size_diff;
+        destination.size() += size_diff;
 
-        Product* const product = destination->integrand() << Product::builder();
+        Product* const product = destination.integrand() << Product::builder();
         Reciprocal* const reciprocal = product->arg1() << Reciprocal::builder();
-        derivative->copy_to(&reciprocal->arg());
+        derivative.copy_to(&reciprocal->arg());
         reciprocal->seal();
         product->seal_arg1();
-        help_space->copy_to(&product->arg2());
+        help_space.copy_to(&product->arg2());
         product->seal();
     }
 

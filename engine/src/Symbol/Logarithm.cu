@@ -8,6 +8,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Logarithm)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Logarithm)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Logarithm)
+    DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Logarithm)
 
     DEFINE_SIMPLIFY_IN_PLACE(Logarithm) { 
         arg().simplify_in_place(help_space); 

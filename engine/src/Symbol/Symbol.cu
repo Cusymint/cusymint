@@ -69,43 +69,20 @@ namespace Sym {
         return -1;
     }
 
-    __host__ __device__ bool Symbol::is_function_of(const Symbol* const expression) const {
-        if (is_constant()) {
-            return false;
-        }
-
-        ssize_t first_var_offset = expression->first_var_occurence();
-
-        for (size_t i = 0; i < size(); ++i) {
-            if (this[i].is(Type::Variable)) {
-                // First variable in `this` appears earlier than first variable in `expression` or
-                // `this` is not long enough to contain another occurence of `expression`
-                if (i < first_var_offset || size() - i < expression->size() - first_var_offset) {
-                    return false;
-                }
-
-                if (!compare_symbol_sequences(this + i - first_var_offset, expression,
-                                              expression->size())) {
-                    return false;
-                }
-
-                i += expression->size() - first_var_offset - 1;
-            }
-        }
-
-        return true;
+    __host__ __device__ bool Symbol::is_function_of(const Symbol* const* const expressions,
+                                                    const size_t expression_count) const {
+        return VIRTUAL_CALL(*this, is_function_of, expressions, expression_count);
     }
 
     __host__ __device__ void
-    Symbol::substitute_with_var_with_holes(Symbol* const destination,
-                                           const Symbol* const expression) const {
-        ssize_t first_var_offset = expression->first_var_occurence();
-        copy_to(destination);
+    Symbol::substitute_with_var_with_holes(Symbol& destination, const Symbol& expression) const {
+        ssize_t first_var_offset = expression.first_var_occurence();
+        copy_to(&destination);
 
         for (size_t i = 0; i < size(); ++i) {
             if (destination[i].is(Type::Variable)) {
                 destination[i - first_var_offset].variable = Variable::create();
-                i += expression->size() - first_var_offset - 1;
+                i += expression.size() - first_var_offset - 1;
             }
         }
     }

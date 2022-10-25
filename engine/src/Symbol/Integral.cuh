@@ -49,9 +49,10 @@ namespace Sym {
      * @param destination Pointer to where the result is going to be saved
      * @param help_space Additional memory for internal usage
      */
-    __host__ __device__ void integrate_by_substitution_with_derivative(
-        const Symbol* const substitution, const Symbol* const derivative, Symbol* const destination,
-        Symbol* const help_space) const;
+    __host__ __device__ void integrate_by_substitution_with_derivative(const Symbol& substitution,
+                                                                       const Symbol& derivative,
+                                                                       Symbol& destination,
+                                                                       Symbol& help_space) const;
 
     [[nodiscard]] __host__ __device__ const Substitution* first_substitution() const;
     [[nodiscard]] __host__ __device__ Substitution* first_substitution();

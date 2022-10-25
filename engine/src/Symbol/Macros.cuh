@@ -24,6 +24,10 @@ namespace Sym {
 #define SIMPLIFY_IN_PLACE_HEADER(_simplify_in_place) \
     __host__ __device__ void _simplify_in_place(Symbol* const help_space)
 
+#define IS_FUNCTION_OF_HEADER(_is_function_of)                                       \
+    __host__ __device__ bool _is_function_of(const Symbol* const* const expressions, \
+                                             const size_t expression_count) const
+
 #define DECLARE_SYMBOL(_name, _simple)                                            \
     struct _name {                                                                \
         constexpr static Sym::Type TYPE = Sym::Type::_name;                       \
@@ -67,7 +71,8 @@ namespace Sym {
                                                                                   \
         COMPARE_HEADER(compare);                                                  \
         COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                          \
-        SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);
+        SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                              \
+        IS_FUNCTION_OF_HEADER(is_function_of);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.
 // standard-layout jest wymagany by zagwarantować, że wszystkie symbole mają pole `type` na offsecie
@@ -90,6 +95,25 @@ namespace Sym {
     SIMPLIFY_IN_PLACE_HEADER(_name::simplify_in_place) {}
 
 #define DEFINE_SIMPLIFY_IN_PLACE(_name) SIMPLIFY_IN_PLACE_HEADER(_name::simplify_in_place)
+
+#define DEFINE_IS_FUNCTION_OF(_name) IS_FUNCTION_OF_HEADER(_name::is_function_of)
+
+#define DEFINE_INVALID_IS_FUNCTION_OF(_name)                                         \
+    IS_FUNCTION_OF_HEADER(_name::is_function_of) {                                   \
+        Util::crash("Is function of called on %s, this should not happen!", #_name); \
+        return false; /* Just to silence warnings */                                 \
+    }
+
+#define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                       \
+    DEFINE_IS_FUNCTION_OF(_name) {                                             \
+        for (size_t i = 0; i < expression_count; ++i) {                        \
+            if (expressions[i]->is<_name>() && *symbol() == *expressions[i]) { \
+                return true;                                                   \
+            }                                                                  \
+        }                                                                      \
+                                                                               \
+        return arg().is_function_of(expressions, expression_count);            \
+    }
 
 #define BASE_COMPARE(_name) \
     symbol->type() == type && symbol->size() == size && symbol->simplified() == simplified

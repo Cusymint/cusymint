@@ -12,14 +12,14 @@ namespace Sym {
     double value;
     __host__ __device__ NumericConstant static with_value(double value);
     DEFINE_TO_STRING(std::to_string(value));
-    std::string to_tex() const;
+    [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(NumericConstant)
 
     DECLARE_SYMBOL(KnownConstant, true)
     KnownConstantValue value;
     __host__ __device__ KnownConstant static with_value(KnownConstantValue value);
-    std::string to_string() const;
-    std::string to_tex() const;
+    [[nodiscard]] std::string to_string() const;
+    [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(KnownConstant)
 
     DECLARE_SYMBOL(UnknownConstant, true)

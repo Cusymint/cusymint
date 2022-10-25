@@ -29,6 +29,25 @@ namespace Sym {
         eliminate_ones();
     }
 
+    DEFINE_IS_FUNCTION_OF(Product) {
+        for (size_t i = 0; i < expression_count; ++i) {
+            if (!expressions[i]->is(Type::Product)) {
+                continue;
+            }
+
+            const auto& product_expression = expressions[i]->as<Product>();
+
+            // TODO: In the future, this should look for correspondences in the product tree (See
+            // the comment in the same function for Power symbol).
+            if (arg1() == product_expression.arg1() && arg2() == product_expression.arg2()) {
+                return true;
+            }
+        }
+
+        return arg1().is_function_of(expressions, expression_count) &&
+               arg2().is_function_of(expressions, expression_count);
+    }
+
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol* const expr1,
                                                                const Symbol* const expr2) {
         return expr1->is(Type::Reciprocal) &&
@@ -119,6 +138,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Reciprocal)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
+    DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
 
     DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) { arg().simplify_in_place(help_space); }
 
