@@ -29,6 +29,14 @@ class CommonMolecules extends StorybookPart {
           ),
         ),
         Story(
+          name: 'Molecules/Drawer',
+          builder: (context) => CuScaffold(
+            body: const Center(child: CuText('Drawer')),
+            drawer: const CuDrawer(),
+            appBar: CuAppBar(),
+          ),
+        ),
+        Story(
           name: 'Molecules/TextLoading',
           builder: (context) => CuTextLoading.med14(
             context.knobs.text(

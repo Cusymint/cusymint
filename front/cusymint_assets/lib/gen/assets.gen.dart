@@ -5,11 +5,22 @@
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
-// ignore_for_file: directives_ordering,unnecessary_import
+// ignore_for_file: directives_ordering,unnecessary_import,implicit_dynamic_list_literal
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
+
+class $AssetsImagesGen {
+  const $AssetsImagesGen();
+
+  /// File path: assets/images/drawer_background.jpg
+  AssetGenImage get drawerBackground =>
+      const AssetGenImage('assets/images/drawer_background.jpg');
+
+  /// List of all assets
+  List<AssetGenImage> get values => [drawerBackground];
+}
 
 class $AssetsSvgGen {
   const $AssetsSvgGen();
@@ -20,11 +31,15 @@ class $AssetsSvgGen {
 
   /// File path: assets/svg/logo_wide.svg
   SvgGenImage get logoWide => const SvgGenImage('assets/svg/logo_wide.svg');
+
+  /// List of all assets
+  List<SvgGenImage> get values => [integralIcon, logoWide];
 }
 
-class Assets {
-  Assets._();
+class CuAssets {
+  CuAssets._();
 
+  static const $AssetsImagesGen images = $AssetsImagesGen();
   static const $AssetsSvgGen svg = $AssetsSvgGen();
 }
 
@@ -86,6 +101,8 @@ class AssetGenImage {
     );
   }
 
+  ImageProvider provider() => AssetImage(_assetName);
+
   String get path => _assetName;
 
   String get keyName => 'packages/cusymint_assets/$_assetName';
@@ -137,5 +154,5 @@ class SvgGenImage {
     );
   }
 
-  String get path => _assetName;
+  String get path => 'packages/cusymint_assets/$_assetName';
 }

@@ -5,15 +5,14 @@ class CuScaffold extends StatelessWidget {
   const CuScaffold({
     super.key,
     required this.body,
-    this.endDrawer,
+    this.drawer,
     this.appBar,
   });
 
   final Widget body;
-  final CuAppBar? appBar;
 
-  /// Drawer displayed at the right side of the screen.
-  final Widget? endDrawer;
+  final CuAppBar? appBar;
+  final CuDrawer? drawer;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +20,7 @@ class CuScaffold extends StatelessWidget {
       appBar: appBar,
       backgroundColor: CuColors.of(context).mint,
       body: body,
-      endDrawer: endDrawer,
+      drawer: drawer,
     );
   }
 }

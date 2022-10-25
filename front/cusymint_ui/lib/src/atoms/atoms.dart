@@ -1,3 +1,4 @@
+export 'blackboard_decoration.dart';
 export 'card.dart';
 export 'elevated_button.dart';
 export 'logo.dart';

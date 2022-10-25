@@ -25,7 +25,7 @@ class CommonAtoms extends StorybookPart {
           builder: (context) => CuLogo(
             color: context.knobs.options(
               label: 'Color',
-              initial: Colors.black,
+              initial: Colors.white,
               options: [
                 const Option(label: 'Black', value: Colors.black),
                 const Option(label: 'White', value: Colors.white),
@@ -91,17 +91,18 @@ class CommonAtoms extends StorybookPart {
           },
         ),
         Story(
-            name: 'Atoms/ElevatedButton',
-            builder: (context) {
-              final text = context.knobs.text(
-                label: 'Text',
-                initial: 'Solve',
-              );
+          name: 'Atoms/ElevatedButton',
+          builder: (context) {
+            final text = context.knobs.text(
+              label: 'Text',
+              initial: 'Solve',
+            );
 
-              return CuElevatedButton(
-                text: text,
-                onPressed: () {},
-              );
-            })
+            return CuElevatedButton(
+              text: text,
+              onPressed: () {},
+            );
+          },
+        ),
       ];
 }
