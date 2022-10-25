@@ -67,9 +67,8 @@ namespace Sym {
      * @param help_space Additional memory for internal usage
      */
     __host__ __device__ void integrate_by_substitution_with_derivative(
-        const Util::Pair<Sym::Symbol, Sym::Symbol>* const substitutions,
-        const size_t substitiution_count, const Symbol& derivative, Symbol& destination,
-        Symbol& help_space) const;
+        const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const substitutions, const Symbol& derivative,
+        Symbol& destination, Symbol& help_space) const;
 
     [[nodiscard]] __host__ __device__ const Substitution* first_substitution() const;
     [[nodiscard]] __host__ __device__ Substitution* first_substitution();

@@ -57,10 +57,10 @@ namespace Sym {
         return is_expr1_sine_squared && is_expr2_cosine_squared;
     }
 
-    __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol* const expr1,
-                                                                  const Symbol* const expr2) {
-        return expr1->is(Type::Negation) && Symbol::compare_trees(&expr1->negation.arg(), expr2) ||
-               expr2->is(Type::Negation) && Symbol::compare_trees(&expr2->negation.arg(), expr1);
+    __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol& expr1,
+                                                                  const Symbol& expr2) {
+        return expr1.is(Type::Negation) && Symbol::compare_trees(expr1.negation.arg(), expr2) ||
+               expr2.is(Type::Negation) && Symbol::compare_trees(expr2.negation.arg(), expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Addition) {
@@ -73,7 +73,7 @@ namespace Sym {
             return true;
         }
 
-        if (are_equal_of_opposite_sign(expr1, expr2)) {
+        if (are_equal_of_opposite_sign(*expr1, *expr2)) {
             expr1->numeric_constant = NumericConstant::with_value(0.0);
             expr2->numeric_constant = NumericConstant::with_value(0.0);
             return true;

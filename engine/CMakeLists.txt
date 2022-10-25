@@ -36,6 +36,7 @@ add_executable(
   ${EVALUATION_DIR}/Heuristic/Heuristic.cu
   ${EVALUATION_DIR}/Heuristic/SplitSum.cu
   ${EVALUATION_DIR}/Heuristic/SubstituteEToX.cu
+  ${EVALUATION_DIR}/Heuristic/UniversalSubstitution.cu
   ${EVALUATION_DIR}/KnownIntegral/KnownIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/ConstantIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/PowerFunction.cu

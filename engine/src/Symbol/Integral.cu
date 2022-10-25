@@ -104,12 +104,12 @@ namespace Sym {
     }
 
     __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
-        const Util::Pair<Sym::Symbol, Sym::Symbol>* const substitutions, const Symbol& derivative,
-        Symbol& destination, Symbol& help_space) const {
+        const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const substitutions,
+        const Symbol& derivative, Symbol& destination, Symbol& help_space) const {
         for (size_t symbol_idx = 0; symbol_idx < integrand()->size(); ++symbol_idx) {
             for (size_t pattern_idx = 0; pattern_idx < substitution_count; ++pattern_idx) {
                 if (!Symbol::compare_trees(integrand()[symbol_idx],
-                                           substitutions[pattern_idx].first)) {
+                                           *substitutions[pattern_idx].first)) {
                     continue;
                 }
 
