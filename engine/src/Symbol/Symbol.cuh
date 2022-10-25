@@ -11,6 +11,7 @@
 #include "Hyperbolic.cuh"
 #include "Integral.cuh"
 #include "InverseTrigonometric.cuh"
+#include "Logarithm.cuh"
 #include "Power.cuh"
 #include "Product.cuh"
 #include "Solution.cuh"
@@ -21,7 +22,6 @@
 #include "Trigonometric.cuh"
 #include "Unknown.cuh"
 #include "Variable.cuh"
-#include "Logarithm.cuh"
 
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
@@ -421,15 +421,14 @@ namespace Sym {
         }
 
         /*
-         * @brief Porównuje dwa drzewa wyrażeń, oba muszą być uproszczone.
+         * @brief Compares expression trees
          *
-         * @param expr1 Pierwsze wyrażenie
-         * @param expr2 Drugie wyrażenie
+         * @param expr1 First expression
+         * @param expr2 Second expression
          *
-         * @return `true` jeśli drzewa wyrażeń mają tę samą strukturę, `false` w przeciwnym wypadku
+         * @return `true` if the trees are the same, `false` otherwise
          */
-        __host__ __device__ static bool compare_trees(const Symbol* const expr1,
-                                                      const Symbol* const expr2);
+        __host__ __device__ static bool compare_trees(const Symbol& expr1, const Symbol& expr2);
 
         /*
          * @brief Zwraca przyjazny użytkownikowi `std::string` reprezentujący wyrażenie.

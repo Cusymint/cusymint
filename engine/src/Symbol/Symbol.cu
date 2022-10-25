@@ -42,7 +42,7 @@ namespace Sym {
     }
 
     __host__ __device__ void Symbol::copy_single_to(Symbol* const destination) const {
-        Util::copy_mem(destination, this, sizeof(Symbol));                                
+        Util::copy_mem(destination, this, sizeof(Symbol));
     }
 
     __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {
@@ -117,13 +117,12 @@ namespace Sym {
         substitute_variable_with(substitute);
     }
 
-    __host__ __device__ bool Symbol::compare_trees(const Symbol* const expr1,
-                                                   const Symbol* const expr2) {
-        if (expr1->size() != expr2->size()) {
+    __host__ __device__ bool Symbol::compare_trees(const Symbol& expr1, const Symbol& expr2) {
+        if (expr1.size() != expr2.size()) {
             return false;
         }
 
-        return compare_symbol_sequences(expr1, expr2, expr1->size());
+        return compare_symbol_sequences(&expr1, &expr2, expr1.size());
     }
 
     std::string Symbol::to_string() const { return VIRTUAL_CALL(*this, to_string); }

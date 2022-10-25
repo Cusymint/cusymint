@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "Utils/Pair.cuh"
+
 #include "Macros.cuh"
 #include "Substitution.cuh"
 
@@ -53,6 +55,21 @@ namespace Sym {
                                                                        const Symbol& derivative,
                                                                        Symbol& destination,
                                                                        Symbol& help_space) const;
+
+    /*
+     * @brief Integrate `this` by substitution and save the result in `destination`.
+     *
+     * @param substitutions List of pairs of expressions such that each occurrence of `first` will
+     * be replaced with `second`.
+     * @param derivative Derivative of `substitution` in terms of u, e.g. if u=x^2 then
+     * `derivative`=2*(var^(1/2))
+     * @param destination Where the result is going to be saved
+     * @param help_space Additional memory for internal usage
+     */
+    __host__ __device__ void integrate_by_substitution_with_derivative(
+        const Util::Pair<Sym::Symbol, Sym::Symbol>* const substitutions,
+        const size_t substitiution_count, const Symbol& derivative, Symbol& destination,
+        Symbol& help_space) const;
 
     [[nodiscard]] __host__ __device__ const Substitution* first_substitution() const;
     [[nodiscard]] __host__ __device__ Substitution* first_substitution();

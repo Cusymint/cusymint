@@ -103,6 +103,27 @@ namespace Sym {
         product->seal();
     }
 
+    __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
+        const Util::Pair<Sym::Symbol, Sym::Symbol>* const substitutions, const Symbol& derivative,
+        Symbol& destination, Symbol& help_space) const {
+        for (size_t symbol_idx = 0; symbol_idx < integrand()->size(); ++symbol_idx) {
+            for (size_t pattern_idx = 0; pattern_idx < substitution_count; ++pattern_idx) {
+                if (!Symbol::compare_trees(integrand()[symbol_idx],
+                                           substitutions[pattern_idx].first)) {
+                    continue;
+                }
+
+                // TODO: Wir haben einen Patternmatch, jetzt müssen wir ausreichend viel Platz für
+                // die Substitution kriegen (`expand_to` usw. wird benötigt). Einfach die Expansion
+                // markieren und ins `help_space` `compress_reverse_to`ieren und ins `destination`
+                // `copy_and_reverse_symbol_sequence`ieren. Jetzt können wir die Substitution
+                // ausführen und das Resultat in `help_space` speichern. Dann können wir nach Hause
+                // gehen. Die Expansion und die Ausführung mögen in unterschiedlichen Schleifen
+                // ausgeführt werden müssen.
+            }
+        }
+    }
+
     __host__ __device__ const Substitution* Integral::first_substitution() const {
         return &Symbol::from(this)->child()->substitution;
     }
