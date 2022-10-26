@@ -3,6 +3,8 @@
 #include "Utils/DeviceArray.cuh"
 #include "Utils/Meta.cuh"
 
+#include "Symbol/MetaOperators.cuh"
+
 namespace Sym::Static {
     namespace {
         using StaticFunctionInitializer = void (*)(Symbol&);
@@ -32,13 +34,7 @@ namespace Sym::Static {
             cosine->seal();
         }
 
-        __device__ void init_e_to_x(Symbol& dst) {
-            Power* const power = dst << Power::builder();
-            power->arg1().known_constant = KnownConstant::with_value(KnownConstantValue::E);
-            power->seal_arg1();
-            power->arg2().variable = Variable::create();
-            power->seal();
-        }
+        __device__ void init_e_to_x(Symbol& dst) { Pow<E, Var>::init(dst); }
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
             init_identity,
