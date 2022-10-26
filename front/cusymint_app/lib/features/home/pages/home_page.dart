@@ -8,19 +8,32 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:share_plus/share_plus.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({
+    super.key,
+    this.isTextSelected = false,
+  });
+
+  final bool isTextSelected;
 
   @override
   Widget build(BuildContext context) {
     final clientCubit = BlocProvider.of<ClientCubit>(context);
 
-    return HomeBody(clientCubit: clientCubit);
+    return HomeBody(
+      clientCubit: clientCubit,
+      isTextSelected: isTextSelected,
+    );
   }
 }
 
 class HomeBody extends StatefulWidget {
-  const HomeBody({super.key, required this.clientCubit});
+  const HomeBody({
+    super.key,
+    required this.clientCubit,
+    required this.isTextSelected,
+  });
 
+  final bool isTextSelected;
   final ClientCubit clientCubit;
 
   @override
@@ -57,6 +70,7 @@ class _HomeBodyState extends State<HomeBody> {
                         children: [
                           CuText.med14(Strings.enterIntegral.tr()),
                           CuTextField(
+                            autofocus: widget.isTextSelected,
                             onSubmitted: (submittedText) {
                               widget.clientCubit.solveIntegral(submittedText);
                             },

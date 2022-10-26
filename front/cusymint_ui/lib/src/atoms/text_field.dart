@@ -11,6 +11,8 @@ class CuTextField extends StatelessWidget {
     this.suffixIcon,
     this.label,
     this.onSubmitted,
+    this.keyboardType,
+    this.autofocus = false,
   });
 
   final TextEditingController? controller;
@@ -20,6 +22,8 @@ class CuTextField extends StatelessWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final Widget? label;
+  final TextInputType? keyboardType;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +32,12 @@ class CuTextField extends StatelessWidget {
     return Material(
       type: MaterialType.transparency,
       child: TextField(
+        autofocus: autofocus,
         controller: controller,
         onTap: onTap,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
+        keyboardType: keyboardType,
         style: TextStyle(
           color: colors.black,
           fontSize: 18.0,

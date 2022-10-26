@@ -12,6 +12,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auto_route/auto_route.dart' as _i3;
+import 'package:cusymint_ui/cusymint_ui.dart' as _i5;
 import 'package:flutter/material.dart' as _i4;
 
 import '../home/pages/home_page.dart' as _i2;
@@ -30,9 +31,14 @@ class AppRouter extends _i3.RootStackRouter {
       );
     },
     HomeRoute.name: (routeData) {
+      final args =
+          routeData.argsAs<HomeRouteArgs>(orElse: () => const HomeRouteArgs());
       return _i3.MaterialPageX<dynamic>(
         routeData: routeData,
-        child: const _i2.HomePage(),
+        child: _i2.HomePage(
+          key: args.key,
+          isTextSelected: args.isTextSelected,
+        ),
       );
     },
   };
@@ -64,12 +70,34 @@ class WelcomeRoute extends _i3.PageRouteInfo<void> {
 
 /// generated route for
 /// [_i2.HomePage]
-class HomeRoute extends _i3.PageRouteInfo<void> {
-  const HomeRoute()
-      : super(
+class HomeRoute extends _i3.PageRouteInfo<HomeRouteArgs> {
+  HomeRoute({
+    _i5.Key? key,
+    bool isTextSelected = false,
+  }) : super(
           HomeRoute.name,
           path: '/home-page',
+          args: HomeRouteArgs(
+            key: key,
+            isTextSelected: isTextSelected,
+          ),
         );
 
   static const String name = 'HomeRoute';
+}
+
+class HomeRouteArgs {
+  const HomeRouteArgs({
+    this.key,
+    this.isTextSelected = false,
+  });
+
+  final _i5.Key? key;
+
+  final bool isTextSelected;
+
+  @override
+  String toString() {
+    return 'HomeRouteArgs{key: $key, isTextSelected: $isTextSelected}';
+  }
 }
