@@ -4,15 +4,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(cusymint LANGUAGES CXX CUDA)
 
+# Convenience variables
+
 set(SRC_DIR "src")
 set(UTILS_DIR "${SRC_DIR}/Utils")
 set(SYMBOL_DIR "${SRC_DIR}/Symbol")
 set(EVALUATION_DIR "${SRC_DIR}/Evaluation")
 set(PARSER_DIR "${SRC_DIR}/Parser")
+set(TEST_DIR "test")
 
-add_executable(
-  cusymint
-  ${SRC_DIR}/main.cu
+# Define build targets
+
+add_library(
+  libcusymint
   ${UTILS_DIR}/Cuda.cu
   ${SYMBOL_DIR}/Symbol.cu
   ${SYMBOL_DIR}/ExpanderPlaceholder.cu
@@ -46,7 +50,10 @@ add_executable(
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
 
-target_include_directories(cusymint PRIVATE ${SRC_DIR})
+add_executable(cusymint ${SRC_DIR}/main.cu)
+add_executable(testcusymint ${TEST_DIR}/test.cu)
+
+# Debug build related things
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "DEBUG")
@@ -55,20 +62,46 @@ endif()
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
 if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
-  target_compile_options(cusymint PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -g -G >)
+  target_compile_options(libcusymint PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -g -G >)
   add_compile_definitions(__DEBUG__)
 else()
-  target_compile_options(cusymint PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:>)
+  target_compile_options(libcusymint PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:>)
 endif()
 
-target_compile_features(cusymint PUBLIC cxx_std_17)
-set_target_properties(cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
-                                          CUDA_ARCHITECTURES OFF)
+# Compilation options
+
+target_compile_features(libcusymint PUBLIC cxx_std_17)
+set_target_properties(
+  libcusymint testcusymint cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
+                                                CUDA_ARCHITECTURES OFF)
+
+# Something to make this work on Mac OS
 
 if(APPLE)
-  set_property(TARGET cusymint PROPERTY BUILD_RPATH
-                                        ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+  set_target_properties(libcusymint cusymint testcusymint PROPERTY BUILD_RPATH
+                        ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
 endif()
 
-find_package(fmt)
-target_link_libraries(cusymint fmt::fmt)
+# Additional packages
+
+find_package(fmt REQUIRED)
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG release-1.12.1)
+
+set(gtest_force_shared_crt
+    ON
+    CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+# Includes and linking
+
+target_include_directories(libcusymint PUBLIC ${SRC_DIR})
+target_link_libraries(libcusymint PUBLIC fmt::fmt)
+
+target_link_libraries(cusymint PRIVATE libcusymint)
+
+target_link_libraries(testcusymint PRIVATE libcusymint gtest_main)
