@@ -57,6 +57,14 @@ namespace Sym {
         };
     };
 
+    // In C++17, doubles can't be template parameters.
+    template <int V> struct Int {
+        using AdditionalArgs = cuda::std::tuple<>;
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/) {
+            dst.init_from(NumericConstant::with_value(V));
+        };
+    };
+
     template <KnownConstantValue V> struct KnownConstantOperator {
         using AdditionalArgs = cuda::std::tuple<>;
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/) {
@@ -66,15 +74,6 @@ namespace Sym {
 
     using Pi = KnownConstantOperator<KnownConstantValue::Pi>;
     using E = KnownConstantOperator<KnownConstantValue::E>;
-
-    struct Const {
-        using AdditionalArgs = cuda::std::tuple<const char[UnknownConstant::NAME_LEN]>;
-        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
-            dst.init_from(UnknownConstant::create());
-            Util::copy_mem(dst.as<UnknownConstant>().name, cuda::std::get<0>(args),
-                           UnknownConstant::NAME_LEN);
-        };
-    };
 
     template <class Inner> struct SolutionOfIntegral {
         using IAdditionalArgs = typename Inner::AdditionalArgs;
@@ -138,8 +137,14 @@ namespace Sym {
     template <class L, class R> using Add = TwoArgOperator<Addition, L, R>;
     template <class I> using Neg = OneArgOperator<Negation, I>;
 
+    template <class Head, class... Tail> struct Sum : Add<Head, Sum<Tail...>> {};
+    template <class T> struct Sum<T> : T {};
+
     template <class L, class R> using Mul = TwoArgOperator<Product, L, R>;
     template <class I> using Inv = OneArgOperator<Reciprocal, I>;
+
+    template <class Head, class... Tail> struct Prod : Mul<Head, Sum<Tail...>> {};
+    template <class T> struct Prod<T> : T {};
 
     template <class L, class R> using Pow = TwoArgOperator<Power, L, R>;
 
