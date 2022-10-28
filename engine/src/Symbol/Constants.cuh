@@ -10,9 +10,11 @@ namespace Sym {
 
     DECLARE_SYMBOL(NumericConstant, true)
     double value;
+    
     __host__ __device__ NumericConstant static with_value(double value);
     DEFINE_TO_STRING(std::to_string(value));
     [[nodiscard]] std::string to_tex() const;
+    size_t additional_required_size;
     END_DECLARE_SYMBOL(NumericConstant)
 
     DECLARE_SYMBOL(KnownConstant, true)
@@ -23,6 +25,7 @@ namespace Sym {
     END_DECLARE_SYMBOL(KnownConstant)
 
     DECLARE_SYMBOL(UnknownConstant, true)
+    size_t additional_required_size;
     static constexpr size_t NAME_LEN = 8;
     char name[NAME_LEN];
     static UnknownConstant create(const char* const name);

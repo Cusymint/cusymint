@@ -3,6 +3,8 @@
 #include "Symbol.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/ExpanderPlaceholder.cuh"
+#include "Symbol/Logarithm.cuh"
+#include "Symbol/Product.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include <fmt/core.h>
 
@@ -10,7 +12,8 @@ namespace {
     __host__ __device__ inline bool is_symbol_inversed_logarithm_of(const Sym::Symbol& symbol, const Sym::Symbol& expression) {
         return symbol.is(Sym::Type::Reciprocal) 
             && symbol.as<Sym::Reciprocal>().arg().is(Sym::Type::Logarithm)
-            && symbol.as<Sym::Reciprocal>().arg().as<Sym::Logarithm>().arg() == expression;
+            && Sym::Symbol::compare_trees(&symbol.as<Sym::Reciprocal>().arg().as<Sym::Logarithm>().arg(),&expression);
+            //&& symbol.as<Sym::Reciprocal>().arg().as<Sym::Logarithm>().arg() == expression;
     }
 }
 
@@ -89,11 +92,17 @@ namespace Sym {
                 iterator.advance();
             }
             if (base == help_space) {
-                arg1().init_from(ExpanderPlaceholder::with_size(base->size()));
+                // arg1().init_from(ExpanderPlaceholder::with_size(base->size()));
+                // Symbol *const compressed_reversed = base + base->size();
+                // const auto compressed_size = compress_reverse_to(compressed_reversed);
+                // Symbol::copy_and_reverse_symbol_sequence(symbol(), compressed_reversed, compressed_size);
+                // base->copy_to(Symbol::from(this)->at(1));
+                Symbol * symb = symbol();
                 Symbol *const compressed_reversed = base + base->size();
-                const auto compressed_size = compress_reverse_to(compressed_reversed);
-                Symbol::copy_and_reverse_symbol_sequence(symbol(), compressed_reversed, compressed_size);
+                const auto compressed_size = arg2().compress_reverse_to(compressed_reversed);
                 base->copy_to(&arg1());
+                seal_arg1();
+                Symbol::copy_and_reverse_symbol_sequence(&arg2(), compressed_reversed, compressed_size);
             }
             // if power base was changed, there may be remaining ones to simplify
             if (base_changed) {

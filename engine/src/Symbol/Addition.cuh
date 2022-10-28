@@ -7,6 +7,9 @@
 
 namespace Sym {
     DECLARE_SYMBOL(Addition, false)
+
+    size_t additional_required_size;
+
     TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(Addition)
     std::string to_string() const;
     std::string to_tex() const;

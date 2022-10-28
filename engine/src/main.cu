@@ -24,7 +24,8 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(parse_function("x^2+x^4+e^(ln(x)*5)+2^(x/ln(2))*e^e^x"));
+    //const auto integral = Sym::integral(parse_function("x^2+x^4+e^(ln(x)*5)+2^(x/ln(2))*e^e^x"));
+    const auto integral = Sym::integral(parse_function("2^sin(e)+x^2+x^4+e^(ln(x)*5)+e^2*e^e^2"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 

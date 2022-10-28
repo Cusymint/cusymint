@@ -154,10 +154,12 @@ namespace Sym {
         }
 
         template <class T> [[nodiscard]] __host__ __device__ inline const T* as_ptr() const {
+
             return reinterpret_cast<const T*>(this);
         }
 
         template <class T> [[nodiscard]] __host__ __device__ inline T* as_ptr() {
+            
             return const_cast<T*>(const_cast<const Symbol*>(this)->as_ptr<T>());
         }
 

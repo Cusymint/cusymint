@@ -91,13 +91,33 @@ namespace Sym {
         return VIRTUAL_CALL(*this, compress_reverse_to, destination);
     }
 
+    __host__ __device__ void print_sequence_for_debug(Symbol* symbol) {
+        printf("SYMBOLS:\n");
+        if (symbol->size()==0)
+        {
+            printf("\t<no symbols>\n");
+            return;
+        }
+        for (int i=0;i<symbol->size();++i) {
+            printf("\t%s\n",type_name(symbol[i].type()));
+        }
+    }
+
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
+        //printf("1: ");
+        //print_sequence_for_debug(this);
         simplify_in_place(help_space);
+        
+        //printf("2: ");print_sequence_for_debug(this);
         const size_t new_size = compress_reverse_to(help_space);
         copy_and_reverse_symbol_sequence(this, help_space, new_size);
+        //printf("3: ");
+        //print_sequence_for_debug(this);
     }
 
     __host__ __device__ void Symbol::simplify_in_place(Symbol* const help_space) {
+        //printf("Simplifying ");
+        //print_sequence_for_debug(this);
         VIRTUAL_CALL(*this, simplify_in_place, help_space);
     }
 

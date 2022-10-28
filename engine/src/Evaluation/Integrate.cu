@@ -95,6 +95,7 @@ namespace Sym {
 
         for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
              expr_idx += thread_count) {
+            printf("Simplifying expression no. %lu\n", expr_idx);
             expressions[expr_idx].simplify(help_spaces.at(expr_idx));
         }
     }
@@ -506,8 +507,13 @@ namespace Sym {
         Util::DeviceArray<uint32_t> scan_array_2(SCAN_ARRAY_SIZE, true);
 
         for (size_t i = 0;; ++i) {
+
+            printf("BEFORE SIMPLIFY:\n\n%s\n", integrals.to_string().c_str());
+
             simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
             cudaDeviceSynchronize();
+
+            printf("SIMPLIFY RESULTS:\n\n%s\n", integrals.to_string().c_str());
 
             check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_1);
             cudaDeviceSynchronize();
