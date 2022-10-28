@@ -19,7 +19,7 @@ namespace Sym {
         __host__ __device__ static void init(Symbol& dst,
                                              const AdditionalArgs& additional_args = {}) {
             Op* const operator_ = dst << Op::builder();
-            Inner::init(dst, additional_args);
+            Inner::init(operator_->arg(), additional_args);
             operator_->seal();
         };
     };
