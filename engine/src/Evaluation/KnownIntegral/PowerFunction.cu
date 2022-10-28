@@ -1,5 +1,7 @@
 #include "PowerFunction.cuh"
 
+#include "Symbol/MetaOperators.cuh"
+
 namespace Sym::KnownIntegral {
     __device__ size_t is_power_function(const Integral& integral) {
         const Symbol* const integrand = integral.integrand();
@@ -17,34 +19,8 @@ namespace Sym::KnownIntegral {
 
     __device__ void integrate_power_function(const Integral& integral, Symbol& destination,
                                              Symbol& /*help_space*/) {
-        const Symbol* const integrand = integral.integrand();
-
-        Symbol& solution_expr = prepare_solution(integral, destination);
         const Symbol& exponent = integral.integrand()->power.arg2();
-
-        // `1/(c+1) * x^(c+1)`, `c` can be a whole expression
-        Product* const product = solution_expr << Product::builder();
-
-        Reciprocal* const reciprocal = &product->arg1() << Reciprocal::builder();
-        Addition* const multiplier_addition = &reciprocal->arg() << Addition::builder();
-        exponent.copy_to(&multiplier_addition->arg1());
-        multiplier_addition->seal_arg1();
-        multiplier_addition->arg2().numeric_constant = NumericConstant::with_value(1.0);
-        multiplier_addition->seal();
-        reciprocal->seal();
-        product->seal_arg1();
-
-        Power* const power = &product->arg2() << Power::builder();
-        power->arg1().variable = Variable::create();
-        power->seal_arg1();
-        Addition* const exponent_addition = &power->arg2() << Addition::builder();
-        exponent.copy_to(&exponent_addition->arg1());
-        exponent_addition->seal_arg1();
-        exponent_addition->arg2().numeric_constant = NumericConstant::with_value(1.0);
-        exponent_addition->seal();
-        power->seal();
-        product->seal();
-
-        destination.solution.seal();
+        SolutionOfIntegral<Mul<Inv<Add<Copy, Num>>, Pow<Var, Add<Copy, Num>>>>::init(
+            destination, {integral, exponent, 1.0, exponent, 1.0});
     }
 }
