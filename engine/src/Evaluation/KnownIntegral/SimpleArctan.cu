@@ -1,5 +1,7 @@
 #include "SimpleArctan.cuh"
 
+#include "Symbol/MetaOperators.cuh"
+
 namespace Sym::KnownIntegral {
     __device__ size_t is_simple_arctan(const Integral& integral) {
         const Symbol* const integrand = integral.integrand();
@@ -23,13 +25,6 @@ namespace Sym::KnownIntegral {
 
     __device__ void integrate_simple_arctan(const Integral& integral, Symbol& destination,
                                             Symbol& /*help_space*/) {
-        const Symbol* const integrand = integral.integrand();
-        Symbol& solution_expr = prepare_solution(integral, destination);
-
-        Arctangent* const arctangent = solution_expr << Arctangent::builder();
-        arctangent->arg().variable = Variable::create();
-        arctangent->seal();
-
-        destination.solution.seal();
+        SolutionOfIntegral<Arctan<Var>>::init(destination, {integral});
     }
 }

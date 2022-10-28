@@ -45,7 +45,7 @@ namespace Sym {
 
     struct Var {
         using AdditionalArgs = cuda::std::tuple<>;
-        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/) {
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
             dst.init_from(Variable::create());
         };
     };
@@ -60,14 +60,14 @@ namespace Sym {
     // In C++17, doubles can't be template parameters.
     template <int V> struct Int {
         using AdditionalArgs = cuda::std::tuple<>;
-        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/) {
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
             dst.init_from(NumericConstant::with_value(V));
         };
     };
 
     template <KnownConstantValue V> struct KnownConstantOperator {
         using AdditionalArgs = cuda::std::tuple<>;
-        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/) {
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
             dst.init_from(KnownConstant::with_value(V));
         };
     };

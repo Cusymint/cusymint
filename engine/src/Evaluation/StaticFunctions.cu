@@ -20,20 +20,9 @@ namespace Sym::Static {
             E_TO_X,
         };
 
-        __device__ void init_identity(Symbol& dst) { dst.init_from(Variable::create()); }
-
-        __device__ void init_sin_x(Symbol& dst) {
-            Sine* const sine = dst << Sine::builder();
-            sine->arg().variable = Variable::create();
-            sine->seal();
-        }
-
-        __device__ void init_cos_x(Symbol& dst) {
-            Cosine* const cosine = dst << Cosine::builder();
-            cosine->arg().variable = Variable::create();
-            cosine->seal();
-        }
-
+        __device__ void init_identity(Symbol& dst) { Var::init(dst); }
+        __device__ void init_sin_x(Symbol& dst) { Sin<Var>::init(dst); }
+        __device__ void init_cos_x(Symbol& dst) { Cos<Var>::init(dst); }
         __device__ void init_e_to_x(Symbol& dst) { Pow<E, Var>::init(dst); }
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
@@ -58,11 +47,8 @@ namespace Sym::Static {
     };
 
     __device__ const Symbol& identity() { return *IDENTITY; }
-
     __device__ const Symbol& sin_x() { return *SIN_X; }
-
     __device__ const Symbol& cos_x() { return *COS_X; }
-
     __device__ const Symbol& e_to_x() { return *E_TO_X; }
 
     void init_functions() {
