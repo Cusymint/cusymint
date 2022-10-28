@@ -5,8 +5,7 @@ COPY . ./engine-src
 
 RUN apt-get update && apt-get install -y \
     cmake \
-    libfmt-dev \
-    libgtest-dev
+    libfmt-dev
 
 RUN cmake -S engine-src -B build -DCMAKE_BUILD_TYPE=Release
-RUN cmake --build build -j13
+RUN cmake --build build -j$((1 + $(nproc)))
