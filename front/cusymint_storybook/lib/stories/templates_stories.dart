@@ -13,5 +13,24 @@ class TemplatesStories extends StorybookPart {
             onTextFieldTap: () {},
           ),
         ),
+        Story(
+          name: 'Templates/SettingsPageTemplate',
+          builder: (context) {
+            final drawer = CuDrawer(
+              onHomePressed: () {},
+              onSettingsPressed: () {},
+              onAboutPressed: () {},
+            );
+
+            return SettingsPageTemplate(
+              drawer: drawer,
+              chosenLanguage: 'English',
+              ipAddress: 'localhost',
+              onIpAddressTap: () {},
+              onLanguageTap: () {},
+              onLicensesTap: () {},
+            );
+          },
+        ),
       ];
 }

@@ -12,5 +12,8 @@
    "settings": "Settings",
    "about": "About",
    "interpretedAs": "Interpreted as",
-   "calculating": "Calculating result"
+   "calculating": "Calculating result",
+   "language": "Language",
+   "ipAddress": "IP Address",
+   "licenses": "Licenses"
 }

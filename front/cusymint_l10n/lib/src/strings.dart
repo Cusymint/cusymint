@@ -15,4 +15,7 @@ class Strings {
   static const String about = 'about';
   static const String interpretedAs = 'interpretedAs';
   static const String calculating = 'calculating';
+  static const String language = 'language';
+  static const String ipAddress = 'ipAddress';
+  static const String licenses = 'licenses';
 }
