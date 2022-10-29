@@ -11,7 +11,6 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Logarithm)
 
     DEFINE_SIMPLIFY_IN_PLACE(Logarithm) { 
-        arg().simplify_in_place(help_space); 
         if (arg().is(Type::NumericConstant) && arg().numeric_constant.value == 1) {
             // ln(1) = 0
             *(this->as<NumericConstant>()) = NumericConstant::with_value(0);

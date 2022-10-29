@@ -33,7 +33,7 @@ namespace Sym {
                symbol->substitution.substitution_idx == substitution_idx;
     }
 
-    DEFINE_SIMPLIFY_IN_PLACE(Substitution) { expression()->simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Substitution)
 
     DEFINE_IS_FUNCTION_OF(Substitution) {
         return expression()->is_function_of(expressions, expression_count);

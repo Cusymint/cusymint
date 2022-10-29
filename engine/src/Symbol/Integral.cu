@@ -31,7 +31,7 @@ namespace Sym {
                symbol->integral.integrand_offset == integrand_offset;
     }
 
-    DEFINE_SIMPLIFY_IN_PLACE(Integral) { integrand()->simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Integral)
 
     DEFINE_IS_FUNCTION_OF(Integral) {
         return integrand()->is_function_of(expressions, expression_count);

@@ -42,7 +42,7 @@ namespace Sym {
     }
 
     __host__ __device__ void Symbol::copy_single_to(Symbol* const destination) const {
-        Util::copy_mem(destination, this, sizeof(Symbol));                                
+        Util::copy_mem(destination, this, sizeof(Symbol));
     }
 
     __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {
@@ -92,7 +92,9 @@ namespace Sym {
     }
 
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
-        simplify_in_place(help_space);
+        for (ssize_t i = size() - 1; i >= 0; --i) {
+            at(i)->simplify_in_place(help_space);
+        }
         const size_t new_size = compress_reverse_to(help_space);
         copy_and_reverse_symbol_sequence(this, help_space, new_size);
     }

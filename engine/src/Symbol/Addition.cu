@@ -12,9 +12,6 @@ namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Addition)
 
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
-        arg1().simplify_in_place(help_space);
-        arg2().simplify_in_place(help_space);
-
         simplify_structure(help_space);
         simplify_pairs();
         eliminate_zeros();

@@ -31,7 +31,7 @@ namespace Sym {
                symbol->solution.expression_offset == expression_offset;
     }
 
-    DEFINE_SIMPLIFY_IN_PLACE(Solution) { expression()->simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Solution)
 
     DEFINE_IS_FUNCTION_OF(Solution) {
         return expression()->is_function_of(expressions, expression_count);
