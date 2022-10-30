@@ -350,7 +350,7 @@ namespace Sym {
          *
          * @return New size of the symbol tree
          */
-        __host__ __device__ size_t compress_reverse_to(Symbol* const destination) const;
+        __host__ __device__ size_t compress_reverse_to(Symbol* const destination) /*const*/;
 
         /*
          * @brief Zwraca funkcję podcałkową jeśli `this` jest całką. Undefined behavior w przeciwnym
@@ -365,6 +365,8 @@ namespace Sym {
             return integral.integrand();
         }
 
+        __host__ __device__ void mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space);
+
         /*
          * @brief Wykonuje uproszcznie wyrażenia
          * Wykorzystuje założenie, że wyrażenie uproszczone jest krótsze od pierwotnego.
@@ -378,8 +380,11 @@ namespace Sym {
          * Wykorzystuje założenie, że wyrażenie uproszczone jest krótsze od pierwotnego.
          *
          * @param help_space Pamięć pomocnicza
+         *
+         * @return `true` if expression was simplified, `false` if simplified result
+         * would take more space than `size()`
          */
-        __host__ __device__ void simplify_in_place(Symbol* const help_space);
+        __host__ __device__ bool simplify_in_place(Symbol* const help_space);
 
         /*
          * @brief Substitutes all occurences of variable with `symbol`

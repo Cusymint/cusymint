@@ -3,6 +3,8 @@
 
 #include "Symbol.cuh"
 
+#include "Symbol/Addition.cuh"
+#include "Symbol/TreeIterator.cuh"
 #include "Utils/Meta.cuh"
 
 namespace Sym {
@@ -158,6 +160,29 @@ namespace Sym {
     template <class I> using Arccot = OneArgOperator<Arccotangent, I>;
 
     template <class I> using Ln = OneArgOperator<Logarithm, I>;
+
+    template <class OneArgOp, class TwoArgOp> struct LargeOperatorWithFunction {
+        template <class SymbolTree>
+        __host__ __device__ static void init(Symbol& dst, SymbolTree& tree, size_t count) {
+            Symbol* terms = &dst + count - 1;
+            TreeIterator<SymbolTree, SymbolTree::TYPE> iterator(&tree);
+            while (iterator.is_valid()) {
+                OneArgOp* operator_ = terms << OneArgOp::builder();
+                iterator.current()->copy_to(terms + 1);
+                operator_->seal();
+                terms += terms->size();
+                iterator.advance();
+            }
+            for (ssize_t i = count - 2; i >= 0; --i) {
+                TwoArgOp* const operator_ = &dst + i << TwoArgOp::builder();
+                operator_->seal_arg1();
+                operator_->seal();
+            }
+        }
+    };
+
+    template <class Op> using SumWithFunction = LargeOperatorWithFunction<Op, Addition>;
+    template <class Op> using ProductWithFunction = LargeOperatorWithFunction<Op, Product>;
 }
 
 #endif

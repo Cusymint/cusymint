@@ -3,6 +3,7 @@
 #include "Symbol.cuh"
 #include "TreeIterator.cuh"
 #include "Utils/Cuda.cuh"
+#include "MetaOperators.cuh"
 
 #include <fmt/core.h>
 
@@ -15,6 +16,7 @@ namespace Sym {
         simplify_structure(help_space);
         simplify_pairs();
         eliminate_zeros();
+        return true;
     }
 
     DEFINE_IS_FUNCTION_OF(Addition) {
@@ -111,16 +113,27 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Negation)
 
     DEFINE_SIMPLIFY_IN_PLACE(Negation) {
-        arg().simplify_in_place(help_space);
-
         if (arg().is(Type::Negation)) {
             arg().negation.arg().copy_to(symbol());
-            return;
+            return true;
         }
 
         if (arg().is(Type::NumericConstant)) {
             *as<NumericConstant>() = NumericConstant::with_value(-arg().numeric_constant.value);
+            return true;
         }
+
+        if (arg().is(Type::Addition)) {
+            const size_t term_count = arg().as<Addition>().tree_count();
+            if (size < arg().size() + term_count) {
+                additional_required_size = term_count - 1;
+                return false;
+            }
+            SumWithFunction<Negation>::init(*help_space, arg().as<Addition>(), term_count);
+            help_space->copy_to(symbol());
+            return false; // created addition needs to be simplified again, but without additional size
+        }
+        return true;
     }
 
     std::string Addition::to_string() const {

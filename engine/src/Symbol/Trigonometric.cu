@@ -14,6 +14,7 @@ namespace Sym {
             arg().as<Arcsine>().arg().copy_to(help_space);
             help_space->copy_to(symbol());
         }
+        return true;
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Cosine)
@@ -26,6 +27,7 @@ namespace Sym {
             arg().as<Arccosine>().arg().copy_to(help_space);
             help_space->copy_to(symbol());
         }
+        return true;
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Tangent)
@@ -38,6 +40,7 @@ namespace Sym {
             arg().as<Arctangent>().arg().copy_to(help_space);
             help_space->copy_to(symbol());
         }
+        return true;
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Cotangent)
@@ -50,6 +53,7 @@ namespace Sym {
             arg().as<Arccotangent>().arg().copy_to(help_space);
             help_space->copy_to(symbol());
         }
+        return true;
     }
 
     std::string Sine::to_string() const { return fmt::format("sin({})", arg().to_string()); }

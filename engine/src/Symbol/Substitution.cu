@@ -11,20 +11,24 @@ namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Substitution)
 
     DEFINE_COMPRESS_REVERSE_TO(Substitution) {
-        size_t new_expression_size = expression()->compress_reverse_to(destination);
-        symbol()->copy_single_to(destination + new_expression_size);
-        destination[new_expression_size].substitution.size = new_expression_size + 1;
-        return new_expression_size + 1;
+        // size_t new_expression_size = expression()->compress_reverse_to(destination);
+        // symbol()->copy_single_to(destination + new_expression_size);
+        // destination[new_expression_size].substitution.size = new_expression_size + 1;
+        // return new_expression_size + 1;
+        const size_t new_expression_size = (destination - 1)->size();
+        symbol()->copy_single_to(destination);
+        destination->substitution.size = new_expression_size + 1;
+        return 1;
     }
 
     __host__ __device__ size_t
-    Substitution::compress_reverse_substitutions_to(Symbol* const destination) const {
+    Substitution::compress_reverse_substitutions_to(Symbol* const destination) /*const*/ {
         size_t offset = 0;
         if (!is_last_substitution()) {
             offset = next_substitution()->compress_reverse_substitutions_to(destination);
         }
 
-        const size_t new_substitution_size = compress_reverse_to(destination + offset);
+        const size_t new_substitution_size = symbol()->compress_reverse_to(destination + offset);
         return new_substitution_size + offset;
     }
 

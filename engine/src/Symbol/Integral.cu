@@ -2,27 +2,46 @@
 
 #include "Substitution.cuh"
 #include "Symbol.cuh"
+#include <cstddef>
 #include <fmt/core.h>
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Integral)
 
     DEFINE_COMPRESS_REVERSE_TO(Integral) {
-        size_t new_integrand_size = integrand()->compress_reverse_to(destination);
+        // size_t new_integrand_size = integrand()->compress_reverse_to(destination);
+        // size_t new_substitutions_size = 0;
+
+        // if (substitution_count > 0) {
+        //     new_substitutions_size = first_substitution()->compress_reverse_substitutions_to(
+        //         destination + new_integrand_size);
+        // }
+
+        // size_t integral_offset = new_integrand_size + new_substitutions_size;
+
+        // symbol()->copy_single_to(destination + integral_offset);
+        // destination[integral_offset].integral.size = integral_offset + 1;
+        // destination[integral_offset].integral.integrand_offset = new_substitutions_size + 1;
+
+        // return destination[integral_offset].integral.size;
         size_t new_substitutions_size = 0;
-
-        if (substitution_count > 0) {
-            new_substitutions_size = first_substitution()->compress_reverse_substitutions_to(
-                destination + new_integrand_size);
+        Symbol* substitution = destination - 1;
+        // we assume that substitutions do not need additional size (this is naive imo)
+        for (size_t index = substitution_count; index > 0; --index) {
+            new_substitutions_size += substitution->size();
+            substitution -= substitution->size();
         }
+        // now substitution points to an integral
+        substitution->size() += substitution->unknown.additional_required_size;
+        substitution->unknown.additional_required_size = 0;
 
-        size_t integral_offset = new_integrand_size + new_substitutions_size;
+        size_t const new_integrand_size = substitution->size();
 
-        symbol()->copy_single_to(destination + integral_offset);
-        destination[integral_offset].integral.size = integral_offset + 1;
-        destination[integral_offset].integral.integrand_offset = new_substitutions_size + 1;
+        symbol()->copy_single_to(destination);
+        destination->integral.size = new_integrand_size + new_substitutions_size + 1;
+        destination->integral.integrand_offset = new_substitutions_size + 1;
 
-        return destination[integral_offset].integral.size;
+        return 1;
     }
 
     DEFINE_COMPARE(Integral) {
