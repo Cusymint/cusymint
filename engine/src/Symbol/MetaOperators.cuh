@@ -163,7 +163,7 @@ namespace Sym {
 
     template <class OneArgOp, class TwoArgOp> struct LargeOperatorWithFunction {
         template <class SymbolTree>
-        __host__ __device__ static void init(Symbol& dst, SymbolTree& tree, size_t count) {
+        __host__ __device__ static void init_from_tree(Symbol& dst, SymbolTree& tree, size_t count) {
             Symbol* terms = &dst + count - 1;
             TreeIterator<SymbolTree, SymbolTree::TYPE> iterator(&tree);
             while (iterator.is_valid()) {

@@ -2,8 +2,7 @@
 
 #include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
-#include <cstddef>
-#include <sys/types.h>
+#include "Utils/StaticStack.cuh"
 
 namespace Sym {
     __host__ __device__ void Symbol::copy_symbol_sequence(Symbol* const destination,
@@ -90,251 +89,51 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ void print_for_debug(Symbol* array, size_t n, const char* msg) {
-        printf("%s\n", msg);
-        for (size_t i = 0; i < n; ++i) {
-            printf("\t%s%s\t%2lu+%lu\n", array[i].unknown.to_be_copied ? "+" : "-",
-                   type_name(array[i].type()), array[i].size(),
-                   array[i].unknown.additional_required_size);
-        }
-    }
-
     __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) /*const*/ {
         mark_to_be_copied_and_propagate_additional_size(destination);
 
-        //print_for_debug(this, size(), "After mark():");
-
         Symbol* compressed_reversed_destination = destination;
         for (ssize_t i = size() - 1; i >= 0; --i) {
-            if (at(i)->unknown.to_be_copied) {
-                at(i)->unknown.to_be_copied = false;
+            if (at(i)->to_be_copied()) {
+                at(i)->to_be_copied() = false;
 
                 const size_t new_size =
-                    // at(i)->compress_reverse_to(compressed_reversed_destination);
                     VIRTUAL_CALL(*at(i), compress_reverse_to, compressed_reversed_destination);
                 compressed_reversed_destination += new_size;
             }
         }
 
-        // print_for_debug(destination, compressed_reversed_destination-destination, "After
-        // compress():");
         return compressed_reversed_destination - destination;
-        // return VIRTUAL_CALL(*this, compress_reverse_to, destination);
     }
 
     __host__ __device__ void
     Symbol::mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space) {
-        Symbol** stack = reinterpret_cast<Symbol**>(help_space);
-        size_t stack_index = 0;
+        Util::StaticStack<Symbol*> stack(help_space);
 
-        stack[stack_index++] = this;
+        stack.push(this);
 
-        while (stack_index > 0) {
-            Symbol* sym = stack[--stack_index];
+        while (!stack.empty()) {
+            Symbol* sym = stack.pop();
 
-            sym->unknown.to_be_copied = true;
-
-            switch (sym->unknown.type) {
-            case Type::Symbol:
-                Util::crash("Trying to access children on a pure Symbol");
-                break;
-            case Type::Variable:
-                break;
-            case Type::NumericConstant:
-                break;
-            case Type::KnownConstant:
-                break;
-            case Type::UnknownConstant:
-                break;
-            case Type::ExpanderPlaceholder:
-                break;
-            case Type::SubexpressionCandidate:
-                stack[stack_index++] = &sym->subexpression_candidate.arg();
-                sym->subexpression_candidate.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::SubexpressionVacancy:
-                break;
-            case Type::Integral:
-                stack[stack_index++] = sym->integral.integrand();
-                if (sym->integral.substitution_count > 0)
-                    stack[stack_index++] = sym->integral.first_substitution()->symbol();
-                sym->integral.integrand()->unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Solution:
-                stack[stack_index++] = sym->solution.expression();
-                if (sym->solution.substitution_count > 0)
-                    stack[stack_index++] = sym->solution.first_substitution()->symbol();
-                sym->solution.expression()->unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Substitution:
-                stack[stack_index++] = sym->substitution.expression();
-                if (!sym->substitution.is_last_substitution())
-                    stack[stack_index++] = sym->substitution.next_substitution()->symbol();
-                sym->substitution.expression()->unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Addition:
-                stack[stack_index++] = &sym->addition.arg1();
-                stack[stack_index++] = &sym->addition.arg2();
-                sym->addition.arg2().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Negation:
-                stack[stack_index++] = &sym->negation.arg();
-                sym->negation.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Product:
-                stack[stack_index++] = &sym->product.arg1();
-                stack[stack_index++] = &sym->product.arg2();
-                sym->product.arg2().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Reciprocal:
-                stack[stack_index++] = &sym->reciprocal.arg();
-                sym->reciprocal.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Power:
-                stack[stack_index++] = &sym->power.arg1();
-                stack[stack_index++] = &sym->power.arg2();
-                sym->power.arg2().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Sine:
-                stack[stack_index++] = &sym->sine.arg();
-                sym->sine.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Cosine:
-                stack[stack_index++] = &sym->cosine.arg();
-                sym->cosine.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Tangent:
-                stack[stack_index++] = &sym->tangent.arg();
-                sym->tangent.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Cotangent:
-                stack[stack_index++] = &sym->cotangent.arg();
-                sym->cotangent.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Arcsine:
-                stack[stack_index++] = &sym->arcsine.arg();
-                sym->arcsine.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Arccosine:
-                stack[stack_index++] = &sym->arccosine.arg();
-                sym->arccosine.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Arctangent:
-                stack[stack_index++] = &sym->arctangent.arg();
-                sym->arctangent.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Arccotangent:
-                stack[stack_index++] = &sym->arccotangent.arg();
-                sym->arccotangent.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Logarithm:
-                stack[stack_index++] = &sym->logarithm.arg();
-                sym->logarithm.arg().unknown.additional_required_size +=
-                    sym->unknown.additional_required_size;
-
-                // sym->unknown.additional_required_size = 0;
-                break;
-            case Type::Unknown:
-                break;
-            default:
-                Util::crash("Trying to access children of invalid type");
-                break;
-            }
+            sym->to_be_copied() = true;
+            VIRTUAL_CALL(*sym, put_children_on_stack_and_propagate_additional_size, stack);
         }
     }
 
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
         bool success = true;
 
-        //int _debug_i = 0;
-
         do {
             success = true;
-            //print_for_debug(this, size(), "Before simplify_in_place():");
 
             for (ssize_t i = size() - 1; i >= 0; --i) {
                 success = at(i)->simplify_in_place(help_space) && success;
             }
 
-            //print_for_debug(this, size(), "After simplify_in_place():");
-
-            // mark_to_be_copied_and_propagate_additional_size(help_space);
-
-            // //print_for_debug(this, size(), "After simplify_in_place():");
-
-            // Symbol* compressed_reversed_destination = help_space;
-            // for (ssize_t i = size() - 1; i >= 0; --i) {
-            //     if (at(i)->unknown.to_be_copied) {
-            //         at(i)->unknown.to_be_copied = false;
-
-            //         const size_t new_size =
-            //             at(i)->compress_reverse_to(compressed_reversed_destination);
-            //         compressed_reversed_destination += new_size;
-            //     }
-            // }
             const size_t new_size = compress_reverse_to(help_space);
-
-            // print_for_debug(help_space, new_size, "After compress_reverse_to():");
-            // printf("Symbols copied: %ld\n", new_size);
 
             copy_and_reverse_symbol_sequence(this, help_space, new_size);
 
-            //print_for_debug(this, size(), "After iteration():");
-
-            // if (_debug_i++ > 2) {
-            //     Util::crash("Loop terminated.");
-            // }
         } while (!success);
     }
 

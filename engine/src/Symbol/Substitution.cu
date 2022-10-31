@@ -6,15 +6,12 @@
 
 #include "Constants.cuh"
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Substitution)
 
     DEFINE_COMPRESS_REVERSE_TO(Substitution) {
-        // size_t new_expression_size = expression()->compress_reverse_to(destination);
-        // symbol()->copy_single_to(destination + new_expression_size);
-        // destination[new_expression_size].substitution.size = new_expression_size + 1;
-        // return new_expression_size + 1;
         const size_t new_expression_size = (destination - 1)->size();
         symbol()->copy_single_to(destination);
         destination->substitution.size = new_expression_size + 1;
@@ -22,7 +19,7 @@ namespace Sym {
     }
 
     __host__ __device__ size_t
-    Substitution::compress_reverse_substitutions_to(Symbol* const destination) /*const*/ {
+    Substitution::compress_reverse_substitutions_to(Symbol* const destination) {
         size_t offset = 0;
         if (!is_last_substitution()) {
             offset = next_substitution()->compress_reverse_substitutions_to(destination);
@@ -42,6 +39,11 @@ namespace Sym {
     DEFINE_IS_FUNCTION_OF(Substitution) {
         return expression()->is_function_of(expressions, expression_count);
     } // NOLINT
+
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Substitution) {
+        stack.push(expression());
+        expression()->additional_required_size() += additional_required_size;
+    }
 
     const char* const Substitution::SUBSTITUTION_NAMES[] = {"u", "v", "w", "t"};
     const size_t Substitution::SUBSTITUTION_NAME_COUNT =

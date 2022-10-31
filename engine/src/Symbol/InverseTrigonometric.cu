@@ -1,6 +1,7 @@
 #include "InverseTrigonometric.cuh"
 
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 #include <fmt/core.h>
 
 namespace Sym {

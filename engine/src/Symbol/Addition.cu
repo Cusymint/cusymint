@@ -129,7 +129,7 @@ namespace Sym {
                 additional_required_size = term_count - 1;
                 return false;
             }
-            SumWithFunction<Negation>::init(*help_space, arg().as<Addition>(), term_count);
+            SumWithFunction<Negation>::init_from_tree(*help_space, arg().as<Addition>(), term_count);
             help_space->copy_to(symbol());
             return false; // created addition needs to be simplified again, but without additional size
         }

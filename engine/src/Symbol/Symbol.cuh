@@ -137,6 +137,12 @@ namespace Sym {
         [[nodiscard]] __host__ __device__ inline size_t& size() { return unknown.size; }
         [[nodiscard]] __host__ __device__ inline size_t size() const { return unknown.size; }
 
+        [[nodiscard]] __host__ __device__ inline size_t& additional_required_size() { return unknown.additional_required_size; }
+        [[nodiscard]] __host__ __device__ inline size_t additional_required_size() const { return unknown.additional_required_size; }
+
+        [[nodiscard]] __host__ __device__ inline bool& to_be_copied() { return unknown.to_be_copied; }
+        [[nodiscard]] __host__ __device__ inline bool to_be_copied() const { return unknown.to_be_copied; }
+
         template <class T> __host__ __device__ inline T& init_from(const T& other) {
             // Not using `as<>` to prevent errors, as in this case
             // `this` can be of a type different than T
@@ -382,7 +388,7 @@ namespace Sym {
          * @param help_space Pamięć pomocnicza
          *
          * @return `true` if expression was simplified, `false` if simplified result
-         * would take more space than `size()`
+         * would take more space than `size()` or expression needs to be simplified again.
          */
         __host__ __device__ bool simplify_in_place(Symbol* const help_space);
 

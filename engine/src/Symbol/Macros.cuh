@@ -9,6 +9,7 @@
 
 #include "SymbolType.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/StaticStack.cuh"
 
 namespace Sym {
     static constexpr size_t BUILDER_SIZE = std::numeric_limits<size_t>::max();
@@ -27,6 +28,16 @@ namespace Sym {
 #define IS_FUNCTION_OF_HEADER(_is_function_of)                                       \
     __host__ __device__ bool _is_function_of(const Symbol* const* const expressions, \
                                              const size_t expression_count) const
+
+#define PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(_fname) \
+    __host__ __device__ void _fname(Util::StaticStack<Symbol*>& stack)
+
+#define PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_NAME \
+    put_children_on_stack_and_propagate_additional_size
+
+#define DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
+    PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(           \
+        _name::PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_NAME)
 
 #define DECLARE_SYMBOL(_name, _simple)                                            \
     struct _name {                                                                \
@@ -78,7 +89,9 @@ namespace Sym {
         COMPARE_HEADER(compare);                                                  \
         COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                          \
         SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                              \
-        IS_FUNCTION_OF_HEADER(is_function_of);
+        IS_FUNCTION_OF_HEADER(is_function_of);                                    \
+        PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                        \
+            PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_NAME);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.
 // standard-layout jest wymagany by zagwarantować, że wszystkie symbole mają pole `type` na offsecie
@@ -96,6 +109,9 @@ namespace Sym {
     void _name::seal() {}
 
 #define DEFINE_COMPARE(_name) COMPARE_HEADER(_name::compare)
+
+#define DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {}
 
 #define DEFINE_NO_OP_SIMPLIFY_IN_PLACE(_name) \
     SIMPLIFY_IN_PLACE_HEADER(_name::simplify_in_place) { return true; } // NOLINT
@@ -152,53 +168,40 @@ namespace Sym {
         return size + additional_required_size;                                 \
     }
 
-#define DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                    \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                      \
-        /*const size_t new_arg_size = arg().compress_reverse_to(destination);                \
-        symbol()->copy_single_to(destination + new_arg_size);                                \
-        destination[new_arg_size].size() = new_arg_size + 1;                                 \
-        return new_arg_size + 1;*/                                                           \
-        size_t& child_additional_size = (destination - 1)->unknown.additional_required_size; \
-        if (child_additional_size > additional_required_size) {                              \
-            (destination - 1)->size() += child_additional_size - additional_required_size;   \
-        }                                                                                    \
-        child_additional_size = 0;                                                           \
-                                                                                             \
-        const size_t new_arg_size = (destination - 1)->size();                               \
-        symbol()->copy_single_to(destination);                                               \
-        destination->size() = new_arg_size + 1;                                              \
-        return 1;                                                                            \
+#define DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                  \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                    \
+        size_t& child_additional_size = (destination - 1)->additional_required_size();     \
+        if (child_additional_size > additional_required_size) {                            \
+            (destination - 1)->size() += child_additional_size - additional_required_size; \
+        }                                                                                  \
+        child_additional_size = 0;                                                         \
+                                                                                           \
+        const size_t new_arg_size = (destination - 1)->size();                             \
+        symbol()->copy_single_to(destination);                                             \
+        destination->size() = new_arg_size + 1;                                            \
+        return 1;                                                                          \
     }
 
-#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                        \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                          \
-        /*const size_t new_arg2_size = arg2().compress_reverse_to(destination);                  \
-        const size_t new_arg1_size = arg1().compress_reverse_to(destination + new_arg2_size);    \
-                                                                                               \ \
-        symbol()->copy_single_to(destination + new_arg1_size + new_arg2_size);                   \
-        destination[new_arg1_size + new_arg2_size].size() = new_arg1_size + new_arg2_size + 1;   \
-        (destination + new_arg1_size + new_arg2_size)->as<_name>().second_arg_offset =           \
-            new_arg1_size + 1;                                                                   \
-                                                                                               \ \
-        return new_arg1_size + new_arg2_size + 1; */                                             \
-        (destination - 1)->size() += (destination - 1)->unknown.additional_required_size;        \
-        (destination - 1)->unknown.additional_required_size = 0;                                 \
-                                                                                                 \
-        const size_t new_arg1_size = (destination - 1)->size();                                  \
-        size_t& child_additional_size =                                                          \
-            (destination - new_arg1_size - 1)->unknown.additional_required_size;                 \
-        if (child_additional_size > additional_required_size) {                                  \
-            (destination - new_arg1_size - 1)->size() +=                                         \
-                child_additional_size - additional_required_size;                                \
-        }                                                                                        \
-        child_additional_size = 0;                                                               \
-                                                                                                 \
-        const size_t new_arg2_size = (destination - new_arg1_size - 1)->size();                  \
-                                                                                                 \
-        symbol()->copy_single_to(destination);                                                   \
-        destination->size() = new_arg1_size + new_arg2_size + 1;                                 \
-        destination->as<_name>().second_arg_offset = new_arg1_size + 1;                          \
-        return 1;                                                                                \
+#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                           \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                             \
+        (destination - 1)->size() += (destination - 1)->additional_required_size(); \
+        (destination - 1)->additional_required_size() = 0;                          \
+                                                                                    \
+        const size_t new_arg1_size = (destination - 1)->size();                     \
+        size_t& child_additional_size =                                             \
+            (destination - new_arg1_size - 1)->additional_required_size();          \
+        if (child_additional_size > additional_required_size) {                     \
+            (destination - new_arg1_size - 1)->size() +=                            \
+                child_additional_size - additional_required_size;                   \
+        }                                                                           \
+        child_additional_size = 0;                                                  \
+                                                                                    \
+        const size_t new_arg2_size = (destination - new_arg1_size - 1)->size();     \
+                                                                                    \
+        symbol()->copy_single_to(destination);                                      \
+        destination->size() = new_arg1_size + new_arg2_size + 1;                    \
+        destination->as<_name>().second_arg_offset = new_arg1_size + 1;             \
+        return 1;                                                                   \
     }
 
 #define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                     \
@@ -235,6 +238,11 @@ namespace Sym {
         _name* const one_arg_op = destination << _name::builder();                               \
         arg->copy_to(&one_arg_op->arg());                                                        \
         one_arg_op->seal();                                                                      \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
+        stack.push(&arg());                                                                      \
+        arg().additional_required_size() += additional_required_size;                            \
     }
 
 #define TWO_ARGUMENT_OP_SYMBOL                                                                 \
@@ -341,6 +349,12 @@ namespace Sym {
         two_arg_op->seal_arg1();                                                                 \
         arg2->copy_to(&two_arg_op->arg2());                                                      \
         two_arg_op->seal();                                                                      \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
+        stack.push(&arg1());                                                                     \
+        stack.push(&arg2());                                                                     \
+        arg2().additional_required_size() += additional_required_size;                           \
     }
 
 #define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
@@ -381,7 +395,7 @@ namespace Sym {
         Symbol* const resized_reversed_this = right_copy + right_copy->size();                             \
         const size_t new_size = symbol()->compress_reverse_to(resized_reversed_this);                      \
                                                                                                            \
-        /* Zmiany w strukturze nie zmieniają całkowitego rozmiaru `this` -- otóż mogą zmienić, bo    \
+        /* Zmiany w strukturze mogą zmienić całkowity rozmiar `this`, bo                                \
          * compress_reverse_to skróci wcześniej uproszczone wyrażenia*/                                 \
         Symbol::copy_and_reverse_symbol_sequence(symbol(), resized_reversed_this, new_size);               \
         right_copy->copy_to(last_left);                                                                    \
