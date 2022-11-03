@@ -8,10 +8,11 @@ static struct mg_rpc *s_rpc_head = NULL;
 
 
 static void interpret(struct mg_rpc_req *r) {
-    auto input = mg_json_get_str(r->frame, "$.input");
+    auto input = mg_json_get_str(r->frame, "$.params.input");
 
     if(input == NULL) {
         mg_rpc_err(r, 400, "Missing input");
+        return;
     }
 
     mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", input);
@@ -19,10 +20,11 @@ static void interpret(struct mg_rpc_req *r) {
 }
 
 static void solve(struct mg_rpc_req *r) {
-    auto input = mg_json_get_str(r->frame, "$.input");
+    auto input = mg_json_get_str(r->frame, "$.params.input");
 
     if(input == NULL) {
         mg_rpc_err(r, 400, "Missing input");
+        return;
     }
 
     mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", input);
