@@ -11,6 +11,7 @@ set(UTILS_DIR "${SRC_DIR}/Utils")
 set(SYMBOL_DIR "${SRC_DIR}/Symbol")
 set(EVALUATION_DIR "${SRC_DIR}/Evaluation")
 set(PARSER_DIR "${SRC_DIR}/Parser")
+set(SERVER_DIR "${SRC_DIR}/Server")
 set(TEST_DIR "test")
 
 # Define build targets
@@ -48,7 +49,9 @@ add_library(
   ${EVALUATION_DIR}/KnownIntegral/SimpleVariable.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleArctan.cu
   ${PARSER_DIR}/Scanner.cu
-  ${PARSER_DIR}/Parser.cu)
+  ${PARSER_DIR}/Parser.cu
+  ${SERVER_DIR}/Server.cu
+  ${SERVER_DIR}/mongoose.c)
 
 add_executable(cusymint ${SRC_DIR}/main.cu)
 add_executable(testcusymint ${TEST_DIR}/test.cu)
@@ -96,6 +99,8 @@ set(gtest_force_shared_crt
     ON
     CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+
+# TODO: Fetch and build mongoose
 
 # Includes and linking
 
