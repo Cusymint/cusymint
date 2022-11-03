@@ -14,7 +14,7 @@ static void interpret(struct mg_rpc_req *r) {
         mg_rpc_err(r, 400, "Missing input");
     }
 
-    mg_rpc_ok(r, "%s", input);
+    mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", input);
     free(input);
 }
 
@@ -25,7 +25,7 @@ static void solve(struct mg_rpc_req *r) {
         mg_rpc_err(r, 400, "Missing input");
     }
 
-    mg_rpc_ok(r, "%s", input);
+    mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", input);
     free(input);
 }
 
@@ -39,13 +39,11 @@ void handler(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     } else if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *hm = (struct mg_http_message *) ev_data;
         if (mg_http_match_uri(hm, "/websocket")) {
-        // Upgrade to websocket. From now on, a connection is a full-duplex
-        // Websocket connection, which will receive MG_EV_WS_MSG events.
-        mg_ws_upgrade(c, hm, NULL);
+            // Upgrade to websocket. From now on, a connection is a full-duplex
+            // Websocket connection, which will receive MG_EV_WS_MSG events.
+            mg_ws_upgrade(c, hm, NULL);
         } else {
-        // Serve static files
-        //   struct mg_http_serve_opts opts = {.root_dir = s_web_root};
-        //   mg_http_serve_dir(c, ev_data, &opts);
+            mg_http_reply(c, 404, "", "Not found");
         }
     } else if (ev == MG_EV_WS_MSG) {
         // Got websocket frame. Received data is wm->data
