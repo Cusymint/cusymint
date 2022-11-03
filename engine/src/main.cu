@@ -13,6 +13,8 @@
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
 
+#include "Server/Server.cuh"
+
 #include "Parser/Parser.cuh"
 
 #include "Utils/CompileConstants.cuh"
@@ -21,6 +23,10 @@ int main() {
     if constexpr (Consts::DEBUG) {
         fmt::print("Running in debug mode\n");
     }
+
+    auto uri = "ws://localhost:8000";
+    Server server = Server(uri);
+    server.run();
 
     Sym::Static::init_functions();
 
