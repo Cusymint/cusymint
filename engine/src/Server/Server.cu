@@ -1,11 +1,12 @@
 #include "Server.cuh"
+#include "Parser/Parser.cuh"
 
 // https://mongoose.ws/tutorials/json-rpc-over-websocket/
 
 // Use of global variables is required, since mongoose callbacks are meant to be C functions.
 
 static struct mg_rpc *s_rpc_head = NULL;
-
+static CachedParser *global_cached_parser = NULL;
 
 static void interpret(struct mg_rpc_req *r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
@@ -15,7 +16,9 @@ static void interpret(struct mg_rpc_req *r) {
         return;
     }
 
-    mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", input);
+    auto parserResult = global_cached_parser->parse(input);
+
+    mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", parserResult.data()->to_string().c_str());
     free(input);
 }
 
@@ -59,13 +62,16 @@ void handler(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     (void) fn_data;
 }
 
-Server::Server(std::string listen_on) : listen_on(listen_on) {
+Server::Server(std::string listen_on, CachedParser cached_parser)
+    : listen_on(listen_on), cached_parser(cached_parser) {
     mg_mgr_init(&mgr);
     mg_log_set(MG_LL_DEBUG);
 
     mg_rpc_add(&s_rpc_head, mg_str("interpret"), interpret, NULL);
     mg_rpc_add(&s_rpc_head, mg_str("solve"), solve, NULL);
     mg_rpc_add(&s_rpc_head, mg_str("rpc.list"), mg_rpc_list, &s_rpc_head);
+
+    global_cached_parser = &cached_parser;
 }
 
 void Server::run() {

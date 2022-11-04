@@ -51,7 +51,8 @@ add_library(
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu
   ${SERVER_DIR}/Server.cu
-  ${SERVER_DIR}/mongoose.c)
+  ${SERVER_DIR}/mongoose.c
+  ${SERVER_DIR}/CachedParser.cu)
 
 add_executable(cusymint ${SRC_DIR}/main.cu)
 add_executable(testcusymint ${TEST_DIR}/test.cu)

@@ -5,15 +5,18 @@
 #include <string>
 #include <functional>
 
+#include "CachedParser.cuh"
+
 class Server {
     private:
         struct mg_mgr mgr;
         /// @brief Server URI.
         /// @example "ws://localhost:8000"
         std::string listen_on;
+        CachedParser cached_parser;
 
     public:
-        Server(std::string listen_on);
+        Server(std::string listen_on, CachedParser cached_parser);
         ~Server();
         void run();
 };

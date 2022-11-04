@@ -14,6 +14,7 @@
 #include "Symbol/Symbol.cuh"
 
 #include "Server/Server.cuh"
+#include "Server/CachedParser.cuh"
 
 #include "Parser/Parser.cuh"
 
@@ -25,7 +26,8 @@ int main() {
     }
 
     auto uri = "ws://localhost:8000";
-    Server server = Server(uri);
+    CachedParser parser;
+    Server server = Server(uri, parser);
     server.run();
 
     Sym::Static::init_functions();
