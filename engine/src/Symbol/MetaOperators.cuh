@@ -168,7 +168,7 @@ namespace Sym {
             TreeIterator<SymbolTree, SymbolTree::TYPE> iterator(&tree);
             while (iterator.is_valid()) {
                 OneArgOp* operator_ = terms << OneArgOp::builder();
-                iterator.current()->copy_to(terms + 1);
+                iterator.current()->copy_to(&operator_->arg());
                 operator_->seal();
                 terms += terms->size();
                 iterator.advance();

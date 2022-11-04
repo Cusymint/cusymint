@@ -356,7 +356,7 @@ namespace Sym {
          *
          * @return New size of the symbol tree
          */
-        __host__ __device__ size_t compress_reverse_to(Symbol* const destination) /*const*/;
+        __host__ __device__ size_t compress_reverse_to(Symbol* const destination);
 
         /*
          * @brief Zwraca funkcję podcałkową jeśli `this` jest całką. Undefined behavior w przeciwnym

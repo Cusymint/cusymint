@@ -32,12 +32,9 @@ namespace Sym {
 #define PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(_fname) \
     __host__ __device__ void _fname(Util::StaticStack<Symbol*>& stack)
 
-#define PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_NAME \
-    put_children_on_stack_and_propagate_additional_size
-
 #define DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
     PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(           \
-        _name::PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_NAME)
+        _name::put_children_on_stack_and_propagate_additional_size)
 
 #define DECLARE_SYMBOL(_name, _simple)                                            \
     struct _name {                                                                \
@@ -91,7 +88,7 @@ namespace Sym {
         SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                              \
         IS_FUNCTION_OF_HEADER(is_function_of);                                    \
         PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                        \
-            PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_NAME);
+            put_children_on_stack_and_propagate_additional_size);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.
 // standard-layout jest wymagany by zagwarantować, że wszystkie symbole mają pole `type` na offsecie
@@ -312,7 +309,7 @@ namespace Sym {
      *                                                                                          \
      * @return Count of symbols in the tree.                                                    \
      */                                                                                         \
-    __host__ __device__ size_t tree_count();
+    __host__ __device__ size_t tree_size();
 
 #define DEFINE_TRY_FUSE_SYMBOLS(_name) \
     __host__ __device__ bool _name::try_fuse_symbols(Symbol* const expr1, Symbol* const expr2)
@@ -372,7 +369,7 @@ namespace Sym {
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                         \
-        /* TODO: Potrzebne sortowanie, inaczej nie będą poprawnie działać porównania drzew */         \
+        /* TODO: Potrzebne sortowanie, inaczej nie będą poprawnie działać porównania drzew */              \
         if (!arg2().is(Type::_name)) {                                                                     \
             return;                                                                                        \
         }                                                                                                  \
@@ -395,8 +392,8 @@ namespace Sym {
         Symbol* const resized_reversed_this = right_copy + right_copy->size();                             \
         const size_t new_size = symbol()->compress_reverse_to(resized_reversed_this);                      \
                                                                                                            \
-        /* Zmiany w strukturze mogą zmienić całkowity rozmiar `this`, bo                                \
-         * compress_reverse_to skróci wcześniej uproszczone wyrażenia*/                                 \
+        /* Zmiany w strukturze mogą zmienić całkowity rozmiar `this`, bo                                   \
+         * compress_reverse_to skróci wcześniej uproszczone wyrażenia*/                                    \
         Symbol::copy_and_reverse_symbol_sequence(symbol(), resized_reversed_this, new_size);               \
         right_copy->copy_to(last_left);                                                                    \
         last_left_copy->copy_to(&arg2());                                                                  \
@@ -425,9 +422,9 @@ namespace Sym {
         }                                                                                                  \
     }                                                                                                      \
                                                                                                            \
-    __host__ __device__ size_t _name::tree_count() {                                                       \
-        if (arg1().is(Type::Addition)) {                                                                   \
-            return arg1().as<Addition>().tree_count() + 1;                                                 \
+    __host__ __device__ size_t _name::tree_size() {                                                        \
+        if (arg1().is(_name::TYPE)) {                                                                      \
+            return arg1().as<_name>().tree_size() + 1;                                                     \
         }                                                                                                  \
         return 2;                                                                                          \
     }

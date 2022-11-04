@@ -89,7 +89,7 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) /*const*/ {
+    __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) {
         mark_to_be_copied_and_propagate_additional_size(destination);
 
         Symbol* compressed_reversed_destination = destination;
@@ -121,9 +121,9 @@ namespace Sym {
     }
 
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
-        bool success = true;
+        bool success = false;
 
-        do {
+        while (!success) {
             success = true;
 
             for (ssize_t i = size() - 1; i >= 0; --i) {
@@ -134,7 +134,7 @@ namespace Sym {
 
             copy_and_reverse_symbol_sequence(this, help_space, new_size);
 
-        } while (!success);
+        }
     }
 
     __host__ __device__ bool Symbol::simplify_in_place(Symbol* const help_space) {

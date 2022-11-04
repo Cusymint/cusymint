@@ -124,7 +124,7 @@ namespace Sym {
         }
 
         if (arg().is(Type::Addition)) {
-            const size_t term_count = arg().as<Addition>().tree_count();
+            const size_t term_count = arg().as<Addition>().tree_size();
             if (size < arg().size() + term_count) {
                 additional_required_size = term_count - 1;
                 return false;
