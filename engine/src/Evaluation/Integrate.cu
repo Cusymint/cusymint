@@ -502,21 +502,21 @@ namespace Sym {
             const size_t thread_count = Util::thread_count();
             const size_t thread_idx = Util::thread_idx();
 
-            // expressions[0] has no parents, so nothing to update there
-            for (size_t expr_idx = thread_idx + 1; expr_idx < expressions.size();
+            for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
                  expr_idx += thread_count) {
                 SubexpressionCandidate& self_candidate =
                     expressions[expr_idx].subexpression_candidate;
 
-                // Some other thread was here already
+                // Some other thread was here already, as `failures` starts with 1 everywhere
                 if (failures[expr_idx] == 0) {
                     continue;
                 }
 
                 bool is_failed = false;
 
-                // expressions[current_expr_idx][0] is subexpression_candidate, so it can be skipped
-                for (size_t sym_idx = 1; sym_idx < expressions[expr_idx].size(); ++sym_idx) {
+                // expressions[current_expr_idx][0] is subexpression_candidate, so it could be
+                // skipped, but if `expr_idx == 0` it is the only SubexpressionVacancy
+                for (size_t sym_idx = 0; sym_idx < expressions[expr_idx].size(); ++sym_idx) {
                     if (!expressions[expr_idx][sym_idx].is(Type::SubexpressionVacancy)) {
                         continue;
                     }
@@ -536,7 +536,6 @@ namespace Sym {
                 }
 
                 size_t current_expr_idx = expr_idx;
-
                 while (current_expr_idx != 0) {
                     const size_t& parent_idx = expressions[current_expr_idx]
                                                    .subexpression_candidate.vacancy_expression_idx;
@@ -761,5 +760,4 @@ namespace Sym {
 
         return std::nullopt;
     }
-
 }
