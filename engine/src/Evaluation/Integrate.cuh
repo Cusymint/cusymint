@@ -19,7 +19,7 @@ namespace Sym {
      * @return `std::nullopt` if no result has been found, vector of vectors with the solution tree
      * otherwise
      */
-    std::optional<std::vector<std::vector<Sym::Symbol>>>
+    std::optional<std::vector<Sym::Symbol>>
     solve_integral(const std::vector<Sym::Symbol>& integral);
 }
 

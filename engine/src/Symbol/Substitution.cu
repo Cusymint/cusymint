@@ -127,26 +127,27 @@ namespace Sym {
 
     __host__ __device__ void Substitution::seal() { size = 1 + expression()->size(); }
 
-    std::vector<Symbol> substitute(const std::vector<Symbol>& integral,
-                                   const std::vector<Symbol>& substitution_expr) {
-        if (!integral.data()->is(Type::Integral)) {
-            throw std::invalid_argument("Explicit substitutions are only allowed in integrals");
+    std::vector<Symbol> Substitution::substitute(std::vector<Symbol> expr) const {
+        if (!is_last_substitution()) {
+            expr = next_substitution()->substitute(expr);
         }
 
-        std::vector<Symbol> new_integral(integral.size() + substitution_expr.size() + 1);
+        std::vector<size_t> variable_indices;
+        for (size_t i = 0; i < expr.size(); ++i) {
+            if (expr[i].is(Type::Variable)) {
+                expr[i].init_from(ExpanderPlaceholder::with_size(expression()->size()));
+                variable_indices.push_back(i);
+            }
+        }
 
-        const size_t integrand_offset = integral.data()->integral.integrand_offset;
-        std::copy(integral.data(), integral.data() + integrand_offset, new_integral.begin());
+        const size_t new_size = expr.size() + variable_indices.size() * (expression()->size() - 1);
+        std::vector<Symbol> new_expr(new_size);
+        expr.data()->compress_to(*new_expr.data());
 
-        Substitution::create(substitution_expr.data(), new_integral.data() + integrand_offset,
-                             integral.data()->integral.substitution_count);
+        for (size_t variable_indice : variable_indices) {
+            expression()->copy_to(&new_expr[variable_indice]);
+        }
 
-        new_integral.data()->integral.substitution_count += 1;
-        new_integral.data()->integral.integrand_offset += 1 + substitution_expr.size();
-        new_integral.data()->integral.size += 1 + substitution_expr.size();
-
-        integral.data()->integrand()->copy_to(new_integral.data()->integrand());
-
-        return new_integral;
+        return new_expr;
     }
 }

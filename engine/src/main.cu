@@ -24,17 +24,14 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(parse_function("sin(x)+cos(x)+e^x+10+x+x^5"));
+    const auto integral = Sym::integral(parse_function("sin(x)+cos(x)+e^e^x*e^x+e^x*sin(e^x)"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
-    std::optional<std::vector<std::vector<Sym::Symbol>>> solution = Sym::solve_integral(integral);
+    const auto solution = Sym::solve_integral(integral);
 
     if (solution.has_value()) {
-        fmt::print("Success! Expressions tree:\n");
-        for (const auto& expr : solution.value()) {
-            fmt::print("{}\n", expr.data()->to_string());
-        }
+        fmt::print("Success! Solution:\n{}", solution.value().data()->to_tex());
     }
     else {
         fmt::print("No solution found\n");

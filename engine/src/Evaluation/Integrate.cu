@@ -616,10 +616,97 @@ namespace Sym {
                 integrals_removability[int_idx] = expressions_removability[parent_idx];
             }
         }
+
+        /*
+         * @brief Replaces nth symbol in `expression` with `tree`, skipping the first element of
+         * `tree` and expanding substitutions if `Solution` is the second symbol in `tree`
+         *
+         * @param expression Expression to make the replacement in
+         * @param n Index of symbol to replace
+         * @param tree Expression to make replacement with. Its first symbol is skipped (assumed to
+         * be SubexpressionCandidate)
+         *
+         * @return Copy of `expression` with the replacement
+         */
+        std::vector<Sym::Symbol> replace_nth_with_tree(std::vector<Sym::Symbol> expression,
+                                                       const size_t n,
+                                                       const std::vector<Sym::Symbol>& tree) {
+            std::vector<Sym::Symbol> tree_content;
+
+            if (tree[1].is(Sym::Type::Solution)) {
+                tree_content = tree[1].as<Sym::Solution>().substitute_substitutions();
+            }
+            else {
+                tree_content.resize(tree.size() - 1);
+                std::copy(tree.begin() + 1, tree.end(), tree_content.begin());
+            }
+
+            expression[n].init_from(Sym::ExpanderPlaceholder::with_size(tree_content.size()));
+
+            std::vector<Sym::Symbol> new_tree(expression.size() + tree_content.size() - 1);
+            expression.data()->compress_to(*new_tree.data());
+
+            std::copy(tree_content.begin(), tree_content.end(),
+                      new_tree.begin() + static_cast<int64_t>(n));
+
+            return new_tree;
+        }
+
+        /*
+         * @brief Collapses a tree of expressions with Solutions with Substitutions and
+         * interreferencing SubexpressionCandidates and SubexpressionVacancies to a single
+         * expression.
+         *
+         * @param tree Tree to collapse
+         * @param n Index of tree node serving as tree root
+         *
+         * @return Collapsed tree
+         */
+        std::vector<Sym::Symbol> collapse_nth(const std::vector<std::vector<Sym::Symbol>>& tree,
+                                              const size_t n) {
+            std::vector<Sym::Symbol> current_collapse = tree[n];
+
+            for (size_t i = 0; i < current_collapse.size(); ++i) {
+                if (!current_collapse[i].is(Sym::Type::SubexpressionVacancy)) {
+                    continue;
+                }
+
+                const auto subtree = collapse_nth(
+                    tree, current_collapse[i].as<Sym::SubexpressionVacancy>().solver_idx);
+
+                auto new_collapse = replace_nth_with_tree(current_collapse, i, subtree);
+                i += new_collapse.size() - current_collapse.size();
+                current_collapse = new_collapse;
+            }
+
+            return current_collapse;
+        }
+
+        /*
+         * @brief Collapses a tree of expressions with Solutions with Substitutions and
+         * interreferencing SubexpressionCandidates and SubexpressionVacancies to a single
+         * expression
+         *
+         * @param tree Tree to collapse
+         *
+         * @return Collapsed tree
+         */
+        std::vector<Sym::Symbol> collapse(const std::vector<std::vector<Sym::Symbol>>& tree) {
+            auto collapsed = collapse_nth(tree, 0);
+            std::vector<Sym::Symbol> reversed(collapsed.size());
+
+            const size_t new_size = collapsed.data()->compress_reverse_to(reversed.data());
+            Sym::Symbol::copy_and_reverse_symbol_sequence(collapsed.data(), reversed.data(),
+                                                          new_size);
+
+            collapsed.data()->simplify(reversed.data());
+            collapsed.resize(collapsed.data()->size());
+
+            return collapsed;
+        }
     }
 
-    std::optional<std::vector<std::vector<Symbol>>>
-    solve_integral(const std::vector<Symbol>& integral) {
+    std::optional<std::vector<Symbol>> solve_integral(const std::vector<Symbol>& integral) {
         static constexpr size_t BLOCK_SIZE = 512;
         static constexpr size_t BLOCK_COUNT = 32;
         const size_t MAX_CHECK_COUNT =
@@ -662,9 +749,8 @@ namespace Sym {
 
             std::vector<Symbol> first_expression = expressions.to_vector(0);
             if (first_expression.data()->as<SubexpressionVacancy>().is_solved == 1) {
-                // TODO: Collapse the tree instead of returning it
                 simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, help_spaces);
-                return expressions.to_vector();
+                return collapse(expressions.to_vector());
             }
 
             scan_array_1.zero_mem();

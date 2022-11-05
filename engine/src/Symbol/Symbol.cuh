@@ -11,6 +11,7 @@
 #include "Hyperbolic.cuh"
 #include "Integral.cuh"
 #include "InverseTrigonometric.cuh"
+#include "Logarithm.cuh"
 #include "Power.cuh"
 #include "Product.cuh"
 #include "Solution.cuh"
@@ -21,7 +22,6 @@
 #include "Trigonometric.cuh"
 #include "Unknown.cuh"
 #include "Variable.cuh"
-#include "Logarithm.cuh"
 
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
@@ -351,6 +351,16 @@ namespace Sym {
          * @return New size of the symbol tree
          */
         __host__ __device__ size_t compress_reverse_to(Symbol* const destination) const;
+
+        /*
+         * @brief Removes holes from symbol tree and copies it to `destination`.
+         *
+         * @param destination Location to which the tree is going to be copied. Cannot be same as
+         * `this`.
+         *
+         * @return New size of the symbol tree
+         */
+        __host__ __device__ size_t compress_to(Symbol& destination) const;
 
         /*
          * @brief Zwraca funkcję podcałkową jeśli `this` jest całką. Undefined behavior w przeciwnym
