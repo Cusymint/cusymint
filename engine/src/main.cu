@@ -24,7 +24,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(parse_function("sin(x)+cos(x)+e^x+10+x+x^5"));
+    const auto integral = Sym::integral(parse_function("5*x^4+3*x^2+x+4"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 

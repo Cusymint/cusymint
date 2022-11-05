@@ -11,7 +11,7 @@ namespace Sym::Heuristic {
                                              const ExpressionArray<>::Iterator& integral_dst,
                                              const ExpressionArray<>::Iterator& /*expression_dst*/,
                                              Symbol& help_space) {
-        SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
+        auto* new_candidate = *integral_dst << SubexpressionCandidate::builder();
         new_candidate->copy_metadata_from(integral);
 
         integral.arg().as<Integral>().integrate_by_substitution_with_derivative(

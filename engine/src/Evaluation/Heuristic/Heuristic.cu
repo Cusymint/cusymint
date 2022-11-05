@@ -2,6 +2,7 @@
 
 #include "SplitSum.cuh"
 #include "SubstituteEToX.cuh"
+#include "BringOutConstantsFromProduct.cuh"
 
 #include "Utils/Meta.cuh"
 
@@ -12,11 +13,13 @@ namespace Sym::Heuristic {
     __device__ const Check CHECKS[] = {
         is_function_of_ex,
         is_sum,
+        contains_constants_product,
     };
 
     __device__ const Application APPLICATIONS[] = {
         transform_function_of_ex,
         split_sum,
+        bring_out_constants_from_product,
     };
 
 #ifdef __CUDA_ARCH__

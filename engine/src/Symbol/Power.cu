@@ -69,7 +69,7 @@ namespace Sym {
 
         // a^(...*1/ln(a)*...)=e^(...), e^(...*ln(b)*...)=b^(...)
         if (arg2().is(Type::Product)) {
-            TreeIterator<Product, Type::Product> iterator(arg2().as_ptr<Product>());
+            TreeIterator<Product> iterator(arg2().as_ptr<Product>());
             Symbol* base = &arg1();
             bool base_changed = false;
             while (iterator.is_valid()) {
