@@ -108,7 +108,7 @@ namespace Sym {
 
     __host__ __device__ void
     Symbol::mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space) {
-        Util::StaticStack<Symbol*> stack(help_space);
+        Util::StaticStack<Symbol*> stack(reinterpret_cast<Symbol**>(help_space));
 
         stack.push(this);
 
@@ -133,7 +133,6 @@ namespace Sym {
             const size_t new_size = compress_reverse_to(help_space);
 
             copy_and_reverse_symbol_sequence(this, help_space, new_size);
-
         }
     }
 

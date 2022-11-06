@@ -1,10 +1,10 @@
 #include "Addition.cuh"
 
+#include "MetaOperators.cuh"
 #include "Symbol.cuh"
 #include "Symbol/Product.cuh"
 #include "TreeIterator.cuh"
 #include "Utils/Cuda.cuh"
-#include "MetaOperators.cuh"
 
 #include <fmt/core.h>
 
@@ -130,9 +130,11 @@ namespace Sym {
                 additional_required_size = term_count - 1;
                 return false;
             }
-            From<Addition>::Create<Addition>::WithMap<Negation>::init(*help_space, {arg().as<Addition>(), term_count});
+            From<Addition>::Create<Addition>::WithMap<Negation>::init(
+                *help_space, {{arg().as<Addition>(), term_count}});
             help_space->copy_to(symbol());
-            return false; // created addition needs to be simplified again, but without additional size
+            return false; // created addition needs to be simplified again, but without additional
+                          // size
         }
         return true;
     }

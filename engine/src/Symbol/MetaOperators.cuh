@@ -114,8 +114,8 @@ namespace Sym {
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             auto* const candidate = dst << SubexpressionCandidate::builder();
             candidate->vacancy_expression_idx = cuda::std::get<0>(cuda::std::get<0>(args));
-            candidate->vacancy_idx = cuda::std::get<0>(cuda::std::get<1>(args));
-            candidate->subexpressions_left = cuda::std::get<0>(cuda::std::get<2>(args));
+            candidate->vacancy_idx = cuda::std::get<1>(cuda::std::get<0>(args));
+            candidate->subexpressions_left = cuda::std::get<2>(cuda::std::get<0>(args));
 
             Inner::init(candidate->arg(),
                         Util::slice_tuple<CandidateArgsSize, IAdditionalArgsSize>(args));
@@ -168,15 +168,13 @@ namespace Sym {
      */
     template <class SymbolTree> struct From {
         template <class TwoArgOp> struct Create {
-
-            using AdditionalArgs =
-                    cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>;
-
             template <class OneArgOp> struct WithMap {
+                using AdditionalArgs = cuda::std::tuple<
+                    cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
 
-                __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
-                    SymbolTree& tree = cuda::std::get<0>(args);
-                    size_t count = cuda::std::get<1>(args);
+                __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}) {
+                    SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
+                    size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
                     Symbol* terms = &dst + count - 1;
                     TreeIterator<SymbolTree, SymbolTree::TYPE> iterator(&tree);
                     while (iterator.is_valid()) {
