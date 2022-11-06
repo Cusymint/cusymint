@@ -17,7 +17,7 @@ namespace Sym {
             new_substitutions_size += substitution->size();
             substitution -= substitution->size();
         }
-        
+
         substitution->size() += substitution->additional_required_size();
         substitution->additional_required_size() = 0;
 
@@ -42,6 +42,9 @@ namespace Sym {
     } // NOLINT
 
     DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Solution) {
+        if (substitution_count > 0) {
+            stack.push(first_substitution()->symbol());
+        }
         stack.push(expression());
         expression()->additional_required_size() += additional_required_size;
     }

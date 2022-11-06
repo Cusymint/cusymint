@@ -10,7 +10,6 @@ namespace Sym::KnownIntegral {
 
     __device__ void integrate_constant_integral(const Integral& integral, Symbol& destination,
                                                 Symbol& /*help_space*/) {
-        const double& constant = integral.integrand()->as<NumericConstant>().value;
-        SolutionOfIntegral<Mul<Var, Num>>::init(destination, {integral, constant});
+        SolutionOfIntegral<Mul<Var, Copy>>::init(destination, {integral, *integral.integrand()});
     }
 }
