@@ -24,7 +24,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(parse_function("sin(x)+cos(x)+2^(x/ln(2))-(10-x)+e^(ln(x)*5)"));
+    const auto integral = Sym::integral(parse_function("e^x*e^e^x*e^e^e^x*e^e^e^e^x*e^e^e^e^e^x"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
