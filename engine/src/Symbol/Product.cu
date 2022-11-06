@@ -21,12 +21,10 @@ namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Product)
 
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
-        arg1().simplify_in_place(help_space);
-        arg2().simplify_in_place(help_space);
-
         simplify_structure(help_space);
         simplify_pairs();
         eliminate_ones();
+        return true;
     }
 
     DEFINE_IS_FUNCTION_OF(Product) {
@@ -140,7 +138,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
 
-    DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) { arg().simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Reciprocal)
 
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);

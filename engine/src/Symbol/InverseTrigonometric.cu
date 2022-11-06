@@ -1,6 +1,7 @@
 #include "InverseTrigonometric.cuh"
 
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 #include <fmt/core.h>
 
 namespace Sym {
@@ -9,28 +10,28 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arcsine)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arcsine)
 
-    DEFINE_SIMPLIFY_IN_PLACE(Arcsine) { arg().simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arcsine) 
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arccosine)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Arccosine)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arccosine)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arccosine)
 
-    DEFINE_SIMPLIFY_IN_PLACE(Arccosine) { arg().simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arccosine)
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arctangent)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Arctangent)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arctangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arctangent)
 
-    DEFINE_SIMPLIFY_IN_PLACE(Arctangent) { arg().simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arctangent) 
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arccotangent)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Arccotangent)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arccotangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arccotangent)
 
-    DEFINE_SIMPLIFY_IN_PLACE(Arccotangent) { arg().simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arccotangent) 
 
     std::string Arcsine::to_string() const { return fmt::format("arcsin({})", arg().to_string()); }
 
