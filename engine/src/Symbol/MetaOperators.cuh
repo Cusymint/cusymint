@@ -176,7 +176,7 @@ namespace Sym {
                     SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
                     size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
                     Symbol* terms = &dst + count - 1;
-                    TreeIterator<SymbolTree, SymbolTree::TYPE> iterator(&tree);
+                    TreeIterator<SymbolTree> iterator(&tree);
                     while (iterator.is_valid()) {
                         OneArgOp* operator_ = terms << OneArgOp::builder();
                         iterator.current()->copy_to(&operator_->arg());

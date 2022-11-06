@@ -40,6 +40,7 @@ add_library(
   ${EVALUATION_DIR}/Heuristic/Heuristic.cu
   ${EVALUATION_DIR}/Heuristic/SplitSum.cu
   ${EVALUATION_DIR}/Heuristic/SubstituteEToX.cu
+  ${EVALUATION_DIR}/Heuristic/BringOutConstantsFromProduct.cu
   ${EVALUATION_DIR}/KnownIntegral/KnownIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/ConstantIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/PowerFunction.cu
@@ -73,7 +74,7 @@ endif()
 target_compile_features(libcusymint PUBLIC cxx_std_17)
 set_target_properties(
   libcusymint testcusymint cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
-                                                CUDA_ARCHITECTURES OFF)
+                                               CUDA_ARCHITECTURES OFF)
 
 # Something to make this work on Mac OS
 

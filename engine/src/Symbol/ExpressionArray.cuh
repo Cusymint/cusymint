@@ -95,7 +95,7 @@ namespace Sym {
                 }
             }
 
-            __host__ __device__ static GenericIterator Null() { return GenericIterator(); };
+            __host__ __device__ static GenericIterator null() { return GenericIterator(); };
 
             [[nodiscard]] __host__ __device__ size_t index() const {
                 if constexpr (Consts::DEBUG) {
@@ -126,9 +126,21 @@ namespace Sym {
             __host__ __device__ Symbol* operator->() const { return array->at(index_); }
 
             /*
+             * @brief Pointer to the expression pointed to by the iterator
+             */
+            [[nodiscard]] __host__ __device__ const T* const_ptr() const { return **this; }
+
+            /*
+             * @brief Pointer to the expression pointed to by the iterator
+             */
+            [[nodiscard]] __host__ __device__ T* ptr() const {
+                return const_cast<Symbol*>(const_cast<const GenericIterator*>(this)->const_ptr());
+            }
+
+            /*
              * @brief Creates a new iterator offset by `offset` expressions
              */
-            __host__ __device__ GenericIterator operator+(const ssize_t offset) const {
+            template <class O> __host__ __device__ GenericIterator operator+(const O offset) const {
                 if constexpr (Consts::DEBUG) {
                     if (array == nullptr) {
                         Util::crash("Trying to offset a null iterator");
@@ -141,17 +153,17 @@ namespace Sym {
             /*
              * @brief Creates a new iterator offset by `-offset` expressions
              */
-            __host__ __device__ GenericIterator operator-(const ssize_t offset) const {
+            template <class O> __host__ __device__ GenericIterator operator-(const O offset) const {
                 return *this + (-offset);
             }
 
             /*
              * @brief Offsets the iterator by `offset`;
              */
-            __host__ __device__ GenericIterator operator+=(const ssize_t offset) {
+            template <class O> __host__ __device__ GenericIterator operator+=(const O offset) {
                 if constexpr (Consts::DEBUG) {
                     if (index_ + offset > array->expression_capacity() || -offset > index_) {
-                        Util::crash("Trying to offset an iterator outside of owned memory (%lu + "
+                        Util::crash("Trying to offset an iterator past owned memory (%lu + "
                                     "%l -> %lu)",
                                     index_, offset, index_ + offset);
                     }
@@ -164,7 +176,7 @@ namespace Sym {
             /*
              * @brief Offsets the iterator by `-offset`;
              */
-            __host__ __device__ GenericIterator operator-=(const ssize_t offset) {
+            template <class O> __host__ __device__ GenericIterator operator-=(const O offset) {
                 return *this += -offset;
             }
 
@@ -177,6 +189,11 @@ namespace Sym {
              * @brief Offsets the iterator by `-1`;
              */
             __host__ __device__ GenericIterator operator--() { return *this -= 1; }
+
+            /*
+             * @brief `index`-th symbol of the expression pointed to by the iterator
+             */
+            __host__ __device__ T& operator[](const size_t index) const { return array + index; }
         };
 
         using Iterator = GenericIterator<ExpressionArray>;

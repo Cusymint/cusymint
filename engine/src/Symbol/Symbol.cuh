@@ -11,6 +11,7 @@
 #include "Hyperbolic.cuh"
 #include "Integral.cuh"
 #include "InverseTrigonometric.cuh"
+#include "Logarithm.cuh"
 #include "Power.cuh"
 #include "Product.cuh"
 #include "Solution.cuh"
@@ -21,7 +22,6 @@
 #include "Trigonometric.cuh"
 #include "Unknown.cuh"
 #include "Variable.cuh"
-#include "Logarithm.cuh"
 
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
@@ -190,7 +190,8 @@ namespace Sym {
                 // checks
                 if (size() != BUILDER_SIZE && size() <= idx) {
                     Util::crash(
-                        "Trying to access %lu element after a symbol, but the symbol's size is %lu",
+                        "Trying to access element at index %lu after a symbol, but the symbol's "
+                        "size is %lu and it is not under construction",
                         idx, size());
                 }
             }
