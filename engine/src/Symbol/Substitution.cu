@@ -41,6 +41,9 @@ namespace Sym {
     } // NOLINT
 
     DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Substitution) {
+        if (!is_last_substitution()) {
+            stack.push(next_substitution()->symbol());
+        }
         stack.push(expression());
         expression()->additional_required_size() += additional_required_size;
     }
