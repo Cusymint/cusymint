@@ -90,6 +90,7 @@ namespace Sym::Heuristic {
     __device__ void bring_out_constants_from_product(
         const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
         const ExpressionArray<>::Iterator& expression_dst, Symbol& /*help_space*/) {
+        
         const auto& product_tree = integral.arg().as<Integral>().integrand()->as<Product>();
         const auto [constant_count, function_count] = count_constants_and_functions(product_tree);
 
