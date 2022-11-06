@@ -11,14 +11,15 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Logarithm)
 
     DEFINE_SIMPLIFY_IN_PLACE(Logarithm) { 
-        arg().simplify_in_place(help_space); 
         if (arg().is(Type::NumericConstant) && arg().numeric_constant.value == 1) {
             // ln(1) = 0
             *(this->as<NumericConstant>()) = NumericConstant::with_value(0);
+            return true;
         }
         if (arg().is(Type::KnownConstant) && arg().known_constant.value == KnownConstantValue::E) {
             // ln(e) = 1
             *(this->as<NumericConstant>()) = NumericConstant::with_value(1);
+            return true;
         }
         if (arg().is(Type::Power)) {
             // Here we do the following transformation: ln(f(x)^g(x)) = ln(f(x))*g(x).
@@ -31,7 +32,9 @@ namespace Sym {
             arg().as<Logarithm>().seal();
             this->type = Type::Product;
             this->as<Product>()->seal_arg1();
+            return true;
         }
+        return true;
     }
 
     [[nodiscard]] std::string Logarithm::to_string() const {

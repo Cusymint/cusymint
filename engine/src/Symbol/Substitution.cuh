@@ -18,7 +18,7 @@ namespace Sym {
      *
      * @param destination Docelowa lokalizacja podstawień
      */
-    __host__ __device__ size_t compress_reverse_substitutions_to(Symbol* const destination) const;
+    __host__ __device__ size_t compress_reverse_substitutions_to(Symbol* const destination);
 
     __host__ __device__ static void create(const Symbol* const expression,
                                            Symbol* const destination,

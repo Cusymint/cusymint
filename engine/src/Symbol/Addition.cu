@@ -1,6 +1,8 @@
 #include "Addition.cuh"
 
+#include "MetaOperators.cuh"
 #include "Symbol.cuh"
+#include "Symbol/Product.cuh"
 #include "TreeIterator.cuh"
 #include "Utils/Cuda.cuh"
 
@@ -12,12 +14,10 @@ namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Addition)
 
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
-        arg1().simplify_in_place(help_space);
-        arg2().simplify_in_place(help_space);
-
         simplify_structure(help_space);
         simplify_pairs();
         eliminate_zeros();
+        return true;
     }
 
     DEFINE_IS_FUNCTION_OF(Addition) {
@@ -114,16 +114,29 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Negation)
 
     DEFINE_SIMPLIFY_IN_PLACE(Negation) {
-        arg().simplify_in_place(help_space);
-
         if (arg().is(Type::Negation)) {
             arg().negation.arg().copy_to(symbol());
-            return;
+            return true;
         }
 
         if (arg().is(Type::NumericConstant)) {
             *as<NumericConstant>() = NumericConstant::with_value(-arg().numeric_constant.value);
+            return true;
         }
+
+        if (arg().is(Type::Addition)) {
+            const size_t term_count = arg().as<Addition>().tree_size();
+            if (size < arg().size() + term_count) {
+                additional_required_size = term_count - 1;
+                return false;
+            }
+            From<Addition>::Create<Addition>::WithMap<Negation>::init(
+                *help_space, {{arg().as<Addition>(), term_count}});
+            help_space->copy_to(symbol());
+            return false; // created addition needs to be simplified again, but without additional
+                          // size
+        }
+        return true;
     }
 
     std::string Addition::to_string() const {
