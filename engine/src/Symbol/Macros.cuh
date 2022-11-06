@@ -9,6 +9,7 @@
 
 #include "SymbolType.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/StaticStack.cuh"
 
 namespace Sym {
     static constexpr size_t BUILDER_SIZE = std::numeric_limits<size_t>::max();
@@ -22,11 +23,18 @@ namespace Sym {
 #define COMPARE_HEADER(_compare) __host__ __device__ bool _compare(const Symbol* const symbol) const
 
 #define SIMPLIFY_IN_PLACE_HEADER(_simplify_in_place) \
-    __host__ __device__ void _simplify_in_place(Symbol* const help_space)
+    __host__ __device__ bool _simplify_in_place(Symbol* const help_space)
 
 #define IS_FUNCTION_OF_HEADER(_is_function_of)                                       \
     __host__ __device__ bool _is_function_of(const Symbol* const* const expressions, \
                                              const size_t expression_count) const
+
+#define PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(_fname) \
+    __host__ __device__ void _fname(Util::StaticStack<Symbol*>& stack)
+
+#define DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
+    PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(           \
+        _name::put_children_on_stack_and_propagate_additional_size)
 
 #define DECLARE_SYMBOL(_name, _simple)                                            \
     struct _name {                                                                \
@@ -34,12 +42,16 @@ namespace Sym {
         Sym::Type type;                                                           \
         size_t size;                                                              \
         bool simplified;                                                          \
+        bool to_be_copied;                                                        \
+        size_t additional_required_size;                                          \
                                                                                   \
         __host__ __device__ static _name builder() {                              \
             return {                                                              \
                 .type = Sym::Type::_name,                                         \
                 .size = BUILDER_SIZE,                                             \
                 .simplified = _simple,                                            \
+                .to_be_copied = false,                                            \
+                .additional_required_size = 0,                                    \
             };                                                                    \
         }                                                                         \
                                                                                   \
@@ -50,6 +62,8 @@ namespace Sym {
                 .type = Sym::Type::_name,                                         \
                 .size = 1,                                                        \
                 .simplified = _simple,                                            \
+                .to_be_copied = false,                                            \
+                .additional_required_size = 0,                                    \
             };                                                                    \
         }                                                                         \
                                                                                   \
@@ -72,7 +86,9 @@ namespace Sym {
         COMPARE_HEADER(compare);                                                  \
         COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                          \
         SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                              \
-        IS_FUNCTION_OF_HEADER(is_function_of);
+        IS_FUNCTION_OF_HEADER(is_function_of);                                    \
+        PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                        \
+            put_children_on_stack_and_propagate_additional_size);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.
 // standard-layout jest wymagany by zagwarantować, że wszystkie symbole mają pole `type` na offsecie
@@ -91,8 +107,11 @@ namespace Sym {
 
 #define DEFINE_COMPARE(_name) COMPARE_HEADER(_name::compare)
 
+#define DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {}
+
 #define DEFINE_NO_OP_SIMPLIFY_IN_PLACE(_name) \
-    SIMPLIFY_IN_PLACE_HEADER(_name::simplify_in_place) {}
+    SIMPLIFY_IN_PLACE_HEADER(_name::simplify_in_place) { return true; } // NOLINT
 
 #define DEFINE_SIMPLIFY_IN_PLACE(_name) SIMPLIFY_IN_PLACE_HEADER(_name::simplify_in_place)
 
@@ -139,31 +158,47 @@ namespace Sym {
 
 #define DEFINE_COMPRESS_REVERSE_TO(_name) COMPRESS_REVERSE_TO_HEADER(_name::compress_reverse_to)
 
-#define DEFINE_SIMPLE_COMPRESS_REVERSE_TO(_name) \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {          \
-        symbol()->copy_single_to(destination);   \
-        return size;                             \
+#define DEFINE_SIMPLE_COMPRESS_REVERSE_TO(_name)                                \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                         \
+        Symbol* const new_destination = destination + additional_required_size; \
+        symbol()->copy_single_to(new_destination);                              \
+        return size + additional_required_size;                                 \
     }
 
-#define DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                   \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                     \
-        const size_t new_arg_size = arg().compress_reverse_to(destination); \
-        symbol()->copy_single_to(destination + new_arg_size);               \
-        destination[new_arg_size].size() = new_arg_size + 1;                \
-        return new_arg_size + 1;                                            \
+#define DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                  \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                    \
+        size_t& child_additional_size = (destination - 1)->additional_required_size();     \
+        if (child_additional_size > additional_required_size) {                            \
+            (destination - 1)->size() += child_additional_size - additional_required_size; \
+        }                                                                                  \
+        child_additional_size = 0;                                                         \
+                                                                                           \
+        const size_t new_arg_size = (destination - 1)->size();                             \
+        symbol()->copy_single_to(destination);                                             \
+        destination->size() = new_arg_size + 1;                                            \
+        return 1;                                                                          \
     }
 
-#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                      \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                                        \
-        const size_t new_arg2_size = arg2().compress_reverse_to(destination);                  \
-        const size_t new_arg1_size = arg1().compress_reverse_to(destination + new_arg2_size);  \
-                                                                                               \
-        symbol()->copy_single_to(destination + new_arg1_size + new_arg2_size);                 \
-        destination[new_arg1_size + new_arg2_size].size() = new_arg1_size + new_arg2_size + 1; \
-        (destination + new_arg1_size + new_arg2_size)->as<_name>().second_arg_offset =         \
-            new_arg1_size + 1;                                                                 \
-                                                                                               \
-        return new_arg1_size + new_arg2_size + 1;                                              \
+#define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                           \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                             \
+        (destination - 1)->size() += (destination - 1)->additional_required_size(); \
+        (destination - 1)->additional_required_size() = 0;                          \
+                                                                                    \
+        const size_t new_arg1_size = (destination - 1)->size();                     \
+        size_t& child_additional_size =                                             \
+            (destination - new_arg1_size - 1)->additional_required_size();          \
+        if (child_additional_size > additional_required_size) {                     \
+            (destination - new_arg1_size - 1)->size() +=                            \
+                child_additional_size - additional_required_size;                   \
+        }                                                                           \
+        child_additional_size = 0;                                                  \
+                                                                                    \
+        const size_t new_arg2_size = (destination - new_arg1_size - 1)->size();     \
+                                                                                    \
+        symbol()->copy_single_to(destination);                                      \
+        destination->size() = new_arg1_size + new_arg2_size + 1;                    \
+        destination->as<_name>().second_arg_offset = new_arg1_size + 1;             \
+        return 1;                                                                   \
     }
 
 #define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                     \
@@ -200,6 +235,11 @@ namespace Sym {
         _name* const one_arg_op = destination << _name::builder();                               \
         arg->copy_to(&one_arg_op->arg());                                                        \
         one_arg_op->seal();                                                                      \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
+        stack.push(&arg());                                                                      \
+        arg().additional_required_size() += additional_required_size;                            \
     }
 
 #define TWO_ARGUMENT_OP_SYMBOL                                                                 \
@@ -217,53 +257,59 @@ namespace Sym {
     __host__ __device__ static void create(const Symbol* const arg1, const Symbol* const arg2, \
                                            Symbol* const destination);
 
-#define TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(_name)                                             \
-    TWO_ARGUMENT_OP_SYMBOL                                                                    \
-    /*                                                                                        \
-     * @brief W uproszczonym drzewie operatora zwraca operację najniżej w drzewie           \
-     *                                                                                        \
-     * @return Wskaźnik do ostatniego operator. Jeśli `arg1()` nie jest tego samego typu co \
-     * `*this`, to zwraca `this`                                                              \
-     */                                                                                       \
-    __host__ __device__ const _name* last_in_tree() const;                                    \
-                                                                                              \
-    /*                                                                                        \
-     * @brief Przeładowanie bez `const`                                                      \
-     */                                                                                       \
-    __host__ __device__ _name* last_in_tree();                                                \
-                                                                                              \
-    /*                                                                                        \
-     * @brief Uproszczenie struktury operatora `$` do drzewa w postaci:                       \
-     *                 $                                                                      \
-     *                / \                                                                     \
-     *               $   e                                                                    \
-     *              / \                                                                       \
-     *             $   d                                                                      \
-     *            / \                                                                         \
-     *           $   c                                                                        \
-     *          / \                                                                           \
-     *         a   b                                                                          \
-     *                                                                                        \
-     * Zakładamy, że oba argumenty są w uproszczonej postaci                               \
-     *                                                                                        \
-     * @param help_space Pamięć pomocnicza                                                  \
-     */                                                                                       \
-    __host__ __device__ void simplify_structure(Symbol* const help_space);                    \
-                                                                                              \
-    /*                                                                                        \
-     * @brief W drzewie o uproszczonej strukturze wyszukuje par upraszczalnych wyrażeń.     \
-     */                                                                                       \
-    __host__ __device__ void simplify_pairs();                                                \
-                                                                                              \
-    /*                                                                                        \
-     * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi   \
-     *                                                                                        \
-     * @param expr1 Pierwszy argument operatora                                               \
-     * @param expr2 Drugi argument operatora                                                  \
-     *                                                                                        \
-     * @return `true` jeśli wykonano uproszczenie, `false` w przeciwnym wypadku              \
-     */                                                                                       \
-    __host__ __device__ static bool try_fuse_symbols(Symbol* const expr1, Symbol* const expr2);
+#define TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(_name)                                               \
+    TWO_ARGUMENT_OP_SYMBOL                                                                      \
+    /*                                                                                          \
+     * @brief W uproszczonym drzewie operatora zwraca operację najniżej w drzewie             \
+     *                                                                                          \
+     * @return Wskaźnik do ostatniego operator. Jeśli `arg1()` nie jest tego samego typu co   \
+     * `*this`, to zwraca `this`                                                                \
+     */                                                                                         \
+    __host__ __device__ const _name* last_in_tree() const;                                      \
+                                                                                                \
+    /*                                                                                          \
+     * @brief Przeładowanie bez `const`                                                        \
+     */                                                                                         \
+    __host__ __device__ _name* last_in_tree();                                                  \
+                                                                                                \
+    /*                                                                                          \
+     * @brief Uproszczenie struktury operatora `$` do drzewa w postaci:                         \
+     *                 $                                                                        \
+     *                / \                                                                       \
+     *               $   e                                                                      \
+     *              / \                                                                         \
+     *             $   d                                                                        \
+     *            / \                                                                           \
+     *           $   c                                                                          \
+     *          / \                                                                             \
+     *         a   b                                                                            \
+     *                                                                                          \
+     * Zakładamy, że oba argumenty są w uproszczonej postaci                                 \
+     *                                                                                          \
+     * @param help_space Pamięć pomocnicza                                                    \
+     */                                                                                         \
+    __host__ __device__ void simplify_structure(Symbol* const help_space);                      \
+                                                                                                \
+    /*                                                                                          \
+     * @brief W drzewie o uproszczonej strukturze wyszukuje par upraszczalnych wyrażeń.       \
+     */                                                                                         \
+    __host__ __device__ void simplify_pairs();                                                  \
+                                                                                                \
+    /*                                                                                          \
+     * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi     \
+     *                                                                                          \
+     * @param expr1 Pierwszy argument operatora                                                 \
+     * @param expr2 Drugi argument operatora                                                    \
+     *                                                                                          \
+     * @return `true` jeśli wykonano uproszczenie, `false` w przeciwnym wypadku                \
+     */                                                                                         \
+    __host__ __device__ static bool try_fuse_symbols(Symbol* const expr1, Symbol* const expr2); \
+    /*                                                                                          \
+     * @brief Counts symbols in simplified tree.                                                \
+     *                                                                                          \
+     * @return Count of symbols in the tree.                                                    \
+     */                                                                                         \
+    __host__ __device__ size_t tree_size();
 
 #define DEFINE_TRY_FUSE_SYMBOLS(_name) \
     __host__ __device__ bool _name::try_fuse_symbols(Symbol* const expr1, Symbol* const expr2)
@@ -300,6 +346,12 @@ namespace Sym {
         two_arg_op->seal_arg1();                                                                 \
         arg2->copy_to(&two_arg_op->arg2());                                                      \
         two_arg_op->seal();                                                                      \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
+        stack.push(&arg1());                                                                     \
+        stack.push(&arg2());                                                                     \
+        arg2().additional_required_size() += additional_required_size;                           \
     }
 
 #define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
@@ -317,7 +369,7 @@ namespace Sym {
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                         \
-        /* TODO: Potrzebne sortowanie, inaczej nie będą poprawnie działać porównania drzew */         \
+        /* TODO: Potrzebne sortowanie, inaczej nie będą poprawnie działać porównania drzew */              \
         if (!arg2().is(Type::_name)) {                                                                     \
             return;                                                                                        \
         }                                                                                                  \
@@ -338,10 +390,11 @@ namespace Sym {
         arg2().expander_placeholder = ExpanderPlaceholder::with_size(last_left_copy->size());              \
                                                                                                            \
         Symbol* const resized_reversed_this = right_copy + right_copy->size();                             \
-        compress_reverse_to(resized_reversed_this);                                                        \
+        const size_t new_size = symbol()->compress_reverse_to(resized_reversed_this);                      \
                                                                                                            \
-        /* Zmiany w strukturze nie zmieniają całkowitego rozmiaru `this` */                              \
-        Symbol::copy_and_reverse_symbol_sequence(symbol(), resized_reversed_this, size);                   \
+        /* Zmiany w strukturze mogą zmienić całkowity rozmiar `this`, bo                                   \
+         * compress_reverse_to skróci wcześniej uproszczone wyrażenia*/                                    \
+        Symbol::copy_and_reverse_symbol_sequence(symbol(), resized_reversed_this, new_size);               \
         right_copy->copy_to(last_left);                                                                    \
         last_left_copy->copy_to(&arg2());                                                                  \
     }                                                                                                      \
@@ -367,6 +420,13 @@ namespace Sym {
                                                                                                            \
             first.advance();                                                                               \
         }                                                                                                  \
+    }                                                                                                      \
+                                                                                                           \
+    __host__ __device__ size_t _name::tree_size() {                                                        \
+        if (arg1().is(_name::TYPE)) {                                                                      \
+            return arg1().as<_name>().tree_size() + 1;                                                     \
+        }                                                                                                  \
+        return 2;                                                                                          \
     }
 
 #endif
