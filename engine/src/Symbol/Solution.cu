@@ -1,28 +1,32 @@
 #include "Solution.cuh"
 
+#include <cstddef>
 #include <stdexcept>
 
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Solution)
 
     DEFINE_COMPRESS_REVERSE_TO(Solution) {
-        size_t new_expression_size = expression()->compress_reverse_to(destination);
         size_t new_substitutions_size = 0;
-
-        if (substitution_count > 0) {
-            new_substitutions_size = first_substitution()->compress_reverse_substitutions_to(
-                destination + new_expression_size);
+        Symbol* substitution = destination - 1;
+        // we assume that substitutions do not need additional size (this is naive imo)
+        for (size_t index = substitution_count; index > 0; --index) {
+            new_substitutions_size += substitution->size();
+            substitution -= substitution->size();
         }
+        
+        substitution->size() += substitution->additional_required_size();
+        substitution->additional_required_size() = 0;
 
-        size_t integral_offset = new_expression_size + new_substitutions_size;
+        const size_t new_expression_size = substitution->size();
+        symbol()->copy_single_to(destination);
+        destination->integral.size = new_expression_size + new_substitutions_size + 1;
+        destination->integral.integrand_offset = new_substitutions_size + 1;
 
-        symbol()->copy_single_to(destination + integral_offset);
-        destination[integral_offset].integral.size = integral_offset + 1;
-        destination[integral_offset].integral.integrand_offset = new_substitutions_size + 1;
-
-        return integral_offset + 1;
+        return 1;
     }
 
     DEFINE_COMPARE(Solution) {
@@ -31,11 +35,16 @@ namespace Sym {
                symbol->solution.expression_offset == expression_offset;
     }
 
-    DEFINE_SIMPLIFY_IN_PLACE(Solution) { expression()->simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Solution)
 
     DEFINE_IS_FUNCTION_OF(Solution) {
         return expression()->is_function_of(expressions, expression_count);
     } // NOLINT
+
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Solution) {
+        stack.push(expression());
+        expression()->additional_required_size() += additional_required_size;
+    }
 
     __host__ __device__ void Solution::seal_no_substitutions() { seal_substitutions(0, 0); }
 

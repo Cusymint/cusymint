@@ -3,6 +3,8 @@
 
 #include "Symbol.cuh"
 
+#include "Symbol/Addition.cuh"
+#include "Symbol/TreeIterator.cuh"
 #include "Utils/Meta.cuh"
 
 namespace Sym {
@@ -112,8 +114,8 @@ namespace Sym {
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             auto* const candidate = dst << SubexpressionCandidate::builder();
             candidate->vacancy_expression_idx = cuda::std::get<0>(cuda::std::get<0>(args));
-            candidate->vacancy_idx = cuda::std::get<0>(cuda::std::get<1>(args));
-            candidate->subexpressions_left = cuda::std::get<0>(cuda::std::get<2>(args));
+            candidate->vacancy_idx = cuda::std::get<1>(cuda::std::get<0>(args));
+            candidate->subexpressions_left = cuda::std::get<2>(cuda::std::get<0>(args));
 
             Inner::init(candidate->arg(),
                         Util::slice_tuple<CandidateArgsSize, IAdditionalArgsSize>(args));
@@ -158,6 +160,39 @@ namespace Sym {
     template <class I> using Arccot = OneArgOperator<Arccotangent, I>;
 
     template <class I> using Ln = OneArgOperator<Logarithm, I>;
+
+    /*
+     * @brief Encapsulates procedure of creating `TwoArgOp` symbol tree from existing `SymbolTree`,
+     * where every leaf of a tree (term of sum/factor of a product) is mapped by function of type
+     * `OneArgOp`. Note that `TwoArgOp` and `SymbolTree` may be different types.
+     */
+    template <class SymbolTree> struct From {
+        template <class TwoArgOp> struct Create {
+            template <class OneArgOp> struct WithMap {
+                using AdditionalArgs = cuda::std::tuple<
+                    cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
+
+                __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}) {
+                    SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
+                    size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
+                    Symbol* terms = &dst + count - 1;
+                    TreeIterator<SymbolTree> iterator(&tree);
+                    while (iterator.is_valid()) {
+                        OneArgOp* operator_ = terms << OneArgOp::builder();
+                        iterator.current()->copy_to(&operator_->arg());
+                        operator_->seal();
+                        terms += terms->size();
+                        iterator.advance();
+                    }
+                    for (ssize_t i = count - 2; i >= 0; --i) {
+                        TwoArgOp* const operator_ = &dst + i << TwoArgOp::builder();
+                        operator_->seal_arg1();
+                        operator_->seal();
+                    }
+                }
+            };
+        };
+    };
 }
 
 #endif
