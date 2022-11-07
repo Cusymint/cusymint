@@ -48,10 +48,16 @@ namespace Sym {
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex_this() const;
     [[nodiscard]] std::string to_tex() const;
-    END_DECLARE_SYMBOL(Substitution)
 
-    std::vector<Symbol> substitute(const std::vector<Symbol>& integral,
-                                   const std::vector<Symbol>& substitution);
+    /*
+     * @brief Applies this substitution to `expession`
+     *
+     * @param expression Expression where variable will be replaced by contents of `this`
+     *
+     * @return `expression` after substitution
+     */
+    [[nodiscard]] std::vector<Symbol> substitute(std::vector<Symbol> expr) const;
+    END_DECLARE_SYMBOL(Substitution)
 }
 
 #endif

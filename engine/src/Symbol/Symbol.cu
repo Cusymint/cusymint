@@ -120,13 +120,19 @@ namespace Sym {
         }
     }
 
+    __host__ __device__ size_t Symbol::compress_to(Symbol& destination) {
+        const size_t new_size = compress_reverse_to(&destination);
+        reverse_symbol_sequence(&destination, new_size);
+        return new_size;
+    }
+
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
         bool success = false;
 
         while (!success) {
             success = true;
 
-            for (ssize_t i = size() - 1; i >= 0; --i) {
+            for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
                 success = at(i)->simplify_in_place(help_space) && success;
             }
 

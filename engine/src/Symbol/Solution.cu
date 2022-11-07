@@ -23,8 +23,8 @@ namespace Sym {
 
         const size_t new_expression_size = substitution->size();
         symbol()->copy_single_to(destination);
-        destination->integral.size = new_expression_size + new_substitutions_size + 1;
-        destination->integral.integrand_offset = new_substitutions_size + 1;
+        destination->solution.size = new_expression_size + new_substitutions_size + 1;
+        destination->solution.expression_offset = new_substitutions_size + 1;
 
         return 1;
     }
@@ -106,6 +106,17 @@ namespace Sym {
         }
 
         return fmt::format(R"(\text{{Solution: }} {})", expression_copy.data()->to_tex());
+    }
+
+    std::vector<Symbol> Solution::substitute_substitutions() const {
+        std::vector<Symbol> this_expression(expression()->size());
+        std::copy(expression(), expression() + expression()->size(), this_expression.begin());
+
+        if (substitution_count == 0) {
+            return this_expression;
+        }
+
+        return first_substitution()->substitute(this_expression);
     }
 
     std::vector<Symbol> solution(const std::vector<Symbol>& arg) {

@@ -162,6 +162,9 @@ namespace Sym {
 
 #define DEFINE_SIMPLE_COMPRESS_REVERSE_TO(_name)                                \
     DEFINE_COMPRESS_REVERSE_TO(_name) {                                         \
+        for (size_t i = 0; i < additional_required_size; ++i) {                 \
+            (destination + i)->init_from(Unknown::create());                    \
+        }                                                                       \
         Symbol* const new_destination = destination + additional_required_size; \
         symbol()->copy_single_to(new_destination);                              \
         return size + additional_required_size;                                 \
@@ -371,7 +374,7 @@ namespace Sym {
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                         \
-        /* TODO: Potrzebne sortowanie, inaczej nie będą poprawnie działać porównania drzew */              \
+        /* TODO: Potrzebne sortowanie, inaczej nie będą poprawnie działać porównania drzew */         \
         if (!arg2().is(Type::_name)) {                                                                     \
             return;                                                                                        \
         }                                                                                                  \
@@ -394,8 +397,8 @@ namespace Sym {
         Symbol* const resized_reversed_this = right_copy + right_copy->size();                             \
         const size_t new_size = symbol()->compress_reverse_to(resized_reversed_this);                      \
                                                                                                            \
-        /* Zmiany w strukturze mogą zmienić całkowity rozmiar `this`, bo                                   \
-         * compress_reverse_to skróci wcześniej uproszczone wyrażenia*/                                    \
+        /* Zmiany w strukturze mogą zmienić całkowity rozmiar `this`, bo                                \
+         * compress_reverse_to skróci wcześniej uproszczone wyrażenia*/                                 \
         Symbol::copy_and_reverse_symbol_sequence(symbol(), resized_reversed_this, new_size);               \
         right_copy->copy_to(last_left);                                                                    \
         last_left_copy->copy_to(&arg2());                                                                  \

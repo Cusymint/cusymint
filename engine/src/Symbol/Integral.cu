@@ -53,7 +53,7 @@ namespace Sym {
     __host__ __device__ void Integral::seal_no_substitutions() { seal_substitutions(0, 0); }
 
     __host__ __device__ void Integral::seal_single_substitution() {
-        seal_substitutions(1, (Symbol::from(this) + integrand_offset)->size());
+        seal_substitutions(1, (symbol() + integrand_offset)->size());
     }
 
     __host__ __device__ void Integral::seal_substitutions(const size_t count, const size_t size) {

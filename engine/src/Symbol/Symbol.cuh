@@ -137,11 +137,19 @@ namespace Sym {
         [[nodiscard]] __host__ __device__ inline size_t& size() { return unknown.size; }
         [[nodiscard]] __host__ __device__ inline size_t size() const { return unknown.size; }
 
-        [[nodiscard]] __host__ __device__ inline size_t& additional_required_size() { return unknown.additional_required_size; }
-        [[nodiscard]] __host__ __device__ inline size_t additional_required_size() const { return unknown.additional_required_size; }
+        [[nodiscard]] __host__ __device__ inline size_t& additional_required_size() {
+            return unknown.additional_required_size;
+        }
+        [[nodiscard]] __host__ __device__ inline size_t additional_required_size() const {
+            return unknown.additional_required_size;
+        }
 
-        [[nodiscard]] __host__ __device__ inline bool& to_be_copied() { return unknown.to_be_copied; }
-        [[nodiscard]] __host__ __device__ inline bool to_be_copied() const { return unknown.to_be_copied; }
+        [[nodiscard]] __host__ __device__ inline bool& to_be_copied() {
+            return unknown.to_be_copied;
+        }
+        [[nodiscard]] __host__ __device__ inline bool to_be_copied() const {
+            return unknown.to_be_copied;
+        }
 
         template <class T> __host__ __device__ inline T& init_from(const T& other) {
             // Not using `as<>` to prevent errors, as in this case
@@ -360,6 +368,16 @@ namespace Sym {
         __host__ __device__ size_t compress_reverse_to(Symbol* const destination);
 
         /*
+         * @brief Removes holes from symbol tree and copies it to `destination`.
+         *
+         * @param destination Location to which the tree is going to be copied. Cannot be same as
+         * `this`.
+         *
+         * @return New size of the symbol tree
+         */
+        __host__ __device__ size_t compress_to(Symbol& destination);
+
+        /*
          * @brief Zwraca funkcję podcałkową jeśli `this` jest całką. Undefined behavior w przeciwnym
          * wypadku.
          *
@@ -372,7 +390,8 @@ namespace Sym {
             return integral.integrand();
         }
 
-        __host__ __device__ void mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space);
+        __host__ __device__ void
+        mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space);
 
         /*
          * @brief Wykonuje uproszcznie wyrażenia
