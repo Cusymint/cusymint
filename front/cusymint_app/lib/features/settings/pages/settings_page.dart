@@ -1,3 +1,4 @@
+import 'package:cusymint_app/features/navigation/navigation.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -5,6 +6,13 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return SettingsPageTemplate(
+      drawer: WiredDrawer(context: context),
+      chosenLanguage: 'English',
+      ipAddress: '',
+      onIpAddressTap: () {},
+      onLanguageTap: () {},
+      onLicensesTap: () {},
+    );
   }
 }
