@@ -12,6 +12,7 @@ set(SYMBOL_DIR "${SRC_DIR}/Symbol")
 set(EVALUATION_DIR "${SRC_DIR}/Evaluation")
 set(PARSER_DIR "${SRC_DIR}/Parser")
 set(SERVER_DIR "${SRC_DIR}/Server")
+set(SOLVER_DIR "${SRC_DIR}/Solver")
 set(TEST_DIR "test")
 
 # Define build targets
@@ -52,7 +53,8 @@ add_library(
   ${PARSER_DIR}/Parser.cu
   ${SERVER_DIR}/Server.cu
   ${SERVER_DIR}/mongoose.c
-  ${SERVER_DIR}/CachedParser.cu)
+  ${SOLVER_DIR}/CachedParser.cu
+  ${SOLVER_DIR}/Expression.cu)
 
 add_executable(cusymint ${SRC_DIR}/main.cu)
 add_executable(testcusymint ${TEST_DIR}/test.cu)

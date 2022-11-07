@@ -5,7 +5,7 @@
 #include <string>
 #include <functional>
 
-#include "CachedParser.cuh"
+#include "../Solver/CachedParser.cuh"
 
 class Server {
     private:

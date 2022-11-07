@@ -2,10 +2,11 @@
 
 #include <vector>
 #include "../Symbol/Symbol.cuh"
+#include "Expression.cuh"
 
 class Solver {
     public:
         Solver();
         ~Solver();
-        void solve(std::vector<std::Symbol> integral);
+        void solve(Expression integral);
 }

@@ -14,7 +14,7 @@
 #include "Symbol/Symbol.cuh"
 
 #include "Server/Server.cuh"
-#include "Server/CachedParser.cuh"
+#include "Solver/CachedParser.cuh"
 
 #include "Parser/Parser.cuh"
 
