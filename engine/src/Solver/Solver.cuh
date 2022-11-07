@@ -1,12 +1,12 @@
 #pragma once
 
 #include <vector>
+#include <optional>
 #include "../Symbol/Symbol.cuh"
 #include "Expression.cuh"
 
 class Solver {
     public:
         Solver();
-        ~Solver();
-        void solve(Expression integral);
-}
+        std::optional<Expression> solve(const Expression& integral) const;
+};

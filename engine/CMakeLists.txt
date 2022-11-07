@@ -54,7 +54,8 @@ add_library(
   ${SERVER_DIR}/Server.cu
   ${SERVER_DIR}/mongoose.c
   ${SOLVER_DIR}/CachedParser.cu
-  ${SOLVER_DIR}/Expression.cu)
+  ${SOLVER_DIR}/Expression.cu
+  ${SOLVER_DIR}/Solver.cu)
 
 add_executable(cusymint ${SRC_DIR}/main.cu)
 add_executable(testcusymint ${TEST_DIR}/test.cu)
