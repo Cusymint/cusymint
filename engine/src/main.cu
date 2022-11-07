@@ -21,16 +21,20 @@
 
 #include "Utils/CompileConstants.cuh"
 
-int main() {
-    if constexpr (Consts::DEBUG) {
-        fmt::print("Running in debug mode\n");
-    }
-
+void run_server() {
     auto uri = "ws://localhost:8000";
     CachedParser parser;
     Solver solver;
     Server server = Server(uri, parser, solver);
     server.run();
+}
+
+int main() {
+    if constexpr (Consts::DEBUG) {
+        fmt::print("Running in debug mode\n");
+    }
+
+    run_server();
 
     Sym::Static::init_functions();
 
