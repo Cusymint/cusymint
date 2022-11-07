@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "Substitution.cuh"
 #include "Macros.cuh"
+#include "Substitution.cuh"
 
 namespace Sym {
     DECLARE_SYMBOL(Integral, false)
@@ -15,8 +15,8 @@ namespace Sym {
     __host__ __device__ void seal_single_substitution();
     __host__ __device__ void seal_substitutions(const size_t count, const size_t size);
 
-    __host__ __device__ Symbol* integrand();
-    __host__ __device__ const Symbol* integrand() const;
+    [[nodiscard]] __host__ __device__ Symbol* integrand();
+    [[nodiscard]] __host__ __device__ const Symbol* integrand() const;
 
     /*
      * @brief Copies `*this`, and all its substitutions into dst, and adds expression from
@@ -32,6 +32,14 @@ namespace Sym {
                                               Symbol* const destination) const;
 
     /*
+     * @brief Copies the integral symbol and its substitutions to `destination`. Sets size of
+     * integral at `destination` to `BUILDER_SIZE`
+     *
+     * @param destination Destination of
+     */
+    __host__ __device__ void copy_without_integrand_to(Symbol* const destination) const;
+
+    /*
      * @brief Integrate `this` by substitution and save the result in `destination`.
      *
      *
@@ -40,17 +48,24 @@ namespace Sym {
      * @param derivative Derivative of `substitution` in terms of u, e.g. if u=x^2 then
      * `derivative`=2*(var^(1/2))
      * @param destination Pointer to where the result is going to be saved
+     * @param help_space Additional memory for internal usage
      */
-    __host__ __device__ void integrate_by_substitution_with_derivative(
-        const Symbol* const substitution, const Symbol* const derivative, Symbol* const destination,
-        Symbol* const help_space) const;
+    __host__ __device__ void integrate_by_substitution_with_derivative(const Symbol& substitution,
+                                                                       const Symbol& derivative,
+                                                                       Symbol& destination,
+                                                                       Symbol& help_space) const;
 
-    __host__ __device__ const Substitution* first_substitution() const;
-    __host__ __device__ Substitution* first_substitution();
+    [[nodiscard]] __host__ __device__ const Substitution* first_substitution() const;
+    [[nodiscard]] __host__ __device__ Substitution* first_substitution();
 
-    __host__ __device__ size_t substitutions_size() const;
+    /*
+     * @brief Number of symbols between the integral symbol and the integrand (not counting either
+     * of them)
+     */
+    [[nodiscard]] __host__ __device__ size_t substitutions_size() const;
 
-    std::string to_string() const;
+    [[nodiscard]] std::string to_string() const;
+    [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(Integral)
 
     std::vector<Symbol> integral(const std::vector<Symbol>& arg);

@@ -1,15 +1,23 @@
+#include "Symbol/Macros.cuh"
 #include "Symbol/Unknown.cuh"
 
 #include "Symbol/Symbol.cuh"
+#include <fmt/core.h>
 
 namespace Sym {
     DEFINE_SIMPLE_COMPARE(Unknown);
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(Unknown);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Unknown);
+    DEFINE_INVALID_IS_FUNCTION_OF(Unknown); // NOLINT
+    DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Unknown)
 
-    std::string Unknown::to_string() const {
-        return "Unknown(type=" +
-               std::to_string(static_cast<std::underlying_type<Type>::type>(type)) +
-               ",size=" + std::to_string(size) + ")";
+    [[nodiscard]] std::string Unknown::to_string() const {
+        return fmt::format("Unknown(type={},size={})",
+                           static_cast<std::underlying_type<Type>::type>(type), size);
+    }
+
+    [[nodiscard]] std::string Unknown::to_tex() const {
+        return fmt::format(R"(?_{{ \text{{ type= }} {}, \text{{ size= }} {} }})",
+                           static_cast<std::underlying_type<Type>::type>(type), size);
     }
 }

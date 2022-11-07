@@ -1,5 +1,5 @@
 CompileFlags:
-  Remove: [-forward-unknown-to-host-compiler]
+  Remove: [-forward-unknown-to-host-compiler, --gpu-architecture=sm_50]
 
 Diagnostics:
   ClangTidy:
