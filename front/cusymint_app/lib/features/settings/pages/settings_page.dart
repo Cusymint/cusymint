@@ -12,7 +12,15 @@ class SettingsPage extends StatelessWidget {
       ipAddress: '',
       onIpAddressTap: () {},
       onLanguageTap: () {},
-      onLicensesTap: () {},
+      onLicensesTap: () {
+        showLicensePage(
+          context: context,
+          applicationIcon: CuLogo(
+            color: CuColors.of(context).black,
+          ),
+          applicationName: '',
+        );
+      },
     );
   }
 }
