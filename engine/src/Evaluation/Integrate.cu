@@ -484,7 +484,7 @@ namespace Sym {
                     else {
                         Heuristic::APPLICATIONS[trans_idx](
                             integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
-                            ExpressionArray<>::Iterator::Null(), help_spaces[int_dst_idx]);
+                            ExpressionArray<>::Iterator::null(), help_spaces[int_dst_idx]);
                     }
                 }
             }

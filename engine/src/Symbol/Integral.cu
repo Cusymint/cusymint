@@ -86,6 +86,7 @@ namespace Sym {
 
     __host__ __device__ void Integral::copy_without_integrand_to(Symbol* const destination) const {
         Symbol::copy_symbol_sequence(destination, symbol(), 1 + substitutions_size());
+        destination->as<Integral>().size = BUILDER_SIZE;
     }
 
     __host__ __device__ void Integral::integrate_by_substitution_with_derivative(

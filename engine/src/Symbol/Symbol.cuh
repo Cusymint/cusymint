@@ -198,7 +198,8 @@ namespace Sym {
                 // checks
                 if (size() != BUILDER_SIZE && size() <= idx) {
                     Util::crash(
-                        "Trying to access %lu element after a symbol, but the symbol's size is %lu",
+                        "Trying to access element at index %lu after a symbol, but the symbol's "
+                        "size is %lu and it is not under construction",
                         idx, size());
                 }
             }

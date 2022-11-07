@@ -12,6 +12,8 @@
 #include "Utils/StaticStack.cuh"
 
 namespace Sym {
+    // Could be 0, but ininitialized memory is often equal to 0, so some checks (like in `at` in
+    // `Symbol`) could fail. This way it is easier to catch problems related to unitialized memory.
     static constexpr size_t BUILDER_SIZE = std::numeric_limits<size_t>::max();
 
     union Symbol;
@@ -403,9 +405,9 @@ namespace Sym {
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_pairs() {                                                     \
-        TreeIterator<_name, Type::_name> first(this);                                                      \
+        TreeIterator<_name> first(this);                                                                   \
         while (first.is_valid()) {                                                                         \
-            TreeIterator<_name, Type::_name> second = first;                                               \
+            TreeIterator<_name> second = first;                                                            \
             second.advance();                                                                              \
                                                                                                            \
             while (second.is_valid()) {                                                                    \
