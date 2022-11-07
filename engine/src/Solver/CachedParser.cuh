@@ -5,16 +5,18 @@
 #include <vector>
 #include <optional>
 
+#include "Expression.cuh"
+
 #include "../Symbol/Symbol.cuh"
 
 class CachedParser {
     private:
-        std::unordered_map<std::string, std::vector<Sym::Symbol>> cache;
-        std::optional<std::vector<Sym::Symbol>> get_from_cache(const std::string& key);
-        void add_to_cache(const std::string& key, const std::vector<Sym::Symbol>& value);
-        std::vector<Sym::Symbol> get_parser_result(const std::string& key);
+        std::unordered_map<std::string, Expression> _cache;
+        std::optional<Expression> _get_from_cache(const std::string& key);
+        void _add_to_cache(const std::string& key, const Expression& value);
+        Expression _get_parser_result(const std::string& key);
 
     public:
         CachedParser();
-        std::vector<Sym::Symbol> parse(const std::string& input);        
+        Expression parse(const std::string& input);        
 };

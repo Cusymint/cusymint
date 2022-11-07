@@ -9,11 +9,11 @@
 
 class Server {
     private:
-        struct mg_mgr mgr;
+        struct mg_mgr _mgr;
         /// @brief Server URI.
         /// @example "ws://localhost:8000"
-        std::string listen_on;
-        CachedParser cached_parser;
+        std::string _listen_on;
+        CachedParser _cached_parser;
 
     public:
         Server(std::string listen_on, CachedParser cached_parser);

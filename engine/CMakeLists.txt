@@ -51,6 +51,7 @@ add_library(
   ${EVALUATION_DIR}/KnownIntegral/SimpleArctan.cu
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu
+  ${SERVER_DIR}/JsonFormatter.cu
   ${SERVER_DIR}/Server.cu
   ${SERVER_DIR}/mongoose.c
   ${SOLVER_DIR}/CachedParser.cu

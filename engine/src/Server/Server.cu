@@ -18,7 +18,7 @@ static void interpret(struct mg_rpc_req *r) {
 
     auto parserResult = global_cached_parser->parse(input);
 
-    mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", parserResult.data()->to_string().c_str());
+    mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", parserResult.to_string().c_str());
     free(input);
 }
 
@@ -63,8 +63,8 @@ void handler(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
 }
 
 Server::Server(std::string listen_on, CachedParser cached_parser)
-    : listen_on(listen_on), cached_parser(cached_parser) {
-    mg_mgr_init(&mgr);
+    : _listen_on(listen_on), _cached_parser(cached_parser) {
+    mg_mgr_init(&_mgr);
     mg_log_set(MG_LL_DEBUG);
 
     mg_rpc_add(&s_rpc_head, mg_str("interpret"), interpret, NULL);
@@ -75,15 +75,15 @@ Server::Server(std::string listen_on, CachedParser cached_parser)
 }
 
 void Server::run() {
-    fmt::print("Starting server on {}\n", listen_on);
+    fmt::print("Starting server on {}\n", _listen_on);
 
-    mg_http_listen(&mgr, listen_on.c_str(), handler, NULL);
+    mg_http_listen(&_mgr, _listen_on.c_str(), handler, NULL);
     for (;;) {
-        mg_mgr_poll(&mgr, 1000);
+        mg_mgr_poll(&_mgr, 1000);
     }
 }
 
 Server::~Server() {
-    mg_mgr_free(&mgr);
+    mg_mgr_free(&_mgr);
     mg_rpc_del(&s_rpc_head, NULL);
 }
