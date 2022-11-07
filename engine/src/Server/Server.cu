@@ -86,7 +86,10 @@ void handler(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
 Server::Server(std::string listen_on, CachedParser cached_parser, Solver solver)
     : _listen_on(listen_on), _cached_parser(cached_parser), _solver() {
     mg_mgr_init(&_mgr);
-    mg_log_set(MG_LL_DEBUG);
+
+    if constexpr (Consts::DEBUG) {
+        mg_log_set(MG_LL_DEBUG);
+    }
 
     mg_rpc_add(&s_rpc_head, mg_str("interpret"), interpret, NULL);
     mg_rpc_add(&s_rpc_head, mg_str("solve"), solve, NULL);
