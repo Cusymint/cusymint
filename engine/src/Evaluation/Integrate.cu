@@ -7,14 +7,15 @@
 #include "KnownIntegral/KnownIntegral.cuh"
 #include "StaticFunctions.cuh"
 
+#include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/Meta.cuh"
 
 namespace Sym {
     namespace {
         constexpr size_t TRANSFORM_GROUP_SIZE = 32;
-        constexpr size_t MAX_EXPRESSION_COUNT = 256;
-        constexpr size_t EXPRESSION_MAX_SYMBOL_COUNT = 256;
+        constexpr size_t MAX_EXPRESSION_COUNT = 128;
+        constexpr size_t EXPRESSION_MAX_SYMBOL_COUNT = 512;
 
         /*
          * @brief Podejmuje próbę ustawienia `expressions[potential_solver_idx]` (będącego
@@ -631,6 +632,14 @@ namespace Sym {
         std::vector<Sym::Symbol> replace_nth_with_tree(std::vector<Sym::Symbol> expression,
                                                        const size_t n,
                                                        const std::vector<Sym::Symbol>& tree) {
+            if constexpr (Consts::DEBUG) {
+                if (!tree[0].is(Type::SubexpressionCandidate)) {
+                    Util::crash(
+                        "Invalid first symbol of tree: %s, should be SubexpressionCandidate",
+                        type_name(tree[0].type()));
+                }
+            }
+
             std::vector<Sym::Symbol> tree_content;
 
             if (tree[1].is(Sym::Type::Solution)) {

@@ -5,14 +5,7 @@
 #include <fmt/core.h>
 
 namespace Sym {
-    DEFINE_COMPRESS_REVERSE_TO(ExpanderPlaceholder) {
-        Symbol* const new_destination = destination + additional_required_size;
-        for (int i = 0; i < size; ++i) {
-            symbol()->copy_single_to(new_destination + i);
-        }
-        new_destination->additional_required_size() = 0;
-        return size + additional_required_size;
-    }
+    DEFINE_SIMPLE_COMPRESS_REVERSE_TO(ExpanderPlaceholder)
     DEFINE_SIMPLE_COMPARE(ExpanderPlaceholder)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(ExpanderPlaceholder)
     DEFINE_INVALID_IS_FUNCTION_OF(ExpanderPlaceholder) // NOLINT
@@ -21,9 +14,9 @@ namespace Sym {
     __host__ __device__ ExpanderPlaceholder ExpanderPlaceholder::with_size(size_t size) {
         return {
             .type = Sym::Type::ExpanderPlaceholder,
-            .size = size,
+            .size = 1,
             .simplified = true,
-            .additional_required_size = 0,
+            .additional_required_size = size - 1,
         };
     }
 
