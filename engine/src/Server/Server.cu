@@ -1,5 +1,6 @@
 #include "Server.cuh"
 #include "Parser/Parser.cuh"
+#include "JsonFormatter.cuh"
 
 // https://mongoose.ws/tutorials/json-rpc-over-websocket/
 
@@ -7,6 +8,7 @@
 
 static struct mg_rpc *s_rpc_head = NULL;
 static CachedParser *global_cached_parser = NULL;
+static Solver *global_solver = NULL;
 
 static void interpret(struct mg_rpc_req *r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
@@ -16,9 +18,11 @@ static void interpret(struct mg_rpc_req *r) {
         return;
     }
 
-    auto parserResult = global_cached_parser->parse(input);
+    auto parser_result = global_cached_parser->parse(input);
+    auto formatter = JsonFormatter();
+    auto json = formatter.format(&parser_result, nullptr);
 
-    mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", parserResult.to_string().c_str());
+    mg_rpc_ok(r, "%s", json.c_str());
     free(input);
 }
 
@@ -30,7 +34,24 @@ static void solve(struct mg_rpc_req *r) {
         return;
     }
 
-    mg_rpc_ok(r, "{\"inputInUtf\": \"%s\"}", input);
+    auto parser_result = global_cached_parser->parse(input);
+
+    // TODO: This is a hack,
+    // we should be able to pass the parser result directly to the solver.
+    auto integral = Sym::integral(parser_result.symbols);
+    parser_result = Expression(integral);
+
+    auto solver_result = global_solver->solve(parser_result);
+
+    auto formatter = JsonFormatter();
+
+    if(solver_result.has_value()) {
+        auto json = formatter.format(&parser_result, &solver_result.value());
+        mg_rpc_ok(r, "%s", json.c_str());
+    } else {
+        auto json = formatter.format(&parser_result, nullptr);
+        mg_rpc_ok(r, "%s", json.c_str());
+    }
     free(input);
 }
 
@@ -62,8 +83,8 @@ void handler(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     (void) fn_data;
 }
 
-Server::Server(std::string listen_on, CachedParser cached_parser)
-    : _listen_on(listen_on), _cached_parser(cached_parser) {
+Server::Server(std::string listen_on, CachedParser cached_parser, Solver solver)
+    : _listen_on(listen_on), _cached_parser(cached_parser), _solver() {
     mg_mgr_init(&_mgr);
     mg_log_set(MG_LL_DEBUG);
 
@@ -72,6 +93,7 @@ Server::Server(std::string listen_on, CachedParser cached_parser)
     mg_rpc_add(&s_rpc_head, mg_str("rpc.list"), mg_rpc_list, &s_rpc_head);
 
     global_cached_parser = &cached_parser;
+    global_solver = &solver;
 }
 
 void Server::run() {

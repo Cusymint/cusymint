@@ -15,6 +15,7 @@
 
 #include "Server/Server.cuh"
 #include "Solver/CachedParser.cuh"
+#include "Solver/Solver.cuh"
 
 #include "Parser/Parser.cuh"
 
@@ -27,7 +28,8 @@ int main() {
 
     auto uri = "ws://localhost:8000";
     CachedParser parser;
-    Server server = Server(uri, parser);
+    Solver solver;
+    Server server = Server(uri, parser, solver);
     server.run();
 
     Sym::Static::init_functions();
