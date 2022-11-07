@@ -54,7 +54,7 @@ int main() {
     const auto solution = Sym::solve_integral(integral);
 
     if (solution.has_value()) {
-        fmt::print("Success! Solution:\n{}", solution.value().data()->to_tex());
+        fmt::print("Success! Solution:\n{} + C\n", solution.value().data()->to_tex());
     }
     else {
         fmt::print("No solution found\n");
