@@ -421,7 +421,6 @@ namespace Sym {
                          * bo być może tę sumę można połączyć z czymś, co było już rozważane.  \
                          * Dzięki rekurencji ogonkowej call stack nie będzie rosnąć.                   \
                          */                                                                                \
-                        /*return simplify_pairs();*/                                                       \
                         expression_changed = true;                                                         \
                     }                                                                                      \
                                                                                                            \
