@@ -53,7 +53,7 @@ add_library(
   ${PARSER_DIR}/Parser.cu
   ${SERVER_DIR}/JsonFormatter.cu
   ${SERVER_DIR}/Server.cu
-  ${SERVER_DIR}/mongoose.c
+  #${SERVER_DIR}/mongoose.c
   ${SOLVER_DIR}/CachedParser.cu
   ${SOLVER_DIR}/Expression.cu
   ${SOLVER_DIR}/Solver.cu)
@@ -103,14 +103,20 @@ FetchContent_Declare(
 set(gtest_force_shared_crt
     ON
     CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
 
-# TODO: Fetch and build mongoose
+FetchContent_Declare(
+  mongoose
+  GIT_REPOSITORY https://github.com/cesanta/mongoose.git
+  GIT_TAG 7.8)
+
+FetchContent_MakeAvailable(googletest mongoose)
+
+add_library(libmongoose ${mongoose_SOURCE_DIR}/mongoose.c)
 
 # Includes and linking
 
-target_include_directories(libcusymint PUBLIC ${SRC_DIR})
-target_link_libraries(libcusymint PUBLIC fmt::fmt)
+target_include_directories(libcusymint PUBLIC ${SRC_DIR} ${mongoose_SOURCE_DIR})
+target_link_libraries(libcusymint PUBLIC fmt::fmt libmongoose)
 
 target_link_libraries(cusymint PRIVATE libcusymint)
 
