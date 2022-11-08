@@ -27,7 +27,7 @@ namespace Sym {
         simplify_pairs();
         eliminate_ones();
 
-        return try_simplify_polynomials(help_space);;
+        return true;
     }
 
     __host__ __device__ bool Product::try_simplify_polynomials(Symbol* const help_space) {
