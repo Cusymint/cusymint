@@ -1,6 +1,8 @@
 #include "Symbol.cuh"
 
+#include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/StaticStack.cuh"
 
 namespace Sym {
     __host__ __device__ void Symbol::copy_symbol_sequence(Symbol* const destination,
@@ -42,7 +44,7 @@ namespace Sym {
     }
 
     __host__ __device__ void Symbol::copy_single_to(Symbol* const destination) const {
-        VIRTUAL_CALL(*this, copy_single_to, destination);
+        Util::copy_mem(destination, this, sizeof(Symbol));
     }
 
     __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {
@@ -69,59 +71,97 @@ namespace Sym {
         return -1;
     }
 
-    __host__ __device__ bool Symbol::is_function_of(Symbol* expression) const {
-        if (is_constant()) {
-            return false;
-        }
-
-        ssize_t first_var_offset = expression->first_var_occurence();
-
-        for (size_t i = 0; i < size(); ++i) {
-            if (this[i].is(Type::Variable)) {
-                // First variable in `this` appears earlier than first variable in `expression` or
-                // `this` is not long enough to contain another occurence of `expression`
-                if (i < first_var_offset || size() - i < expression->size() - first_var_offset) {
-                    return false;
-                }
-
-                if (!compare_symbol_sequences(this + i - first_var_offset, expression,
-                                              expression->size())) {
-                    return false;
-                }
-
-                i += expression->size() - first_var_offset - 1;
-            }
-        }
-
-        return true;
+    __host__ __device__ bool Symbol::is_function_of(const Symbol* const* const expressions,
+                                                    const size_t expression_count) const {
+        return VIRTUAL_CALL(*this, is_function_of, expressions, expression_count);
     }
 
     __host__ __device__ void
-    Symbol::substitute_with_var_with_holes(Symbol* const destination,
-                                           const Symbol* const expression) const {
-        ssize_t first_var_offset = expression->first_var_occurence();
-        copy_to(destination);
+    Symbol::substitute_with_var_with_holes(Symbol& destination, const Symbol& expression) const {
+        ssize_t first_var_offset = expression.first_var_occurence();
+        copy_to(&destination);
 
         for (size_t i = 0; i < size(); ++i) {
             if (destination[i].is(Type::Variable)) {
                 destination[i - first_var_offset].variable = Variable::create();
-                i += expression->size() - first_var_offset - 1;
+                i += expression.size() - first_var_offset - 1;
             }
         }
     }
 
-    __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) const {
-        return VIRTUAL_CALL(*this, compress_reverse_to, destination);
+    __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) {
+        mark_to_be_copied_and_propagate_additional_size(destination);
+
+        Symbol* compressed_reversed_destination = destination;
+        for (ssize_t i = size() - 1; i >= 0; --i) {
+            if (at(i)->to_be_copied()) {
+                at(i)->to_be_copied() = false;
+
+                const size_t new_size =
+                    VIRTUAL_CALL(*at(i), compress_reverse_to, compressed_reversed_destination);
+                compressed_reversed_destination += new_size;
+            }
+        }
+
+        return compressed_reversed_destination - destination;
+    }
+
+    __host__ __device__ void
+    Symbol::mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space) {
+        Util::StaticStack<Symbol*> stack(reinterpret_cast<Symbol**>(help_space));
+
+        stack.push(this);
+
+        while (!stack.empty()) {
+            Symbol* sym = stack.pop();
+
+            sym->to_be_copied() = true;
+            VIRTUAL_CALL(*sym, put_children_on_stack_and_propagate_additional_size, stack);
+        }
+    }
+
+    __host__ __device__ size_t Symbol::compress_to(Symbol& destination) {
+        const size_t new_size = compress_reverse_to(&destination);
+        reverse_symbol_sequence(&destination, new_size);
+        return new_size;
+    }
+
+    __host__ __device__ void print_symbols(const char* str, Symbol* array, size_t size) {
+        printf("%s\n", str);
+        for (size_t i = 0; i < size; ++i) {
+            printf("\t%s\t%lu+%lu\n", type_name(array[i].type()), array[i].size(), array[i].additional_required_size());
+        }
     }
 
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
-        simplify_in_place(help_space);
-        const size_t new_size = compress_reverse_to(help_space);
-        copy_and_reverse_symbol_sequence(this, help_space, new_size);
+        bool success = false;
+
+        int i_deb = 0;
+
+        while (!success) {
+            success = true;
+
+            print_symbols("before in-place", this, size());
+
+            for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
+                success = at(i)->simplify_in_place(help_space) && success;
+            }
+
+            print_symbols("after in-place", this, size());
+
+            const size_t new_size = compress_reverse_to(help_space);
+
+            copy_and_reverse_symbol_sequence(this, help_space, new_size);
+
+            print_symbols("after all", this, size());
+
+            if (i_deb++ > 5)
+                return;
+        }
     }
 
-    __host__ __device__ void Symbol::simplify_in_place(Symbol* const help_space) {
-        VIRTUAL_CALL(*this, simplify_in_place, help_space);
+    __host__ __device__ bool Symbol::simplify_in_place(Symbol* const help_space) {
+        return VIRTUAL_CALL(*this, simplify_in_place, help_space);
     }
 
     void Symbol::substitute_variable_with(const Symbol symbol) {
@@ -153,9 +193,13 @@ namespace Sym {
 
     std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
 
-    __host__ __device__ int Symbol::is_polynomial() const { return VIRTUAL_CALL(*this, is_polynomial); }
+    __host__ __device__ int Symbol::is_polynomial() const {
+        return VIRTUAL_CALL(*this, is_polynomial);
+    }
 
-    __host__ __device__ double Symbol::get_monomial_coefficient() const { return VIRTUAL_CALL(*this, get_monomial_coefficient); }
+    __host__ __device__ double Symbol::get_monomial_coefficient() const {
+        return VIRTUAL_CALL(*this, get_monomial_coefficient);
+    }
 
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {
         return VIRTUAL_CALL(sym1, compare, &sym2);

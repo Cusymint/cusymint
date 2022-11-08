@@ -1,8 +1,21 @@
+#include "Symbol/Addition.cuh"
 #include "Symbol/Product.cuh"
 
 #include "Symbol/Symbol.cuh"
 #include "Symbol/TreeIterator.cuh"
+#include <cstdio>
 #include <fmt/core.h>
+
+namespace {
+    std::string fraction_to_tex(const Sym::Symbol& numerator, const Sym::Symbol& denominator) {
+        if (numerator.is(Sym::Type::Logarithm) && denominator.is(Sym::Type::Logarithm)) {
+            return fmt::format(R"(\log_{{ {} }}\left({}\right))",
+                               denominator.logarithm.arg().to_tex(),
+                               numerator.logarithm.arg().to_tex());
+        }
+        return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(), denominator.to_tex());
+    }
+}
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Product)
@@ -10,17 +23,14 @@ namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Product)
 
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
-        arg1().simplify_in_place(help_space);
-        arg2().simplify_in_place(help_space);
-
         simplify_structure(help_space);
         simplify_pairs();
         eliminate_ones();
 
-        try_simplify_polynomials(help_space);
+        return try_simplify_polynomials(help_space);;
     }
 
-    __host__ __device__ void Product::try_simplify_polynomials(Symbol* const help_space) {
+    __host__ __device__ bool Product::try_simplify_polynomials(Symbol* const help_space) {
         Symbol* numerator = nullptr;
         Symbol* denominator = nullptr;
         if (arg1().is(Type::Addition) && arg2().is(Type::Reciprocal) &&
@@ -34,38 +44,91 @@ namespace Sym {
             denominator = &arg1().reciprocal.arg();
         }
         if (numerator == nullptr || denominator == nullptr) {
-            return;
+            return true;
         }
         int const rank1 = numerator->is_polynomial();
         int const rank2 = denominator->is_polynomial();
 
-        if (rank1 < 1 || rank2 < 1 || rank1 < rank2) {
-            return;
+        if (rank1 < 1 || rank2 < 1 || rank1 <= rank2) {
+            return true;
         }
 
-        //numerator->addition.make_polynomial_in_place(rank1, help_space);
-        //denominator->addition.make_polynomial_in_place(rank2, help_space);
+        const size_t size_for_simplified_expression =
+            3 + Polynomial::expanded_size_from_rank(rank1 - rank2) +
+            Polynomial::expanded_size_from_rank(rank2 - 1) +
+            Polynomial::expanded_size_from_rank(rank2);
+
+        printf("%lu %lu\n", size, size_for_simplified_expression);
+
+        if (size < size_for_simplified_expression) {
+            additional_required_size = size_for_simplified_expression - size;
+            return false;
+        }
+
+        // here we start dividing polynomials
         auto* poly1 = help_space;
         numerator->addition.make_polynomial_to(poly1, rank1);
 
-        auto* poly2 = (poly1 + poly1->size());
+        auto* poly2 = poly1 + poly1->size();
         denominator->addition.make_polynomial_to(poly2, rank2);
 
         auto* result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
         Polynomial::divide_polynomials(poly1->as<Polynomial>(), poly2->as<Polynomial>(), *result);
 
-        // TODO larger sizes
-        if (poly1->as<Polynomial>().rank < 0 && size >= result->size) { // zero polynomial
-            result->symbol()->copy_to(symbol());
-            return;
+        Symbol* destination = symbol();
+
+        if (poly1->as<Polynomial>().is_zero()) {
+            result->expand_to(destination);
+            return true;
         }
-        if (size >= poly1->size() + poly2->size() + result->size + 3) {
-            Symbol* reciprocal = result->symbol()+result->size;
-            Reciprocal::create(poly2,reciprocal);
-            Symbol* product = reciprocal+reciprocal->size();
-            Product::create(poly1,reciprocal,product);
-            Addition::create(result->symbol(),product,symbol());
+
+        Addition* plus = symbol() << Addition::builder();
+        result->expand_to(&plus->arg1());
+        plus->seal_arg1();
+
+        Product* prod = &plus->arg2() << Product::builder();
+        poly1->as<Polynomial>().expand_to(&prod->arg1());
+        prod->seal_arg1();
+
+        Reciprocal* rec = &prod->arg2() << Reciprocal::builder();
+        poly2->as<Polynomial>().expand_to(&rec->arg());
+        rec->seal();
+        
+        prod->seal();
+        plus->seal();
+
+        return false; // maybe additional simplify required
+        // // TODO larger sizes
+        // if (poly1->as<Polynomial>().rank < 0 && size >= result->size) { // zero polynomial
+        //     result->symbol()->copy_to(symbol());
+        //     return;
+        // }
+        // if (size >= poly1->size() + poly2->size() + result->size + 3) {
+        //     Symbol* reciprocal = result->symbol() + result->size;
+        //     Reciprocal::create(poly2, reciprocal);
+        //     Symbol* product = reciprocal + reciprocal->size();
+        //     Product::create(poly1, reciprocal, product);
+        //     Addition::create(result->symbol(), product, symbol());
+        // }
+    }
+
+    DEFINE_IS_FUNCTION_OF(Product) {
+        for (size_t i = 0; i < expression_count; ++i) {
+            if (!expressions[i]->is(Type::Product)) {
+                continue;
+            }
+
+            const auto& product_expression = expressions[i]->as<Product>();
+
+            // TODO: In the future, this should look for correspondences in the product tree (See
+            // the comment in the same function for Power symbol).
+            if (arg1() == product_expression.arg1() && arg2() == product_expression.arg2()) {
+                return true;
+            }
         }
+
+        return arg1().is_function_of(expressions, expression_count) &&
+               arg2().is_function_of(expressions, expression_count);
     }
 
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol* const expr1,
@@ -112,13 +175,11 @@ namespace Sym {
 
     std::string Product::to_tex() const {
         if (arg1().is(Type::Reciprocal)) {
-            return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg2().to_tex(),
-                               arg1().reciprocal.arg().to_tex());
+            return fraction_to_tex(arg2(), arg1().reciprocal.arg());
         }
 
         if (arg2().is(Type::Reciprocal)) {
-            return fmt::format(R"(\frac{{ {} }}{{ {} }})", arg1().to_tex(),
-                               arg2().reciprocal.arg().to_tex());
+            return fraction_to_tex(arg1(), arg2().reciprocal.arg());
         }
 
         std::string arg1_pattern = "{}";
@@ -176,8 +237,9 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Reciprocal)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
+    DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
 
-    DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) { arg().simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Reciprocal)
 
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);

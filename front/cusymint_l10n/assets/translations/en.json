@@ -1,5 +1,16 @@
 {
-   "enterIntegral": "Enter integral",
+   "enterIntegral": "Enter your integral here",
    "tryExamples": "Or try one of these examples",
-   "foundResult": "Found result in {timeInMs} ms"
+   "foundResult": "Found result in {timeInMs} ms",
+   "encounteredErrors": "Encountered errors:",
+   "copiedToClipboard": "Copied to clipboard",
+   "subtitle": "Cuda symbolic integration",
+   "solve": "Solve",
+   "interpreting": "Interpreting",
+   "retry": "Retry",
+   "home": "Home",
+   "settings": "Settings",
+   "about": "About",
+   "interpretedAs": "Interpreted as",
+   "calculating": "Calculating result"
 }

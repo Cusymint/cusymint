@@ -11,6 +11,12 @@ namespace Sym {
 
     __host__ __device__ static void divide_polynomials(Polynomial& numerator, Polynomial& denominator, Polynomial& result);
 
+    __host__ __device__ void expand_to(Symbol* destination) const;
+    __host__ __device__ inline size_t expanded_size() const;
+    __host__ __device__ static size_t expanded_size_from_rank(size_t rank);
+
+    __host__ __device__ bool is_zero() const { return rank == 0 && coefficients()[0] < Util::EPS; }
+
     __host__ __device__ void make_proper();
 
     std::string to_string() const;

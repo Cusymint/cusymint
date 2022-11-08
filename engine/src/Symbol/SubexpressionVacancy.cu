@@ -2,12 +2,15 @@
 
 #include <fmt/format.h>
 
+#include "Symbol/Macros.cuh"
 #include "Symbol/Symbol.cuh"
 
 namespace Sym {
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(SubexpressionVacancy);
     DEFINE_SIMPLE_COMPARE(SubexpressionVacancy);
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(SubexpressionVacancy);
+    DEFINE_INVALID_IS_FUNCTION_OF(SubexpressionVacancy); // NOLINT
+    DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(SubexpressionVacancy)
 
     [[nodiscard]] std::string SubexpressionVacancy::to_string() const {
         std::string solved_info;

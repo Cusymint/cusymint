@@ -18,6 +18,7 @@ namespace Sym {
     END_DECLARE_SYMBOL(Power)
 
     std::vector<Symbol> operator^(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);
+    std::vector<Symbol> sqrt(const std::vector<Symbol>& arg);
 }
 
 #endif

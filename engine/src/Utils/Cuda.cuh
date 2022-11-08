@@ -6,9 +6,16 @@
 #include <cstdio>
 
 namespace Util {
-    constexpr double eps = 1e-10;
+    constexpr double EPS = 1e-10;
 
+    /*
+     * @brief The number of threads running in the current kernel
+     */
     __device__ inline size_t thread_count() { return gridDim.x * blockDim.x; }
+
+    /*
+     * @brief A kernel-wide unique thread identifier
+     */
     __device__ inline size_t thread_idx() { return threadIdx.x + blockDim.x * blockIdx.x; }
 
     /*
@@ -48,8 +55,7 @@ namespace Util {
      * @param tail Arguments used by the format string, same format as that of printf
      */
 
-    template <class T, class... Types>
-    __host__ __device__ void crash(T head, Types... tail) {
+    template <class T, class... Types> __host__ __device__ void crash(T head, Types... tail) {
         printf("\n[ERROR]: ");
         printf(head, tail...);
         printf("\n");

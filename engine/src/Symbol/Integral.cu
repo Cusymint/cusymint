@@ -2,27 +2,32 @@
 
 #include "Substitution.cuh"
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
+#include <cstddef>
 #include <fmt/core.h>
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Integral)
 
     DEFINE_COMPRESS_REVERSE_TO(Integral) {
-        size_t new_integrand_size = integrand()->compress_reverse_to(destination);
         size_t new_substitutions_size = 0;
-
-        if (substitution_count > 0) {
-            new_substitutions_size = first_substitution()->compress_reverse_substitutions_to(
-                destination + new_integrand_size);
+        Symbol* substitution = destination - 1;
+        // we assume that substitutions do not need additional size (this is naive imo)
+        for (size_t index = substitution_count; index > 0; --index) {
+            new_substitutions_size += substitution->size();
+            substitution -= substitution->size();
         }
+        // now `substitution` points to an integrand
+        substitution->size() += substitution->additional_required_size();
+        substitution->additional_required_size() = 0;
 
-        size_t integral_offset = new_integrand_size + new_substitutions_size;
+        size_t const new_integrand_size = substitution->size();
 
-        copy_single_to(destination + integral_offset);
-        destination[integral_offset].integral.size = integral_offset + 1;
-        destination[integral_offset].integral.integrand_offset = new_substitutions_size + 1;
+        symbol()->copy_single_to(destination);
+        destination->integral.size = new_integrand_size + new_substitutions_size + 1;
+        destination->integral.integrand_offset = new_substitutions_size + 1;
 
-        return destination[integral_offset].integral.size;
+        return 1;
     }
 
     DEFINE_COMPARE(Integral) {
@@ -31,12 +36,24 @@ namespace Sym {
                symbol->integral.integrand_offset == integrand_offset;
     }
 
-    DEFINE_SIMPLIFY_IN_PLACE(Integral) { integrand()->simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Integral)
+
+    DEFINE_IS_FUNCTION_OF(Integral) {
+        return integrand()->is_function_of(expressions, expression_count);
+    } // NOLINT
+
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Integral) {
+        if (substitution_count > 0) {
+            stack.push(first_substitution()->symbol());
+        }
+        stack.push(integrand());
+        integrand()->additional_required_size() += additional_required_size;
+    }
 
     __host__ __device__ void Integral::seal_no_substitutions() { seal_substitutions(0, 0); }
 
     __host__ __device__ void Integral::seal_single_substitution() {
-        seal_substitutions(1, (Symbol::from(this) + integrand_offset)->size());
+        seal_substitutions(1, (symbol() + integrand_offset)->size());
     }
 
     __host__ __device__ void Integral::seal_substitutions(const size_t count, const size_t size) {
@@ -69,33 +86,34 @@ namespace Sym {
 
     __host__ __device__ void Integral::copy_without_integrand_to(Symbol* const destination) const {
         Symbol::copy_symbol_sequence(destination, symbol(), 1 + substitutions_size());
+        destination->as<Integral>().size = BUILDER_SIZE;
     }
 
     __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
-        const Symbol* const substitution, const Symbol* const derivative, Symbol* const destination,
-        Symbol* const help_space) const {
+        const Symbol& substitution, const Symbol& derivative, Symbol& destination,
+        Symbol& help_space) const {
         integrand()->substitute_with_var_with_holes(destination, substitution);
-        size_t new_incomplete_integrand_size = destination->compress_reverse_to(help_space);
-        Symbol::reverse_symbol_sequence(help_space, new_incomplete_integrand_size);
+        size_t new_incomplete_integrand_size = destination.compress_reverse_to(&help_space);
+        Symbol::reverse_symbol_sequence(&help_space, new_incomplete_integrand_size);
 
         // Teraz w `help_space` jest docelowa funkcja podcałkowa, ale jeszcze bez mnożenia przez
         // pochodną. W `destination` są niepotrzebne dane.
 
         const auto old_integrand_size = static_cast<ssize_t>(integrand()->size());
         const auto new_integrand_size =
-            static_cast<ssize_t>(new_incomplete_integrand_size + 2 + derivative->size());
+            static_cast<ssize_t>(new_incomplete_integrand_size + 2 + derivative.size());
         const ssize_t size_diff = new_integrand_size - old_integrand_size;
 
-        copy_substitutions_with_an_additional_one(substitution, destination);
+        copy_substitutions_with_an_additional_one(&substitution, &destination);
 
-        destination->size() += size_diff;
+        destination.size() += size_diff;
 
-        Product* const product = destination->integrand() << Product::builder();
+        Product* const product = destination.integrand() << Product::builder();
         Reciprocal* const reciprocal = product->arg1() << Reciprocal::builder();
-        derivative->copy_to(&reciprocal->arg());
+        derivative.copy_to(&reciprocal->arg());
         reciprocal->seal();
         product->seal_arg1();
-        help_space->copy_to(&product->arg2());
+        help_space.copy_to(&product->arg2());
         product->seal();
     }
 

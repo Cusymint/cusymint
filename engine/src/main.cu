@@ -8,12 +8,15 @@
 #include <fmt/core.h>
 
 #include "Evaluation/Integrate.cuh"
+#include "Evaluation/StaticFunctions.cuh"
 
 #include "Symbol/Constants.cuh"
 #include "Symbol/ExpressionArray.cuh"
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Symbol/Variable.cuh"
+
+#include "Parser/Parser.cuh"
 
 #include "Utils/CompileConstants.cuh"
 
@@ -28,24 +31,44 @@ void print_polynomial_ranks(const Sym::ExpressionArray<Sym::Integral> integrals)
     fmt::print("\n");
 }
 
+/*
+ * @brief Creates a `std::string` representing expression of type `e^x * e^e^x * ... * e^e^...^e^x`,
+ * which is made of `n` factors.
+ * 
+ * @param `n` - number of factors in created expression. 
+ *
+ * @return Created string. If `n==0`, function returns `"1"`.
+ */
+std::string e_tower(size_t n) {
+    if (n == 0) {
+        return "1";
+    }
+    std::string res = "e^x";
+    for (int i = 2; i <= n; ++i) {
+        res += "*";
+        for (int j = 1; j <= i; ++j) {
+            res += "e^";
+        }
+        res += "x";
+    }
+    return res;
+}
+
 int main() {
     if constexpr (Consts::DEBUG) {
         fmt::print("Running in debug mode\n");
     }
 
-    std::vector<Sym::Symbol> integral = Sym::integral(
-        (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(4)) + (Sym::var() ^ Sym::num(5)) +
-        ((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var()))));
+    Sym::Static::init_functions();
 
-    fmt::print("Trying to solve an integral: {}\n", integral.data()->to_string());
+    const auto integral = Sym::integral(parse_function("(x^3+1)/(x+1)"));
 
-    std::optional<std::vector<std::vector<Sym::Symbol>>> solution = Sym::solve_integral(integral);
+    fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
+
+    const auto solution = Sym::solve_integral(integral);
 
     if (solution.has_value()) {
-        fmt::print("Success! Expressions tree:\n");
-        for (const auto& expr : solution.value()) {
-            fmt::print("{}\n", expr.data()->to_string());
-        }
+        fmt::print("Success! Solution:\n{} + C\n", solution.value().data()->to_tex());
     }
     else {
         fmt::print("No solution found\n");

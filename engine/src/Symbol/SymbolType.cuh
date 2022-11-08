@@ -34,6 +34,8 @@ namespace Sym {
         Arccosine,
         Arctangent,
         Arccotangent,
+        // Logarithm
+        Logarithm,
         // Polynomials
         Polynomial
     };
@@ -91,6 +93,10 @@ namespace Sym {
             return "Arctangent";
         case Type::Arccotangent:
             return "Arccotangent";
+        case Type::Logarithm:
+            return "Logarithm";
+        case Type::Polynomial:
+            return "Polynomial";
         }
 
         return "Invalid type";

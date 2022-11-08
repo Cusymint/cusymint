@@ -38,9 +38,14 @@ namespace Sym {
                                                              const Symbol* const expr2);
 
     /*
-     * TODO comments
+     * @brief Checks if `this` is a rational function and tries to simplify it.
+     *
+     * @param `help_space` a help space
+     *
+     * @return `true` if simplification was successful or didn't happen.
+     * `false` if simplification requires additional space.
      */
-    __host__ __device__ void try_simplify_polynomials(Symbol* const help_space);
+    __host__ __device__ bool try_simplify_polynomials(Symbol* const help_space);
 
     END_DECLARE_SYMBOL(Product)
 
