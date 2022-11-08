@@ -11,7 +11,7 @@ std::optional<Expression> Solver::solve(const Expression& integral) const {
     auto solve_result = Sym::solve_integral(integral.symbols);
 
     if (solve_result.has_value()) {
-        return Expression(solve_result.value()[0]);
+        return Expression(solve_result.value());
     }
 
     return std::nullopt;

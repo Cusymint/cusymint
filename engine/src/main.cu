@@ -21,14 +21,6 @@
 
 #include "Utils/CompileConstants.cuh"
 
-void run_server() {
-    auto uri = "ws://localhost:8000";
-    CachedParser parser;
-    Solver solver;
-    Server server = Server(uri, parser, solver);
-    server.run();
-}
-
 /*
  * @brief Creates a `std::string` representing expression of type `e^x * e^e^x * ... * e^e^...^e^x`,
  * which is made of `n` factors.
@@ -56,8 +48,6 @@ int main() {
     if constexpr (Consts::DEBUG) {
         fmt::print("Running in debug mode\n");
     }
-
-    run_server();
 
     Sym::Static::init_functions();
 

@@ -60,6 +60,7 @@ add_library(
 
 add_executable(cusymint ${SRC_DIR}/main.cu)
 add_executable(testcusymint ${TEST_DIR}/test.cu)
+add_executable(srvcusymint ${SRC_DIR}/main_server.cu)
 
 # Debug build related things
 
@@ -80,13 +81,13 @@ endif()
 
 target_compile_features(libcusymint PUBLIC cxx_std_17)
 set_target_properties(
-  libcusymint testcusymint cusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
+  libcusymint testcusymint cusymint srvcusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
                                                CUDA_ARCHITECTURES OFF)
 
 # Something to make this work on Mac OS
 
 if(APPLE)
-  set_target_properties(libcusymint cusymint testcusymint PROPERTY BUILD_RPATH
+  set_target_properties(libcusymint cusymint testcusymint srvcusymint PROPERTY BUILD_RPATH
                         ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
 endif()
 
@@ -119,5 +120,7 @@ target_include_directories(libcusymint PUBLIC ${SRC_DIR} ${mongoose_SOURCE_DIR})
 target_link_libraries(libcusymint PUBLIC fmt::fmt libmongoose)
 
 target_link_libraries(cusymint PRIVATE libcusymint)
+
+target_link_libraries(srvcusymint PRIVATE libcusymint)
 
 target_link_libraries(testcusymint PRIVATE libcusymint gtest_main)
