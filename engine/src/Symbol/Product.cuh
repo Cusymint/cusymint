@@ -18,7 +18,7 @@ namespace Sym {
      * UWAGA: funkcja ta może zmienić typ `this`, np. kiedy `this == * Reciprocal(pi) pi`, to po
      * wykonaniu funkcji `this == 1.0`, czyli typ się zmienił z Product na NumericConstant! Nie
      * należy więc po wywołaniu tej funkcji wywoływać już żadnych innych funkcji składowych z
-     * Product! Assumes that ones were eliminated from children.
+     * Product!
      */
     __host__ __device__ void eliminate_ones();
 

@@ -113,10 +113,6 @@ namespace Sym {
     }
 
     __host__ __device__ void Product::eliminate_ones() {
-        // if (arg1().is(Type::Product)) {
-        //     arg1().product.eliminate_ones();
-        // }
-
         for (auto* last = last_in_tree(); last >= this; last = (last->symbol() - 1)->as_ptr<Product>()) {
             if (last->arg2().is(Type::NumericConstant) && last->arg2().numeric_constant.value == 1.0) {
                 last->arg1().copy_to(last->symbol());

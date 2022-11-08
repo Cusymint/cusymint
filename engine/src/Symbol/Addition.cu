@@ -94,10 +94,6 @@ namespace Sym {
     }
 
     __host__ __device__ void Addition::eliminate_zeros() {
-        // if (arg1().is(Type::Addition)) {
-        //     arg1().addition.eliminate_zeros();
-        // }
-
         for (auto* last = last_in_tree(); last >= this; last = (last->symbol() - 1)->as_ptr<Addition>()) {
             if (last->arg2().is(Type::NumericConstant) && last->arg2().numeric_constant.value == 0.0) {
                 last->arg1().copy_to(last->symbol());
@@ -108,15 +104,6 @@ namespace Sym {
                 last->arg2().copy_to(last->symbol());
             }
         }
-
-        // if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value == 0.0) {
-        //     arg1().copy_to(symbol());
-        //     return;
-        // }
-
-        // if (arg1().is(Type::NumericConstant) && arg1().numeric_constant.value == 0.0) {
-        //     arg2().copy_to(symbol());
-        // }
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Negation)
