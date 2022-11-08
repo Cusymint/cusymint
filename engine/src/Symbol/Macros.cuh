@@ -359,79 +359,87 @@ namespace Sym {
         arg2().additional_required_size() += additional_required_size;                           \
     }
 
-#define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
-    DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                                \
-    __host__ __device__ const _name* _name::last_in_tree() const {                                         \
-        if (arg1().is(Type::_name)) {                                                                      \
-            return arg1().as<_name>().last_in_tree();                                                      \
-        }                                                                                                  \
-                                                                                                           \
-        return this;                                                                                       \
-    }                                                                                                      \
-                                                                                                           \
-    __host__ __device__ _name* _name::last_in_tree() {                                                     \
-        return const_cast<_name*>(const_cast<const _name*>(this)->last_in_tree());                         \
-    }                                                                                                      \
-                                                                                                           \
-    __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                         \
-        /* TODO: Potrzebne sortowanie, inaczej nie będą poprawnie działać porównania drzew */         \
-        if (!arg2().is(Type::_name)) {                                                                     \
-            return;                                                                                        \
-        }                                                                                                  \
-                                                                                                           \
-        if (!arg1().is(Type::_name)) {                                                                     \
-            swap_args(help_space);                                                                         \
-            return;                                                                                        \
-        }                                                                                                  \
-                                                                                                           \
-        Symbol* const last_left = &arg1().as<_name>().last_in_tree()->arg1();                              \
-                                                                                                           \
-        Symbol* const last_left_copy = help_space;                                                         \
-        last_left->copy_to(last_left_copy);                                                                \
-        last_left->expander_placeholder = ExpanderPlaceholder::with_size(arg2().size());                   \
-                                                                                                           \
-        Symbol* const right_copy = help_space + last_left_copy->size();                                    \
-        arg2().copy_to(right_copy);                                                                        \
-        arg2().expander_placeholder = ExpanderPlaceholder::with_size(last_left_copy->size());              \
-                                                                                                           \
-        Symbol* const resized_reversed_this = right_copy + right_copy->size();                             \
-        const size_t new_size = symbol()->compress_reverse_to(resized_reversed_this);                      \
-                                                                                                           \
-        /* Zmiany w strukturze mogą zmienić całkowity rozmiar `this`, bo                                \
-         * compress_reverse_to skróci wcześniej uproszczone wyrażenia*/                                 \
-        Symbol::copy_and_reverse_symbol_sequence(symbol(), resized_reversed_this, new_size);               \
-        right_copy->copy_to(last_left);                                                                    \
-        last_left_copy->copy_to(&arg2());                                                                  \
-    }                                                                                                      \
-                                                                                                           \
-    __host__ __device__ void _name::simplify_pairs() {                                                     \
-        TreeIterator<_name> first(this);                                                                   \
-        while (first.is_valid()) {                                                                         \
-            TreeIterator<_name> second = first;                                                            \
-            second.advance();                                                                              \
-                                                                                                           \
-            while (second.is_valid()) {                                                                    \
-                if (try_fuse_symbols(first.current(), second.current())) {                                 \
-                    /* Jeśli udało się coś połączyć, to upraszczanie trzeba rozpocząć od nowa     \
-                     * (możnaby tylko dla zmienionego elementu, jest to opytmalizacja TODO), bo           \
-                     * być może tę sumę można połączyć z czymś, co było już rozważane. Dzięki \
-                     * rekurencji ogonkowej call stack nie będzie rosnąć.                               \
-                     */                                                                                    \
-                    return simplify_pairs();                                                               \
-                }                                                                                          \
-                                                                                                           \
-                second.advance();                                                                          \
-            }                                                                                              \
-                                                                                                           \
-            first.advance();                                                                               \
-        }                                                                                                  \
-    }                                                                                                      \
-                                                                                                           \
-    __host__ __device__ size_t _name::tree_size() {                                                        \
-        if (arg1().is(_name::TYPE)) {                                                                      \
-            return arg1().as<_name>().tree_size() + 1;                                                     \
-        }                                                                                                  \
-        return 2;                                                                                          \
+#define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                  \
+    DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                                  \
+    __host__ __device__ const _name* _name::last_in_tree() const {                                           \
+        auto* last = this;                                                                                   \
+        while (last->arg1().is(Type::_name)) {                                                               \
+            last = last->arg1().as_ptr<_name>();                                                             \
+        }                                                                                                    \
+                                                                                                             \
+        return last;                                                                                         \
+        /*if (arg1().is(Type::_name)) {                                                                      \
+            return arg1().as<_name>().last_in_tree();                                                        \
+        }                                                                                                    \
+                                                                                                           \ \
+        return this;      */                                                                                 \
+    }                                                                                                        \
+                                                                                                             \
+    __host__ __device__ _name* _name::last_in_tree() {                                                       \
+        return const_cast<_name*>(const_cast<const _name*>(this)->last_in_tree());                           \
+    }                                                                                                        \
+                                                                                                             \
+    __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                           \
+        /* TODO: Potrzebne sortowanie, inaczej nie będą poprawnie działać porównania drzew */           \
+        if (!arg2().is(Type::_name)) {                                                                       \
+            return;                                                                                          \
+        }                                                                                                    \
+                                                                                                             \
+        if (!arg1().is(Type::_name)) {                                                                       \
+            swap_args(help_space);                                                                           \
+            return;                                                                                          \
+        }                                                                                                    \
+                                                                                                             \
+        Symbol* const last_left = &arg1().as<_name>().last_in_tree()->arg1();                                \
+                                                                                                             \
+        Symbol* const last_left_copy = help_space;                                                           \
+        last_left->copy_to(last_left_copy);                                                                  \
+        last_left->expander_placeholder = ExpanderPlaceholder::with_size(arg2().size());                     \
+                                                                                                             \
+        Symbol* const right_copy = help_space + last_left_copy->size();                                      \
+        arg2().copy_to(right_copy);                                                                          \
+        arg2().expander_placeholder = ExpanderPlaceholder::with_size(last_left_copy->size());                \
+                                                                                                             \
+        Symbol* const resized_reversed_this = right_copy + right_copy->size();                               \
+        const size_t new_size = symbol()->compress_reverse_to(resized_reversed_this);                        \
+                                                                                                             \
+        /* Zmiany w strukturze mogą zmienić całkowity rozmiar `this`, bo                                  \
+         * compress_reverse_to skróci wcześniej uproszczone wyrażenia*/                                   \
+        Symbol::copy_and_reverse_symbol_sequence(symbol(), resized_reversed_this, new_size);                 \
+        right_copy->copy_to(last_left);                                                                      \
+        last_left_copy->copy_to(&arg2());                                                                    \
+    }                                                                                                        \
+                                                                                                             \
+    __host__ __device__ void _name::simplify_pairs() {                                                       \
+        bool expression_changed = true;                                                                      \
+        while (expression_changed) {                                                                         \
+            expression_changed = false;                                                                      \
+            TreeIterator<_name> first(this);                                                                 \
+            while (first.is_valid()) {                                                                       \
+                TreeIterator<_name> second = first;                                                          \
+                second.advance();                                                                            \
+                                                                                                             \
+                while (second.is_valid()) {                                                                  \
+                    if (try_fuse_symbols(first.current(), second.current())) {                               \
+                        /* Jeśli udało się coś połączyć, to upraszczanie trzeba rozpocząć od nowa   \
+                         * (możnaby tylko dla zmienionego elementu, jest to opytmalizacja TODO),            \
+                         * bo być może tę sumę można połączyć z czymś, co było już rozważane.    \
+                         * Dzięki rekurencji ogonkowej call stack nie będzie rosnąć.                     \
+                         */                                                                                  \
+                        /*return simplify_pairs();*/                                                         \
+                        expression_changed = true;                                                           \
+                    }                                                                                        \
+                                                                                                             \
+                    second.advance();                                                                        \
+                }                                                                                            \
+                                                                                                             \
+                first.advance();                                                                             \
+            }                                                                                                \
+        }                                                                                                    \
+    }                                                                                                        \
+                                                                                                             \
+    __host__ __device__ size_t _name::tree_size() {                                                          \
+        return last_in_tree()->symbol() - symbol() + 2;                                                      \
     }
 
 #endif

@@ -38,6 +38,7 @@ namespace Sym {
      * UWAGA: funkcja ta może zmienić typ `this`, np. kiedy `this == + -1.0 1.0`, to po wykonaniu
      * funkcji `this == 0.0`, czyli typ się zmienił z Addition na NumericConstant! Nie należy więc
      * po wywołaniu tej funkcji wywoływać już żadnych innych funkcji składowych z Addition!
+     * Assumes that ones were eliminated from children.
      */
     __host__ __device__ void eliminate_zeros();
     END_DECLARE_SYMBOL(Addition)

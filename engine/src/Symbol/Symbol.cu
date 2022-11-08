@@ -171,7 +171,7 @@ namespace Sym {
         return compare_symbol_sequences(expr1, expr2, expr1->size());
     }
 
-    std::string Symbol::to_string() const { return VIRTUAL_CALL(*this, to_string); }
+    std::string Symbol::to_string() const { if (type() == Type::Symbol) return "$$$"; return VIRTUAL_CALL(*this, to_string); }
 
     std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
 

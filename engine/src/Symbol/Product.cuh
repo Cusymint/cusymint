@@ -11,7 +11,6 @@ namespace Sym {
     std::string to_string() const;
     std::string to_tex() const;
 
-  private:
     /*
      * @brief W drzewie mnożenia usuwa mnożenia, których jednym z argumentów jest 1.0. Mnożenie
      * takie jest zamieniane na niejedynkowy argument lub 1.0, jeśli oba argumenty były jedynką.
@@ -19,10 +18,11 @@ namespace Sym {
      * UWAGA: funkcja ta może zmienić typ `this`, np. kiedy `this == * Reciprocal(pi) pi`, to po
      * wykonaniu funkcji `this == 1.0`, czyli typ się zmienił z Product na NumericConstant! Nie
      * należy więc po wywołaniu tej funkcji wywoływać już żadnych innych funkcji składowych z
-     * Product!
+     * Product! Assumes that ones were eliminated from children.
      */
     __host__ __device__ void eliminate_ones();
 
+  private:
     /*
      * @brief Sprawdza, czy `expr1` i `expr2` są swoimi odwrotnościami.
      *
