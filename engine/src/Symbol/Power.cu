@@ -20,19 +20,16 @@ namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Power)
 
     DEFINE_SIMPLIFY_IN_PLACE(Power) {
-        arg1().simplify_in_place(help_space);
-        arg2().simplify_in_place(help_space);
-
         if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value == 0.0) {
             Symbol::from(this)->numeric_constant = NumericConstant::with_value(1.0);
-            return;
+            return true;
         }
 
         if (arg1().is(Type::NumericConstant) && arg2().is(Type::NumericConstant)) {
             double value1 = arg1().numeric_constant.value;
             double value2 = arg2().numeric_constant.value;
             Symbol::from(this)->numeric_constant = NumericConstant::with_value(pow(value1, value2));
-            return;
+            return true;
         }
 
         // (a^b)^c -> a^(b*c)
@@ -52,12 +49,13 @@ namespace Sym {
 
             seal();
 
-            return;
+            return true;
         }
 
         // a^(1/ln(a))=e
         if (is_symbol_inversed_logarithm_of(arg2(), arg1())) {
             symbol()->init_from(KnownConstant::with_value(KnownConstantValue::E));
+            return true;
         }
 
         // e^(ln(b))=b
@@ -65,11 +63,12 @@ namespace Sym {
             && arg1().is(Type::KnownConstant)
             && arg1().as<KnownConstant>().value == KnownConstantValue::E) {
                 arg2().as<Logarithm>().arg().copy_to(symbol());
+                return true;
         }
 
         // a^(...*1/ln(a)*...)=e^(...), e^(...*ln(b)*...)=b^(...)
         if (arg2().is(Type::Product)) {
-            TreeIterator<Product, Type::Product> iterator(arg2().as_ptr<Product>());
+            TreeIterator<Product> iterator(arg2().as_ptr<Product>());
             Symbol* base = &arg1();
             bool base_changed = false;
             while (iterator.is_valid()) {
@@ -91,15 +90,17 @@ namespace Sym {
             if (base == help_space) {
                 arg1().init_from(ExpanderPlaceholder::with_size(base->size()));
                 Symbol *const compressed_reversed = base + base->size();
-                const auto compressed_size = compress_reverse_to(compressed_reversed);
+                const auto compressed_size = symbol()->compress_reverse_to(compressed_reversed);
                 Symbol::copy_and_reverse_symbol_sequence(symbol(), compressed_reversed, compressed_size);
                 base->copy_to(&arg1());
             }
             // if power base was changed, there may be remaining ones to simplify
             if (base_changed) {
-                arg2().simplify(help_space);
+                arg2().as<Product>().simplify_in_place(help_space);
             }
+            return true;
         }
+        return true;
     }
 
     DEFINE_IS_FUNCTION_OF(Power) {

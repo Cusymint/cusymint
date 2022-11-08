@@ -6,25 +6,26 @@
 
 #include "Constants.cuh"
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Substitution)
 
     DEFINE_COMPRESS_REVERSE_TO(Substitution) {
-        size_t new_expression_size = expression()->compress_reverse_to(destination);
-        symbol()->copy_single_to(destination + new_expression_size);
-        destination[new_expression_size].substitution.size = new_expression_size + 1;
-        return new_expression_size + 1;
+        const size_t new_expression_size = (destination - 1)->size();
+        symbol()->copy_single_to(destination);
+        destination->substitution.size = new_expression_size + 1;
+        return 1;
     }
 
     __host__ __device__ size_t
-    Substitution::compress_reverse_substitutions_to(Symbol* const destination) const {
+    Substitution::compress_reverse_substitutions_to(Symbol* const destination) {
         size_t offset = 0;
         if (!is_last_substitution()) {
             offset = next_substitution()->compress_reverse_substitutions_to(destination);
         }
 
-        const size_t new_substitution_size = compress_reverse_to(destination + offset);
+        const size_t new_substitution_size = symbol()->compress_reverse_to(destination + offset);
         return new_substitution_size + offset;
     }
 
@@ -33,11 +34,19 @@ namespace Sym {
                symbol->substitution.substitution_idx == substitution_idx;
     }
 
-    DEFINE_SIMPLIFY_IN_PLACE(Substitution) { expression()->simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Substitution)
 
     DEFINE_IS_FUNCTION_OF(Substitution) {
         return expression()->is_function_of(expressions, expression_count);
     } // NOLINT
+
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Substitution) {
+        if (!is_last_substitution()) {
+            stack.push(next_substitution()->symbol());
+        }
+        stack.push(expression());
+        expression()->additional_required_size() += additional_required_size;
+    }
 
     const char* const Substitution::SUBSTITUTION_NAMES[] = {"u", "v", "w", "t"};
     const size_t Substitution::SUBSTITUTION_NAME_COUNT =
@@ -127,26 +136,27 @@ namespace Sym {
 
     __host__ __device__ void Substitution::seal() { size = 1 + expression()->size(); }
 
-    std::vector<Symbol> substitute(const std::vector<Symbol>& integral,
-                                   const std::vector<Symbol>& substitution_expr) {
-        if (!integral.data()->is(Type::Integral)) {
-            throw std::invalid_argument("Explicit substitutions are only allowed in integrals");
+    std::vector<Symbol> Substitution::substitute(std::vector<Symbol> expr) const {
+        if (!is_last_substitution()) {
+            expr = next_substitution()->substitute(expr);
         }
 
-        std::vector<Symbol> new_integral(integral.size() + substitution_expr.size() + 1);
+        std::vector<size_t> variable_indices;
+        for (size_t i = 0; i < expr.size(); ++i) {
+            if (expr[i].is(Type::Variable)) {
+                expr[i].init_from(ExpanderPlaceholder::with_size(expression()->size()));
+                variable_indices.push_back(i);
+            }
+        }
 
-        const size_t integrand_offset = integral.data()->integral.integrand_offset;
-        std::copy(integral.data(), integral.data() + integrand_offset, new_integral.begin());
+        const size_t new_size = expr.size() + variable_indices.size() * (expression()->size() - 1);
+        std::vector<Symbol> new_expr(new_size);
+        expr.data()->compress_to(*new_expr.data());
 
-        Substitution::create(substitution_expr.data(), new_integral.data() + integrand_offset,
-                             integral.data()->integral.substitution_count);
+        for (size_t variable_indice : variable_indices) {
+            expression()->copy_to(&new_expr[variable_indice]);
+        }
 
-        new_integral.data()->integral.substitution_count += 1;
-        new_integral.data()->integral.integrand_offset += 1 + substitution_expr.size();
-        new_integral.data()->integral.size += 1 + substitution_expr.size();
-
-        integral.data()->integrand()->copy_to(new_integral.data()->integrand());
-
-        return new_integral;
+        return new_expr;
     }
 }

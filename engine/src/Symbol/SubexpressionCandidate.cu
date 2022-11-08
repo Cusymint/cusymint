@@ -7,7 +7,7 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(SubexpressionCandidate)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(SubexpressionCandidate)
 
-    DEFINE_SIMPLIFY_IN_PLACE(SubexpressionCandidate) { arg().simplify_in_place(help_space); }
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(SubexpressionCandidate)
 
     DEFINE_IS_FUNCTION_OF(SubexpressionCandidate) {
         return arg().is_function_of(expressions, expression_count);

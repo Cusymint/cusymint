@@ -32,7 +32,8 @@ namespace Sym {
                                               Symbol* const destination) const;
 
     /*
-     * @brief Copies the integral symbol and its substitutions to `destination`
+     * @brief Copies the integral symbol and its substitutions to `destination`. Sets size of
+     * integral at `destination` to `BUILDER_SIZE`
      *
      * @param destination Destination of
      */

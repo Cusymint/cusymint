@@ -9,6 +9,8 @@ namespace Sym::Heuristic {
         __host__ __device__ CheckResult(const size_t new_integrals, const size_t new_expressions) :
             new_integrals(new_integrals), new_expressions(new_expressions) {}
 
+        __host__ __device__ static inline CheckResult empty() { return {0UL, 0UL}; }
+
         size_t new_integrals;
         size_t new_expressions;
     };

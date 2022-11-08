@@ -1,3 +1,4 @@
+#include "Symbol/Macros.cuh"
 #include "Variable.cuh"
 
 #include "Symbol.cuh"
@@ -15,6 +16,8 @@ namespace Sym {
 
         return true;
     }
+
+    DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Variable)
 
     std::vector<Symbol> var() {
         std::vector<Symbol> var(1);

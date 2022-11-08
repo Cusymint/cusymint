@@ -18,7 +18,7 @@ namespace Sym {
      *
      * @param destination Docelowa lokalizacja podstawień
      */
-    __host__ __device__ size_t compress_reverse_substitutions_to(Symbol* const destination) const;
+    __host__ __device__ size_t compress_reverse_substitutions_to(Symbol* const destination);
 
     __host__ __device__ static void create(const Symbol* const expression,
                                            Symbol* const destination,
@@ -48,10 +48,16 @@ namespace Sym {
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex_this() const;
     [[nodiscard]] std::string to_tex() const;
-    END_DECLARE_SYMBOL(Substitution)
 
-    std::vector<Symbol> substitute(const std::vector<Symbol>& integral,
-                                   const std::vector<Symbol>& substitution);
+    /*
+     * @brief Applies this substitution to `expession`
+     *
+     * @param expression Expression where variable will be replaced by contents of `this`
+     *
+     * @return `expression` after substitution
+     */
+    [[nodiscard]] std::vector<Symbol> substitute(std::vector<Symbol> expr) const;
+    END_DECLARE_SYMBOL(Substitution)
 }
 
 #endif
