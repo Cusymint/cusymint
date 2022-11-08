@@ -32,11 +32,12 @@ class SettingsPageTemplate<TLocale> extends StatelessWidget {
             PopupMenuButton<TLocale>(
               initialValue: selectedLocale,
               padding: EdgeInsets.zero,
+              itemBuilder: (context) => languageMenuItems,
+              offset: const Offset(1, 0),
               child: CuSettingTile(
                 title: CuText(Strings.language.tr()),
                 trailing: CuText(chosenLanguage),
               ),
-              itemBuilder: (context) => languageMenuItems,
             ),
             CuSettingTile(
               title: CuText(Strings.ipAddress.tr()),
