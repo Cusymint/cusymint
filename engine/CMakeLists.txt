@@ -53,7 +53,6 @@ add_library(
   ${PARSER_DIR}/Parser.cu
   ${SERVER_DIR}/JsonFormatter.cu
   ${SERVER_DIR}/Server.cu
-  #${SERVER_DIR}/mongoose.c
   ${SOLVER_DIR}/CachedParser.cu
   ${SOLVER_DIR}/Expression.cu
   ${SOLVER_DIR}/Solver.cu)
