@@ -3,12 +3,12 @@ import 'package:cusymint_ui/cusymint_ui.dart';
 class CuSettingTile extends StatelessWidget {
   const CuSettingTile({
     super.key,
-    required this.onTap,
+    this.onTap,
     required this.title,
     this.trailing,
   });
 
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final CuText title;
   final Widget? trailing;
 

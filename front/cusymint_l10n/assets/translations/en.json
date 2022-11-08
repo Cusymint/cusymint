@@ -15,5 +15,8 @@
    "calculating": "Calculating result",
    "language": "Language",
    "ipAddress": "IP Address",
-   "licenses": "Licenses"
+   "licenses": "Licenses",
+   "languagePolish": "Polski",
+   "languageEnglish": "English",
+   "languageCurrent": "English"
 }

@@ -15,5 +15,8 @@
     "calculating": "Obliczanie",
     "language": "Język",
     "ipAddress": "Adres IP",
-    "licenses": "Licencje"
+    "licenses": "Licencje",
+    "languagePolish": "Polski",
+    "languageEnglish": "English",
+    "languageCurrent": "Polski"
 }

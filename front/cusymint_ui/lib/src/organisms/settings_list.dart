@@ -6,7 +6,7 @@ class CuSettingsList extends StatelessWidget {
     required this.settingTiles,
   });
 
-  final List<CuSettingTile> settingTiles;
+  final List<Widget> settingTiles;
 
   @override
   Widget build(BuildContext context) {

@@ -22,12 +22,12 @@ class TemplatesStories extends StorybookPart {
               onAboutPressed: () {},
             );
 
-            return SettingsPageTemplate(
+            return SettingsPageTemplate<String>(
+              languageMenuItems: const [],
               drawer: drawer,
               chosenLanguage: 'English',
               ipAddress: 'localhost',
               onIpAddressTap: () {},
-              onLanguageTap: () {},
               onLicensesTap: () {},
             );
           },

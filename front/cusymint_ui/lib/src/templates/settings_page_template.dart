@@ -1,23 +1,25 @@
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 
-class SettingsPageTemplate extends StatelessWidget {
+class SettingsPageTemplate<TLocale> extends StatelessWidget {
   const SettingsPageTemplate({
     super.key,
     required this.drawer,
     required this.chosenLanguage,
     required this.ipAddress,
-    required this.onLanguageTap,
     required this.onIpAddressTap,
     required this.onLicensesTap,
+    required this.languageMenuItems,
+    this.selectedLocale,
   });
 
   final CuDrawer drawer;
   final String chosenLanguage;
   final String ipAddress;
-  final VoidCallback onLanguageTap;
   final VoidCallback onIpAddressTap;
   final VoidCallback onLicensesTap;
+  final List<PopupMenuItem<TLocale>> languageMenuItems;
+  final TLocale? selectedLocale;
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +29,14 @@ class SettingsPageTemplate extends StatelessWidget {
       body: Center(
         child: CuSettingsList(
           settingTiles: [
-            CuSettingTile(
-              title: CuText(Strings.language.tr()),
-              trailing: CuText(chosenLanguage),
-              onTap: onLanguageTap,
+            PopupMenuButton<TLocale>(
+              initialValue: selectedLocale,
+              padding: EdgeInsets.zero,
+              child: CuSettingTile(
+                title: CuText(Strings.language.tr()),
+                trailing: CuText(chosenLanguage),
+              ),
+              itemBuilder: (context) => languageMenuItems,
             ),
             CuSettingTile(
               title: CuText(Strings.ipAddress.tr()),
