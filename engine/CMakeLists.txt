@@ -51,16 +51,18 @@ add_library(
   ${EVALUATION_DIR}/KnownIntegral/SimpleVariable.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleArctan.cu
   ${PARSER_DIR}/Scanner.cu
-  ${PARSER_DIR}/Parser.cu
+  ${PARSER_DIR}/Parser.cu)
+
+add_executable(cusymint ${SRC_DIR}/main.cu)
+add_executable(testcusymint ${TEST_DIR}/test.cu)
+add_executable(
+  srvcusymint 
+  ${SRC_DIR}/main_server.cu
   ${SERVER_DIR}/JsonFormatter.cu
   ${SERVER_DIR}/Server.cu
   ${SOLVER_DIR}/CachedParser.cu
   ${SOLVER_DIR}/Expression.cu
   ${SOLVER_DIR}/Solver.cu)
-
-add_executable(cusymint ${SRC_DIR}/main.cu)
-add_executable(testcusymint ${TEST_DIR}/test.cu)
-add_executable(srvcusymint ${SRC_DIR}/main_server.cu)
 
 # Debug build related things
 
@@ -117,10 +119,10 @@ add_library(libmongoose ${mongoose_SOURCE_DIR}/mongoose.c)
 # Includes and linking
 
 target_include_directories(libcusymint PUBLIC ${SRC_DIR} ${mongoose_SOURCE_DIR})
-target_link_libraries(libcusymint PUBLIC fmt::fmt libmongoose)
+target_link_libraries(libcusymint PUBLIC fmt::fmt)
 
 target_link_libraries(cusymint PRIVATE libcusymint)
 
-target_link_libraries(srvcusymint PRIVATE libcusymint)
+target_link_libraries(srvcusymint PRIVATE libcusymint libmongoose)
 
 target_link_libraries(testcusymint PRIVATE libcusymint gtest_main)
