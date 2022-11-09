@@ -3,9 +3,7 @@
 #include "../Evaluation/Integrate.cuh"
 #include "../Evaluation/StaticFunctions.cuh"
 
-Solver::Solver() {
-    Sym::Static::init_functions();
-}
+Solver::Solver() { Sym::Static::init_functions(); }
 
 std::optional<Expression> Solver::solve(const Expression& integral) const {
     auto solve_result = Sym::solve_integral(integral.symbols);
