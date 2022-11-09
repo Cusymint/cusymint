@@ -96,7 +96,7 @@ namespace Sym {
             }
             // if power base was changed, there may be remaining ones to simplify
             if (base_changed) {
-                arg2().as_ptr<Product>()->eliminate_ones();
+                arg2().as<Product>().eliminate_ones();
             }
             return true;
         }

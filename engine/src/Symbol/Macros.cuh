@@ -419,7 +419,6 @@ namespace Sym {
                         /* Jeśli udało się coś połączyć, to upraszczanie trzeba rozpocząć od nowa \
                          * (możnaby tylko dla zmienionego elementu, jest to opytmalizacja TODO),          \
                          * bo być może tę sumę można połączyć z czymś, co było już rozważane.  \
-                         * Dzięki rekurencji ogonkowej call stack nie będzie rosnąć.                   \
                          */                                                                                \
                         expression_changed = true;                                                         \
                     }                                                                                      \
@@ -433,6 +432,14 @@ namespace Sym {
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ size_t _name::tree_size() {                                                        \
+        /* In every sum, number of terms is equal to number of `+` signs plus 1.                           \
+         * When an addition tree is simplified, all `Addition` symbols are placed in a row,                \
+         * so it suffices to calculate address of the last `Addition` symbol. The offset between           \
+         * `this` and last plus 1 is the number of `+` signs in the sum.                                   \
+         * Thus, the offset plus 2 is the number of terms in the sum.                                      \
+         * Conversion to `Symbol*` with `symbol()` function is necessary, because `_name`                  \
+         * structure may be smaller than `Symbol` union.                                                   \
+         */                                                                                                \
         return last_in_tree()->symbol() - symbol() + 2;                                                    \
     }
 
