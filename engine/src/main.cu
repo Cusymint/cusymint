@@ -13,10 +13,6 @@
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
 
-#include "Server/Server.cuh"
-#include "Solver/CachedParser.cuh"
-#include "Solver/Solver.cuh"
-
 #include "Parser/Parser.cuh"
 
 #include "Utils/CompileConstants.cuh"
@@ -24,8 +20,8 @@
 /*
  * @brief Creates a `std::string` representing expression of type `e^x * e^e^x * ... * e^e^...^e^x`,
  * which is made of `n` factors.
- * 
- * @param `n` - number of factors in created expression. 
+ *
+ * @param `n` - number of factors in created expression.
  *
  * @return Created string. If `n==0`, function returns `"1"`.
  */
