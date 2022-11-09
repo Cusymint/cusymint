@@ -10,7 +10,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arcsine)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arcsine)
 
-    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arcsine) 
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arcsine)
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arccosine)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Arccosine)
@@ -24,14 +24,14 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arctangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arctangent)
 
-    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arctangent) 
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arctangent)
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arccotangent)
     DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Arccotangent)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arccotangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arccotangent)
 
-    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arccotangent) 
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arccotangent)
 
     std::string Arcsine::to_string() const { return fmt::format("arcsin({})", arg().to_string()); }
 

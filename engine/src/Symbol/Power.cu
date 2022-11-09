@@ -7,10 +7,12 @@
 #include <fmt/core.h>
 
 namespace {
-    __host__ __device__ inline bool is_symbol_inversed_logarithm_of(const Sym::Symbol& symbol, const Sym::Symbol& expression) {
-        return symbol.is(Sym::Type::Reciprocal) 
-            && symbol.as<Sym::Reciprocal>().arg().is(Sym::Type::Logarithm)
-            && Sym::Symbol::compare_trees(&symbol.as<Sym::Reciprocal>().arg().as<Sym::Logarithm>().arg(), &expression);
+    __host__ __device__ inline bool is_symbol_inversed_logarithm_of(const Sym::Symbol& symbol,
+                                                                    const Sym::Symbol& expression) {
+        return symbol.is(Sym::Type::Reciprocal) &&
+               symbol.as<Sym::Reciprocal>().arg().is(Sym::Type::Logarithm) &&
+               Sym::Symbol::compare_trees(
+                   &symbol.as<Sym::Reciprocal>().arg().as<Sym::Logarithm>().arg(), &expression);
     }
 }
 

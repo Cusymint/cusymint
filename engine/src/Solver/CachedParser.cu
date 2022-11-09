@@ -1,6 +1,6 @@
-#include "CachedParser.cuh"
 #include "../Parser/Parser.cuh"
 #include "../Parser/Scanner.cuh"
+#include "CachedParser.cuh"
 
 CachedParser::CachedParser() : _cache() {}
 
@@ -23,7 +23,6 @@ Expression CachedParser::_get_parser_result(const std::string& input) {
     auto result = parser.parse();
     return Expression(result);
 }
-
 
 Expression CachedParser::parse(const std::string& input) {
     auto cached = _get_from_cache(input);
