@@ -54,15 +54,13 @@ add_library(
   ${PARSER_DIR}/Parser.cu)
 
 add_executable(cusymint ${SRC_DIR}/main.cu)
-add_executable(testcusymint ${TEST_DIR}/test.cu)
+add_executable(testcusymint ${TEST_DIR}/IntegralCommons.cu
+                            ${TEST_DIR}/KnownIntegral.cu)
 add_executable(
-  srvcusymint 
-  ${SRC_DIR}/main_server.cu
-  ${SERVER_DIR}/JsonFormatter.cu
-  ${SERVER_DIR}/Server.cu
-  ${SOLVER_DIR}/CachedParser.cu
-  ${SOLVER_DIR}/Expression.cu
-  ${SOLVER_DIR}/Solver.cu)
+  srvcusymint
+  ${SRC_DIR}/main_server.cu ${SERVER_DIR}/JsonFormatter.cu
+  ${SERVER_DIR}/Server.cu ${SOLVER_DIR}/CachedParser.cu
+  ${SOLVER_DIR}/Expression.cu ${SOLVER_DIR}/Solver.cu)
 
 # Debug build related things
 
@@ -83,14 +81,20 @@ endif()
 
 target_compile_features(libcusymint PUBLIC cxx_std_17)
 set_target_properties(
-  libcusymint testcusymint cusymint srvcusymint PROPERTIES CUDA_SEPARABLE_COMPILATION ON
-                                               CUDA_ARCHITECTURES OFF)
+  libcusymint testcusymint cusymint srvcusymint
+  PROPERTIES CUDA_SEPARABLE_COMPILATION ON CUDA_ARCHITECTURES OFF)
 
 # Something to make this work on Mac OS
 
 if(APPLE)
-  set_target_properties(libcusymint cusymint testcusymint srvcusymint PROPERTY BUILD_RPATH
-                        ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+  set_target_properties(
+    libcusymint
+    cusymint
+    testcusymint
+    srvcusymint
+    PROPERTY
+    BUILD_RPATH
+    ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
 endif()
 
 # Additional packages
