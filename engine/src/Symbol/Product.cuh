@@ -14,7 +14,6 @@ namespace Sym {
     __host__ __device__ int is_polynomial() const;
     __host__ __device__ double get_monomial_coefficient() const;
 
-  private:
     /*
      * @brief W drzewie mnożenia usuwa mnożenia, których jednym z argumentów jest 1.0. Mnożenie
      * takie jest zamieniane na niejedynkowy argument lub 1.0, jeśli oba argumenty były jedynką.
@@ -25,7 +24,8 @@ namespace Sym {
      * Product!
      */
     __host__ __device__ void eliminate_ones();
-
+    
+  private:
     /*
      * @brief Sprawdza, czy `expr1` i `expr2` są swoimi odwrotnościami.
      *
