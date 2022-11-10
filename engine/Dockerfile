@@ -5,7 +5,8 @@ COPY . ./engine-src
 
 RUN apt-get update && apt-get install -y \
     cmake \
-    libfmt-dev
+    libfmt-dev \
+    git
 
 RUN cmake -S engine-src -B build -DCMAKE_BUILD_TYPE=Release
 RUN cmake --build build -j$((1 + $(nproc)))
