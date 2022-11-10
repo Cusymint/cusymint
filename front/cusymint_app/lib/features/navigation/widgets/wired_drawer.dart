@@ -10,7 +10,7 @@ class WiredDrawer extends CuDrawer {
   }) : super(
           onAboutPressed: () {},
           onHomePressed: () {
-            context.router.navigate(const WelcomeRoute());
+            context.router.popUntilRoot();
           },
           onSettingsPressed: () {
             context.router.navigate(const SettingsRoute());
