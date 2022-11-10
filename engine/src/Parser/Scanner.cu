@@ -1,6 +1,16 @@
 #include "Scanner.cuh"
+#include <cctype>
+#include <string>
 
 Scanner::Scanner(std::string& text) : text(text) {}
+
+bool isFunction(Token tok) { return tok >= Token::Asin; }
+
+void Scanner::read_letter_sequence(std::string& read_text) {
+    while (std::isalpha(text[pos])) {
+        read_text += text[pos++];
+    }
+}
 
 Token Scanner::try_read_inverse_trig(std::string& read_text) {
     read_text += 'a';
@@ -34,7 +44,7 @@ Token Scanner::try_read_inverse_trig(std::string& read_text) {
         pos += 5;
         return Token::Acot;
     }
-    return Token::Error;
+    return Token::SymbolicConstant;
 }
 
 Token Scanner::try_read_cosine_cotangent(std::string& read_text) {
@@ -69,7 +79,7 @@ Token Scanner::try_read_cosine_cotangent(std::string& read_text) {
         pos += 2;
         return Token::Cot;
     }
-    return Token::Error;
+    return Token::SymbolicConstant;
 }
 
 Token Scanner::try_read_log(std::string& read_text) {
@@ -84,7 +94,7 @@ Token Scanner::try_read_log(std::string& read_text) {
         ++pos;
         return Token::Ln;
     }
-    return Token::Error;
+    return Token::SymbolicConstant;
 }
 
 Token Scanner::try_read_sine_sqrt(std::string& read_text) {
@@ -104,7 +114,7 @@ Token Scanner::try_read_sine_sqrt(std::string& read_text) {
         pos += 2;
         return Token::Sin;
     }
-    return Token::Error;
+    return Token::SymbolicConstant;
 }
 
 Token Scanner::try_read_tangent(std::string& read_text) {
@@ -129,11 +139,30 @@ Token Scanner::try_read_tangent(std::string& read_text) {
         pos += 2;
         return Token::Tan;
     }
-    return Token::Error;
+    return Token::SymbolicConstant;
+}
+
+Token Scanner::try_read_integral(std::string& read_text) {
+    read_text += 'i';
+    if (text.substr(pos + 1, 8) == "ntegrate") {
+        read_text += "ntegrate";
+        pos += 8;
+        return Token::Integral;
+    }
+    if (text.substr(pos + 1, 7) == "ntegral") {
+        read_text += "ntegral";
+        pos += 7;
+        return Token::Integral;
+    }
+    if (text.substr(pos + 1, 2) == "nt") {
+        read_text += "nt";
+        pos += 2;
+        return Token::Integral;
+    }
+    return Token::SymbolicConstant;
 }
 
 Token Scanner::read_after_start(Token& state, std::string& read_text) {
-    Token result = Token::Error;
     if (pos == text.size() - 1) {
         read_text = "<end>";
         return Token::End;
@@ -165,6 +194,10 @@ Token Scanner::read_after_start(Token& state, std::string& read_text) {
     case '_':
         read_text += '_';
         return Token::Underscore;
+    case '.':
+        read_text += '.';
+        state = Token::Double;
+        break;
     case '0':
     case '1':
     case '2':
@@ -198,39 +231,33 @@ Token Scanner::read_after_start(Token& state, std::string& read_text) {
         }
         break;
     case 'a':
-        result = try_read_inverse_trig(read_text);
-        if (result != Token::Error) {
-            return result;
-        }
-        state = Token::SymbolicConstant;
+        state = try_read_inverse_trig(read_text);
         break;
     case 'c':
-        result = try_read_cosine_cotangent(read_text);
-        if (result != Token::Error) {
-            return result;
-        }
-        state = Token::SymbolicConstant;
+        state = try_read_cosine_cotangent(read_text);
         break;
     case 'l':
-        result = try_read_log(read_text);
-        if (result != Token::Error) {
-            return result;
-        }
-        state = Token::SymbolicConstant;
+        state = try_read_log(read_text);
         break;
     case 's':
-        result = try_read_sine_sqrt(read_text);
-        if (result != Token::Error) {
-            return result;
-        }
-        state = Token::SymbolicConstant;
+        state = try_read_sine_sqrt(read_text);
         break;
     case 't':
-        result = try_read_tangent(read_text);
-        if (result != Token::Error) {
-            return result;
+        state = try_read_tangent(read_text);
+        break;
+    case 'i':
+        state = try_read_integral(read_text);
+        break;
+    case 'd':
+        read_text += 'd';
+        if (text.substr(pos + 1, 1) == "x") {
+            read_text += 'x';
+            ++pos;
+            state = Token::Differential;
         }
-        state = Token::SymbolicConstant;
+        else {
+            state = Token::SymbolicConstant;
+        }
         break;
     default:
         read_text += text[pos];
@@ -238,6 +265,7 @@ Token Scanner::read_after_start(Token& state, std::string& read_text) {
             state = Token::SymbolicConstant;
             break;
         }
+        read_letter_sequence(read_text);
         return Token::Error;
     }
     return Token::Start;
@@ -247,7 +275,8 @@ Token Scanner::check_if_no_letter_ahead(std::string& read_text, Token return_on_
     if (pos == text.size() - 1 || std::isalpha(text[pos + 1]) == 0) {
         return return_on_success;
     }
-    read_text += text[++pos];
+    ++pos;
+    read_letter_sequence(read_text);
     return Token::Error;
 }
 
@@ -324,7 +353,14 @@ Token Scanner::scan(std::string& read_text) {
             return check_if_no_letter_ahead(read_text, Token::Pi);
         case Token::SymbolicConstant:
             return check_if_no_letter_ahead(read_text, Token::SymbolicConstant);
+        case Token::Integral:
+            return check_if_no_letter_ahead(read_text, Token::Integral);
+        case Token::Differential:
+            return check_if_no_letter_ahead(read_text, Token::Differential);
         default:
+            if (isFunction(state)) {
+                return check_if_no_letter_ahead(read_text, state);
+            }
             return Token::Error;
         }
     }

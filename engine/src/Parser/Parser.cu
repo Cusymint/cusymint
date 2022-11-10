@@ -2,8 +2,6 @@
 #include "Symbol/Symbol.cuh"
 #include <stdexcept>
 
-bool isFunction(Token tok) { return tok >= Token::Asin; }
-
 Parser::Parser(Scanner* scanner) : scanner(scanner) {}
 
 void Parser::next_token() { tok = scanner->scan(read_text); }
@@ -17,6 +15,19 @@ void Parser::match_and_get_next_token(Token token) {
     else {
         throw_error();
     }
+}
+
+std::vector<Sym::Symbol> Parser::integral() {
+    bool differential_expected = false;
+    if (tok == Token::Integral) {
+        next_token();
+        differential_expected = true;
+    }
+    auto expression = expr();
+    if (differential_expected && tok == Token::Differential) {
+        next_token();
+    }
+    return expression;
 }
 
 std::vector<Sym::Symbol> Parser::expr() {
@@ -58,7 +69,7 @@ std::vector<Sym::Symbol> Parser::power_arg() {
     case Token::Double:
         prev_text = read_text;
         next_token();
-        return Sym::num(std::stof(prev_text));
+        return Sym::num(std::stod(prev_text));
     case Token::SymbolicConstant:
         prev_text = read_text;
         next_token();
@@ -118,7 +129,7 @@ std::vector<Sym::Symbol> Parser::parse() {
         throw std::logic_error("Parser has already processed a string.");
     }
     next_token();
-    std::vector<Sym::Symbol> expression = expr();
+    std::vector<Sym::Symbol> expression = integral();
     match_and_get_next_token(Token::End);
     return expression;
 }

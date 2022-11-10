@@ -1,6 +1,7 @@
 #ifndef CONSTANTS_CUH
 #define CONSTANTS_CUH
 
+#include <fmt/core.h>
 #include <vector>
 
 #include "Macros.cuh"

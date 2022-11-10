@@ -12,6 +12,7 @@ set(SYMBOL_DIR "${SRC_DIR}/Symbol")
 set(EVALUATION_DIR "${SRC_DIR}/Evaluation")
 set(PARSER_DIR "${SRC_DIR}/Parser")
 set(TEST_DIR "test")
+set(TEST_PARSER_DIR "${TEST_DIR}/Parser")
 
 # Define build targets
 
@@ -52,7 +53,11 @@ add_library(
   ${PARSER_DIR}/Parser.cu)
 
 add_executable(cusymint ${SRC_DIR}/main.cu)
-add_executable(testcusymint ${TEST_DIR}/test.cu)
+
+add_executable(testcusymint
+  ${TEST_PARSER_DIR}/Scanner.cu
+  ${TEST_PARSER_DIR}/Parser.cu 
+  ${TEST_DIR}/test.cu)
 
 # Debug build related things
 
