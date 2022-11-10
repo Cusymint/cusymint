@@ -63,7 +63,7 @@ namespace Sym {
             coefficient_dst += coefficient_dst->size();
         }
 
-        for (size_t i = 2; i < rank; ++i) {
+        for (size_t i = 2; i <= rank; ++i) {
             Mul<Num, Pow<Var, Num>>::init(*coefficient_dst, {coefficients()[i], i});
             coefficient_dst += coefficient_dst->size();
         }
@@ -80,10 +80,10 @@ namespace Sym {
     }
 
     __host__ __device__ size_t Polynomial::expanded_size_from_rank(size_t rank) {
-        return rank == 0 ? 1 : (6 * rank - 1);
+        return rank == 0 ? 1 : (6 * rank - 1); 
     }
 
-    __host__ __device__ Polynomial Polynomial::with_rank(int rank) {
+    __host__ __device__ Polynomial Polynomial::with_rank(size_t rank) {
         return {
             .type = Type::Polynomial,
             .size = size_from_rank(rank),
@@ -94,22 +94,31 @@ namespace Sym {
 
     __host__ __device__ void Polynomial::divide_polynomials(Polynomial& numerator,
                                                             Polynomial& denominator,
-                                                            Polynomial& result) {
-        for (int i = numerator.rank - denominator.rank; i >= 0; --i) {
+                                                            Polynomial& result) {        
+        // for (ssize_t i=0;i<=result.rank;++i) {
+        //     printf("%f\t",result[i]);
+        // }
+        // printf("\n");
+        
+        for (ssize_t i = numerator.rank - denominator.rank; i >= 0; --i) {
             double& num_first = numerator[i + denominator.rank];
             double& res_current = result[i];
             res_current = num_first / denominator[denominator.rank];
             num_first = 0;
-            for (int j = denominator.rank - 1; j >= 0; --j) {
+            for (ssize_t j = denominator.rank - 1; j >= 0; --j) {
                 numerator[i + j] -= res_current * denominator[j];
             }
+        //     for (ssize_t i=0;i<=result.rank;++i) {
+        //     printf("%f\t",result[i]);
+        // }
+        // printf("\n");
         }
         numerator.make_proper();
     }
 
     __host__ __device__ void Polynomial::make_proper() {
-        int i = rank;
-        while (i >= 0 && abs(coefficients()[i--]) < Util::EPS) {
+        ssize_t i = rank;
+        while (i > 0 && abs(coefficients()[i--]) < Util::EPS) {
             --rank;
         }
         size = size_from_rank(rank);

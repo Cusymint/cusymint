@@ -164,53 +164,88 @@ namespace Sym {
         return fmt::format("{}+{}", arg1().to_tex(), arg2().to_tex());
     }
 
-    __host__ __device__ int Addition::is_polynomial() const {
-        int const rank1 = arg1().is_polynomial();
-        int const rank2 = arg2().is_polynomial();
+    __host__ __device__ ssize_t Addition::is_polynomial(const ssize_t* const ranks) const {
+        ssize_t const rank1 = ranks[&arg1() - symbol()];
+        ssize_t const rank2 = ranks[&arg2() - symbol()];
 
         return rank1 < 0 || rank2 < 0 ? -1 : (rank1 < rank2 ? rank2 : rank1);
     }
 
-    __host__ __device__ void Addition::make_polynomial_in_place(int rank,
-                                                                Symbol* const help_space) {
-        symbol()->copy_to(help_space); 
-        auto* this_poly = as<Polynomial>();                                                         
-        *this_poly = Polynomial::with_rank(rank);
+    // __host__ __device__ void Addition::make_polynomial_in_place(int rank,
+    //                                                             Symbol* const help_space) {
+    //     symbol()->copy_to(help_space); 
+    //     auto* this_poly = as<Polynomial>();                                                         
+    //     *this_poly = Polynomial::with_rank(rank);
 
-        double* coefs = this_poly->coefficients();
+    //     double* coefs = this_poly->coefficients();
 
-        for (int i=0;i<=rank;++i) {
-            coefs[i] = 0;
+    //     for (int i=0;i<=rank;++i) {
+    //         coefs[i] = 0;
+    //     }
+
+    //     Symbol& node = help_space->as<Addition>().arg1();
+    //     this_poly->coefficients()[arg2().is_polynomial()] += arg2().get_monomial_coefficient();
+    //     while (node.is(Type::Addition))
+    //     {
+    //         this_poly->coefficients()[node.as<Addition>().arg2().is_polynomial()] += arg2().get_monomial_coefficient();
+    //         node = node.as<Addition>().arg1();
+    //     }
+    //     this_poly->coefficients()[node.is_polynomial()] += node.get_monomial_coefficient();
+    // }
+
+    __host__ __device__ void Addition::make_polynomial_to(Symbol* const destination, size_t rank) {        
+        //auto* dest_poly = destination->as_ptr<Polynomial>();                                                         
+        //*dest_poly = Polynomial::with_rank(rank);
+
+        auto* term_ranks = reinterpret_cast<ssize_t*>(destination);
+        auto* term_coefficients_dst = destination + size * sizeof(double) / sizeof(Symbol) + 1;
+        auto* term_coefficients = reinterpret_cast<double*>(term_coefficients_dst);
+        auto* dst_coefs = term_coefficients + size;
+
+        symbol()->is_polynomial(destination);
+        symbol()->get_monomial_coefficient(term_coefficients_dst);
+
+        for (ssize_t i = 0;i<=rank;++i) {
+            dst_coefs[i] = 0;
         }
 
-        Symbol& node = help_space->addition.arg1();
-        this_poly->coefficients()[arg2().is_polynomial()] += arg2().get_monomial_coefficient();
-        while (node.is(Type::Addition))
-        {
-            this_poly->coefficients()[node.addition.arg2().is_polynomial()] += arg2().get_monomial_coefficient();
-            node = node.addition.arg1();
-        }
-        this_poly->coefficients()[node.is_polynomial()] += node.get_monomial_coefficient();
-    }
+        TreeIterator<Addition> iterator(this);
+        while (iterator.is_valid()) {
+            const size_t offset = iterator.current() - symbol();
+            dst_coefs[term_ranks[offset]] = term_coefficients[offset]; 
 
-    __host__ __device__ void Addition::make_polynomial_to(Symbol* const destination, int rank) {
-        auto* dest_poly = destination->as_ptr<Polynomial>();                                                         
-        *dest_poly = Polynomial::with_rank(rank);
-
-        double* coefs = dest_poly->coefficients();
-
-        for (int i=0;i<=rank;++i) {
-            coefs[i] = 0;
+            iterator.advance();
         }
 
-        Symbol& node = arg1();
-        dest_poly->coefficients()[arg2().is_polynomial()] += arg2().get_monomial_coefficient();
-        while (node.is(Type::Addition))
-        {
-            dest_poly->coefficients()[node.addition.arg2().is_polynomial()] += arg2().get_monomial_coefficient();
-            node = node.addition.arg1();
+        auto& dest_poly = destination->init_from(Polynomial::with_rank(rank));
+
+        double* coefs = dest_poly.coefficients();
+
+        for (ssize_t i = 0;i<=rank;++i) {
+            coefs[i] = dst_coefs[i];
         }
-        dest_poly->coefficients()[node.is_polynomial()] += node.get_monomial_coefficient();
+
+        // double* coefs = dest_poly->coefficients();
+
+        // for (int i=0;i<=rank;++i) {
+        //     coefs[i] = 0;
+        // }
+
+        // TreeIterator<Addition> iterator(this);
+
+        // while (iterator.is_valid()) {
+        //     dest_poly->coefficients()[iterator.current()->is_polynomial()]
+        //     iterator.advance();
+        // }
+
+        // Symbol& node = arg1();
+        // dest_poly->coefficients()[arg2().is_polynomial()] += arg2().get_monomial_coefficient();
+        // while (node.is(Type::Addition))
+        // {
+        //     dest_poly->coefficients()[node.as<Addition>().arg2().is_polynomial()] += arg2().get_monomial_coefficient();
+        //     node = node.as<Addition>().arg1();
+        // }
+        // dest_poly->coefficients()[node.is_polynomial()] += node.get_monomial_coefficient();
     }
 
     std::string Negation::to_string() const { return fmt::format("-({})", arg().to_string()); }
@@ -222,9 +257,9 @@ namespace Sym {
         return fmt::format("-{}", arg().to_tex());
     }
 
-    __host__ __device__ int Negation::is_polynomial() const { return arg().is_polynomial(); }
+    __host__ __device__ ssize_t Negation::is_polynomial(const ssize_t* const ranks) const { return ranks[&arg()-symbol()]; }
 
-    __host__ __device__ double Negation::get_monomial_coefficient() const { return -arg().get_monomial_coefficient(); }
+    __host__ __device__ double Negation::get_monomial_coefficient(const double* const coefficients) const { return -coefficients[&arg()-symbol()]; }
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);

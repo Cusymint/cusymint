@@ -11,8 +11,8 @@ namespace Sym {
     std::string to_string() const;
     std::string to_tex() const;
 
-    __host__ __device__ int is_polynomial() const;
-    __host__ __device__ double get_monomial_coefficient() const;
+    __host__ __device__ ssize_t is_polynomial(const ssize_t* const ranks) const;
+    __host__ __device__ double get_monomial_coefficient(const double* const coefficients) const;
 
     /*
      * @brief W drzewie mnożenia usuwa mnożenia, których jednym z argumentów jest 1.0. Mnożenie
@@ -24,7 +24,7 @@ namespace Sym {
      * Product!
      */
     __host__ __device__ void eliminate_ones();
-    
+
   private:
     /*
      * @brief Sprawdza, czy `expr1` i `expr2` są swoimi odwrotnościami.

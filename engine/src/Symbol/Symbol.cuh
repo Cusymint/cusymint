@@ -480,12 +480,12 @@ namespace Sym {
          * @brief Checks if `this` is a polynomial. Returns its rank if yes. Otherwise, returns
          * `-1`.
          */
-        __host__ __device__ int is_polynomial() const;
+        __host__ __device__ ssize_t is_polynomial(Symbol* const help_space) const;
 
         /*
          * @brief If `this` is a monomial, returns its coefficient. Otherwise, returns `NaN`.
          */
-        __host__ __device__ double get_monomial_coefficient() const;
+        __host__ __device__ double get_monomial_coefficient(Symbol* const help_space) const;
     };
 
     /*

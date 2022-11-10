@@ -1,8 +1,11 @@
 #include "Symbol/Addition.cuh"
+#include "Symbol/Constants.cuh"
 #include "Symbol/Product.cuh"
 
 #include "Symbol/Symbol.cuh"
+#include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
+#include "Utils/Cuda.cuh"
 #include <cstdio>
 #include <fmt/core.h>
 
@@ -24,10 +27,17 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
         simplify_structure(help_space);
+
+        if ((arg1().is(Type::NumericConstant) && arg1().as<NumericConstant>().value == 0.0)
+            || (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value == 0.0)) {
+            symbol()->init_from(NumericConstant::with_value(0));
+            return true;
+        }
+
         simplify_pairs();
         eliminate_ones();
 
-        return true;
+        return try_simplify_polynomials(help_space);
     }
 
     __host__ __device__ bool Product::try_simplify_polynomials(Symbol* const help_space) {
@@ -46,22 +56,22 @@ namespace Sym {
         if (numerator == nullptr || denominator == nullptr) {
             return true;
         }
-        int const rank1 = numerator->is_polynomial();
-        int const rank2 = denominator->is_polynomial();
+        ssize_t const rank1 = numerator->is_polynomial(help_space);
+        ssize_t const rank2 = denominator->is_polynomial(help_space);
 
         if (rank1 < 1 || rank2 < 1 || rank1 <= rank2) {
             return true;
         }
+
+
 
         const size_t size_for_simplified_expression =
             3 + Polynomial::expanded_size_from_rank(rank1 - rank2) +
             Polynomial::expanded_size_from_rank(rank2 - 1) +
             Polynomial::expanded_size_from_rank(rank2);
 
-        printf("%lu %lu\n", size, size_for_simplified_expression);
-
         if (size < size_for_simplified_expression) {
-            additional_required_size = size_for_simplified_expression - size;
+            additional_required_size = size_for_simplified_expression - 1;
             return false;
         }
 
@@ -75,11 +85,9 @@ namespace Sym {
         auto* result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
         Polynomial::divide_polynomials(poly1->as<Polynomial>(), poly2->as<Polynomial>(), *result);
 
-        Symbol* destination = symbol();
-
         if (poly1->as<Polynomial>().is_zero()) {
-            result->expand_to(destination);
-            return true;
+            result->expand_to(symbol());
+            return false; // maybe additional simplify required
         }
 
         Addition* plus = symbol() << Addition::builder();
@@ -213,20 +221,20 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ int Product::is_polynomial() const {
+    __host__ __device__ ssize_t Product::is_polynomial(const ssize_t* const ranks) const {
         // Checks if product is a monomial (maybe TODO check eg. (x+2)^5*(x+1)*x^2)
         if (arg1().is(Type::Addition) || arg2().is(Type::Addition)) {
             return -1;
         }
 
-        int const rank1 = arg1().is_polynomial();
-        int const rank2 = arg2().is_polynomial();
+        ssize_t const rank1 = ranks[&arg1() - symbol()];
+        ssize_t const rank2 = ranks[&arg2() - symbol()];
 
         return rank1 < 0 || rank2 < 0 ? -1 : (rank1 + rank2);
     }
 
-    __host__ __device__ double Product::get_monomial_coefficient() const {
-        return arg1().get_monomial_coefficient() * arg2().get_monomial_coefficient();
+    __host__ __device__ double Product::get_monomial_coefficient(const double* const coefficients) const {
+        return coefficients[&arg1() - symbol()] * coefficients[&arg2() - symbol()];
     }
 
     std::string Reciprocal::to_string() const { return fmt::format("(1/{})", arg().to_string()); }

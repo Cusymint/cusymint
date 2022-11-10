@@ -443,10 +443,10 @@ namespace Sym {
         return last_in_tree()->symbol() - symbol() + 2;                                                    \
     }
 
-#define DEFINE_IS_MONOMIAL(_coefficient) __host__ __device__ double get_monomial_coefficient() const { return _coefficient; }
+#define DEFINE_IS_MONOMIAL(_coefficient) __host__ __device__ double get_monomial_coefficient(const double* const /*coefficients*/) const { return _coefficient; }
 #define DEFINE_IS_NOT_MONOMIAL DEFINE_IS_MONOMIAL(NAN)
 
-#define DEFINE_IS_POLYNOMIAL(_rank) __host__ __device__ int is_polynomial() const { return _rank; }
+#define DEFINE_IS_POLYNOMIAL(_rank) __host__ __device__ ssize_t is_polynomial(const ssize_t* const /*ranks*/) const { return _rank; }
 #define DEFINE_IS_NOT_POLYNOMIAL \
     DEFINE_IS_POLYNOMIAL(-1)     \
     DEFINE_IS_NOT_MONOMIAL

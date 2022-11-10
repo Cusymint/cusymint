@@ -126,37 +126,38 @@ namespace Sym {
         return new_size;
     }
 
-    __host__ __device__ void print_symbols(const char* str, Symbol* array, size_t size) {
-        printf("%s\n", str);
-        for (size_t i = 0; i < size; ++i) {
-            printf("\t%s\t%lu+%lu\n", type_name(array[i].type()), array[i].size(), array[i].additional_required_size());
-        }
-    }
+    // __host__ __device__ void print_symbols(const char* str, Symbol* array, size_t size) {
+    //     printf("%s\n", str);
+    //     for (size_t i = 0; i < size; ++i) {
+    //         printf("\t%s\t%lu+%lu\n", type_name(array[i].type()), array[i].size(),
+    //                array[i].additional_required_size());
+    //     }
+    // }
 
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
         bool success = false;
 
-        int i_deb = 0;
+        //int i_deb = 0;
 
         while (!success) {
             success = true;
 
-            print_symbols("before in-place", this, size());
+            //print_symbols("before in-place", this, size());
 
             for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
                 success = at(i)->simplify_in_place(help_space) && success;
             }
 
-            print_symbols("after in-place", this, size());
+            //print_symbols("after in-place", this, size());
 
             const size_t new_size = compress_reverse_to(help_space);
 
             copy_and_reverse_symbol_sequence(this, help_space, new_size);
 
-            print_symbols("after all", this, size());
+            //print_symbols("after all", this, size());
 
-            if (i_deb++ > 5)
-                return;
+            //if (i_deb++ > 5)
+                //return;
         }
     }
 
@@ -193,12 +194,20 @@ namespace Sym {
 
     std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
 
-    __host__ __device__ int Symbol::is_polynomial() const {
-        return VIRTUAL_CALL(*this, is_polynomial);
+    __host__ __device__ ssize_t Symbol::is_polynomial(Symbol* const help_space) const {
+        auto* ranks = reinterpret_cast<ssize_t*>(help_space);
+        for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
+            ranks[i] = VIRTUAL_CALL(*at(i), is_polynomial, ranks + i);
+        }
+        return ranks[0];
     }
 
-    __host__ __device__ double Symbol::get_monomial_coefficient() const {
-        return VIRTUAL_CALL(*this, get_monomial_coefficient);
+    __host__ __device__ double Symbol::get_monomial_coefficient(Symbol* const help_space) const {
+        auto* coefficients = reinterpret_cast<double*>(help_space);
+        for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
+            coefficients[i] = VIRTUAL_CALL(*at(i), get_monomial_coefficient, coefficients + i);
+        }
+        return coefficients[0];
     }
 
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {

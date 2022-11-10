@@ -739,12 +739,12 @@ namespace Sym {
 
         for (size_t i = 0;; ++i) {
 
-            printf("BEFORE SIMPLIFY:\n\n%s\n",integrals.to_string().c_str());
+            //printf("BEFORE SIMPLIFY:\n\n%s\n",integrals.to_string().c_str());
 
             simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
             cudaDeviceSynchronize();
 
-            printf("AFTER SIMPLIFY:\n\n%s\n",integrals.to_string().c_str());
+            //printf("AFTER SIMPLIFY:\n\n%s\n",integrals.to_string().c_str());
 
             check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_1);
             cudaDeviceSynchronize();

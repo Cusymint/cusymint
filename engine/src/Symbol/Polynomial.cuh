@@ -5,9 +5,9 @@
 
 namespace Sym {
     DECLARE_SYMBOL(Polynomial, true)
-    int rank;
+    size_t rank;
 
-    __host__ __device__ static Polynomial with_rank(int rank);
+    __host__ __device__ static Polynomial with_rank(size_t rank);
 
     __host__ __device__ static void divide_polynomials(Polynomial& numerator, Polynomial& denominator, Polynomial& result);
 
@@ -27,8 +27,10 @@ namespace Sym {
 
     __host__ __device__ double* coefficients();
     __host__ __device__ const double* coefficients() const;
-    __host__ __device__ inline double& operator[](int idx) { return coefficients()[idx]; }
-    __host__ __device__ inline const double& operator[](int idx) const { return coefficients()[idx]; }
+    template <class T>
+    __host__ __device__ inline double& operator[](T idx) { return coefficients()[idx]; }
+    template <class T>
+    __host__ __device__ inline const double& operator[](T idx) const { return coefficients()[idx]; }
 
     END_DECLARE_SYMBOL(Polynomial)
 }
