@@ -92,7 +92,7 @@ std::vector<Sym::Symbol> Parser::power_arg() {
         next_token(); // -
         return -power_arg();
     case Token::Log:
-        next_token(); // log
+        next_token();                                // log
         match_and_get_next_token(Token::Underscore); // _
         base_expression = power_arg();
         match_and_get_next_token(Token::OpenBrace); // (
@@ -117,8 +117,8 @@ std::vector<Sym::Symbol> Parser::power_arg() {
 
 SymbolicFunction Parser::function() {
     const SymbolicFunction functions[] = {
-        Sym::arcsin, Sym::arccos, Sym::arctan, Sym::arccot, Sym::cos,  Sym::cot, Sym::cosh, Sym::coth,
-        Sym::sin,    Sym::sinh,   Sym::sqrt,   Sym::tan,    Sym::tanh, Sym::ln};
+        Sym::arcsin, Sym::arccos, Sym::arctan, Sym::arccot, Sym::cos, Sym::cot,  Sym::cosh,
+        Sym::coth,   Sym::sin,    Sym::sinh,   Sym::sqrt,   Sym::tan, Sym::tanh, Sym::ln};
     Token const prev = tok;
     next_token();
     return functions[static_cast<int>(prev) - static_cast<int>(Token::Asin)];
