@@ -16,7 +16,9 @@ namespace Test {
 
             if (!result.has_value()) {
                 return testing::AssertionFailure()
-                       << "no result found, but should be:\n  " << integral_str << "\n";
+                       << "Tried to calculate the integral of:\n  " << integral_str
+                       << "\n  but no result was found. The result should be:\n  "
+                       << expected_result.data()->to_string();
             }
 
             if (Sym::Symbol::compare_trees(
@@ -26,7 +28,8 @@ namespace Test {
             }
 
             return testing::AssertionFailure()
-                   << "expressions not equal:\n  "
+                   << "Tried to calculate the integral of:\n  " << integral_str
+                   << "\n  but got an unexpected result:\n  "
                    << result // NOLINT(bugprone-unchecked-optional-access)
                           .value()
                           .data()
