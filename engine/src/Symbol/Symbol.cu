@@ -5,6 +5,10 @@
 #include "Utils/StaticStack.cuh"
 
 namespace Sym {
+    [[nodiscard]] __host__ __device__ bool Symbol::is(const double number) const {
+        return is(Type::NumericConstant) && as<NumericConstant>().value == number;
+    }
+
     __host__ __device__ void Symbol::copy_symbol_sequence(Symbol* const destination,
                                                           const Symbol* const source,
                                                           size_t symbol_count) {
@@ -19,8 +23,8 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ bool Symbol::compare_symbol_sequences(const Symbol* sequence1,
-                                                              const Symbol* sequence2,
+    __host__ __device__ bool Symbol::compare_symbol_sequences(const Symbol* const sequence1,
+                                                              const Symbol* const sequence2,
                                                               size_t symbol_count) {
         // Cannot simply use Util::compare_mem because padding can differ
         for (size_t i = 0; i < symbol_count; ++i) {
@@ -113,7 +117,7 @@ namespace Sym {
         stack.push(this);
 
         while (!stack.empty()) {
-            Symbol* sym = stack.pop();
+            Symbol* const sym = stack.pop();
 
             sym->to_be_copied() = true;
             VIRTUAL_CALL(*sym, put_children_on_stack_and_propagate_additional_size, stack);
@@ -137,7 +141,6 @@ namespace Sym {
             }
 
             const size_t new_size = compress_reverse_to(help_space);
-
             copy_and_reverse_symbol_sequence(this, help_space, new_size);
         }
     }

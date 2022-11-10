@@ -43,6 +43,7 @@ namespace Sym {
     END_DECLARE_SYMBOL(Reciprocal)
 
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);
+    std::vector<Symbol> inv(const std::vector<Symbol>& arg);
     std::vector<Symbol> operator/(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);
 }
 
