@@ -5,13 +5,17 @@ class CuWelcomePageTemplate extends StatelessWidget {
   const CuWelcomePageTemplate({
     super.key,
     this.onTextFieldTap,
+    this.drawer,
   });
 
   final VoidCallback? onTextFieldTap;
+  final CuDrawer? drawer;
 
   @override
   Widget build(BuildContext context) {
     return CuScaffold(
+      appBar: CuAppBar(hasLogo: false),
+      drawer: drawer,
       body: Center(
         child: Column(
           children: [
