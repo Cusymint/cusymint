@@ -19,5 +19,7 @@
    "languagePolish": "Polski",
    "languageEnglish": "English",
    "languageCurrent": "English",
+   "aboutText": "Cusymint was inspired by MIT Artificial Intelligence lecture led by Prof. Patrick H. Winston. It comes with a twist compared to typical symbolic calculators. It uses GPU at its core, not just CPU. Research on the topic of symbolic calculations on GPU was started during Research Project - GPU Algorithms at Warsaw University of Technology led by PhD Krzysztof Kaczmarski. This application is developed as part of BEng thesis. Source code can be found at",
+   "aboutTextGithub": "GitHub",
    "madeBy": "Made by"
 }

@@ -22,5 +22,6 @@ class Strings {
   static const String languageEnglish = 'languageEnglish';
   static const String languageCurrent = 'languageCurrent';
   static const String aboutText = 'aboutText';
+  static const String aboutTextGithub = 'aboutTextGithub';
   static const String madeBy = 'madeBy';
 }

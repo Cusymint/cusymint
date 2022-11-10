@@ -41,11 +41,31 @@ class CuText extends StatelessWidget {
 
     return Text(
       data,
-      style: TextStyle(
+      style: CuTextStyle(
         color: textColor,
         fontWeight: fontWeight,
         fontSize: fontSize,
       ),
     );
   }
+}
+
+class CuTextStyle extends TextStyle {
+  const CuTextStyle({
+    CuColor? color,
+    FontWeight fontWeight = FontWeight.normal,
+    double fontSize = 14.0,
+  }) : super(color: color, fontWeight: fontWeight, fontSize: fontSize);
+
+  const CuTextStyle.med14({
+    CuColor? color,
+  }) : super(fontWeight: FontWeight.normal, fontSize: 14.0, color: color);
+
+  const CuTextStyle.bold14({
+    CuColor? color,
+  }) : super(fontWeight: FontWeight.bold, fontSize: 14.0, color: color);
+
+  const CuTextStyle.med24({
+    CuColor? color,
+  }) : super(fontWeight: FontWeight.normal, fontSize: 24.0, color: color);
 }
