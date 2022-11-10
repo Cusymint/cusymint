@@ -11,8 +11,8 @@ namespace Test {
             const auto result = Sym::solve_integral(integral);
 
             auto expected_result = parse_function(expected_result_str);
-            std::vector<Sym::Symbol> simplifycation_memory(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
-            expected_result.data()->simplify(simplifycation_memory.data());
+            std::vector<Sym::Symbol> simplification_memory(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+            expected_result.data()->simplify(simplification_memory.data());
 
             if (!result.has_value()) {
                 return testing::AssertionFailure()
