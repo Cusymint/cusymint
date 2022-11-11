@@ -1,4 +1,5 @@
 import 'package:cusymint_app/features/home/blocs/client_cubit.dart';
+import 'package:cusymint_app/features/navigation/navigation.dart';
 import 'package:cusymint_app/features/tex_rendering/widgets/tex_view.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
@@ -49,11 +50,7 @@ class _HomeBodyState extends State<HomeBody> {
       bloc: widget.clientCubit,
       builder: (context, state) {
         return CuScaffold(
-          drawer: CuDrawer(
-            onAboutPressed: () {},
-            onHomePressed: () {},
-            onSettingsPressed: () {},
-          ),
+          drawer: WiredDrawer(context: context),
           appBar: CuAppBar(),
           body: Center(
             child: Column(
