@@ -141,14 +141,6 @@ namespace Sym {
     }
 
     std::string Addition::to_string() const {
-        if (arg2().is(Type::Negation)) {
-            return fmt::format("({}-{})", arg1().to_string(), arg2().negation.arg().to_string());
-        }
-
-        if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value < 0.0) {
-            return fmt::format("({}-{})", arg1().to_string(), -arg2().numeric_constant.value);
-        }
-
         return fmt::format("({}+{})", arg1().to_string(), arg2().to_string());
     }
 
