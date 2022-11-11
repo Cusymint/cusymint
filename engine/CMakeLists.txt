@@ -54,8 +54,9 @@ add_library(
   ${PARSER_DIR}/Parser.cu)
 
 add_executable(cusymint ${SRC_DIR}/main.cu)
-add_executable(testcusymint ${TEST_DIR}/IntegralCommons.cu
-                            ${TEST_DIR}/KnownIntegral.cu)
+add_executable(
+  testcusymint ${TEST_DIR}/IntegralCommons.cu ${TEST_DIR}/Heuristic.cu
+               ${TEST_DIR}/KnownIntegral.cu)
 add_executable(
   srvcusymint
   ${SRC_DIR}/main_server.cu ${SERVER_DIR}/JsonFormatter.cu

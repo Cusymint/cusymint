@@ -16,7 +16,7 @@ namespace Test {
 
             if (!result.has_value()) {
                 return testing::AssertionFailure()
-                       << "Tried to calculate the integral of:\n  " << integral_str
+                       << "Tried to calculate the integral:\n  " << integral.data()->to_string()
                        << "\n  but no result was found. The result should be:\n  "
                        << expected_result.data()->to_string();
             }
@@ -28,7 +28,7 @@ namespace Test {
             }
 
             return testing::AssertionFailure()
-                   << "Tried to calculate the integral of:\n  " << integral_str
+                   << "Tried to calculate the integral:\n  " << integral.data()->to_string()
                    << "\n  but got an unexpected result:\n  "
                    << result // NOLINT(bugprone-unchecked-optional-access)
                           .value()
