@@ -15,6 +15,31 @@ namespace Sym {
         };
     };
 
+    template <class... Matchers> struct AnyOf {
+        using AdditionalArgs = cuda::std::tuple<>;
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return (Matchers::match(dst) || ...);
+        };
+    };
+
+    template <class... Matchers> struct AllOf {
+        using AdditionalArgs = cuda::std::tuple<>;
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return (Matchers::match(dst) && ...);
+        };
+    };
+
+    template <class Inner> struct Not {
+        using AdditionalArgs = typename Inner::AdditionalArgs;
+
+        __host__ __device__ static bool match(const Symbol& dst) { return !Inner::match(dst); };
+    };
+
+    template <class... Matchers> struct Any {
+        using AdditionalArgs = cuda::std::tuple<>;
+        __host__ __device__ static bool match(const Symbol& /*dst*/) { return true; };
+    };
+
     template <class Op, class Inner> struct OneArgOperator {
         using AdditionalArgs = typename Inner::AdditionalArgs;
 
@@ -24,6 +49,10 @@ namespace Sym {
             Inner::init(operator_->arg(), additional_args);
             operator_->seal();
         };
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Op::TYPE) && Inner::match(dst.as<Op>().arg());
+        }
     };
 
     template <class Op, class LInner, class RInner> struct TwoArgOperator {
@@ -43,6 +72,11 @@ namespace Sym {
                          Util::slice_tuple<LAdditionalArgsSize, RAdditionalArgsSize>(args));
             operator_->seal();
         };
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1()) &&
+                   RInner::match(dst.as<Op>().arg2());
+        }
     };
 
     struct Var {
@@ -50,6 +84,8 @@ namespace Sym {
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
             dst.init_from(Variable::create());
         };
+
+        __host__ __device__ static bool match(const Symbol& dst) { return dst.is(Type::Variable); }
     };
 
     struct Num {
@@ -57,14 +93,27 @@ namespace Sym {
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             dst.init_from(NumericConstant::with_value(cuda::std::get<0>(args)));
         };
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Type::NumericConstant);
+        }
+    };
+
+    struct Const {
+        using AdditionalArgs = cuda::std::tuple<>;
+        __host__ __device__ static bool match(const Symbol& dst) { return dst.is_constant(); }
     };
 
     // In C++17, doubles can't be template parameters.
-    template <int V> struct Int {
+    template <int V> struct Integer {
         using AdditionalArgs = cuda::std::tuple<>;
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
             dst.init_from(NumericConstant::with_value(V));
         };
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Type::NumericConstant) && dst.as<NumericConstant>().value == V;
+        }
     };
 
     template <KnownConstantValue V> struct KnownConstantOperator {
@@ -72,6 +121,10 @@ namespace Sym {
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
             dst.init_from(KnownConstant::with_value(V));
         };
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Type::KnownConstant) && dst.as<KnownConstant>().value == V;
+        }
     };
 
     using Pi = KnownConstantOperator<KnownConstantValue::Pi>;
@@ -100,6 +153,10 @@ namespace Sym {
 
             solution->seal();
         }
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression());
+        }
     };
 
     template <class Inner> struct Candidate {
@@ -122,6 +179,34 @@ namespace Sym {
 
             candidate->seal();
         }
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Type::SubexpressionCandidate) &&
+                   Inner::match(dst.as<SubexpressionCandidate>().arg());
+        }
+    };
+
+    template <class Inner> struct Int {
+        using IAdditionalArgs = typename Inner::AdditionalArgs;
+        static constexpr size_t IAdditionalArgsSize = cuda::std::tuple_size_v<IAdditionalArgs>;
+
+        using IntegralArgs = cuda::std::tuple<cuda::std::reference_wrapper<const Integral>>;
+        static constexpr size_t IntegralArgsSize = cuda::std::tuple_size_v<IntegralArgs>;
+
+        using AdditionalArgs = Util::TupleCat<IntegralArgs, IAdditionalArgs>;
+
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
+            cuda::std::get<0>(args).get().copy_without_integrand_to(&dst);
+            auto& dst_integral = dst.as<Integral>();
+
+            Inner::init(*dst_integral.integrand(),
+                        Util::slice_tuple<IntegralArgsSize, IAdditionalArgsSize>(args));
+            dst_integral.seal();
+        }
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Type::Integral) && Inner::match(*dst.as<Integral>().integrand());
+        }
     };
 
     struct Vacancy {
@@ -133,6 +218,18 @@ namespace Sym {
             vacancy.candidate_expression_count = cuda::std::get<0>(args);
             vacancy.candidate_integral_count = cuda::std::get<1>(args);
             vacancy.is_solved = cuda::std::get<2>(args);
+        }
+    };
+
+    struct SingleIntegralVacancy {
+        using AdditionalArgs = cuda::std::tuple<>;
+
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/) {
+            dst.init_from(SubexpressionVacancy::for_single_integral());
+        }
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Type::SubexpressionVacancy);
         }
     };
 
@@ -184,7 +281,7 @@ namespace Sym {
                         terms += terms->size();
                         iterator.advance();
                     }
-                    for (ssize_t i = count - 2; i >= 0; --i) {
+                    for (ssize_t i = static_cast<ssize_t>(count) - 2; i >= 0; --i) {
                         TwoArgOp* const operator_ = &dst + i << TwoArgOp::builder();
                         operator_->seal_arg1();
                         operator_->seal();
