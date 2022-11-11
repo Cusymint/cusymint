@@ -1,8 +1,8 @@
 #include "Heuristic.cuh"
 
+#include "BringOutConstantsFromProduct.cuh"
 #include "SplitSum.cuh"
 #include "SubstituteEToX.cuh"
-#include "BringOutConstantsFromProduct.cuh"
 
 #include "Utils/Meta.cuh"
 

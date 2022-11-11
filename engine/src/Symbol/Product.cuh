@@ -11,7 +11,6 @@ namespace Sym {
     std::string to_string() const;
     std::string to_tex() const;
 
-  private:
     /*
      * @brief W drzewie mnożenia usuwa mnożenia, których jednym z argumentów jest 1.0. Mnożenie
      * takie jest zamieniane na niejedynkowy argument lub 1.0, jeśli oba argumenty były jedynką.
@@ -23,6 +22,7 @@ namespace Sym {
      */
     __host__ __device__ void eliminate_ones();
 
+  private:
     /*
      * @brief Sprawdza, czy `expr1` i `expr2` są swoimi odwrotnościami.
      *

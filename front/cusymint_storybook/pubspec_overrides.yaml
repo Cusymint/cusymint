@@ -3,7 +3,7 @@
 dependency_overrides:
   cusymint_assets:
     path: ../cusymint_assets
-  cusymint_l10n:
-    path: ..\\cusymint_l10n
+  cusymint_l10n: 
+    path: ../cusymint_l10n
   cusymint_ui:
     path: ../cusymint_ui

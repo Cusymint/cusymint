@@ -20,8 +20,8 @@
 /*
  * @brief Creates a `std::string` representing expression of type `e^x * e^e^x * ... * e^e^...^e^x`,
  * which is made of `n` factors.
- * 
- * @param `n` - number of factors in created expression. 
+ *
+ * @param `n` - number of factors in created expression.
  *
  * @return Created string. If `n==0`, function returns `"1"`.
  */
