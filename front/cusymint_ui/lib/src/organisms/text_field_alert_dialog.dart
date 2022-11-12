@@ -1,3 +1,4 @@
+import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 
 class CuTextFieldAlertDialog extends StatelessWidget {
@@ -21,11 +22,11 @@ class CuTextFieldAlertDialog extends StatelessWidget {
       content: textField,
       actions: [
         CuTextButton(
-          text: 'Cancel',
+          text: Strings.cancel.tr(),
           onPressed: onCancelPressed,
         ),
         CuElevatedButton(
-          text: 'Ok',
+          text: Strings.ok.tr(),
           onPressed: onOkPressed,
         ),
       ],

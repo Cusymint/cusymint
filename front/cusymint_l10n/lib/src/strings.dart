@@ -21,4 +21,6 @@ class Strings {
   static const String languagePolish = 'languagePolish';
   static const String languageEnglish = 'languageEnglish';
   static const String languageCurrent = 'languageCurrent';
+  static const String cancel = 'cancel';
+  static const String ok = 'ok';
 }

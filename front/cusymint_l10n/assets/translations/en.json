@@ -18,5 +18,7 @@
    "licenses": "Licenses",
    "languagePolish": "Polski",
    "languageEnglish": "English",
-   "languageCurrent": "English"
+   "languageCurrent": "English",
+   "cancel": "Cancel",
+   "ok": "OK"
 }
