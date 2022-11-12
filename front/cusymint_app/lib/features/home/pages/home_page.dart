@@ -257,10 +257,6 @@ class _FailureBody extends StatelessWidget {
     return Column(
       children: [
         for (final error in errors) CuText.med14(error),
-        CuElevatedButton(
-          onPressed: () => context.read<ClientCubit>().reset(),
-          text: Strings.retry.tr(),
-        ),
       ],
     );
   }
