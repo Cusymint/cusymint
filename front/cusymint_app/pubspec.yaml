@@ -16,6 +16,7 @@ dependencies:
   fluttertoast: ^8.0.9
   provider: ^6.0.3
   share_plus: ^6.0.0
+  shared_preferences: ^2.0.15
 
   cusymint_l10n:
     path: ../cusymint_l10n
