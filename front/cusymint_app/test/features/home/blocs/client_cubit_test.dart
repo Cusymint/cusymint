@@ -1,7 +1,9 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cusymint_app/features/client/client_factory.dart';
 import 'package:cusymint_app/features/home/blocs/client_cubit.dart';
 import 'package:cusymint_client_mock/cusymint_client_mock.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
 
 void main() {
   const waitDuration = Duration(milliseconds: 100);
@@ -14,7 +16,7 @@ void main() {
         solveDelay: waitDuration,
       );
 
-      final clientCubit = ClientCubit(client: client);
+      final clientCubit = _generateCubit(client);
 
       return clientCubit;
     },
@@ -29,7 +31,7 @@ void main() {
         solveDelay: waitDuration,
       );
 
-      final clientCubit = ClientCubit(client: client);
+      final clientCubit = _generateCubit(client);
 
       return clientCubit;
     },
@@ -47,7 +49,7 @@ void main() {
         solveDelay: waitDuration,
       );
 
-      final clientCubit = ClientCubit(client: client);
+      final clientCubit = _generateCubit(client);
 
       return clientCubit;
     },
@@ -89,7 +91,7 @@ void main() {
         solveDelay: waitDuration,
       );
 
-      final clientCubit = ClientCubit(client: client);
+      final clientCubit = _generateCubit(client);
 
       return clientCubit;
     },
@@ -112,7 +114,7 @@ void main() {
     build: () {
       final client = ExceptionThrowingClient(waitDuration: waitDuration);
 
-      final clientCubit = ClientCubit(client: client);
+      final clientCubit = _generateCubit(client);
 
       return clientCubit;
     },
@@ -129,6 +131,34 @@ void main() {
       ),
     ],
   );
+
+  test('ClientFactoryMock returns specified client', () {
+    final client = CusymintClientMock(
+      fakeResponse: ResponseMockFactory.validationErrors,
+      solveDelay: waitDuration,
+    );
+
+    final clientFactory = ClientFactoryMock(client);
+
+    expect(clientFactory.client, same(client));
+  });
+}
+
+ClientCubit _generateCubit(CusymintClient client) {
+  final clientFactory = ClientFactoryMock(client);
+
+  final cubit = ClientCubit(clientFactory: clientFactory);
+
+  return cubit;
+}
+
+class ClientFactoryMock extends Mock implements ClientFactory {
+  ClientFactoryMock(CusymintClient client) : _client = client;
+
+  final CusymintClient _client;
+
+  @override
+  CusymintClient get client => _client;
 }
 
 class ExceptionThrowingClient extends Fake implements CusymintClient {

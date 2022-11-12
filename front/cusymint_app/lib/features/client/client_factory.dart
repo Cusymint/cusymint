@@ -38,6 +38,9 @@ class ClientFactory {
 
     throw Exception('Unsupported scheme: ${_uri.scheme}');
   }
+
+  static ClientFactory of(BuildContext context) =>
+      Provider.of<ClientFactory>(context, listen: false);
 }
 
 extension on CusymintClient {

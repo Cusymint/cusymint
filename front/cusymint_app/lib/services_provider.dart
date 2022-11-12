@@ -1,5 +1,4 @@
 import 'package:cusymint_app/features/client/client_factory.dart';
-import 'package:cusymint_client_mock/cusymint_client_mock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
@@ -20,7 +19,7 @@ class ServicesProvider extends StatelessWidget {
         ),
         BlocProvider(
           create: (context) => ClientCubit(
-            client: Provider.of<CusymintClient>(context, listen: false),
+            clientFactory: ClientFactory.of(context),
           ),
         ),
       ],
