@@ -36,10 +36,10 @@ static void solve(struct mg_rpc_req* r) {
 
     auto parser_result = global_cached_parser->parse(input);
 
-    // TODO: This is a hack,
-    // we should be able to pass the parser result directly to the solver.
-    auto integral = Sym::integral(parser_result.symbols);
-    parser_result = Expression(integral);
+    // // TODO: This is a hack,
+    // // we should be able to pass the parser result directly to the solver.
+    // auto integral = Sym::integral(parser_result.symbols);
+    // parser_result = Expression(integral);
 
     auto solver_result = global_solver->solve(parser_result);
 

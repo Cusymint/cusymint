@@ -11,9 +11,9 @@ class IntegralCalculation : public ::testing::Test {
 };
 
 void test_integral(const std::string integral_str, const std::string expected_result_str) {
-    const auto integral = Sym::integral(parse_function(integral_str));
+    const auto integral = Sym::integral(Parser::parse_function(integral_str));
     const auto result = Sym::solve_integral(integral);
-    const auto expected_result = parse_function(expected_result_str);
+    const auto expected_result = Parser::parse_function(expected_result_str);
     EXPECT_TRUE(result.has_value());
     EXPECT_TRUE(Sym::Symbol::compare_trees(
         result.value().data(), // NOLINT(bugprone-unchecked-optional-access)

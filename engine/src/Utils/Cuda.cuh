@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdio>
+#include <limits>
 
 namespace Util {
     /*
@@ -57,7 +58,7 @@ namespace Util {
      * or their `n` first chars are equal, `false` otherwise
      */
     __host__ __device__ bool compare_str(const char* const str1, const char* const str2,
-                                         const size_t n);
+                                         const size_t n = std::numeric_limits<size_t>::max());
 
 
     /*
