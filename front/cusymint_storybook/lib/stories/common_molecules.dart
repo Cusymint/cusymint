@@ -63,5 +63,25 @@ class CommonMolecules extends StorybookPart {
             );
           },
         ),
+        Story(
+          name: 'Molecules/SettingTile',
+          builder: (context) {
+            final titleText = context.knobs.text(
+              label: 'Title',
+              initial: 'IP Address',
+            );
+
+            final trailingText = context.knobs.text(
+              label: 'Trailing',
+              initial: '192.168.1.123',
+            );
+
+            return CuSettingTile(
+              title: CuText.med14(titleText),
+              trailing: CuText.med14(trailingText),
+              onTap: () {},
+            );
+          },
+        ),
       ];
 }
