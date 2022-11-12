@@ -1,5 +1,6 @@
 #include "Constants.cuh"
 
+#include <cstring>
 #include <fmt/core.h>
 #include <stdexcept>
 #include <string>
@@ -30,7 +31,7 @@ namespace Sym {
 
     DEFINE_COMPARE(UnknownConstant) {
         return BASE_COMPARE(UnknownConstant) &&
-               Util::compare_mem(symbol->unknown_constant.name, name, NAME_LEN);
+               Util::compare_str(symbol->unknown_constant.name, name, NAME_LEN);
     }
 
     DEFINE_COMPARE(KnownConstant) {

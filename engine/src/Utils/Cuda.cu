@@ -36,4 +36,15 @@ namespace Util {
             p2_8[i] = temp;
         }
     }
+
+    __host__ __device__ bool compare_str(const char* const str1, const char* const str2,
+                                         const size_t n) {
+        for (size_t i = 0; str1[i] != '\0' && str2[i] != '\0' && i < n; ++i) {
+            if (str1[i] != str2[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
