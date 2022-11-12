@@ -84,8 +84,10 @@ namespace Test {
     SIMPLIFY_TEST(OneReciprocal, "tan(x)/1", "tan(x)")
     SIMPLIFY_TEST(ComplicatedSum, "0+cos(x)^2+10-(e^e^x)+sin(x)^2-0+e^e^x", "11")
     SIMPLIFY_TEST(LongFraction, "(1+3+4)/(4-5+2/(6-1-4/(2-1-1+1)))", "8")
-    // Negation distribution inverses terms order 
+    // Negation distribution inverses terms order
     SIMPLIFY_TEST(NegationDistribution, "-(e+x+cos(x))", "-cos(x)-x-e")
+    SIMPLIFY_TEST(NegationDistributionWithNegation, "-(e-pi^x+x+sin(x)-tan(x))",
+                  "tan(x)-sin(x)-x+pi^x-e")
 
     SIMPLIFY_TEST(OneMultiplicationLeft, "1*x", "x")
     SIMPLIFY_TEST(OneMultiplicationRight, "x*1", "x")
