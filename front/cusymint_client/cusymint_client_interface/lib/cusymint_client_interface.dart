@@ -23,6 +23,22 @@ class Response {
     this.errors = const [],
   });
 
+  Response copyWith({
+    String? inputInUtf,
+    String? inputInTex,
+    String? outputInUtf,
+    String? outputInTex,
+    List<ResponseError>? errors,
+  }) {
+    return Response(
+      inputInUtf: inputInUtf ?? this.inputInUtf,
+      inputInTex: inputInTex ?? this.inputInTex,
+      outputInUtf: outputInUtf ?? this.outputInUtf,
+      outputInTex: outputInTex ?? this.outputInTex,
+      errors: errors ?? this.errors,
+    );
+  }
+
   bool get hasErrors => errors.isNotEmpty;
 }
 
@@ -34,4 +50,5 @@ class ResponseError {
 
 abstract class CusymintClient {
   Future<Response> solveIntegral(Request request);
+  Future<Response> interpretIntegral(Request request);
 }

@@ -11,7 +11,7 @@ void main() {
     build: () {
       final client = CusymintClientMock(
         fakeResponse: ResponseMockFactory.defaultResponse,
-        delay: waitDuration,
+        solveDelay: waitDuration,
       );
 
       final clientCubit = ClientCubit(client: client);
@@ -26,7 +26,7 @@ void main() {
     build: () {
       final client = CusymintClientMock(
         fakeResponse: ResponseMockFactory.defaultResponse,
-        delay: waitDuration,
+        solveDelay: waitDuration,
       );
 
       final clientCubit = ClientCubit(client: client);
@@ -44,7 +44,7 @@ void main() {
     build: () {
       final client = CusymintClientMock(
         fakeResponse: ResponseMockFactory.defaultResponse,
-        delay: waitDuration,
+        solveDelay: waitDuration,
       );
 
       final clientCubit = ClientCubit(client: client);
@@ -86,7 +86,7 @@ void main() {
     build: () {
       final client = CusymintClientMock(
         fakeResponse: ResponseMockFactory.validationErrors,
-        delay: waitDuration,
+        solveDelay: waitDuration,
       );
 
       final clientCubit = ClientCubit(client: client);

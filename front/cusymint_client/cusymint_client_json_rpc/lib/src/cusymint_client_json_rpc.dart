@@ -48,4 +48,9 @@ class CusymintClientJsonRpc implements CusymintClient {
       client.close();
     }
   }
+
+  @override
+  Future<Response> interpretIntegral(Request request) {
+    throw UnimplementedError();
+  }
 }
