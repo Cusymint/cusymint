@@ -35,7 +35,7 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol& dst) { return !Inner::match(dst); };
     };
 
-    template <class... Matchers> struct Any {
+    struct Any {
         using AdditionalArgs = cuda::std::tuple<>;
         __host__ __device__ static bool match(const Symbol& /*dst*/) { return true; };
     };
