@@ -9,6 +9,6 @@ namespace Sym::KnownIntegral {
 
     __device__ void integrate_simple_variable(const Integral& integral, Symbol& destination,
                                               Symbol& /*help_space*/) {
-        SolutionOfIntegral<Prod<Num, Pow<Var, Int<2>>>>::init(destination, {integral, 0.5});
+        SolutionOfIntegral<Prod<Num, Pow<Var, Integer<2>>>>::init(destination, {integral, 0.5});
     }
 }

@@ -87,14 +87,6 @@ namespace Sym {
     }
 
     std::string Product::to_string() const {
-        if (arg1().is(Type::Reciprocal)) {
-            return fmt::format("({}/{})", arg2().to_string(), arg1().reciprocal.arg().to_string());
-        }
-
-        if (arg2().is(Type::Reciprocal)) {
-            return fmt::format("({}/{})", arg1().to_string(), arg2().reciprocal.arg().to_string());
-        }
-
         return fmt::format("({}*{})", arg1().to_string(), arg2().to_string());
     }
 
