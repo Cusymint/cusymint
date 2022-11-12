@@ -4,63 +4,91 @@ import 'package:cusymint_client_mock/cusymint_client_mock.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group(
-    'ClientFactory tests',
-    () {
-      test('Mock client', () {
-        final factory = ClientFactory();
+  group('isValid', () {
+    final clientFactory = ClientFactory();
 
-        factory.setUrl('mock');
+    final validUrls = <String>[
+      'mock',
+      'errors',
+      'ws://localhost:8000/websocket',
+      'ws://localhost/websocket/',
+    ];
 
-        expect(
-          factory.client,
-          isA<CusymintClientMock>().having(
-            (mock) => mock.fakeResponse.errors,
-            'No errors',
-            [],
-          ).having(
-            (mock) => mock.fakeResponse.outputInUtf,
-            'Some output',
-            isNotEmpty,
-          ),
-        );
+    for (final validUrl in validUrls) {
+      test('valid url: $validUrl', () {
+        expect(clientFactory.isUrlCorrect(validUrl), true);
       });
+    }
 
-      test('Mock client with errors', () {
-        final factory = ClientFactory();
+    final invalidUrls = <String>[
+      'http://locahost',
+      'ws/localhost:8000/websocket',
+      'mocks',
+      'err',
+      'localhost',
+    ];
 
-        factory.setUrl('errors');
-
-        expect(
-          factory.client,
-          isA<CusymintClientMock>()
-              .having(
-                (mock) => mock.fakeResponse.errors,
-                'Some errors',
-                isNotEmpty,
-              )
-              .having(
-                (mock) => mock.fakeResponse.outputInUtf,
-                'No output',
-                isNull,
-              ),
-        );
+    for (final invalidUrl in invalidUrls) {
+      test('invalid url: $invalidUrl', () {
+        expect(clientFactory.isUrlCorrect(invalidUrl), false);
       });
+    }
+  });
 
-      test('JsonRpc client', () {
-        final factory = ClientFactory();
+  group('setUrl', () {
+    test('Mock client', () {
+      final factory = ClientFactory();
 
-        factory.setUrl('ws://localhost:8000/websocket');
+      factory.setUrl('mock');
 
-        expect(
-          factory.client,
-          isA<CusymintClientJsonRpc>().having(
-            (jsonRpc) => jsonRpc.uri,
-            'Correct uri',
-            Uri.parse('ws://localhost:8000/websocket'),
-          ),
-        );
-      });
-    },
-  );
+      expect(
+        factory.client,
+        isA<CusymintClientMock>().having(
+          (mock) => mock.fakeResponse.errors,
+          'No errors',
+          [],
+        ).having(
+          (mock) => mock.fakeResponse.outputInUtf,
+          'Some output',
+          isNotEmpty,
+        ),
+      );
+    });
+
+    test('Mock client with errors', () {
+      final factory = ClientFactory();
+
+      factory.setUrl('errors');
+
+      expect(
+        factory.client,
+        isA<CusymintClientMock>()
+            .having(
+              (mock) => mock.fakeResponse.errors,
+              'Some errors',
+              isNotEmpty,
+            )
+            .having(
+              (mock) => mock.fakeResponse.outputInUtf,
+              'No output',
+              isNull,
+            ),
+      );
+    });
+
+    test('JsonRpc client', () {
+      final factory = ClientFactory();
+
+      factory.setUrl('ws://localhost:8000/websocket');
+
+      expect(
+        factory.client,
+        isA<CusymintClientJsonRpc>().having(
+          (jsonRpc) => jsonRpc.uri,
+          'Correct uri',
+          Uri.parse('ws://localhost:8000/websocket'),
+        ),
+      );
+    });
+  });
 }
