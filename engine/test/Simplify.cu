@@ -39,8 +39,9 @@ namespace Test {
 
         testing::AssertionResult simplifies_to(const std::string& expression_str,
                                                const std::string& expected_simplification_str) {
-            auto expression = parse_function(expression_str);
-            const auto expected_simplification = parse_function(expected_simplification_str);
+            auto expression = Parser::parse_function(expression_str);
+            const auto expected_simplification =
+                Parser::parse_function(expected_simplification_str);
 
             return simplifies_to(expression, expected_simplification);
         }

@@ -14,6 +14,7 @@ set(PARSER_DIR "${SRC_DIR}/Parser")
 set(SERVER_DIR "${SRC_DIR}/Server")
 set(SOLVER_DIR "${SRC_DIR}/Solver")
 set(TEST_DIR "test")
+set(TEST_PARSER_DIR "${TEST_DIR}/Parser")
 
 # Define build targets
 
@@ -55,9 +56,11 @@ add_library(
 
 add_executable(cusymint ${SRC_DIR}/main.cu)
 
-add_executable(testcusymint ${TEST_DIR}/IntegralCommons.cu
-                            ${TEST_DIR}/KnownIntegral.cu
-                            ${TEST_DIR}/Simplify.cu)
+add_executable(
+  testcusymint
+  ${TEST_PARSER_DIR}/Scanner.cu ${TEST_PARSER_DIR}/Parser.cu
+  ${TEST_DIR}/IntegralCommons.cu ${TEST_DIR}/KnownIntegral.cu
+  ${TEST_DIR}/Simplify.cu)
 
 add_executable(
   srvcusymint
