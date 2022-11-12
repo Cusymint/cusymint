@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:json_rpc_2/json_rpc_2.dart';
+import 'package:json_rpc_2/json_rpc_2.dart' as json_rpc;
 import 'package:cusymint_client_interface/cusymint_client_interface.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -16,7 +16,7 @@ class CusymintClientJsonRpc implements CusymintClient {
   @override
   Future<Response> solveIntegral(Request request) async {
     var socket = WebSocketChannel.connect(uri);
-    var client = Client(socket.cast<String>());
+    var client = json_rpc.Client(socket.cast<String>());
 
     unawaited(client.listen());
 
@@ -40,7 +40,7 @@ class CusymintClientJsonRpc implements CusymintClient {
         outputInTex: result['outputInTex'],
         errors: errors,
       );
-    } on RpcException catch (e) {
+    } on json_rpc.RpcException catch (e) {
       return Response(
         errors: [ResponseError(e.message)],
       );

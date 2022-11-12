@@ -1,3 +1,4 @@
+import 'package:cusymint_app/features/client/client_factory.dart';
 import 'package:cusymint_client_mock/cusymint_client_mock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,11 +15,8 @@ class ServicesProvider extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<CusymintClient>(
-          // TODO: replace with real client
-          create: (context) => CusymintClientMock(
-            fakeResponse: ResponseMockFactory.defaultResponse,
-          ),
+        Provider<ClientFactory>(
+          create: (context) => ClientFactory(),
         ),
         BlocProvider(
           create: (context) => ClientCubit(

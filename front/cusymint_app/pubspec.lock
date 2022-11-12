@@ -204,6 +204,13 @@ packages:
       relative: true
     source: path
     version: "0.0.0"
+  cusymint_client_json_rpc:
+    dependency: "direct main"
+    description:
+      path: "../cusymint_client/cusymint_client_json_rpc"
+      relative: true
+    source: path
+    version: "0.0.0"
   cusymint_client_mock:
     dependency: "direct main"
     description:
@@ -427,6 +434,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.7.0"
+  json_rpc_2:
+    dependency: transitive
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: "381a437ce54f47480511c919c3ce08fc1a8d8264"
+      url: "https://github.com/TortillaZHawaii/json_rpc_2.git"
+    source: git
+    version: "3.0.3-dev"
   lints:
     dependency: transitive
     description:

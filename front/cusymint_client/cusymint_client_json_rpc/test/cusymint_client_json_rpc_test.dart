@@ -9,19 +9,15 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 void main() {
   final uri = Uri.parse('ws://localhost:8000/websocket');
 
-  test(
-    'Solve method returns input in Utf',
-    () async {
-      final client = CusymintClientJsonRpc(uri: uri);
+  test('Solve method returns input in Utf', () async {
+    final client = CusymintClientJsonRpc(uri: uri);
 
-      final request = Request('x^2');
+    final request = Request('x^2');
 
-      final response = await client.solveIntegral(request);
+    final response = await client.solveIntegral(request);
 
-      expect(response.inputInUtf, 'x^2');
-    },
-    skip: true,
-  );
+    expect(response.inputInUtf, 'x^2');
+  }, skip: true, timeout: Timeout(Duration(days: 1)));
 
   test(
     'Test rpc.list',
