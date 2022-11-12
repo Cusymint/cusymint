@@ -107,6 +107,11 @@ namespace Sym {
             }
         }
 
+        // Corrects the size of copied `this` (if additional demanded)
+        Symbol* const last_copied_symbol = compressed_reversed_destination - 1;
+        last_copied_symbol->size() += last_copied_symbol->additional_required_size();
+        last_copied_symbol->additional_required_size() = 0;
+
         return compressed_reversed_destination - destination;
     }
 
