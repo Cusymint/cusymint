@@ -47,7 +47,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(parse_function(e_tower(11)));
+    const auto integral = Sym::integral(Parser::parse_function(e_tower(11)));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
