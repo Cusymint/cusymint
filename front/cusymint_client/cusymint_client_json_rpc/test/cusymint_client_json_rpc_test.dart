@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:cusymint_client_interface/cusymint_client_interface.dart';
 import 'package:cusymint_client_json_rpc/src/cusymint_client_json_rpc.dart';
@@ -16,7 +17,29 @@ void main() {
 
     final response = await client.solveIntegral(request);
 
-    expect(response.inputInUtf, 'x^2');
+    expect(response.inputInUtf, isNotNull);
+    expect(response.inputInTex, isNotNull);
+
+    expect(response.outputInUtf, isNotNull);
+    expect(response.outputInTex, isNotNull);
+
+    expect(response.errors, isEmpty);
+  }, skip: true, timeout: Timeout(Duration(days: 1)));
+
+  test('Interpret method returns input in Utf and Tex', () async {
+    final client = CusymintClientJsonRpc(uri: uri);
+
+    final request = Request('x^2');
+
+    final response = await client.interpretIntegral(request);
+
+    expect(response.inputInUtf, isNotNull);
+    expect(response.inputInTex, isNotNull);
+
+    expect(response.outputInUtf, isNull);
+    expect(response.outputInTex, isNull);
+
+    expect(response.errors, isEmpty);
   }, skip: true, timeout: Timeout(Duration(days: 1)));
 
   test(

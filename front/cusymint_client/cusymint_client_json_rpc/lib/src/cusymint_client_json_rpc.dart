@@ -50,7 +50,38 @@ class CusymintClientJsonRpc implements CusymintClient {
   }
 
   @override
-  Future<Response> interpretIntegral(Request request) {
-    throw UnimplementedError();
+  Future<Response> interpretIntegral(Request request) async {
+    var socket = WebSocketChannel.connect(uri);
+    var client = json_rpc.Client(socket.cast<String>());
+
+    unawaited(client.listen());
+
+    try {
+      // this returns result
+      final result = await client.sendRequest(
+        _interpretMethodName,
+        {'input': request.integralToBeSolved},
+      );
+
+      final errors = result['errors'] != null
+          ? (result['errors'] as List)
+              .map((e) => ResponseError(e['errorMessage']))
+              .toList()
+          : List<ResponseError>.empty();
+
+      return Response(
+        inputInUtf: result['inputInUtf'],
+        inputInTex: result['inputInTex'],
+        outputInUtf: result['outputInUtf'],
+        outputInTex: result['outputInTex'],
+        errors: errors,
+      );
+    } on json_rpc.RpcException catch (e) {
+      return Response(
+        errors: [ResponseError(e.message)],
+      );
+    } finally {
+      client.close();
+    }
   }
 }
