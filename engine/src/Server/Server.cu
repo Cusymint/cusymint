@@ -1,6 +1,9 @@
 #include "JsonFormatter.cuh"
 #include "Parser/Parser.cuh"
 #include "Server.cuh"
+#include "Utils/CompileConstants.cuh"
+
+#include <fmt/core.h>
 
 // https://mongoose.ws/tutorials/json-rpc-over-websocket/
 
@@ -10,17 +13,28 @@ static struct mg_rpc* s_rpc_head = NULL;
 static CachedParser* global_cached_parser = NULL;
 static Solver* global_solver = NULL;
 
+template <typename... T> static void print_debug(fmt::format_string<T...> fmt, T&&... args) {
+    if constexpr (Consts::DEBUG) {
+        fmt::print(fmt, std::forward<T>(args)...);
+    }
+}
+
 static void interpret(struct mg_rpc_req* r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
 
     if (input == NULL) {
+        print_debug("[Server] Interpret couldn't find input\n");
         mg_rpc_err(r, 400, "Missing input");
         return;
     }
 
+    print_debug("[Server] Interpret input {}\n", input);
+
     auto parser_result = global_cached_parser->parse(input);
     auto formatter = JsonFormatter();
     auto json = formatter.format(&parser_result, nullptr);
+
+    print_debug("[Server] Interpret result {}\n", json);
 
     mg_rpc_ok(r, "%s", json.c_str());
     free(input);
@@ -30,11 +44,16 @@ static void solve(struct mg_rpc_req* r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
 
     if (input == NULL) {
+        print_debug("[Server] Solve couldn't find input\n", input);
         mg_rpc_err(r, 400, "Missing input");
         return;
     }
 
+    print_debug("[Server] Solve input {}\n", input);
+
     auto parser_result = global_cached_parser->parse(input);
+
+    print_debug("[Server] Parser result {}\n", parser_result.to_string());
 
     // TODO: This is a hack,
     // we should be able to pass the parser result directly to the solver.
@@ -45,14 +64,19 @@ static void solve(struct mg_rpc_req* r) {
 
     auto formatter = JsonFormatter();
 
-    if (solver_result.has_value()) {
-        auto json = formatter.format(&parser_result, &solver_result.value());
-        mg_rpc_ok(r, "%s", json.c_str());
-    }
-    else {
-        auto json = formatter.format(&parser_result, nullptr);
-        mg_rpc_ok(r, "%s", json.c_str());
-    }
+    // if (solver_result.has_value()) {
+    //     auto json = formatter.format(&parser_result, &solver_result.value());
+    //     print_debug("[Server] Solver found solution, returning response {}\n", json);
+    //     mg_rpc_ok(r, "%s", json.c_str());
+    // }
+    // else {
+    //     auto json = formatter.format(&parser_result, nullptr);
+    //     print_debug("[Server] Solver failed to find solution, returning response {}\n", json);
+    //     mg_rpc_ok(r, "%s", json.c_str());
+    // }
+    auto json = formatter.format(&parser_result, &solver_result.value());
+    print_debug("[Server] Solver found solution, returning response {}\n", json);
+    mg_rpc_ok(r, "%s", json.c_str());
     free(input);
 }
 
