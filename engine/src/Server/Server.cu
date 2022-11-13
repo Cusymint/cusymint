@@ -64,19 +64,16 @@ static void solve(struct mg_rpc_req* r) {
 
     auto formatter = JsonFormatter();
 
-    // if (solver_result.has_value()) {
-    //     auto json = formatter.format(&parser_result, &solver_result.value());
-    //     print_debug("[Server] Solver found solution, returning response {}\n", json);
-    //     mg_rpc_ok(r, "%s", json.c_str());
-    // }
-    // else {
-    //     auto json = formatter.format(&parser_result, nullptr);
-    //     print_debug("[Server] Solver failed to find solution, returning response {}\n", json);
-    //     mg_rpc_ok(r, "%s", json.c_str());
-    // }
-    auto json = formatter.format(&parser_result, &solver_result.value());
-    print_debug("[Server] Solver found solution, returning response {}\n", json);
-    mg_rpc_ok(r, "%s", json.c_str());
+    if (solver_result.has_value()) {
+        auto json = formatter.format(&parser_result, &solver_result.value());
+        print_debug("[Server] Solver found solution, returning response {}\n", json);
+        mg_rpc_ok(r, "%s", json.c_str());
+    }
+    else {
+        auto json = formatter.format(&parser_result, nullptr);
+        print_debug("[Server] Solver failed to find solution, returning response {}\n", json);
+        mg_rpc_ok(r, "%s", json.c_str());
+    }
     free(input);
 }
 
