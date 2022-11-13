@@ -17,6 +17,8 @@
 
 #include "Utils/CompileConstants.cuh"
 
+#include "Symbol/MetaOperators.cuh"
+
 /*
  * @brief Creates a `std::string` representing expression of type `e^x * e^e^x * ... * e^e^...^e^x`,
  * which is made of `n` factors.
@@ -46,6 +48,10 @@ int main() {
     }
 
     Sym::Static::init_functions();
+
+    if (Sym::Add<Sym::Same, Sym::Mul<Sym::Var, Sym::Same>>::match(*Parser::parse_function("2^x+x*2^x").data())) {
+        printf ("AAAAAA\n");
+    }
 
     const auto integral = Sym::integral(Parser::parse_function(e_tower(11)));
 
