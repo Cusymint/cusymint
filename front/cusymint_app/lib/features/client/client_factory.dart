@@ -6,10 +6,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ClientFactory {
   ClientFactory({this.sharedPreferences}) {
-    initialize();
+    initialize(false);
   }
 
-  final SharedPreferences? sharedPreferences;
+  ClientFactory.withStorage() {
+    initialize(true);
+  }
+
+  SharedPreferences? sharedPreferences;
 
   Uri get uri => _uri;
   Uri _uri = Uri.parse(_defaultUri);
@@ -39,7 +43,10 @@ class ClientFactory {
     ),
   ];
 
-  void initialize() {
+  void initialize(bool initializeStorage) async {
+    if (initializeStorage) {
+      sharedPreferences = await SharedPreferences.getInstance();
+    }
     final storedUrl = _readUrlFromStorage();
     if (storedUrl != null) {
       setUrl(storedUrl);
