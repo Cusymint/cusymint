@@ -32,44 +32,47 @@ class _SettingsPageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsPageTemplate<Locale>(
-      drawer: WiredDrawer(context: context),
-      chosenLanguage: Strings.languageCurrent.tr(),
-      // TODO: fix
-      ipAddress: clientFactory.uri.toString(),
-      onIpAddressTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => _UrlAlertDialog(clientUrlCubit: clientUrlCubit),
-        );
-      },
-      onLicensesTap: () {
-        showLicensePage(
-          context: context,
-          applicationIcon: CuLogo(
-            color: CuColors.of(context).black,
+    return BlocBuilder<ClientUrlCubit, ClientUrlState>(
+      bloc: clientUrlCubit,
+      builder: (context, state) => SettingsPageTemplate<Locale>(
+        drawer: WiredDrawer(context: context),
+        chosenLanguage: Strings.languageCurrent.tr(),
+        ipAddress: state.isValid ? state.url : clientFactory.uri.toString(),
+        onIpAddressTap: () {
+          showDialog(
+            context: context,
+            builder: (context) =>
+                _UrlAlertDialog(clientUrlCubit: clientUrlCubit),
+          );
+        },
+        onLicensesTap: () {
+          showLicensePage(
+            context: context,
+            applicationIcon: CuLogo(
+              color: CuColors.of(context).black,
+            ),
+            applicationName: '',
+          );
+        },
+        selectedLocale: context.locale,
+        languageMenuItems: [
+          _LocalePopupMenuItem(
+            context: context,
+            locale: const Locale('en'),
+            language: Strings.languageEnglish.tr(),
           ),
-          applicationName: '',
-        );
-      },
-      selectedLocale: context.locale,
-      languageMenuItems: [
-        _LocalePopupMenuItem(
-          context: context,
-          locale: const Locale('en'),
-          language: Strings.languageEnglish.tr(),
-        ),
-        _LocalePopupMenuItem(
-          context: context,
-          locale: const Locale('pl'),
-          language: Strings.languagePolish.tr(),
-        ),
-      ],
+          _LocalePopupMenuItem(
+            context: context,
+            locale: const Locale('pl'),
+            language: Strings.languagePolish.tr(),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _UrlAlertDialog extends StatelessWidget {
+class _UrlAlertDialog extends StatefulWidget {
   const _UrlAlertDialog({
     required this.clientUrlCubit,
   });
@@ -77,20 +80,36 @@ class _UrlAlertDialog extends StatelessWidget {
   final ClientUrlCubit clientUrlCubit;
 
   @override
+  State<_UrlAlertDialog> createState() => _UrlAlertDialogState();
+}
+
+class _UrlAlertDialogState extends State<_UrlAlertDialog> {
+  late final TextEditingController _textEditingController;
+
+  @override
+  void initState() {
+    super.initState();
+    _textEditingController = TextEditingController(
+      text: widget.clientUrlCubit.state.url,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<ClientUrlCubit, ClientUrlState>(
-      bloc: clientUrlCubit,
+      bloc: widget.clientUrlCubit,
       builder: (context, state) {
         return CuTextFieldAlertDialog(
           title: Strings.ipAddress.tr(),
           textField: CuTextField(
+            controller: _textEditingController,
             keyboardType: TextInputType.url,
-            onChanged: (newText) => clientUrlCubit.onChangedUrl(newText),
+            onChanged: (newText) => widget.clientUrlCubit.onChangedUrl(newText),
             autofocus: true,
           ),
           onOkPressed: state.isValid
               ? () {
-                  clientUrlCubit.setUrl();
+                  widget.clientUrlCubit.setUrl();
                   Navigator.of(context).pop();
                 }
               : null,
