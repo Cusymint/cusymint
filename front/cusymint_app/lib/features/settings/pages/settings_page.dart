@@ -95,6 +95,12 @@ class _UrlAlertDialogState extends State<_UrlAlertDialog> {
   }
 
   @override
+  void dispose() {
+    _textEditingController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<ClientUrlCubit, ClientUrlState>(
       bloc: widget.clientUrlCubit,
