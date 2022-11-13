@@ -11,6 +11,7 @@ class ServicesProvider extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // TODO: add SharedPreferences sync
         Provider<ClientFactory>(
           create: (context) => ClientFactory(),
         ),

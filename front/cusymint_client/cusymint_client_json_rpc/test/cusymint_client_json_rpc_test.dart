@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:cusymint_client_interface/cusymint_client_interface.dart';
 import 'package:cusymint_client_json_rpc/src/cusymint_client_json_rpc.dart';
