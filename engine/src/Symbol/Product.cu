@@ -19,7 +19,8 @@ namespace {
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Product)
-    DEFINE_SIMPLE_TWO_ARGUMENT_OP_COMPARE(Product)
+    DEFINE_SIMPLE_TWO_ARGUMENT_OP_ARE_EQUAL(Product)
+    DEFINE_IDENTICAL_COMPARE_TO(Product)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Product)
 
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
@@ -58,9 +59,9 @@ namespace Sym {
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol* const expr1,
                                                                const Symbol* const expr2) {
         return expr1->is(Type::Reciprocal) &&
-                   Symbol::compare_trees(&expr1->reciprocal.arg(), expr2) ||
+                   Symbol::are_expressions_equal(&expr1->reciprocal.arg(), expr2) ||
                expr2->is(Type::Reciprocal) &&
-                   Symbol::compare_trees(&expr2->reciprocal.arg(), expr1);
+                   Symbol::are_expressions_equal(&expr2->reciprocal.arg(), expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {
@@ -137,7 +138,8 @@ namespace Sym {
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)
-    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Reciprocal)
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_ARE_EQUAL(Reciprocal)
+    DEFINE_IDENTICAL_COMPARE_TO(Reciprocal)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
 

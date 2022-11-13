@@ -170,8 +170,8 @@ namespace Sym {
         substitute_variable_with(substitute);
     }
 
-    __host__ __device__ bool Symbol::compare_trees(const Symbol* const expr1,
-                                                   const Symbol* const expr2) {
+    __host__ __device__ bool Symbol::are_expressions_equal(const Symbol* const expr1,
+                                                           const Symbol* const expr2) {
         if (expr1->size() != expr2->size()) {
             return false;
         }
@@ -179,12 +179,44 @@ namespace Sym {
         return compare_symbol_sequences(expr1, expr2, expr1->size());
     }
 
+    __host__ __device__ Util::Order Symbol::compare_expressions(const Symbol& expr1,
+                                                                const Symbol& expr2) {
+
+        const size_t smaller_size = Util::min(expr1.size(), expr2.size());
+
+        for (size_t i = 0; i < smaller_size; ++i) {
+            if (expr1[i].type_ordinal() < expr2[i].type_ordinal()) {
+                return Util::Order::Less;
+            }
+
+            if (expr1[i].type_ordinal() > expr2[i].type_ordinal()) {
+                return Util::Order::Greater;
+            }
+
+            const auto order = VIRTUAL_CALL(expr1, compare_to, expr2);
+            if (order != Util::Order::Equal) {
+                return order;
+            }
+        }
+
+        if constexpr (Consts::DEBUG) {
+            if (expr1.size() != expr2.size()) {
+                Util::crash("Comparing expressions of different length found out that one of them "
+                            "is a prefix of the other one, this should not be possible in "
+                            "well-formed expressions. (sizes: %lu, %lu)",
+                            expr1.size(), expr2.size());
+            }
+        }
+
+        return Util::Order::Equal;
+    }
+
     std::string Symbol::to_string() const { return VIRTUAL_CALL(*this, to_string); }
 
     std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
 
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {
-        return VIRTUAL_CALL(sym1, compare, &sym2);
+        return VIRTUAL_CALL(sym1, are_equal, &sym2);
     }
 
     __host__ __device__ bool operator!=(const Symbol& sym1, const Symbol& sym2) {

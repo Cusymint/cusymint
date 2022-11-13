@@ -11,14 +11,15 @@ namespace {
                                                                    const Sym::Symbol& expression) {
         return symbol.is(Sym::Type::Reciprocal) &&
                symbol.as<Sym::Reciprocal>().arg().is(Sym::Type::Logarithm) &&
-               Sym::Symbol::compare_trees(
+               Sym::Symbol::are_expressions_equal(
                    &symbol.as<Sym::Reciprocal>().arg().as<Sym::Logarithm>().arg(), &expression);
     }
 }
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(Power)
-    DEFINE_SIMPLE_TWO_ARGUMENT_OP_COMPARE(Power)
+    DEFINE_SIMPLE_TWO_ARGUMENT_OP_ARE_EQUAL(Power)
+    DEFINE_IDENTICAL_COMPARE_TO(Power)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Power)
 
     DEFINE_SIMPLIFY_IN_PLACE(Power) {

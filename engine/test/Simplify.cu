@@ -22,8 +22,8 @@ namespace Test {
             simplified_expression.data()->simplify(simplification_memory.data());
             simplified_expression.resize(simplified_expression.data()->size());
 
-            if (Sym::Symbol::compare_trees(simplified_expression.data(),
-                                           expected_simplification.data())) {
+            if (Sym::Symbol::are_expressions_equal(simplified_expression.data(),
+                                                   expected_simplification.data())) {
                 return testing::AssertionSuccess();
             }
 

@@ -21,7 +21,7 @@ namespace Test {
                        << expected_result.data()->to_string();
             }
 
-            if (Sym::Symbol::compare_trees(
+            if (Sym::Symbol::are_expressions_equal(
                     result.value().data(), // NOLINT(bugprone-unchecked-optional-access)
                     expected_result.data())) {
                 return testing::AssertionSuccess();

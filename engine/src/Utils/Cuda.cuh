@@ -60,6 +60,29 @@ namespace Util {
     __host__ __device__ bool compare_str(const char* const str1, const char* const str2,
                                          const size_t n = std::numeric_limits<size_t>::max());
 
+    /*
+     * @brief Compares two values and returns the smaller one
+     *
+     * @param first First value to compare
+     * @param second First value to compare
+     *
+     * @return the smaller of the two values
+     */
+    template <class T> __host__ __device__ T min(const T& first, const T& second) {
+        return first < second ? first : second;
+    }
+
+    /*
+     * @brief Compares two values and returns the greater one
+     *
+     * @param first First value to compare
+     * @param second First value to compare
+     *
+     * @return the greater of the two values
+     */
+    template <class T> __host__ __device__ T max(const T& first, const T& second) {
+        return first > second ? first : second;
+    }
 
     /*
      * @brief Crashes the program in case of irreversible errors

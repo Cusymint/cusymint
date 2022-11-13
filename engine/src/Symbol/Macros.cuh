@@ -9,6 +9,7 @@
 
 #include "SymbolType.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/Order.cuh"
 #include "Utils/StaticStack.cuh"
 
 namespace Sym {
@@ -22,7 +23,13 @@ namespace Sym {
 #define COMPRESS_REVERSE_TO_HEADER(_compress_reverse_to) \
     __host__ __device__ size_t _compress_reverse_to(Symbol* const destination) const
 
-#define COMPARE_HEADER(_compare) __host__ __device__ bool _compare(const Symbol* const symbol) const
+#define ARE_EQUAL_HEADER(_are_equal) \
+    __host__ __device__ bool _are_equal(const Symbol* const symbol) const
+
+#define COMPARE_TO_HEADER(_compare_to)                            \
+    __host__ __device__ Util::Order _compare_to(                  \
+        const Symbol& other) /* NOLINT(misc-unused-parameters) */ \
+        const
 
 #define SIMPLIFY_IN_PLACE_HEADER(_simplify_in_place) \
     __host__ __device__ bool _simplify_in_place(Symbol* const help_space)
@@ -85,7 +92,8 @@ namespace Sym {
             return const_cast<T*>(const_cast<const _name*>(this)->as<T>());       \
         }                                                                         \
                                                                                   \
-        COMPARE_HEADER(compare);                                                  \
+        ARE_EQUAL_HEADER(are_equal);                                              \
+        COMPARE_TO_HEADER(compare_to);                                            \
         COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                          \
         SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                              \
         IS_FUNCTION_OF_HEADER(is_function_of);                                    \
@@ -107,7 +115,7 @@ namespace Sym {
 #define DEFINE_NO_OP_SEAL(_name) \
     void _name::seal() {}
 
-#define DEFINE_COMPARE(_name) COMPARE_HEADER(_name::compare)
+#define DEFINE_ARE_EQUAL(_name) ARE_EQUAL_HEADER(_name::are_equal)
 
 #define DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
     DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {}
@@ -119,10 +127,10 @@ namespace Sym {
 
 #define DEFINE_IS_FUNCTION_OF(_name) IS_FUNCTION_OF_HEADER(_name::is_function_of)
 
-#define DEFINE_INVALID_IS_FUNCTION_OF(_name)                                         \
-    IS_FUNCTION_OF_HEADER(_name::is_function_of) {                                   \
-        Util::crash("Is function of called on %s, this should not happen!", #_name); \
-        return false; /* Just to silence warnings */                                 \
+#define DEFINE_INVALID_IS_FUNCTION_OF(_name)                                            \
+    IS_FUNCTION_OF_HEADER(_name::is_function_of) /* NOLINT(misc-unused-parameters) */ { \
+        Util::crash("is_function_of called on %s, this should not happen!", #_name);    \
+        return false; /* Just to silence warnings */                                    \
     }
 
 #define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                       \
@@ -136,21 +144,32 @@ namespace Sym {
         return arg().is_function_of(expressions, expression_count);            \
     }
 
-#define BASE_COMPARE(_name) \
+#define BASE_ARE_EQUAL(_name) \
     symbol->type() == type && symbol->size() == size && symbol->simplified() == simplified
 
-#define ONE_ARGUMENT_OP_COMPARE(_name) true
+#define ONE_ARGUMENT_OP_ARE_EQUAL(_name) true
 
-#define TWO_ARGUMENT_OP_COMPARE(_name) symbol->as<_name>().second_arg_offset == second_arg_offset
+#define TWO_ARGUMENT_OP_ARE_EQUAL(_name) symbol->as<_name>().second_arg_offset == second_arg_offset
 
-#define DEFINE_SIMPLE_COMPARE(_name) \
-    DEFINE_COMPARE(_name) { return BASE_COMPARE(_name); }
+#define DEFINE_SIMPLE_ARE_EQUAL(_name) \
+    DEFINE_ARE_EQUAL(_name) { return BASE_ARE_EQUAL(_name); }
 
-#define DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(_name) \
-    DEFINE_COMPARE(_name) { return BASE_COMPARE(_name) && ONE_ARGUMENT_OP_COMPARE(_name); }
+#define DEFINE_SIMPLE_ONE_ARGUMETN_OP_ARE_EQUAL(_name) \
+    DEFINE_ARE_EQUAL(_name) { return BASE_ARE_EQUAL(_name) && ONE_ARGUMENT_OP_ARE_EQUAL(_name); }
 
-#define DEFINE_SIMPLE_TWO_ARGUMENT_OP_COMPARE(_name) \
-    DEFINE_COMPARE(_name) { return BASE_COMPARE(_name) && TWO_ARGUMENT_OP_COMPARE(_name); }
+#define DEFINE_SIMPLE_TWO_ARGUMENT_OP_ARE_EQUAL(_name) \
+    DEFINE_ARE_EQUAL(_name) { return BASE_ARE_EQUAL(_name) && TWO_ARGUMENT_OP_ARE_EQUAL(_name); }
+
+#define DEFINE_COMPARE_TO(_name) COMPARE_TO_HEADER(_name::compare_to)
+
+#define DEFINE_IDENTICAL_COMPARE_TO(_name) \
+    COMPARE_TO_HEADER(_name::compare_to) { return Util::Order::Equal; }
+
+#define DEFINE_INVALID_COMPARE_TO(_name)                                         \
+    COMPARE_TO_HEADER(_name::compare_to) {                                       \
+        Util::crash("compare_to called on %s, this should not happen!", #_name); \
+        return Util::Order::Equal; /* Just to silence warnings */                             \
+    }
 
 #define DEFINE_TO_STRING(_str) \
     [[nodiscard]] std::string to_string() const { return _str; }

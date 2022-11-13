@@ -10,7 +10,8 @@
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Addition)
-    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Addition)
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_ARE_EQUAL(Addition)
+    DEFINE_IDENTICAL_COMPARE_TO(Addition)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Addition)
 
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
@@ -55,16 +56,16 @@ namespace Sym {
             return false;
         }
 
-        return Symbol::compare_trees(&expr1->as<Power>().arg1().as<Sine>().arg(),
+        return Symbol::are_expressions_equal(&expr1->as<Power>().arg1().as<Sine>().arg(),
                                      &expr2->as<Power>().arg1().as<Cosine>().arg());
     }
 
     __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
         return expr1->is(Type::Negation) &&
-                   Symbol::compare_trees(&expr1->as<Negation>().arg(), expr2) ||
+                   Symbol::are_expressions_equal(&expr1->as<Negation>().arg(), expr2) ||
                expr2->is(Type::Negation) &&
-                   Symbol::compare_trees(&expr2->as<Negation>().arg(), expr1);
+                   Symbol::are_expressions_equal(&expr2->as<Negation>().arg(), expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Addition) {
@@ -114,7 +115,8 @@ namespace Sym {
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Negation)
-    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Negation)
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_ARE_EQUAL(Negation)
+    DEFINE_IDENTICAL_COMPARE_TO(Negation)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Negation)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Negation)
 

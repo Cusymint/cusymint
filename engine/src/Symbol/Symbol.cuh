@@ -123,9 +123,14 @@ namespace Sym {
         constexpr static Sym::Type TYPE = Sym::Type::Symbol;
 
         [[nodiscard]] __host__ __device__ inline Type type() const { return unknown.type; }
+        [[nodiscard]] __host__ __device__ inline size_t type_ordinal() const {
+            return Sym::type_ordinal(type());
+        }
+
         [[nodiscard]] __host__ __device__ inline bool simplified() const {
             return unknown.simplified;
         }
+
         [[nodiscard]] __host__ __device__ inline bool is(const Type other_type) const {
             return type() == other_type;
         }
@@ -142,6 +147,7 @@ namespace Sym {
         [[nodiscard]] __host__ __device__ inline size_t& additional_required_size() {
             return unknown.additional_required_size;
         }
+
         [[nodiscard]] __host__ __device__ inline size_t additional_required_size() const {
             return unknown.additional_required_size;
         }
@@ -192,7 +198,7 @@ namespace Sym {
         }
 
         /*
-         * @brief Zwraca wskaźnik na n-ty element za `this`
+         * @brief Pointer to the `idx`th element after `this`
          */
         [[nodiscard]] __host__ __device__ const inline Symbol* at(const size_t idx) const {
             if constexpr (Consts::DEBUG) {
@@ -210,33 +216,33 @@ namespace Sym {
         }
 
         /*
-         * @brief Pointer to the nth element after `this`
+         * @brief Pointer to the `idx`th element after `this`
          */
         [[nodiscard]] __host__ __device__ inline Symbol* at(const size_t idx) {
             return const_cast<Symbol*>(const_cast<const Symbol*>(this)->at(idx));
         }
 
         /*
-         * @brief Zwraca n-ty element za `this`
+         * @brief Reference to the `idx`th element after `this`
          */
         [[nodiscard]] __host__ __device__ inline const Symbol& operator[](const size_t idx) const {
             return *at(idx);
         }
 
         /*
-         * @brief Zwraca n-ty element za `this`
+         * @brief Reference to the `idx`th element after `this`
          */
         [[nodiscard]] __host__ __device__ inline Symbol& operator[](const size_t idx) {
             return *const_cast<Symbol*>(&(*const_cast<const Symbol*>(this))[idx]);
         }
 
         /*
-         * @brief Zwraca wskaźnik na symbol bezpośrednio za `this`
+         * @brief Pointer to the symbol right after `this`
          */
         [[nodiscard]] __host__ __device__ inline const Symbol* child() const { return at(1); }
 
         /*
-         * @brief Zwraca wskaźnik na symbol bezpośrednio za `this`
+         * @brief Pointer to the symbol right after `this`
          */
         [[nodiscard]] __host__ __device__ inline Symbol* child() {
             return const_cast<Symbol*>(const_cast<const Symbol*>(this)->child());
@@ -454,23 +460,36 @@ namespace Sym {
         }
 
         /*
-         * @brief Porównuje dwa drzewa wyrażeń, oba muszą być uproszczone.
+         * @brief Checks if two expressions are equal
          *
-         * @param expr1 Pierwsze wyrażenie
-         * @param expr2 Drugie wyrażenie
+         * @param expr1 First expression
+         * @param expr2 Second expression
          *
-         * @return `true` jeśli drzewa wyrażeń mają tę samą strukturę, `false` w przeciwnym wypadku
+         * @return `true` if expressions have the same structure, `false` otherwise
          */
-        __host__ __device__ static bool compare_trees(const Symbol* const expr1,
-                                                      const Symbol* const expr2);
+        [[nodiscard]] __host__ __device__ static bool
+        are_expressions_equal(const Symbol* const expr1, const Symbol* const expr2);
 
         /*
-         * @brief Zwraca przyjazny użytkownikowi `std::string` reprezentujący wyrażenie.
+         * @brief Compares two expressions
+         *
+         * @param expr1 First expression
+         * @param expr2 Second expression
+         *
+         * @return `Util::Order::Less` if `expr1` comes before `expr2` in the expression
+         * order, `Util::Order::Greater` if `expr2` comes before `expr1`, and
+         * `Util::Order::Equal`, if expressions are equal
+         */
+        [[nodiscard]] __host__ __device__ static Util::Order
+        compare_expressions(const Symbol& expr1, const Symbol& expr2);
+
+        /*
+         * @brief String formatting of the expression
          */
         [[nodiscard]] std::string to_string() const;
 
         /*
-         * @brief Zwraca zapis wyrażenia w formacie TeX-a.
+         * @brief TeX string formatting of the expression
          */
         [[nodiscard]] std::string to_tex() const;
     };

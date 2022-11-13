@@ -4,7 +4,8 @@
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(SubexpressionCandidate)
-    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(SubexpressionCandidate)
+    DEFINE_SIMPLE_ONE_ARGUMETN_OP_ARE_EQUAL(SubexpressionCandidate)
+    DEFINE_INVALID_COMPARE_TO(SubexpressionCandidate)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(SubexpressionCandidate)
 
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(SubexpressionCandidate)
