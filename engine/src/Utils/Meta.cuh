@@ -36,7 +36,7 @@ namespace Util {
     constexpr auto ensure_same_v = ensure_same<first, second>::value;
 
     template <size_t S, class Tuple, size_t... Is>
-    __host__ __device__ constexpr auto _slice_tuple(Tuple tuple,
+    __host__ __device__ constexpr auto _slice_tuple(const Tuple& tuple,
                                                     std::index_sequence<Is...> /*unused*/) {
         return cuda::std::make_tuple(cuda::std::get<S + Is>(tuple)...);
     }
@@ -53,7 +53,7 @@ namespace Util {
      * @return A new tuple containing N elements
      */
     template <size_t S, size_t N, class Tuple>
-    __host__ __device__ constexpr auto slice_tuple(Tuple tuple) {
+    __host__ __device__ constexpr auto slice_tuple(const Tuple& tuple) {
         return _slice_tuple<S>(tuple, std::make_index_sequence<N>{});
     }
 

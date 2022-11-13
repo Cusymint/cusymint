@@ -55,11 +55,6 @@ static void solve(struct mg_rpc_req* r) {
 
     print_debug("[Server] Parser result {}\n", parser_result.to_string());
 
-    // TODO: This is a hack,
-    // we should be able to pass the parser result directly to the solver.
-    auto integral = Sym::integral(parser_result.symbols);
-    parser_result = Expression(integral);
-
     auto solver_result = global_solver->solve(parser_result);
 
     auto formatter = JsonFormatter();

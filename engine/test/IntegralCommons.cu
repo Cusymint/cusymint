@@ -7,16 +7,16 @@ namespace Test {
     namespace {
         testing::AssertionResult is_integral_solution(const std::string integral_str,
                                                       const std::string expected_result_str) {
-            const auto integral = Sym::integral(parse_function(integral_str));
+            const auto integral = Sym::integral(Parser::parse_function(integral_str));
             const auto result = Sym::solve_integral(integral);
 
-            auto expected_result = parse_function(expected_result_str);
+            auto expected_result = Parser::parse_function(expected_result_str);
             std::vector<Sym::Symbol> simplification_memory(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
             expected_result.data()->simplify(simplification_memory.data());
 
             if (!result.has_value()) {
                 return testing::AssertionFailure()
-                       << "Tried to calculate the integral of:\n  " << integral_str
+                       << "Tried to calculate the integral:\n  " << integral.data()->to_string()
                        << "\n  but no result was found. The result should be:\n  "
                        << expected_result.data()->to_string();
             }
@@ -28,7 +28,7 @@ namespace Test {
             }
 
             return testing::AssertionFailure()
-                   << "Tried to calculate the integral of:\n  " << integral_str
+                   << "Tried to calculate the integral:\n  " << integral.data()->to_string()
                    << "\n  but got an unexpected result:\n  "
                    << result // NOLINT(bugprone-unchecked-optional-access)
                           .value()

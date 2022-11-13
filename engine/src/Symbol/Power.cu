@@ -7,8 +7,8 @@
 #include <fmt/core.h>
 
 namespace {
-    __host__ __device__ inline bool is_symbol_inversed_logarithm_of(const Sym::Symbol& symbol,
-                                                                    const Sym::Symbol& expression) {
+    __host__ __device__ inline bool is_symbol_inverse_logarithm_of(const Sym::Symbol& symbol,
+                                                                   const Sym::Symbol& expression) {
         return symbol.is(Sym::Type::Reciprocal) &&
                symbol.as<Sym::Reciprocal>().arg().is(Sym::Type::Logarithm) &&
                Sym::Symbol::compare_trees(
@@ -22,15 +22,21 @@ namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Power)
 
     DEFINE_SIMPLIFY_IN_PLACE(Power) {
-        if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value == 0.0) {
-            Symbol::from(this)->numeric_constant = NumericConstant::with_value(1.0);
+        if (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value == 0) {
+            symbol()->init_from(NumericConstant::with_value(1));
+            return true;
+        }
+
+        if (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value == 1) {
+            arg1().copy_to(help_space);
+            help_space->copy_to(symbol());
             return true;
         }
 
         if (arg1().is(Type::NumericConstant) && arg2().is(Type::NumericConstant)) {
-            double value1 = arg1().numeric_constant.value;
-            double value2 = arg2().numeric_constant.value;
-            Symbol::from(this)->numeric_constant = NumericConstant::with_value(pow(value1, value2));
+            double value1 = arg1().as<NumericConstant>().value;
+            double value2 = arg2().as<NumericConstant>().value;
+            symbol()->init_from(NumericConstant::with_value(pow(value1, value2)));
             return true;
         }
 
@@ -55,7 +61,7 @@ namespace Sym {
         }
 
         // a^(1/ln(a))=e
-        if (is_symbol_inversed_logarithm_of(arg2(), arg1())) {
+        if (is_symbol_inverse_logarithm_of(arg2(), arg1())) {
             symbol()->init_from(KnownConstant::with_value(KnownConstantValue::E));
             return true;
         }
@@ -73,7 +79,7 @@ namespace Sym {
             Symbol* base = &arg1();
             bool base_changed = false;
             while (iterator.is_valid()) {
-                if (is_symbol_inversed_logarithm_of(*iterator.current(), *base)) {
+                if (is_symbol_inverse_logarithm_of(*iterator.current(), *base)) {
                     base->init_from(KnownConstant::with_value(KnownConstantValue::E));
                     iterator.current()->init_from(NumericConstant::with_value(1));
                     base_changed = true;
