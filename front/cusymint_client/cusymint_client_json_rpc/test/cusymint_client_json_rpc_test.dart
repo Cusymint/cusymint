@@ -24,7 +24,7 @@ void main() {
     expect(response.outputInTex, isNotNull);
 
     expect(response.errors, isEmpty);
-  }, skip: true, timeout: Timeout(Duration(days: 1)));
+  }, skip: true);
 
   test('Interpret method returns input in Utf and Tex', () async {
     final client = CusymintClientJsonRpc(uri: uri);
@@ -40,31 +40,27 @@ void main() {
     expect(response.outputInTex, isNull);
 
     expect(response.errors, isEmpty);
-  }, skip: true, timeout: Timeout(Duration(days: 1)));
+  }, skip: true);
 
-  test(
-    'Test rpc.list',
-    () async {
-      var socket = WebSocketChannel.connect(uri);
-      var client = Client(socket.cast<String>());
+  test('Test rpc.list', () async {
+    var socket = WebSocketChannel.connect(uri);
+    var client = Client(socket.cast<String>());
 
-      unawaited(client.listen());
+    unawaited(client.listen());
 
-      final response = await client.sendRequest(
-        'rpc.list',
-      );
+    final response = await client.sendRequest(
+      'rpc.list',
+    );
 
-      final methodsList = response as List;
+    final methodsList = response as List;
 
-      expect(
-        methodsList,
-        allOf([
-          contains('rpc.list'),
-          contains('solve'),
-          contains('interpret'),
-        ]),
-      );
-    },
-    skip: true,
-  );
+    expect(
+      methodsList,
+      allOf([
+        contains('rpc.list'),
+        contains('solve'),
+        contains('interpret'),
+      ]),
+    );
+  }, skip: true);
 }
