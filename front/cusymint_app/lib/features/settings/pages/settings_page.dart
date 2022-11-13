@@ -112,6 +112,7 @@ class _UrlAlertDialogState extends State<_UrlAlertDialog> {
             keyboardType: TextInputType.url,
             onChanged: (newText) => widget.clientUrlCubit.onChangedUrl(newText),
             autofocus: true,
+            errorText: state.isValid ? null : Strings.ipAddressError.tr(),
           ),
           onOkPressed: state.isValid
               ? () {

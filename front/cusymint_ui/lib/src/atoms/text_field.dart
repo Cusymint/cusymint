@@ -13,6 +13,7 @@ class CuTextField extends StatelessWidget {
     this.onSubmitted,
     this.keyboardType,
     this.autofocus = false,
+    this.errorText,
   });
 
   final TextEditingController? controller;
@@ -23,6 +24,7 @@ class CuTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final Widget? label;
   final TextInputType? keyboardType;
+  final String? errorText;
   final bool autofocus;
 
   @override
@@ -56,6 +58,7 @@ class CuTextField extends StatelessWidget {
           filled: true,
           fillColor: colors.mintLight,
           iconColor: colors.mintDark,
+          errorText: errorText,
         ),
       ),
     );
