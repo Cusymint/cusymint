@@ -2,9 +2,14 @@ import 'package:cusymint_client_json_rpc/cusymint_client_json_rpc.dart';
 import 'package:cusymint_client_mock/cusymint_client_mock.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ClientFactory {
-  ClientFactory();
+  ClientFactory({this.sharedPreferences}) {
+    initialize();
+  }
+
+  final SharedPreferences? sharedPreferences;
 
   Uri get uri => _uri;
   Uri _uri = Uri.parse(_defaultUri);
@@ -13,6 +18,7 @@ class ClientFactory {
   CusymintClient _client = CusymintClientMock();
 
   static const _defaultUri = 'ws://localhost:8000/websocket';
+  static const _clientUrlKey = 'clientUrl';
 
   final _clientMatchers = <_ClientMatcher>[
     _ClientMatcher(
@@ -33,6 +39,13 @@ class ClientFactory {
     ),
   ];
 
+  void initialize() {
+    final storedUrl = _readUrlFromStorage();
+    if (storedUrl != null) {
+      setUrl(storedUrl);
+    }
+  }
+
   bool isUrlCorrect(String url) {
     for (final matcher in _clientMatchers) {
       if (matcher.match(Uri.parse(url))) {
@@ -43,18 +56,21 @@ class ClientFactory {
     return false;
   }
 
-  void setUrl(String url) {
+  Future<void> setUrl(String url) async {
     _uri = Uri.parse(url);
 
     for (final matcher in _clientMatchers) {
       if (matcher.match(_uri)) {
         _client = matcher.create(_uri);
+        await sharedPreferences?.setString(_clientUrlKey, url);
         return;
       }
     }
 
     throw Exception('Unsupported scheme: ${_uri.scheme}');
   }
+
+  String? _readUrlFromStorage() => sharedPreferences?.getString(_clientUrlKey);
 
   static ClientFactory of(BuildContext context) =>
       Provider.of<ClientFactory>(context, listen: false);
