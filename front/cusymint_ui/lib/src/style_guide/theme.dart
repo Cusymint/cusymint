@@ -1,7 +1,10 @@
+import 'package:cusymint_assets/cusymint_assets.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 
 class CuTheme {
   static ThemeData of(BuildContext context) {
+    GoogleFonts.config.allowRuntimeFetching = false;
+
     final colors = CuColors.of(context);
 
     return Theme.of(context).copyWith(
@@ -21,6 +24,7 @@ class CuTheme {
         selectionColor: colors.mintGray,
         selectionHandleColor: colors.mintDark,
       ),
+      textTheme: GoogleFonts.mavenProTextTheme(),
     );
   }
 }
