@@ -28,6 +28,22 @@ flutter:
     - assets/images/
     - assets/icons/
 
+  fonts:
+    - family: MavenPro
+      fonts:
+        - asset: assets/fonts/MavenPro-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/MavenPro-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/MavenPro-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/MavenPro-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/MavenPro-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/MavenPro-Black.ttf
+          weight: 900
+
 flutter_gen:
   integrations:
     flutter_svg: true
