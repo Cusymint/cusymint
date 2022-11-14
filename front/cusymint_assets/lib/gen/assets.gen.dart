@@ -11,6 +11,30 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 
+class $AssetsIconsGen {
+  const $AssetsIconsGen();
+
+  /// File path: assets/icons/app_icon_background.png
+  AssetGenImage get appIconBackground =>
+      const AssetGenImage('assets/icons/app_icon_background.png');
+
+  /// File path: assets/icons/app_icon_curved_edges.png
+  AssetGenImage get appIconCurvedEdges =>
+      const AssetGenImage('assets/icons/app_icon_curved_edges.png');
+
+  /// File path: assets/icons/app_icon_foreground.png
+  AssetGenImage get appIconForeground =>
+      const AssetGenImage('assets/icons/app_icon_foreground.png');
+
+  /// File path: assets/icons/app_icon_ios.png
+  AssetGenImage get appIconIos =>
+      const AssetGenImage('assets/icons/app_icon_ios.png');
+
+  /// List of all assets
+  List<AssetGenImage> get values =>
+      [appIconBackground, appIconCurvedEdges, appIconForeground, appIconIos];
+}
+
 class $AssetsImagesGen {
   const $AssetsImagesGen();
 
@@ -39,6 +63,7 @@ class $AssetsSvgGen {
 class CuAssets {
   CuAssets._();
 
+  static const $AssetsIconsGen icons = $AssetsIconsGen();
   static const $AssetsImagesGen images = $AssetsImagesGen();
   static const $AssetsSvgGen svg = $AssetsSvgGen();
 }
