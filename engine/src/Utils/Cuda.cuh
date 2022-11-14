@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdio>
+#include <limits>
 
 namespace Util {
     constexpr double EPS = 1e-10;
@@ -47,6 +48,20 @@ namespace Util {
      * @param n Number of bytes to swap
      */
     __host__ __device__ void swap_mem(void* const mem1, void* const mem2, const size_t n);
+
+    /*
+     * @brief GPU compatible alternative to strncmp
+     *
+     * @param p1 First string pointer
+     * @param p2 Second string pointer
+     * @param n Maximal mumber of bytes to compare
+     *
+     * @return `true` if null-terminated strings `str1` and `str2` are equal
+     * or their `n` first chars are equal, `false` otherwise
+     */
+    __host__ __device__ bool compare_str(const char* const str1, const char* const str2,
+                                         const size_t n = std::numeric_limits<size_t>::max());
+
 
     /*
      * @brief Crashes the program in case of irreversible errors

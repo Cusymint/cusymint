@@ -43,52 +43,56 @@ namespace Sym {
 
     __host__ __device__ bool Addition::is_sine_cosine_squared_sum(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
-        bool is_expr1_sine_squared = expr1->is(Type::Power) && expr1->power.arg1().is(Type::Sine) &&
-                                     expr1->power.arg1().sine.arg().is(Type::Variable) &&
-                                     expr1->power.arg2().is(Type::NumericConstant) &&
-                                     expr1->power.arg2().numeric_constant.value == 2.0;
+        if (!expr1->is(Type::Power) || !expr1->as<Power>().arg1().is(Type::Sine) ||
+            !expr1->as<Power>().arg2().is(Type::NumericConstant) ||
+            expr1->as<Power>().arg2().as<NumericConstant>().value != 2) {
+            return false;
+        }
 
-        bool is_expr2_cosine_squared = expr2->is(Type::Power) &&
-                                       expr2->power.arg1().is(Type::Cosine) &&
-                                       expr2->power.arg1().cosine.arg().is(Type::Variable) &&
-                                       expr2->power.arg2().is(Type::NumericConstant) &&
-                                       expr2->power.arg2().numeric_constant.value == 2.0;
+        if (!expr2->is(Type::Power) || !expr2->as<Power>().arg1().is(Type::Cosine) ||
+            !expr2->as<Power>().arg2().is(Type::NumericConstant) ||
+            expr2->as<Power>().arg2().as<NumericConstant>().value != 2) {
+            return false;
+        }
 
-        return is_expr1_sine_squared && is_expr2_cosine_squared;
+        return Symbol::compare_trees(&expr1->as<Power>().arg1().as<Sine>().arg(),
+                                     &expr2->as<Power>().arg1().as<Cosine>().arg());
     }
 
     __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
-        return expr1->is(Type::Negation) && Symbol::compare_trees(&expr1->negation.arg(), expr2) ||
-               expr2->is(Type::Negation) && Symbol::compare_trees(&expr2->negation.arg(), expr1);
+        return expr1->is(Type::Negation) &&
+                   Symbol::compare_trees(&expr1->as<Negation>().arg(), expr2) ||
+               expr2->is(Type::Negation) &&
+                   Symbol::compare_trees(&expr2->as<Negation>().arg(), expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Addition) {
         // Sprawdzenie, czy jeden z argumentów nie jest rónwy zero jest wymagane by nie wpaść w
         // nieskończoną pętlę, zera i tak są potem usuwane w `eliminate_zeros`.
         if (expr1->is(Type::NumericConstant) && expr2->is(Type::NumericConstant) &&
-            expr1->numeric_constant.value != 0.0 && expr2->numeric_constant.value != 0.0) {
-            expr1->numeric_constant.value += expr2->numeric_constant.value;
-            expr2->numeric_constant.value = 0.0;
+            expr1->as<NumericConstant>().value != 0.0 &&
+            expr2->as<NumericConstant>().value != 0.0) {
+            expr1->as<NumericConstant>().value += expr2->as<NumericConstant>().value;
+            expr2->as<NumericConstant>().value = 0.0;
             return true;
         }
 
         if (are_equal_of_opposite_sign(expr1, expr2)) {
-            expr1->numeric_constant = NumericConstant::with_value(0.0);
-            expr2->numeric_constant = NumericConstant::with_value(0.0);
+            expr1->init_from(NumericConstant::with_value(0.0));
+            expr2->init_from(NumericConstant::with_value(0.0));
             return true;
         }
 
         // TODO: Jakieś inne tożsamości trygonometryczne
-        // TODO: Rozszerzyć na kombinacje liniowe, np x*sin^2(x) + x*cos^2(x) = x
-        if (is_sine_cosine_squared_sum(expr1, expr2) || is_sine_cosine_squared_sum(expr2, expr1)) {
-            expr1->numeric_constant = NumericConstant::with_value(1.0);
-            expr2->numeric_constant = NumericConstant::with_value(0.0);
+        if (is_sine_cosine_squared_sum(expr1, expr2)) {
+            expr1->init_from(NumericConstant::with_value(1.0));
+            expr2->init_from(NumericConstant::with_value(0.0));
             return true;
         }
 
         // TODO: Dodawanie gdy to samo jest tylko przemnożone przez stałą
-        // TODO: Jedynka hiperboliczna gdy funkcje hiperboliczne będą już zaimplementowane
+        // TODO: Jedynka hiperboliczna
 
         return false;
     }
@@ -97,13 +101,13 @@ namespace Sym {
         for (auto* last = last_in_tree(); last >= this;
              last = (last->symbol() - 1)->as_ptr<Addition>()) {
             if (last->arg2().is(Type::NumericConstant) &&
-                last->arg2().numeric_constant.value == 0.0) {
+                last->arg2().as<NumericConstant>().value == 0.0) {
                 last->arg1().copy_to(last->symbol());
                 continue;
             }
 
             if (last->arg1().is(Type::NumericConstant) &&
-                last->arg1().numeric_constant.value == 0.0) {
+                last->arg1().as<NumericConstant>().value == 0.0) {
                 last->arg2().copy_to(last->symbol());
             }
         }
@@ -116,7 +120,7 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Negation) {
         if (arg().is(Type::Negation)) {
-            arg().negation.arg().copy_to(symbol());
+            arg().as<Negation>().arg().copy_to(symbol());
             return true;
         }
 
@@ -131,24 +135,19 @@ namespace Sym {
                 additional_required_size = term_count - 1;
                 return false;
             }
+
             From<Addition>::Create<Addition>::WithMap<Negation>::init(
                 *help_space, {{arg().as<Addition>(), term_count}});
             help_space->copy_to(symbol());
-            return false; // created addition needs to be simplified again, but without additional
-                          // size
+
+            // created addition needs to be simplified again, but without additional
+            // size
+            return false;
         }
         return true;
     }
 
     std::string Addition::to_string() const {
-        if (arg2().is(Type::Negation)) {
-            return fmt::format("({}-{})", arg1().to_string(), arg2().negation.arg().to_string());
-        }
-
-        if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value < 0.0) {
-            return fmt::format("({}-{})", arg1().to_string(), -arg2().numeric_constant.value);
-        }
-
         return fmt::format("({}+{})", arg1().to_string(), arg2().to_string());
     }
 

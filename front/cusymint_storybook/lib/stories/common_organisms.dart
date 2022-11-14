@@ -19,5 +19,28 @@ class CommonOrganisms extends StorybookPart {
             appBar: CuAppBar(),
           ),
         ),
+        Story(
+          name: 'Organisms/SettingsList',
+          builder: (context) {
+            return CuSettingsList(
+              settingTiles: [
+                CuSettingTile(
+                  onTap: () {},
+                  title: const CuText('Language'),
+                  trailing: const CuText('English'),
+                ),
+                CuSettingTile(
+                  onTap: () {},
+                  title: const CuText('IP Address'),
+                  trailing: const CuText('localhost'),
+                ),
+                CuSettingTile(
+                  onTap: () {},
+                  title: const CuText('Licenses'),
+                )
+              ],
+            );
+          },
+        ),
       ];
 }

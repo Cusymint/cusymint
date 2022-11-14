@@ -12,6 +12,11 @@
 
 namespace Sym {
     /*
+     * @brief Maximum number of symbols in a single expression
+     */
+    constexpr size_t EXPRESSION_MAX_SYMBOL_COUNT = 512;
+
+    /*
      * @brief Solves an integral and returns the result
      *
      * @param integral Vector of symbols with the integral, the first symbol should be

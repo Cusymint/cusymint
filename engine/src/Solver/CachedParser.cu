@@ -17,10 +17,7 @@ void CachedParser::_add_to_cache(const std::string& key, const Expression& value
 }
 
 Expression CachedParser::_get_parser_result(const std::string& input) {
-    auto mutable_input = std::string(input);
-    auto scanner = Scanner(mutable_input);
-    auto parser = Parser(&scanner);
-    auto result = parser.parse();
+    auto result = Parser::parse_function(input);
     return Expression(result);
 }
 

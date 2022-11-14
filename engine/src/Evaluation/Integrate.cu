@@ -15,7 +15,6 @@ namespace Sym {
     namespace {
         constexpr size_t TRANSFORM_GROUP_SIZE = 32;
         constexpr size_t MAX_EXPRESSION_COUNT = 128;
-        constexpr size_t EXPRESSION_MAX_SYMBOL_COUNT = 512;
 
         /*
          * @brief Podejmuje próbę ustawienia `expressions[potential_solver_idx]` (będącego
