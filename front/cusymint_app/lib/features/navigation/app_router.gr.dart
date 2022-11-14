@@ -50,9 +50,11 @@ class AppRouter extends _i5.RootStackRouter {
       );
     },
     AboutRoute.name: (routeData) {
+      final args = routeData.argsAs<AboutRouteArgs>(
+          orElse: () => const AboutRouteArgs());
       return _i5.MaterialPageX<dynamic>(
         routeData: routeData,
-        child: const _i4.AboutPage(),
+        child: _i4.AboutPage(key: args.key),
       );
     },
   };
@@ -138,12 +140,24 @@ class SettingsRoute extends _i5.PageRouteInfo<void> {
 
 /// generated route for
 /// [_i4.AboutPage]
-class AboutRoute extends _i5.PageRouteInfo<void> {
-  const AboutRoute()
+class AboutRoute extends _i5.PageRouteInfo<AboutRouteArgs> {
+  AboutRoute({_i7.Key? key})
       : super(
           AboutRoute.name,
           path: '/about-page',
+          args: AboutRouteArgs(key: key),
         );
 
   static const String name = 'AboutRoute';
+}
+
+class AboutRouteArgs {
+  const AboutRouteArgs({this.key});
+
+  final _i7.Key? key;
+
+  @override
+  String toString() {
+    return 'AboutRouteArgs{key: $key}';
+  }
 }
