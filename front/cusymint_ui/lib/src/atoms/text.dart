@@ -1,4 +1,5 @@
 import 'package:cusymint_ui/cusymint_ui.dart';
+import 'package:flutter/gestures.dart';
 
 class CuText extends StatelessWidget {
   const CuText(
@@ -48,6 +49,41 @@ class CuText extends StatelessWidget {
       ),
     );
   }
+}
+
+class CuTextSpan extends TextSpan {
+  const CuTextSpan({
+    String? text,
+    CuTextStyle? style,
+    List<InlineSpan>? children,
+  }) : super(
+          text: text,
+          style: style,
+          children: children,
+        );
+
+  CuTextSpan.med14({
+    String? text,
+    CuColor? color,
+    List<InlineSpan>? children,
+  }) : super(
+          text: text,
+          style: CuTextStyle.med14(color: color),
+          children: children,
+        );
+
+  CuTextSpan.link14({
+    String? text,
+    required VoidCallback onTap,
+    CuColor? color,
+    List<InlineSpan>? children,
+  }) : super(
+          text: text,
+          style: CuTextStyle.med14(color: color),
+          children: children,
+          recognizer: TapGestureRecognizer()..onTap = onTap,
+          mouseCursor: SystemMouseCursors.click,
+        );
 }
 
 class CuTextStyle extends TextStyle {

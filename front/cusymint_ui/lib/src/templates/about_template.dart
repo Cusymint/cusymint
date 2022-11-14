@@ -1,6 +1,5 @@
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
-import 'package:flutter/gestures.dart';
 
 class AboutTemplate extends StatelessWidget {
   const AboutTemplate({
@@ -9,13 +8,6 @@ class AboutTemplate extends StatelessWidget {
   });
 
   final VoidCallback onGithubTap;
-
-  final List<String> authors = const [
-    'Szymon Tur',
-    'Dawid Wysocki',
-    'Szymon Zyguła',
-    'Krzysztof Kaczmarski'
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -33,30 +25,9 @@ class AboutTemplate extends StatelessWidget {
                 color: colors.textWhite,
               ),
               const SizedBox(height: 16),
-              RichText(
-                text: TextSpan(
-                  children: <TextSpan>[
-                    TextSpan(
-                      text: '${Strings.aboutText.tr()} ',
-                      style: CuTextStyle.med14(color: colors.textBlack),
-                    ),
-                    TextSpan(
-                      text: Strings.aboutTextGithub.tr(),
-                      style: CuTextStyle.med14(color: colors.mintHeavyish),
-                      recognizer: TapGestureRecognizer()..onTap = onGithubTap,
-                      mouseCursor: SystemMouseCursors.click,
-                    ),
-                    TextSpan(
-                      text: '.',
-                      style: CuTextStyle.med14(color: colors.textBlack),
-                    ),
-                  ],
-                ),
-              ),
+              CuAboutWidget(onGithubTap: onGithubTap),
               const SizedBox(height: 20),
-              CuText.med14(Strings.madeBy.tr()),
-              const SizedBox(height: 6),
-              for (final author in authors) CuText.med14(author),
+              const CuAuthorsWidget(),
             ],
           ),
         ),
