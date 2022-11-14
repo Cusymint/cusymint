@@ -47,6 +47,16 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "../cusymint_assets/assets/icons/app_icon.png"
+  remove_alpha_ios: true
+  image_path: "../cusymint_assets/assets/icons/app_icon_ios.png"
   adaptive_icon_background: "../cusymint_assets/assets/icons/app_icon_background.png"
   adaptive_icon_foreground: "../cusymint_assets/assets/icons/app_icon_foreground.png"
+  
+  windows:
+    generate: true
+    image_path: "../cusymint_assets/assets/icons/app_icon_curved_edges.png"
+    icon_size: 256
+  
+  web:
+    generate: true
+    image_path: "../cusymint_assets/assets/icons/app_icon_curved_edges.png"
