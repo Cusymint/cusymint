@@ -3,6 +3,7 @@
 #include "Polynomial.cuh"
 #include "Symbol.cuh"
 #include "Symbol/Addition.cuh"
+#include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
 #include <fmt/core.h>
 
@@ -51,6 +52,53 @@ namespace Sym {
                are_coefficients_equal(*this, symbol->polynomial);
     }
 
+    __host__ __device__ void Polynomial::make_polynomial_to(const Symbol* const symbol,
+                                                            Symbol* const destination) {
+        auto* term_ranks = reinterpret_cast<ssize_t*>(destination);
+        auto* term_coefficients_dst =
+            destination + symbol->size() * sizeof(double) / sizeof(Symbol) + 1;
+        auto* term_coefficients = reinterpret_cast<double*>(term_coefficients_dst);
+        auto* dst_coefs = term_coefficients + symbol->size();
+
+        symbol->is_polynomial(destination);
+        symbol->get_monomial_coefficient(term_coefficients_dst);
+
+        const size_t rank = term_ranks[0];
+
+        for (ssize_t i = 0; i <= rank; ++i) {
+            dst_coefs[i] = 0;
+        }
+
+        switch (symbol->type()) {
+        case Type::Addition: {
+            ConstTreeIterator<Addition> iterator(symbol->as_ptr<Addition>());
+            while (iterator.is_valid()) {
+                const size_t offset = iterator.current() - symbol;
+                dst_coefs[term_ranks[offset]] = term_coefficients[offset];
+
+                iterator.advance();
+            }
+        } break;
+        case Type::Product:
+        case Type::Power:
+        case Type::Negation:
+        case Type::Variable:
+            dst_coefs[term_ranks[0]] = term_coefficients[0];
+            break;
+        default:
+            Util::crash("Improper use of make_polynomial_to() function on symbol type %s.",
+                        type_name(symbol->type()));
+        }
+
+        auto& dest_poly = destination->init_from(Polynomial::with_rank(rank));
+
+        double* coefs = dest_poly.coefficients();
+
+        for (ssize_t i = 0; i <= rank; ++i) {
+            coefs[i] = dst_coefs[i];
+        }
+    }
+
     __host__ __device__ void Polynomial::expand_to(Symbol* destination) const {
 
         Symbol* coefficient_dst = destination + rank;
@@ -80,7 +128,7 @@ namespace Sym {
     }
 
     __host__ __device__ size_t Polynomial::expanded_size_from_rank(size_t rank) {
-        return rank == 0 ? 1 : (6 * rank - 1); 
+        return rank == 0 ? 1 : (6 * rank - 1);
     }
 
     __host__ __device__ Polynomial Polynomial::with_rank(size_t rank) {
@@ -94,12 +142,12 @@ namespace Sym {
 
     __host__ __device__ void Polynomial::divide_polynomials(Polynomial& numerator,
                                                             Polynomial& denominator,
-                                                            Polynomial& result) {        
+                                                            Polynomial& result) {
         // for (ssize_t i=0;i<=result.rank;++i) {
         //     printf("%f\t",result[i]);
         // }
         // printf("\n");
-        
+
         for (ssize_t i = numerator.rank - denominator.rank; i >= 0; --i) {
             double& num_first = numerator[i + denominator.rank];
             double& res_current = result[i];
@@ -108,10 +156,10 @@ namespace Sym {
             for (ssize_t j = denominator.rank - 1; j >= 0; --j) {
                 numerator[i + j] -= res_current * denominator[j];
             }
-        //     for (ssize_t i=0;i<=result.rank;++i) {
-        //     printf("%f\t",result[i]);
-        // }
-        // printf("\n");
+            //     for (ssize_t i=0;i<=result.rank;++i) {
+            //     printf("%f\t",result[i]);
+            // }
+            // printf("\n");
         }
         numerator.make_proper();
     }

@@ -20,17 +20,6 @@
 
 #include "Utils/CompileConstants.cuh"
 
-// void print_polynomial_ranks(const Sym::ExpressionArray<Sym::Integral> integrals) {
-//     const auto h_integrals = integrals.to_vector();
-
-//     fmt::print("Polynomial ranks:({}):\n", integrals.size());
-//     for (size_t int_idx = 0; int_idx < integrals.size(); ++int_idx) {
-//         fmt::print("{}: {}\n", int_idx, h_integrals[int_idx].data()->as<Sym::Integral>().integrand()->is_polynomial());
-//     }
-
-//     fmt::print("\n");
-// }
-
 /*
  * @brief Creates a `std::string` representing expression of type `e^x * e^e^x * ... * e^e^...^e^x`,
  * which is made of `n` factors.
@@ -61,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("(x^4)/(1+x^2)"));
+    const auto integral = Sym::integral(Parser::parse_function("x^4/(1+x^2)"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 

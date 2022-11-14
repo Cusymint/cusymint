@@ -2,12 +2,23 @@
 #define POLYNOMIAL_CUH
 
 #include "Macros.cuh"
+#include "Symbol/Addition.cuh"
+#include <cstddef>
 
 namespace Sym {
     DECLARE_SYMBOL(Polynomial, true)
     size_t rank;
 
     __host__ __device__ static Polynomial with_rank(size_t rank);
+
+    /*
+     * @brief Creates `Polynomial` from a `symbol` (which is assumed to be a polynomial).
+     * Assumes that structure of `symbol` is simplified.
+     *
+     * @param symbol Symbol which has been checked with `is_polynomial` function
+     * @param destination Pointer to memory where `Polynomial` symbol will be created.
+     */
+    __host__ __device__ static void make_polynomial_to(const Symbol* const symbol, Symbol* const destination);
 
     __host__ __device__ static void divide_polynomials(Polynomial& numerator, Polynomial& denominator, Polynomial& result);
 

@@ -6,9 +6,6 @@
 #include "Symbol/ExpressionArray.cuh"
 
 #include "Symbol/Symbol.cuh"
-#include <optional>
-
-#include <optional>
 
 namespace Sym {
     /*

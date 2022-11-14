@@ -36,19 +36,20 @@ namespace Sym {
 
         eliminate_ones();
 
-        return try_simplify_polynomials(help_space);
+        if (type == Type::Product) {
+            return try_simplify_polynomials(help_space);
+        }
+        return true;        
     }
 
     __host__ __device__ bool Product::try_simplify_polynomials(Symbol* const help_space) {
         Symbol* numerator = nullptr;
         Symbol* denominator = nullptr;
-        if (arg1().is(Type::Addition) && arg2().is(Type::Reciprocal) &&
-            arg2().reciprocal.arg().is(Type::Addition)) {
+        if (!arg1().is(Type::Reciprocal) && arg2().is(Type::Reciprocal)) {
             numerator = &arg1();
             denominator = &arg2().reciprocal.arg();
         }
-        if (arg2().is(Type::Addition) && arg1().is(Type::Reciprocal) &&
-            arg1().reciprocal.arg().is(Type::Addition)) {
+        if (!arg2().is(Type::Reciprocal) && arg1().is(Type::Reciprocal)) {
             numerator = &arg2();
             denominator = &arg1().reciprocal.arg();
         }
@@ -62,8 +63,6 @@ namespace Sym {
             return true;
         }
 
-
-
         const size_t size_for_simplified_expression =
             3 + Polynomial::expanded_size_from_rank(rank1 - rank2) +
             Polynomial::expanded_size_from_rank(rank2 - 1) +
@@ -76,10 +75,10 @@ namespace Sym {
 
         // here we start dividing polynomials
         auto* poly1 = help_space;
-        numerator->addition.make_polynomial_to(poly1, rank1);
+        Polynomial::make_polynomial_to(numerator, poly1);
 
         auto* poly2 = poly1 + poly1->size();
-        denominator->addition.make_polynomial_to(poly2, rank2);
+        Polynomial::make_polynomial_to(denominator, poly2);
 
         auto* result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
         Polynomial::divide_polynomials(poly1->as<Polynomial>(), poly2->as<Polynomial>(), *result);
@@ -105,18 +104,6 @@ namespace Sym {
         plus->seal();
 
         return false; // maybe additional simplify required
-        // // TODO larger sizes
-        // if (poly1->as<Polynomial>().rank < 0 && size >= result->size) { // zero polynomial
-        //     result->symbol()->copy_to(symbol());
-        //     return;
-        // }
-        // if (size >= poly1->size() + poly2->size() + result->size + 3) {
-        //     Symbol* reciprocal = result->symbol() + result->size;
-        //     Reciprocal::create(poly2, reciprocal);
-        //     Symbol* product = reciprocal + reciprocal->size();
-        //     Product::create(poly1, reciprocal, product);
-        //     Addition::create(result->symbol(), product, symbol());
-        // }
     }
 
     DEFINE_IS_FUNCTION_OF(Product) {

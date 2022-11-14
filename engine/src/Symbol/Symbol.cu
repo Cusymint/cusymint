@@ -135,37 +135,18 @@ namespace Sym {
         return new_size;
     }
 
-    // __host__ __device__ void print_symbols(const char* str, Symbol* array, size_t size) {
-    //     printf("%s\n", str);
-    //     for (size_t i = 0; i < size; ++i) {
-    //         printf("\t%s\t%lu+%lu\n", type_name(array[i].type()), array[i].size(),
-    //                array[i].additional_required_size());
-    //     }
-    // }
-
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
         bool success = false;
 
-        //int i_deb = 0;
-
         while (!success) {
             success = true;
-
-            //print_symbols("before in-place", this, size());
 
             for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
                 success = at(i)->simplify_in_place(help_space) && success;
             }
 
-            //print_symbols("after in-place", this, size());
-
             const size_t new_size = compress_reverse_to(help_space);
             copy_and_reverse_symbol_sequence(this, help_space, new_size);
-
-            //print_symbols("after all", this, size());
-
-            //if (i_deb++ > 5)
-                //return;
         }
     }
 

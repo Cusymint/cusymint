@@ -2,7 +2,9 @@
 
 #include "Evaluation/Integrate.cuh"
 #include "Parser/Parser.cuh"
+#include "Symbol/Constants.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Symbol/Variable.cuh"
 
 #define SIMPLIFY_TEST(_name, _input, _expected) \
     TEST(SimplifyTest, _name) { EXPECT_TRUE(simplifies_to(_input, _expected)); }
@@ -42,6 +44,14 @@ namespace Test {
             auto expression = Parser::parse_function(expression_str);
             const auto expected_simplification =
                 Parser::parse_function(expected_simplification_str);
+
+            return simplifies_to(expression, expected_simplification);
+        }
+
+        testing::AssertionResult
+        simplifies_to(const std::string& expression_str,
+                      const std::vector<Sym::Symbol>& expected_simplification) {
+            auto expression = Parser::parse_function(expression_str);
 
             return simplifies_to(expression, expected_simplification);
         }
@@ -118,4 +128,21 @@ namespace Test {
     SIMPLIFY_TEST(PowerOfLogarithmReciprocal, "10^(1/ln(10))", "e")
     SIMPLIFY_TEST(PowerWithLogarithm, "e^(sin(x)*x*ln(10)*pi)", "10^(sin(x)*x*pi)")
     SIMPLIFY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
+
+    SIMPLIFY_TEST_NO_ACTION(NoActionPolynomialsOfEqualRank, "(x^3+2*x^2+9)/(x+3+5*x^2+10*x^3)")
+    SIMPLIFY_TEST_NO_ACTION(NoActionNumeratorRankLessThanDenominator,
+                            "(x^3+2*x^2+9)/(x+3+5*x^2+10*x^3+x^6)")
+    SIMPLIFY_TEST(DivisiblePolynomials, "(x^4-1)/(x^2+1)",
+                  Sym::num(-1) + (Sym::var() ^ Sym::num(2)))
+    SIMPLIFY_TEST(DivideMonomialByMonomial, "x^5/x", "x^4")
+    SIMPLIFY_TEST(DivideAdvancedMonomialByMonomial, "2*5*7*x^5/(---(14*x^2))", Sym::num(-5)*(Sym::var()^Sym::num(3)))
+    SIMPLIFY_TEST_NO_ACTION(DivideByConstant, "x^5/2")
+    SIMPLIFY_TEST(PolynomialsDivisibleWithRemainder, "x^4/(x^2+1)",
+                  Sym::num(-1) + (Sym::var() ^ Sym::num(2)) +
+                    Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2))))
+    SIMPLIFY_TEST(LongPolynomialsDivisibleWithRemainder, "(x^5+6*x^2+x+9)/(x^2+x+1)",
+                  Sym::num(7) + Sym::num(-1) * (Sym::var() ^ Sym::num(2)) +
+                      (Sym::var() ^ Sym::num(3)) +
+                      (Sym::num(2) + Sym::num(-6) * Sym::var()) /
+                          (Sym::num(1) + Sym::var() + (Sym::var() ^ Sym::num(2))))
 }
