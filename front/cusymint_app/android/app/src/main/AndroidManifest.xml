@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.cusymint.cusymint_app">
    <application
-        android:label="cusymint_app"
+        android:label="Cusymint"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
