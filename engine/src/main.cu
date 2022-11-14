@@ -17,8 +17,6 @@
 
 #include "Utils/CompileConstants.cuh"
 
-#include "Symbol/MetaOperators.cuh"
-
 /*
  * @brief Creates a `std::string` representing expression of type `e^x * e^e^x * ... * e^e^...^e^x`,
  * which is made of `n` factors.

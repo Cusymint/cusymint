@@ -3,13 +3,11 @@
 
 #include "Symbol.cuh"
 
-#include "Symbol/Addition.cuh"
-#include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include "Utils/Meta.cuh"
 #include <type_traits>
 
-#define GET_SAME_HEADER                                                   \
+#define DEFINE_GET_SAME                                                   \
     template <typename U = void, std::enable_if_t<HasSame, U>* = nullptr> \
     __host__ __device__ static const Symbol& get_same(const Symbol& dst)
 
@@ -47,16 +45,15 @@ namespace Sym {
         }
     };
 
+    template <class Head, class... Tail>
+    struct FirstHavingSame : std::conditional_t<Head::HasSame, Head, FirstHavingSame<Tail...>> {};
+    template <class T> struct FirstHavingSame<T> : T {};
+
     template <class... Matchers> struct AnyOf {
         using AdditionalArgs = cuda::std::tuple<>;
         static constexpr bool HasSame = (Matchers::HasSame || ...);
 
-        template <class Head, class... Tail>
-        struct FirstHavingSame : std::conditional_t<Head::HasSame, Head, FirstHavingSame<Tail...>> {
-        };
-        template <class T> struct FirstHavingSame<T> : T {};
-
-        GET_SAME_HEADER { return FirstHavingSame<Matchers...>::get_same(dst); }
+        DEFINE_GET_SAME { return FirstHavingSame<Matchers...>::get_same(dst); }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
             return (Matchers::match(dst, other) || ...);
@@ -71,12 +68,7 @@ namespace Sym {
         using AdditionalArgs = cuda::std::tuple<>;
         static constexpr bool HasSame = (Matchers::HasSame || ...);
 
-        template <class Head, class... Tail>
-        struct FirstHavingSame : std::conditional_t<Head::HasSame, Head, FirstHavingSame<Tail...>> {
-        };
-        template <class T> struct FirstHavingSame<T> : T {};
-
-        GET_SAME_HEADER { return FirstHavingSame<Matchers...>::get_same(dst); }
+        DEFINE_GET_SAME { return FirstHavingSame<Matchers...>::get_same(dst); }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
             return (Matchers::match(dst, other) && ...);
@@ -91,7 +83,7 @@ namespace Sym {
         using AdditionalArgs = typename Inner::AdditionalArgs;
         static constexpr bool HasSame = Inner::HasSame;
 
-        GET_SAME_HEADER { return Inner::get_same(dst); }
+        DEFINE_GET_SAME { return Inner::get_same(dst); }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
             return !Inner::match(dst, other);
@@ -110,7 +102,7 @@ namespace Sym {
 
         static constexpr bool HasSame = Inner::HasSame;
 
-        GET_SAME_HEADER { return Inner::get_same(dst.as<Op>().arg()); }
+        DEFINE_GET_SAME { return Inner::get_same(dst.as<Op>().arg()); }
 
         __host__ __device__ static void init(Symbol& dst,
                                              const AdditionalArgs& additional_args = {}) {
@@ -138,7 +130,7 @@ namespace Sym {
         using AdditionalArgs = Util::TupleCat<LAdditionalArgs, RAdditionalArgs>;
         static constexpr bool HasSame = LInner::HasSame || RInner::HasSame;
 
-        GET_SAME_HEADER {
+        DEFINE_GET_SAME {
             if constexpr (LInner::HasSame) {
                 return LInner::get_same(dst.as<Op>().arg1());
             }
@@ -249,7 +241,7 @@ namespace Sym {
         using AdditionalArgs = Util::TupleCat<SolutionArgs, IAdditionalArgs>;
         static constexpr bool HasSame = Inner::HasSame;
 
-        GET_SAME_HEADER {
+        DEFINE_GET_SAME {
             return Inner::get_same(*dst.as<Solution>().expression());
         }
 
@@ -287,7 +279,7 @@ namespace Sym {
         using AdditionalArgs = Util::TupleCat<CandidateArgs, IAdditionalArgs>;
         static constexpr bool HasSame = Inner::HasSame;
 
-        GET_SAME_HEADER {
+        DEFINE_GET_SAME {
             return Inner::get_same(dst.as<SubexpressionCandidate>().arg());
         }
 
@@ -324,7 +316,7 @@ namespace Sym {
         using AdditionalArgs = Util::TupleCat<IntegralArgs, IAdditionalArgs>;
         static constexpr bool HasSame = Inner::HasSame;
 
-        GET_SAME_HEADER {
+        DEFINE_GET_SAME {
             return Inner::get_same(*dst.as<Integral>().integrand());
         }
 
