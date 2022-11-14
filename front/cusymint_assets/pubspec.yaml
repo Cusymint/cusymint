@@ -26,6 +26,7 @@ flutter:
     - assets/
     - assets/svg/
     - assets/images/
+    - assets/icons/
 
 flutter_gen:
   integrations:

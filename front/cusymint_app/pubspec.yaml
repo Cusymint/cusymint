@@ -37,9 +37,16 @@ dev_dependencies:
   bloc_test: ^9.1.0
 
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.10.0
 
   mockito: ^5.3.2
 
 flutter:
   uses-material-design: true
   
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "../cusymint_assets/assets/icons/app_icon.png"
+  adaptive_icon_background: "../cusymint_assets/assets/icons/app_icon_background.png"
+  adaptive_icon_foreground: "../cusymint_assets/assets/icons/app_icon_foreground.png"
