@@ -22,6 +22,18 @@ namespace Sym {
         };
     };
 
+    template <class T, class U>
+    struct PatternPair {
+        __host__ __device__ static bool match_pair(const Symbol& expr1, const Symbol& expr2) {
+            if constexpr (T::HasSame) {
+                return T::match(expr1) && U::match(expr2, T::get_same(expr1));
+            }
+            else {
+                return T::match(expr1) && U::match(expr2);
+            }
+        }
+    };
+
     struct Same {
         using AdditionalArgs = cuda::std::tuple<>;
         static constexpr bool HasSame = true;

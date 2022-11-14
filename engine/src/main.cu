@@ -49,10 +49,6 @@ int main() {
 
     Sym::Static::init_functions();
 
-    if (Sym::Add<Sym::Same, Sym::Mul<Sym::Var, Sym::Same>>::match(*Parser::parse_function("2^x+x*2^x").data())) {
-        printf ("AAAAAA\n");
-    }
-
     const auto integral = Sym::integral(Parser::parse_function(e_tower(11)));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
