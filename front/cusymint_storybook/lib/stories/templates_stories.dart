@@ -34,7 +34,7 @@ class TemplatesStories extends StorybookPart {
         ),
         Story(
           name: 'Templates/AboutPageTemplate',
-          builder: (context) => const AboutTemplate(),
+          builder: (context) => AboutTemplate(onGithubTap: () {}),
         ),
       ];
 }

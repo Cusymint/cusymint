@@ -3,7 +3,12 @@ import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/gestures.dart';
 
 class AboutTemplate extends StatelessWidget {
-  const AboutTemplate({super.key});
+  const AboutTemplate({
+    super.key,
+    required this.onGithubTap,
+  });
+
+  final VoidCallback onGithubTap;
 
   final List<String> authors = const [
     'Szymon Tur',
@@ -37,8 +42,9 @@ class AboutTemplate extends StatelessWidget {
                     ),
                     TextSpan(
                       text: Strings.aboutTextGithub.tr(),
-                      style: CuTextStyle.med14(color: colors.mintDark),
-                      recognizer: TapGestureRecognizer()..onTap = () {},
+                      style: CuTextStyle.med14(color: colors.mintHeavyish),
+                      recognizer: TapGestureRecognizer()..onTap = onGithubTap,
+                      mouseCursor: SystemMouseCursors.click,
                     ),
                     TextSpan(
                       text: '.',
