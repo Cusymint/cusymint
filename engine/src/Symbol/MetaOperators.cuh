@@ -40,8 +40,8 @@ namespace Sym {
 
         __host__ __device__ static bool match(const Symbol&) { return true; }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
-            return Symbol::compare_trees(&dst, &other);
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return Symbol::compare_trees(&dst, &other_same);
         }
     };
 
@@ -55,8 +55,8 @@ namespace Sym {
 
         DEFINE_GET_SAME { return FirstHavingSame<Matchers...>::get_same(dst); }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
-            return (Matchers::match(dst, other) || ...);
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return (Matchers::match(dst, other_same) || ...);
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
@@ -70,8 +70,8 @@ namespace Sym {
 
         DEFINE_GET_SAME { return FirstHavingSame<Matchers...>::get_same(dst); }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
-            return (Matchers::match(dst, other) && ...);
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return (Matchers::match(dst, other_same) && ...);
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
@@ -85,8 +85,8 @@ namespace Sym {
 
         DEFINE_GET_SAME { return Inner::get_same(dst); }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
-            return !Inner::match(dst, other);
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return !Inner::match(dst, other_same);
         };
         __host__ __device__ static bool match(const Symbol& dst) { return !Inner::match(dst); };
     };
@@ -111,8 +111,8 @@ namespace Sym {
             operator_->seal();
         };
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
-            return dst.is(Op::TYPE) && Inner::match(dst.as<Op>().arg(), other);
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return dst.is(Op::TYPE) && Inner::match(dst.as<Op>().arg(), other_same);
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
@@ -148,9 +148,9 @@ namespace Sym {
             operator_->seal();
         };
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
-            return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1(), other) &&
-                   RInner::match(dst.as<Op>().arg2(), other);
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1(), other_same) &&
+                   RInner::match(dst.as<Op>().arg2(), other_same);
         }
 
         template <typename U = void, std::enable_if_t<LInner::HasSame && RInner::HasSame, U>* = nullptr>
@@ -264,8 +264,8 @@ namespace Sym {
             return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression());
         }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
-            return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression(), other);
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression(), other_same);
         }
     };
 
@@ -295,9 +295,9 @@ namespace Sym {
             candidate->seal();
         }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
             return dst.is(Type::SubexpressionCandidate) &&
-                   Inner::match(dst.as<SubexpressionCandidate>().arg(), other);
+                   Inner::match(dst.as<SubexpressionCandidate>().arg(), other_same);
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
@@ -333,8 +333,8 @@ namespace Sym {
             return dst.is(Type::Integral) && Inner::match(*dst.as<Integral>().integrand());
         }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other) {
-            return dst.is(Type::Integral) && Inner::match(*dst.as<Integral>().integrand(), other);
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return dst.is(Type::Integral) && Inner::match(*dst.as<Integral>().integrand(), other_same);
         }
     };
 
