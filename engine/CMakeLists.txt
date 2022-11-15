@@ -60,7 +60,8 @@ add_executable(
   testcusymint
   ${TEST_PARSER_DIR}/Scanner.cu ${TEST_PARSER_DIR}/Parser.cu
   ${TEST_DIR}/Heuristic.cu ${TEST_DIR}/IntegralCommons.cu
-  ${TEST_DIR}/KnownIntegral.cu ${TEST_DIR}/Simplify.cu)
+  ${TEST_DIR}/KnownIntegral.cu ${TEST_DIR}/Simplify.cu
+  ${TEST_DIR}/Symbol/MetaOperators.cu)
 
 add_executable(
   srvcusymint
