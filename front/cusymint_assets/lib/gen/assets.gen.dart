@@ -11,6 +11,38 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 
+class $AssetsFontsGen {
+  const $AssetsFontsGen();
+
+  /// File path: assets/fonts/MavenPro-Black.ttf
+  String get mavenProBlack => 'assets/fonts/MavenPro-Black.ttf';
+
+  /// File path: assets/fonts/MavenPro-Bold.ttf
+  String get mavenProBold => 'assets/fonts/MavenPro-Bold.ttf';
+
+  /// File path: assets/fonts/MavenPro-ExtraBold.ttf
+  String get mavenProExtraBold => 'assets/fonts/MavenPro-ExtraBold.ttf';
+
+  /// File path: assets/fonts/MavenPro-Medium.ttf
+  String get mavenProMedium => 'assets/fonts/MavenPro-Medium.ttf';
+
+  /// File path: assets/fonts/MavenPro-Regular.ttf
+  String get mavenProRegular => 'assets/fonts/MavenPro-Regular.ttf';
+
+  /// File path: assets/fonts/MavenPro-SemiBold.ttf
+  String get mavenProSemiBold => 'assets/fonts/MavenPro-SemiBold.ttf';
+
+  /// List of all assets
+  List<String> get values => [
+        mavenProBlack,
+        mavenProBold,
+        mavenProExtraBold,
+        mavenProMedium,
+        mavenProRegular,
+        mavenProSemiBold
+      ];
+}
+
 class $AssetsIconsGen {
   const $AssetsIconsGen();
 
@@ -30,9 +62,25 @@ class $AssetsIconsGen {
   AssetGenImage get appIconIos =>
       const AssetGenImage('assets/icons/app_icon_ios.png');
 
+  /// File path: assets/icons/copy.svg
+  SvgGenImage get copy => const SvgGenImage('assets/icons/copy.svg');
+
+  /// File path: assets/icons/copy_tex.svg
+  SvgGenImage get copyTex => const SvgGenImage('assets/icons/copy_tex.svg');
+
+  /// File path: assets/icons/share.svg
+  SvgGenImage get share => const SvgGenImage('assets/icons/share.svg');
+
   /// List of all assets
-  List<AssetGenImage> get values =>
-      [appIconBackground, appIconCurvedEdges, appIconForeground, appIconIos];
+  List<dynamic> get values => [
+        appIconBackground,
+        appIconCurvedEdges,
+        appIconForeground,
+        appIconIos,
+        copy,
+        copyTex,
+        share
+      ];
 }
 
 class $AssetsImagesGen {
@@ -42,8 +90,12 @@ class $AssetsImagesGen {
   AssetGenImage get drawerBackground =>
       const AssetGenImage('assets/images/drawer_background.jpg');
 
+  /// File path: assets/images/logo_wide.png
+  AssetGenImage get logoWide =>
+      const AssetGenImage('assets/images/logo_wide.png');
+
   /// List of all assets
-  List<AssetGenImage> get values => [drawerBackground];
+  List<AssetGenImage> get values => [drawerBackground, logoWide];
 }
 
 class $AssetsSvgGen {
@@ -63,6 +115,7 @@ class $AssetsSvgGen {
 class CuAssets {
   CuAssets._();
 
+  static const $AssetsFontsGen fonts = $AssetsFontsGen();
   static const $AssetsIconsGen icons = $AssetsIconsGen();
   static const $AssetsImagesGen images = $AssetsImagesGen();
   static const $AssetsSvgGen svg = $AssetsSvgGen();

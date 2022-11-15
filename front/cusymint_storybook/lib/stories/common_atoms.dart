@@ -33,6 +33,31 @@ class CommonAtoms extends StorybookPart {
           ),
         ),
         Story(
+          name: 'Atoms/Icons',
+          builder: (context) {
+            final colors = CuColors.of(context);
+
+            final color = context.knobs.options(
+              label: 'Color',
+              initial: colors.black,
+              options: [
+                Option(label: 'Black', value: colors.black),
+                Option(label: 'White', value: colors.white),
+              ],
+            );
+
+            return Center(
+              child: Row(
+                children: [
+                  CuIcon(CuIcons.copy, color: color),
+                  CuIcon(CuIcons.copyTex, color: color),
+                  CuIcon(CuIcons.share, color: color),
+                ],
+              ),
+            );
+          },
+        ),
+        Story(
           name: 'Atoms/TextField',
           builder: (context) => SizedBox(
             width: 350,
