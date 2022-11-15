@@ -16,13 +16,21 @@ scripts:
       depends-on: 
         - build_runner
 
-  rebuild-icons:
+  rebuild:icons:
     run: |
       melos exec -- \
         "flutter pub run flutter_launcher_icons:main"
     select-package:
       depends-on: 
         - flutter_launcher_icons
+  
+  rebuild:splash:
+    run: |
+      melos exec -- \
+        "flutter pub run flutter_native_splash:create"
+    select-package:
+      depends-on: 
+        - flutter_native_splash
 
   analyze:
     run: melos exec -c 1 -- "dart analyze . --fatal-infos"
