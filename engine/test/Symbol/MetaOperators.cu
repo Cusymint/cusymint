@@ -9,10 +9,13 @@
 #include "Symbol/Symbol.cuh"
 #include "Symbol/Variable.cuh"
 
-#define I ,
+// This is a workaround for use of commas in template types in macros
+template <class T> struct macro_type;
+template <class T, class U> struct macro_type<T(U)> { using type = U; };
+#define MACRO_TYPE(_pattern) macro_type<void(_pattern)>::type
 
 #define _META_TEST_MATCH(_name, _pattern, _expression, _should_match) \
-    TEST(MetaOperatorsMatchTest, _name) { test_meta_match<_pattern, _should_match>(_expression); } // NOLINT
+    TEST(MetaOperatorsMatchTest, _name) { test_meta_match<MACRO_TYPE(_pattern), _should_match>(_expression); } // NOLINT
 
 #define META_TEST_MATCH(_name, _pattern, _expression) \
     _META_TEST_MATCH(_name, _pattern, _expression, true)
@@ -21,7 +24,7 @@
     _META_TEST_MATCH(_name, _pattern, _expression, false)
 
 #define META_TEST_INIT(_name, _pattern, ...) \
-    TEST(MetaOperatorsInitTest, _name) { test_meta_init<_pattern>(__VA_ARGS__); } // NOLINT
+    TEST(MetaOperatorsInitTest, _name) { test_meta_init<MACRO_TYPE(_pattern)>(__VA_ARGS__); } // NOLINT
 
 namespace Test {
     namespace {
@@ -70,7 +73,7 @@ namespace Test {
     META_TEST_INIT(Arccotangent, Sym::Arccot<Sym::E>, "arccot(e)")
     META_TEST_INIT(Logarithm, Sym::Ln<Sym::Var>, "ln(x)")
     // Simple TwoArgOperators
-    META_TEST_INIT(Sum, Sym::Add<Sym::Cos<Sym::E> I Sym::Pi>, "cos(e)+pi")
+    META_TEST_INIT(Sum, (Sym::Add<Sym::Cos<Sym::E>, Sym::Pi>), "cos(e)+pi")
     // Advanced expressions
 
     // solution, candidate, integral, vacancy, singleIntegralVacancy
