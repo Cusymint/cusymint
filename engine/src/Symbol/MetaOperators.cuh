@@ -269,7 +269,7 @@ namespace Sym {
                 using AdditionalArgs = cuda::std::tuple<
                     cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
 
-                __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}) {
+                __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
                     SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
                     size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
                     Symbol* terms = &dst + count - 1;

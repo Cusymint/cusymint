@@ -6,15 +6,18 @@
 #include "Evaluation/Integrate.cuh"
 #include "Parser/Parser.cuh"
 #include "Symbol/MetaOperators.cuh"
+#include "Symbol/Product.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Symbol/Variable.cuh"
 
 // This is a workaround for use of commas in template types in macros
 template <class T> struct macro_type;
-template <class T, class U> struct macro_type<T(U)> { using type = U; };
+template <class T, class U> struct macro_type<T(U)> {
+    using type = U;
+};
 #define MACRO_TYPE(_pattern) macro_type<void(_pattern)>::type
 
-#define _META_TEST_MATCH(_name, _pattern, _expression, _should_match) \
+#define _META_TEST_MATCH(_name, _pattern, _expression, _should_match)      \
     TEST(MetaOperatorsMatchTest, _name) { test_meta_match<MACRO_TYPE(_pattern), _should_match>(_expression); } // NOLINT
 
 #define META_TEST_MATCH(_name, _pattern, _expression) \
@@ -23,7 +26,7 @@ template <class T, class U> struct macro_type<T(U)> { using type = U; };
 #define META_TEST_NOT_MATCH(_name, _pattern, _expression) \
     _META_TEST_MATCH(_name, _pattern, _expression, false)
 
-#define META_TEST_INIT(_name, _pattern, ...) \
+#define META_TEST_INIT(_name, _pattern, ...)               \
     TEST(MetaOperatorsInitTest, _name) { test_meta_init<MACRO_TYPE(_pattern)>(__VA_ARGS__); } // NOLINT
 
 namespace Test {
@@ -43,7 +46,8 @@ namespace Test {
         }
 
         template <class T, class... Args>
-        void test_meta_init(const std::vector<Sym::Symbol>& expected_expression, const Args&... args) {
+        void test_meta_init(const std::vector<Sym::Symbol>& expected_expression,
+                            const Args&... args) {
             std::vector<Sym::Symbol> expression(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
             T::init(*expression.data(), {args...});
             expression.resize(expression[0].size());
@@ -74,11 +78,29 @@ namespace Test {
     META_TEST_INIT(Logarithm, Sym::Ln<Sym::Var>, "ln(x)")
     // Simple TwoArgOperators
     META_TEST_INIT(Sum, (Sym::Add<Sym::Cos<Sym::E>, Sym::Pi>), "cos(e)+pi")
+    META_TEST_INIT(Product, (Sym::Mul<Sym::Cos<Sym::Var>, Sym::Pi>), "cos(x)*pi")
+    META_TEST_INIT(Power, (Sym::Pow<Sym::Cos<Sym::E>, Sym::Pi>), "cos(e)^pi")
     // Advanced expressions
 
     // solution, candidate, integral, vacancy, singleIntegralVacancy
-    // from create withmap
+    
+    // From::Create::WithMap
+    TEST(MetaOperatorsInitTest, FromCreateWithMap) { // NOLINT
+        auto expression = Parser::parse_function("x+4+x^6+e^(2*x)+9+cos(sin(x))+2*u");
+        auto expected_expression = Parser::parse_function(
+            "arcsin(2*u)*arcsin(cos(sin(x)))*arcsin(9)*arcsin(e^(2*x))*arcsin(x^6)*arcsin(4)*arcsin(x)");
 
+        size_t const count = expression.data()->as<Sym::Addition>().tree_size();
+        std::vector<Sym::Symbol> destination(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
 
+        Sym::From<Sym::Addition>::Create<Sym::Product>::WithMap<Sym::Arcsine>::init(
+            *destination.data(), {{expression.data()->as<Sym::Addition>(), count}});
+
+        destination.resize(destination.data()->size());
+
+        EXPECT_TRUE(Sym::Symbol::compare_trees(destination.data(), expected_expression.data()));
+    }
+
+    // Match
     META_TEST_MATCH(Variable, Sym::Var, "x")
 }
