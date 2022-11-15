@@ -15,8 +15,11 @@
     "calculating": "Obliczanie",
     "language": "Język",
     "ipAddress": "Adres IP",
+    "ipAddressError": "Adres niepoprawny",
     "licenses": "Licencje",
     "languagePolish": "Polski",
     "languageEnglish": "English",
-    "languageCurrent": "Polski"
+    "languageCurrent": "Polski",
+    "cancel": "Anuluj",
+    "ok": "OK"
 }

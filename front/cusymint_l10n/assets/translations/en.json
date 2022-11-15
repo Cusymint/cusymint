@@ -15,8 +15,11 @@
    "calculating": "Calculating result",
    "language": "Language",
    "ipAddress": "IP Address",
+   "ipAddressError": "Incorrect URL",
    "licenses": "Licenses",
    "languagePolish": "Polski",
    "languageEnglish": "English",
-   "languageCurrent": "English"
+   "languageCurrent": "English",
+   "cancel": "Cancel",
+   "ok": "OK"
 }

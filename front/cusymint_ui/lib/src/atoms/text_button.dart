@@ -1,25 +1,22 @@
 import 'package:cusymint_ui/cusymint_ui.dart';
 
-class CuElevatedButton extends StatelessWidget {
-  const CuElevatedButton({
+class CuTextButton extends StatelessWidget {
+  const CuTextButton({
     super.key,
     required this.text,
     required this.onPressed,
   });
 
   final String text;
-  final VoidCallback? onPressed;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final colors = CuColors.of(context);
 
-    return ElevatedButton(
+    return TextButton(
       onPressed: onPressed,
-      child: CuText.bold14(
-        text.toUpperCase(),
-        color: colors.textWhite,
-      ),
+      child: CuText.bold14(text, color: colors.mintDark),
     );
   }
 }

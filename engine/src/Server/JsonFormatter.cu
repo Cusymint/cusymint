@@ -1,7 +1,23 @@
 #include "JsonFormatter.cuh"
 #include <fmt/core.h>
 
-inline std::string quote(const std::string& str) { return fmt::format("\"{}\"", str); }
+inline std::string escape_backslashes(const std::string& str) {
+    std::string result;
+    for (const auto& symbol : str) {
+        if (symbol == '\\') {
+            result += "\\\\";
+        }
+        else {
+            result += symbol;
+        }
+    }
+    return result;
+}
+
+inline std::string quote(const std::string& str) {
+    auto escaped = escape_backslashes(str);
+    return fmt::format("\"{}\"", escaped);
+}
 
 inline std::string generate_key_value(const std::string& key, const std::string& value) {
     return fmt::format("{}: {}", quote(key), quote(value));
