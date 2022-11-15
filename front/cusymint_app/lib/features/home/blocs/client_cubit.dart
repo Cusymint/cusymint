@@ -1,10 +1,11 @@
+import 'package:cusymint_app/features/client/client_factory.dart';
 import 'package:cusymint_client_mock/cusymint_client_mock.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ClientCubit extends Cubit<ClientState> {
-  ClientCubit({required this.client}) : super(const ClientInitial());
+  ClientCubit({required this.clientFactory}) : super(const ClientInitial());
 
-  final CusymintClient client;
+  final ClientFactory clientFactory;
 
   Future<void> solveIntegral(String integralToBeSolved) async {
     final watch = Stopwatch()..start();
@@ -37,6 +38,8 @@ class ClientCubit extends Cubit<ClientState> {
 
   Future<Response> _getResponse(Request request) async {
     try {
+      final client = clientFactory.client;
+
       final response = await client.solveIntegral(request);
 
       if (response.inputInTex == null ||

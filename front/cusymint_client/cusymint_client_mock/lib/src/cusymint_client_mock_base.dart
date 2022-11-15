@@ -2,17 +2,29 @@ import 'package:cusymint_client_interface/cusymint_client_interface.dart';
 
 class CusymintClientMock implements CusymintClient {
   final Response fakeResponse;
-  final Duration delay;
+  final Duration solveDelay;
+  final Duration interpretDelay;
 
   @override
   Future<Response> solveIntegral(Request request) async {
-    await Future.delayed(delay);
+    await Future.delayed(solveDelay);
     return Future.value(fakeResponse);
+  }
+
+  @override
+  Future<Response> interpretIntegral(Request request) async {
+    await Future.delayed(solveDelay);
+    final responseWithoutOutput = fakeResponse.copyWith(
+      outputInUtf: null,
+      outputInTex: null,
+    );
+    return Future.value(responseWithoutOutput);
   }
 
   CusymintClientMock({
     this.fakeResponse = const Response(),
-    this.delay = const Duration(milliseconds: 800),
+    this.solveDelay = const Duration(milliseconds: 800),
+    this.interpretDelay = const Duration(milliseconds: 100),
   });
 }
 

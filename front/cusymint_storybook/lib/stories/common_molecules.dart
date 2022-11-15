@@ -83,5 +83,30 @@ class CommonMolecules extends StorybookPart {
             );
           },
         ),
+        Story(
+          name: 'Molecules/AlertDialog',
+          builder: (context) {
+            final titleText = context.knobs.text(
+              label: 'Title',
+              initial: 'Title',
+            );
+
+            final contentText = context.knobs.text(
+              label: 'Content',
+              initial: 'Content',
+            );
+
+            return CuAlertDialog(
+              title: CuText.bold14(titleText),
+              content: CuText.med14(contentText),
+              actions: [
+                CuElevatedButton(
+                  text: 'OK',
+                  onPressed: () {},
+                ),
+              ],
+            );
+          },
+        ),
       ];
 }

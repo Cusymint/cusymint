@@ -362,11 +362,12 @@ namespace Sym {
 #define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
     DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                                \
     __host__ __device__ const _name* _name::last_in_tree() const {                                         \
-        if (arg1().is(Type::_name)) {                                                                      \
-            return arg1().as<_name>().last_in_tree();                                                      \
+        auto* last = this;                                                                                 \
+        while (last->arg1().is(Type::_name)) {                                                             \
+            last = last->arg1().as_ptr<_name>();                                                           \
         }                                                                                                  \
                                                                                                            \
-        return this;                                                                                       \
+        return last;                                                                                       \
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ _name* _name::last_in_tree() {                                                     \
@@ -405,33 +406,41 @@ namespace Sym {
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_pairs() {                                                     \
-        TreeIterator<_name> first(this);                                                                   \
-        while (first.is_valid()) {                                                                         \
-            TreeIterator<_name> second = first;                                                            \
-            second.advance();                                                                              \
+        bool expression_changed = true;                                                                    \
+        while (expression_changed) {                                                                       \
+            expression_changed = false;                                                                    \
+            TreeIterator<_name> first(this);                                                               \
+            while (first.is_valid()) {                                                                     \
+                TreeIterator<_name> second = first;                                                        \
+                second.advance();                                                                          \
                                                                                                            \
-            while (second.is_valid()) {                                                                    \
-                if (try_fuse_symbols(first.current(), second.current())) {                                 \
-                    /* Jeśli udało się coś połączyć, to upraszczanie trzeba rozpocząć od nowa     \
-                     * (możnaby tylko dla zmienionego elementu, jest to opytmalizacja TODO), bo           \
-                     * być może tę sumę można połączyć z czymś, co było już rozważane. Dzięki \
-                     * rekurencji ogonkowej call stack nie będzie rosnąć.                               \
-                     */                                                                                    \
-                    return simplify_pairs();                                                               \
+                while (second.is_valid()) {                                                                \
+                    if (try_fuse_symbols(first.current(), second.current())) {                             \
+                        /* Jeśli udało się coś połączyć, to upraszczanie trzeba rozpocząć od nowa \
+                         * (możnaby tylko dla zmienionego elementu, jest to opytmalizacja TODO),          \
+                         * bo być może tę sumę można połączyć z czymś, co było już rozważane.  \
+                         */                                                                                \
+                        expression_changed = true;                                                         \
+                    }                                                                                      \
+                                                                                                           \
+                    second.advance();                                                                      \
                 }                                                                                          \
                                                                                                            \
-                second.advance();                                                                          \
+                first.advance();                                                                           \
             }                                                                                              \
-                                                                                                           \
-            first.advance();                                                                               \
         }                                                                                                  \
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ size_t _name::tree_size() {                                                        \
-        if (arg1().is(_name::TYPE)) {                                                                      \
-            return arg1().as<_name>().tree_size() + 1;                                                     \
-        }                                                                                                  \
-        return 2;                                                                                          \
+        /* In every sum, number of terms is equal to number of `+` signs plus 1.                           \
+         * When an addition tree is simplified, all `Addition` symbols are placed in a row,                \
+         * so it suffices to calculate address of the last `Addition` symbol. The offset between           \
+         * `this` and last plus 1 is the number of `+` signs in the sum.                                   \
+         * Thus, the offset plus 2 is the number of terms in the sum.                                      \
+         * Conversion to `Symbol*` with `symbol()` function is necessary, because `_name`                  \
+         * structure may be smaller than `Symbol` union.                                                   \
+         */                                                                                                \
+        return last_in_tree()->symbol() - symbol() + 2;                                                    \
     }
 
 #endif

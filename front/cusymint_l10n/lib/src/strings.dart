@@ -17,6 +17,7 @@ class Strings {
   static const String calculating = 'calculating';
   static const String language = 'language';
   static const String ipAddress = 'ipAddress';
+  static const String ipAddressError = 'ipAddressError';
   static const String licenses = 'licenses';
   static const String languagePolish = 'languagePolish';
   static const String languageEnglish = 'languageEnglish';
@@ -24,4 +25,6 @@ class Strings {
   static const String aboutText = 'aboutText';
   static const String aboutTextGithub = 'aboutTextGithub';
   static const String madeBy = 'madeBy';
+  static const String cancel = 'cancel';
+  static const String ok = 'ok';
 }

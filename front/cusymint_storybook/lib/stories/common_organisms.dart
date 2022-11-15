@@ -50,5 +50,26 @@ class CommonOrganisms extends StorybookPart {
             );
           },
         ),
+        Story(
+          name: 'Organisms/TextFieldAlertDialog',
+          builder: (context) {
+            final title = context.knobs.text(
+              label: 'Title',
+              initial: 'Title',
+            );
+
+            final isEnabled = context.knobs.boolean(
+              label: 'Is enabled',
+              initial: true,
+            );
+
+            return CuTextFieldAlertDialog(
+              title: title,
+              onCancelPressed: () {},
+              onOkPressed: isEnabled ? () {} : null,
+              textField: const CuTextField(),
+            );
+          },
+        )
       ];
 }

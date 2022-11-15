@@ -1,3 +1,4 @@
+import 'package:cusymint_app/features/client/client_factory.dart';
 import 'package:cusymint_app/features/home/blocs/client_cubit.dart';
 import 'package:cusymint_app/features/navigation/navigation.dart';
 import 'package:cusymint_app/features/tex_rendering/widgets/tex_view.dart';
@@ -18,7 +19,7 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clientCubit = BlocProvider.of<ClientCubit>(context);
+    final clientCubit = ClientCubit(clientFactory: ClientFactory.of(context));
 
     return HomeBody(
       clientCubit: clientCubit,
@@ -257,10 +258,6 @@ class _FailureBody extends StatelessWidget {
     return Column(
       children: [
         for (final error in errors) CuText.med14(error),
-        CuElevatedButton(
-          onPressed: () => context.read<ClientCubit>().reset(),
-          text: Strings.retry.tr(),
-        ),
       ],
     );
   }
