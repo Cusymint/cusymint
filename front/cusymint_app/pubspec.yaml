@@ -64,5 +64,5 @@ flutter_icons:
 
 flutter_native_splash:
   color: "#b9ded2"
-  image: "../cusymint_assets/assets/icons/app_icon_foreground.png"
+  image: "../cusymint_assets/assets/images/logo_wide.png"
   
