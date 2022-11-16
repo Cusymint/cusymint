@@ -45,7 +45,7 @@ namespace Sym {
 
     __host__ __device__ bool Addition::is_sine_cosine_squared_sum(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
-        return PatternPair<Pow<Sin<Same>, Integer<2>>, Pow<Cos<Same>, Integer<2>>>::match_pair(
+        return PatternPair<Pow<Cos<Same>, Integer<2>>, Pow<Sin<Same>, Integer<2>>>::match_pair(
             *expr1, *expr2);
     }
 
