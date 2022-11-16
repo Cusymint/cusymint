@@ -17,11 +17,11 @@ namespace Sym::Static {
         __device__ Symbol TAN_X[2];
         __device__ Symbol COT_X[2];
 
-        __device__ Symbol UNIVERSAL_SIN_X[2];
-        __device__ Symbol UNIVERSAL_COS_X[2];
-        __device__ Symbol UNIVERSAL_TAN_X[2];
-        __device__ Symbol UNIVERSAL_COT_X[2];
-        __device__ Symbol UNIVERSAL_DERIVATIVE[2];
+        __device__ Symbol UNIVERSAL_SIN_X[9];
+        __device__ Symbol UNIVERSAL_COS_X[11];
+        __device__ Symbol UNIVERSAL_TAN_X[9];
+        __device__ Symbol UNIVERSAL_COT_X[9];
+        __device__ Symbol UNIVERSAL_DERIVATIVE[7];
 
         __device__ Symbol E_TO_X[3];
         // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
@@ -34,6 +34,12 @@ namespace Sym::Static {
             UNIVERSAL_COT_X, UNIVERSAL_DERIVATIVE,
             E_TO_X,
         };
+
+        __device__ void init_identity(Symbol& dst) { Var::init(dst); }
+        __device__ void init_sin_x(Symbol& dst) { Sin<Var>::init(dst); }
+        __device__ void init_cos_x(Symbol& dst) { Cos<Var>::init(dst); }
+        __device__ void init_tan_x(Symbol& dst) { Tan<Var>::init(dst); }
+        __device__ void init_cot_x(Symbol& dst) { Cot<Var>::init(dst); }
 
         __device__ void init_universal_sin_x(Symbol& dst) {
             Frac<Prod<Integer<2>, Var>, Add<Integer<1>, Pow<Var, Integer<2>>>>::init(dst, {});
@@ -56,11 +62,6 @@ namespace Sym::Static {
             Frac<Add<Integer<1>, Pow<Var, Integer<2>>>, Integer<2>>::init(dst, {});
         }
 
-        __device__ void init_identity(Symbol& dst) { Var::init(dst); }
-        __device__ void init_sin_x(Symbol& dst) { Sin<Var>::init(dst); }
-        __device__ void init_cos_x(Symbol& dst) { Cos<Var>::init(dst); }
-        __device__ void init_tan_x(Symbol& dst) { Tan<Var>::init(dst); }
-        __device__ void init_cot_x(Symbol& dst) { Cot<Var>::init(dst); }
         __device__ void init_e_to_x(Symbol& dst) { Pow<E, Var>::init(dst); }
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
