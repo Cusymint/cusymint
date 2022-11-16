@@ -1,5 +1,6 @@
 #include "Power.cuh"
 
+#include "MetaOperators.cuh"
 #include "Symbol.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/ExpanderPlaceholder.cuh"
@@ -9,10 +10,8 @@
 namespace {
     __host__ __device__ inline bool is_symbol_inverse_logarithm_of(const Sym::Symbol& symbol,
                                                                    const Sym::Symbol& expression) {
-        return symbol.is(Sym::Type::Reciprocal) &&
-               symbol.as<Sym::Reciprocal>().arg().is(Sym::Type::Logarithm) &&
-               Sym::Symbol::are_expressions_equal(
-                   &symbol.as<Sym::Reciprocal>().arg().as<Sym::Logarithm>().arg(), &expression);
+        return Sym::PatternPair<Sym::Inv<Sym::Ln<Sym::Same>>, Sym::Same>::match_pair(symbol,
+                                                                                     expression);
     }
 }
 

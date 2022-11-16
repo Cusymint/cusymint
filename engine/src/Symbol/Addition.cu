@@ -45,28 +45,14 @@ namespace Sym {
 
     __host__ __device__ bool Addition::is_sine_cosine_squared_sum(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
-        if (!expr1->is(Type::Power) || !expr1->as<Power>().arg1().is(Type::Cosine) ||
-            !expr1->as<Power>().arg2().is(Type::NumericConstant) ||
-            expr1->as<Power>().arg2().as<NumericConstant>().value != 2) {
-            return false;
-        }
-
-        if (!expr2->is(Type::Power) || !expr2->as<Power>().arg1().is(Type::Sine) ||
-            !expr2->as<Power>().arg2().is(Type::NumericConstant) ||
-            expr2->as<Power>().arg2().as<NumericConstant>().value != 2) {
-            return false;
-        }
-
-        return Symbol::are_expressions_equal(&expr2->as<Power>().arg1().as<Sine>().arg(),
-                                             &expr1->as<Power>().arg1().as<Cosine>().arg());
+        return PatternPair<Pow<Sin<Same>, Integer<2>>, Pow<Cos<Same>, Integer<2>>>::match_pair(
+            *expr1, *expr2);
     }
 
     __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
-        return expr1->is(Type::Negation) &&
-                   Symbol::are_expressions_equal(&expr1->as<Negation>().arg(), expr2) ||
-               expr2->is(Type::Negation) &&
-                   Symbol::are_expressions_equal(&expr2->as<Negation>().arg(), expr1);
+        return PatternPair<Neg<Same>, Same>::match_pair(*expr1, *expr2) ||
+               PatternPair<Same, Neg<Same>>::match_pair(*expr1, *expr2);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Addition) {

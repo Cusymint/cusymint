@@ -3,20 +3,61 @@
 
 #include "Symbol.cuh"
 
-#include "Symbol/Addition.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include "Utils/Meta.cuh"
+#include <type_traits>
+
+#define DEFINE_GET_SAME                                                    \
+    template <typename U = void, std::enable_if_t<HAS_SAME, U>* = nullptr> \
+    __host__ __device__ static const Symbol& get_same(const Symbol& dst)
 
 namespace Sym {
     struct Copy {
         using AdditionalArgs = cuda::std::tuple<cuda::std::reference_wrapper<const Symbol>>;
+        static constexpr bool HAS_SAME = false;
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             cuda::std::get<0>(args).get().copy_to(&dst);
         };
     };
 
+    template <class T, class U> struct PatternPair {
+        __host__ __device__ static bool match_pair(const Symbol& expr1, const Symbol& expr2) {
+            if constexpr (T::HAS_SAME) {
+                return T::match(expr1) && U::match(expr2, T::get_same(expr1));
+            }
+            else {
+                return T::match(expr1) && U::match(expr2);
+            }
+        }
+    };
+
+    struct Same {
+        using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = true;
+
+        __host__ __device__ static const Symbol& get_same(const Symbol& dst) { return dst; }
+
+        __host__ __device__ static bool match(const Symbol&) { return true; }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return Symbol::are_expressions_equal(&dst, &other_same);
+        }
+    };
+
+    template <class Head, class... Tail>
+    struct FirstHavingSame : std::conditional_t<Head::HAS_SAME, Head, FirstHavingSame<Tail...>> {};
+    template <class T> struct FirstHavingSame<T> : T {};
+
     template <class... Matchers> struct AnyOf {
         using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = (Matchers::HAS_SAME || ...);
+
+        DEFINE_GET_SAME { return FirstHavingSame<Matchers...>::get_same(dst); }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return (Matchers::match(dst, other_same) || ...);
+        }
+
         __host__ __device__ static bool match(const Symbol& dst) {
             return (Matchers::match(dst) || ...);
         };
@@ -24,6 +65,14 @@ namespace Sym {
 
     template <class... Matchers> struct AllOf {
         using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = (Matchers::HAS_SAME || ...);
+
+        DEFINE_GET_SAME { return FirstHavingSame<Matchers...>::get_same(dst); }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return (Matchers::match(dst, other_same) && ...);
+        }
+
         __host__ __device__ static bool match(const Symbol& dst) {
             return (Matchers::match(dst) && ...);
         };
@@ -31,17 +80,31 @@ namespace Sym {
 
     template <class Inner> struct Not {
         using AdditionalArgs = typename Inner::AdditionalArgs;
+        static constexpr bool HAS_SAME = Inner::HAS_SAME;
 
+        DEFINE_GET_SAME { return Inner::get_same(dst); }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return !Inner::match(dst, other_same);
+        };
         __host__ __device__ static bool match(const Symbol& dst) { return !Inner::match(dst); };
     };
 
     struct Any {
         using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = false;
         __host__ __device__ static bool match(const Symbol& /*dst*/) { return true; };
+        __host__ __device__ static bool match(const Symbol& /*dst*/, const Symbol&) {
+            return true;
+        };
     };
 
     template <class Op, class Inner> struct OneArgOperator {
         using AdditionalArgs = typename Inner::AdditionalArgs;
+
+        static constexpr bool HAS_SAME = Inner::HAS_SAME;
+
+        DEFINE_GET_SAME { return Inner::get_same(dst.as<Op>().arg()); }
 
         __host__ __device__ static void init(Symbol& dst,
                                              const AdditionalArgs& additional_args = {}) {
@@ -50,6 +113,10 @@ namespace Sym {
             operator_->seal();
         };
 
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return dst.is(Op::TYPE) && Inner::match(dst.as<Op>().arg(), other_same);
+        }
+
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Op::TYPE) && Inner::match(dst.as<Op>().arg());
         }
@@ -57,22 +124,46 @@ namespace Sym {
 
     template <class Op, class LInner, class RInner> struct TwoArgOperator {
         using LAdditionalArgs = typename LInner::AdditionalArgs;
-        static constexpr size_t LAdditionalArgsSize = cuda::std::tuple_size_v<LAdditionalArgs>;
+        static constexpr size_t L_ADDITIONAL_ARGS_SIZE = cuda::std::tuple_size_v<LAdditionalArgs>;
 
         using RAdditionalArgs = typename RInner::AdditionalArgs;
-        static constexpr size_t RAdditionalArgsSize = cuda::std::tuple_size_v<RAdditionalArgs>;
+        static constexpr size_t R_ADDITIONAL_ARGS_SIZE = cuda::std::tuple_size_v<RAdditionalArgs>;
 
         using AdditionalArgs = Util::TupleCat<LAdditionalArgs, RAdditionalArgs>;
+        static constexpr bool HAS_SAME = LInner::HAS_SAME || RInner::HAS_SAME;
+
+        DEFINE_GET_SAME {
+            if constexpr (LInner::HAS_SAME) {
+                return LInner::get_same(dst.as<Op>().arg1());
+            }
+            else {
+                return RInner::get_same(dst.as<Op>().arg2());
+            }
+        }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}) {
             Op* const operator_ = dst << Op::builder();
-            LInner::init(operator_->arg1(), Util::slice_tuple<0, LAdditionalArgsSize>(args));
+            LInner::init(operator_->arg1(), Util::slice_tuple<0, L_ADDITIONAL_ARGS_SIZE>(args));
             operator_->seal_arg1();
             RInner::init(operator_->arg2(),
-                         Util::slice_tuple<LAdditionalArgsSize, RAdditionalArgsSize>(args));
+                         Util::slice_tuple<L_ADDITIONAL_ARGS_SIZE, R_ADDITIONAL_ARGS_SIZE>(args));
             operator_->seal();
         };
 
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1(), other_same) &&
+                   RInner::match(dst.as<Op>().arg2(), other_same);
+        }
+
+        template <typename U = void,
+                  std::enable_if_t<LInner::HAS_SAME && RInner::HAS_SAME, U>* = nullptr>
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1()) &&
+                   RInner::match(dst.as<Op>().arg2(), LInner::get_same(dst.as<Op>().arg1()));
+        }
+
+        template <typename U = void,
+                  std::enable_if_t<!(LInner::HAS_SAME && RInner::HAS_SAME), U>* = nullptr>
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1()) &&
                    RInner::match(dst.as<Op>().arg2());
@@ -81,15 +172,22 @@ namespace Sym {
 
     struct Var {
         using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = false;
+
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
             dst.init_from(Variable::create());
         };
 
         __host__ __device__ static bool match(const Symbol& dst) { return dst.is(Type::Variable); }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     struct Num {
         using AdditionalArgs = cuda::std::tuple<double>;
+        static constexpr bool HAS_SAME = false;
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             dst.init_from(NumericConstant::with_value(cuda::std::get<0>(args)));
         };
@@ -97,16 +195,24 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::NumericConstant);
         }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     struct Const {
         using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = false;
         __host__ __device__ static bool match(const Symbol& dst) { return dst.is_constant(); }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     // In C++17, doubles can't be template parameters.
     template <int V> struct Integer {
         using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = false;
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
             dst.init_from(NumericConstant::with_value(V));
         };
@@ -114,16 +220,25 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::NumericConstant) && dst.as<NumericConstant>().value == V;
         }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     template <KnownConstantValue V> struct KnownConstantOperator {
         using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = false;
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
             dst.init_from(KnownConstant::with_value(V));
         };
 
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::KnownConstant) && dst.as<KnownConstant>().value == V;
+        }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
         }
     };
 
@@ -132,12 +247,15 @@ namespace Sym {
 
     template <class Inner> struct SolutionOfIntegral {
         using IAdditionalArgs = typename Inner::AdditionalArgs;
-        static constexpr size_t IAdditionalArgsSize = cuda::std::tuple_size_v<IAdditionalArgs>;
+        static constexpr size_t I_ADDITIONAL_ARGS_SIZE = cuda::std::tuple_size_v<IAdditionalArgs>;
 
         using SolutionArgs = cuda::std::tuple<cuda::std::reference_wrapper<const Integral>>;
-        static constexpr size_t SolutionArgsSize = cuda::std::tuple_size_v<SolutionArgs>;
+        static constexpr size_t SOLUTION_ARGS_SIZE = cuda::std::tuple_size_v<SolutionArgs>;
 
         using AdditionalArgs = Util::TupleCat<SolutionArgs, IAdditionalArgs>;
+        static constexpr bool HAS_SAME = Inner::HAS_SAME;
+
+        DEFINE_GET_SAME { return Inner::get_same(*dst.as<Solution>().expression()); }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             auto& integral = cuda::std::get<0>(args).get();
@@ -149,7 +267,7 @@ namespace Sym {
                                          integral.substitutions_size());
 
             Inner::init(*solution->expression(),
-                        Util::slice_tuple<SolutionArgsSize, IAdditionalArgsSize>(args));
+                        Util::slice_tuple<SOLUTION_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
 
             solution->seal();
         }
@@ -157,16 +275,24 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression());
         }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return dst.is(Type::Solution) &&
+                   Inner::match(dst.as<Solution>().expression(), other_same);
+        }
     };
 
     template <class Inner> struct Candidate {
         using IAdditionalArgs = typename Inner::AdditionalArgs;
-        static constexpr size_t IAdditionalArgsSize = cuda::std::tuple_size_v<IAdditionalArgs>;
+        static constexpr size_t I_ADDITIONAL_ARGS_SIZE = cuda::std::tuple_size_v<IAdditionalArgs>;
 
         using CandidateArgs = cuda::std::tuple<cuda::std::tuple<size_t, size_t, unsigned>>;
-        static constexpr size_t CandidateArgsSize = cuda::std::tuple_size_v<CandidateArgs>;
+        static constexpr size_t CANDIDATE_ARGS_SIZE = cuda::std::tuple_size_v<CandidateArgs>;
 
         using AdditionalArgs = Util::TupleCat<CandidateArgs, IAdditionalArgs>;
+        static constexpr bool HAS_SAME = Inner::HAS_SAME;
+
+        DEFINE_GET_SAME { return Inner::get_same(dst.as<SubexpressionCandidate>().arg()); }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             auto* const candidate = dst << SubexpressionCandidate::builder();
@@ -175,9 +301,14 @@ namespace Sym {
             candidate->subexpressions_left = cuda::std::get<2>(cuda::std::get<0>(args));
 
             Inner::init(candidate->arg(),
-                        Util::slice_tuple<CandidateArgsSize, IAdditionalArgsSize>(args));
+                        Util::slice_tuple<CANDIDATE_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
 
             candidate->seal();
+        }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return dst.is(Type::SubexpressionCandidate) &&
+                   Inner::match(dst.as<SubexpressionCandidate>().arg(), other_same);
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
@@ -188,29 +319,38 @@ namespace Sym {
 
     template <class Inner> struct Int {
         using IAdditionalArgs = typename Inner::AdditionalArgs;
-        static constexpr size_t IAdditionalArgsSize = cuda::std::tuple_size_v<IAdditionalArgs>;
+        static constexpr size_t I_ADDITIONAL_ARGS_SIZE = cuda::std::tuple_size_v<IAdditionalArgs>;
 
         using IntegralArgs = cuda::std::tuple<cuda::std::reference_wrapper<const Integral>>;
-        static constexpr size_t IntegralArgsSize = cuda::std::tuple_size_v<IntegralArgs>;
+        static constexpr size_t INTEGRAL_ARGS_SIZE = cuda::std::tuple_size_v<IntegralArgs>;
 
         using AdditionalArgs = Util::TupleCat<IntegralArgs, IAdditionalArgs>;
+        static constexpr bool HAS_SAME = Inner::HAS_SAME;
+
+        DEFINE_GET_SAME { return Inner::get_same(*dst.as<Integral>().integrand()); }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             cuda::std::get<0>(args).get().copy_without_integrand_to(&dst);
             auto& dst_integral = dst.as<Integral>();
 
             Inner::init(*dst_integral.integrand(),
-                        Util::slice_tuple<IntegralArgsSize, IAdditionalArgsSize>(args));
+                        Util::slice_tuple<INTEGRAL_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
             dst_integral.seal();
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::Integral) && Inner::match(*dst.as<Integral>().integrand());
         }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
+            return dst.is(Type::Integral) &&
+                   Inner::match(*dst.as<Integral>().integrand(), other_same);
+        }
     };
 
     struct Vacancy {
         using AdditionalArgs = cuda::std::tuple<size_t, size_t, int>;
+        static constexpr bool HAS_SAME = false;
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             dst.init_from(SubexpressionVacancy::create());
@@ -223,6 +363,7 @@ namespace Sym {
 
     struct SingleIntegralVacancy {
         using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = false;
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& /*args*/) {
             dst.init_from(SubexpressionVacancy::for_single_integral());
@@ -230,6 +371,10 @@ namespace Sym {
 
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::SubexpressionVacancy);
+        }
+
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
         }
     };
 
@@ -268,6 +413,7 @@ namespace Sym {
             template <class OneArgOp> struct WithMap {
                 using AdditionalArgs = cuda::std::tuple<
                     cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
+                static constexpr bool HAS_SAME = false;
 
                 __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}) {
                     SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));

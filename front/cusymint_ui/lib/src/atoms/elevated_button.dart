@@ -8,16 +8,13 @@ class CuElevatedButton extends StatelessWidget {
   });
 
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     final colors = CuColors.of(context);
 
     return ElevatedButton(
-      style: ButtonStyle(
-        backgroundColor: MaterialStatePropertyAll<Color>(colors.mintDark),
-      ),
       onPressed: onPressed,
       child: CuText.bold14(
         text.toUpperCase(),
