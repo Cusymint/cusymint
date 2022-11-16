@@ -81,7 +81,9 @@ namespace Test {
     META_TEST_INIT(Product, (Sym::Mul<Sym::Cos<Sym::Var>, Sym::Pi>), "cos(x)*pi")
     META_TEST_INIT(Power, (Sym::Pow<Sym::Cos<Sym::E>, Sym::Pi>), "cos(e)^pi")
     // Advanced expressions
-
+    META_TEST_INIT(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Const>>, Sym::E, Sym::Int<1>>), "x+cos(ln(2+3+c))+e+1")
+    META_TEST_INIT(LongProduct, (Sym::Prod<Sym::Add<Sym::Var, Sym::Num>, Sym::Var, Sym::Pow<Sym::E, Sym::Var>>), "(x+5.6)*x*e^x")
+    META_TEST_INIT(EToXTower, (Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Var>>>>>>), "e^e^e^e^e^e^x")
     // solution, candidate, integral, vacancy, singleIntegralVacancy
     
     // From::Create::WithMap
@@ -103,4 +105,36 @@ namespace Test {
 
     // Match
     META_TEST_MATCH(Variable, Sym::Var, "x")
+    META_TEST_MATCH(Pi, Sym::Pi, "pi")
+    META_TEST_MATCH(E, Sym::E, "e")
+    META_TEST_MATCH(Integer, Sym::Integer<69>, "69")
+    META_TEST_MATCH(NumericConstant, Sym::Num, "123.456")
+    // Const
+    META_TEST_MATCH(ConstantExpression, Sym::Const, "sin(e)+pi+c^456+cos(tan(1))*(-ln(2))")
+    META_TEST_NOT_MATCH(NotConstantExpression, Sym::Const, "e^pi+sin(x)")
+    // Simple OneArgOperators
+    META_TEST_MATCH(Sine, Sym::Sin<Sym::E>, "sin(e)")
+    META_TEST_MATCH(Cosine, Sym::Cos<Sym::Var>, "cos(x)")
+    META_TEST_MATCH(Tangent, Sym::Tan<Sym::Pi>, "tan(pi)")
+    META_TEST_MATCH(Cotangent, Sym::Cot<Sym::Sin<Sym::Var>>, "cot(sin(x))")
+    META_TEST_MATCH(Arcsine, Sym::Arcsin<Sym::E>, "arcsin(e)")
+    META_TEST_MATCH(Arccosine, Sym::Arccos<Sym::E>, "arccos(e)")
+    META_TEST_MATCH(Arctangent, Sym::Arctan<Sym::E>, "arctan(e)")
+    META_TEST_MATCH(Arccotangent, Sym::Arccot<Sym::E>, "arccot(e)")
+    META_TEST_MATCH(Logarithm, Sym::Ln<Sym::Var>, "ln(x)")
+    // Simple TwoArgOperators
+    META_TEST_MATCH(Sum, (Sym::Add<Sym::Cos<Sym::E>, Sym::Pi>), "cos(e)+pi")
+    META_TEST_MATCH(Product, (Sym::Mul<Sym::Cos<Sym::Var>, Sym::Pi>), "cos(x)*pi")
+    META_TEST_MATCH(Power, (Sym::Pow<Sym::Cos<Sym::E>, Sym::Pi>), "cos(e)^pi")
+    // AnyOf, AllOf, Not
+        
+    // Same, PatternPair
+    
+    // Advanced expressions
+    META_TEST_MATCH(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Const>>, Sym::E, Sym::Int<1>>), "x+cos(ln(2+3+c))+e+1")
+    META_TEST_MATCH(LongProduct, (Sym::Prod<Sym::Add<Sym::Var, Sym::Num>, Sym::Var, Sym::Pow<Sym::E, Sym::Var>>), "(x+5.6)*x*e^x")
+    META_TEST_MATCH(EToXTower, (Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Var>>>>>>), "e^e^e^e^e^e^x")
+        
+    // solution, candidate, integral, vacancy, singleIntegralVacancy
+    
 }
