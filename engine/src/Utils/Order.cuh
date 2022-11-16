@@ -17,7 +17,7 @@ namespace Util {
         }
 
         if (first > second) {
-            return Order::Equal;
+            return Order::Greater;
         }
 
         return Order::Equal;
