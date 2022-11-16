@@ -1,6 +1,5 @@
 import 'package:cusymint_storybook/storybook_part.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
-import 'package:flutter/material.dart';
 import 'package:storybook_flutter/storybook_flutter.dart';
 
 class CommonMolecules extends StorybookPart {
@@ -27,6 +26,87 @@ class CommonMolecules extends StorybookPart {
               ],
             ),
           ),
+        ),
+        Story(
+          name: 'Molecules/TextLoading',
+          builder: (context) => CuTextLoading.med14(
+            context.knobs.text(
+              label: 'Text',
+              initial: 'Loading',
+            ),
+          ),
+        ),
+        Story(
+          name: 'Molecules/Scaffold',
+          builder: (context) {
+            final displayAppBar = context.knobs.boolean(
+              label: 'Display app bar',
+              initial: true,
+            );
+
+            final displayMenuButton = context.knobs.boolean(
+              label: 'Display menu button',
+              initial: true,
+            );
+
+            final appBar = displayAppBar
+                ? CuAppBar(
+                    onMenuPressed: displayMenuButton ? () {} : null,
+                  )
+                : null;
+
+            return CuScaffold(
+              appBar: appBar,
+              body: const Center(
+                child: CuText.bold14('Hello world!'),
+              ),
+            );
+          },
+        ),
+        Story(
+          name: 'Molecules/SettingTile',
+          builder: (context) {
+            final titleText = context.knobs.text(
+              label: 'Title',
+              initial: 'IP Address',
+            );
+
+            final trailingText = context.knobs.text(
+              label: 'Trailing',
+              initial: '192.168.1.123',
+            );
+
+            return CuSettingTile(
+              title: CuText.med14(titleText),
+              trailing: CuText.med14(trailingText),
+              onTap: () {},
+            );
+          },
+        ),
+        Story(
+          name: 'Molecules/AlertDialog',
+          builder: (context) {
+            final titleText = context.knobs.text(
+              label: 'Title',
+              initial: 'Title',
+            );
+
+            final contentText = context.knobs.text(
+              label: 'Content',
+              initial: 'Content',
+            );
+
+            return CuAlertDialog(
+              title: CuText.bold14(titleText),
+              content: CuText.med14(contentText),
+              actions: [
+                CuElevatedButton(
+                  text: 'OK',
+                  onPressed: () {},
+                ),
+              ],
+            );
+          },
         ),
       ];
 }

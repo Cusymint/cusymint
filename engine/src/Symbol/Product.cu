@@ -1,8 +1,10 @@
 #include "Symbol/Product.cuh"
 
+#include <fmt/core.h>
+
+#include "Symbol/MetaOperators.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Symbol/TreeIterator.cuh"
-#include <fmt/core.h>
 
 namespace {
     std::string fraction_to_tex(const Sym::Symbol& numerator, const Sym::Symbol& denominator) {
@@ -21,12 +23,17 @@ namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Product)
 
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
-        arg1().simplify_in_place(help_space);
-        arg2().simplify_in_place(help_space);
-
         simplify_structure(help_space);
         simplify_pairs();
+
+        if (arg1().is(0) || arg2().is(0)) {
+            symbol()->init_from(NumericConstant::with_value(0));
+            return true;
+        }
+
         eliminate_ones();
+
+        return true;
     }
 
     DEFINE_IS_FUNCTION_OF(Product) {
@@ -50,23 +57,24 @@ namespace Sym {
 
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol& expr1,
                                                                const Symbol& expr2) {
-        return expr1.is(Type::Reciprocal) && Symbol::compare_trees(expr1.reciprocal.arg(), expr2) ||
-               expr2.is(Type::Reciprocal) && Symbol::compare_trees(expr2.reciprocal.arg(), expr1);
+        return PatternPair<Inv<Same>, Same>::match_pair(expr1, expr2) ||
+               PatternPair<Same, Inv<Same>>::match_pair(expr1, expr2);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {
         // Sprawdzenie, czy jeden z argumentów nie jest rónwy jeden jest wymagane by nie wpaść w
         // nieskończoną pętlę, jedynki i tak są potem usuwane w `eliminate_ones`.
         if (expr1->is(Type::NumericConstant) && expr2->is(Type::NumericConstant) &&
-            expr1->numeric_constant.value != 1.0 && expr2->numeric_constant.value != 1.0) {
-            expr1->numeric_constant.value *= expr2->numeric_constant.value;
-            expr2->numeric_constant.value = 1.0;
+            expr1->as<NumericConstant>().value != 1.0 &&
+            expr2->as<NumericConstant>().value != 1.0) {
+            expr1->as<NumericConstant>().value *= expr2->as<NumericConstant>().value;
+            expr2->as<NumericConstant>().value = 1.0;
             return true;
         }
 
         if (are_inverse_of_eachother(*expr1, *expr2)) {
-            expr1->numeric_constant = NumericConstant::with_value(1.0);
-            expr2->numeric_constant = NumericConstant::with_value(1.0);
+            expr1->init_from(NumericConstant::with_value(1.0));
+            expr2->init_from(NumericConstant::with_value(1.0));
             return true;
         }
 
@@ -77,14 +85,6 @@ namespace Sym {
     }
 
     std::string Product::to_string() const {
-        if (arg1().is(Type::Reciprocal)) {
-            return fmt::format("({}/{})", arg2().to_string(), arg1().reciprocal.arg().to_string());
-        }
-
-        if (arg2().is(Type::Reciprocal)) {
-            return fmt::format("({}/{})", arg1().to_string(), arg2().reciprocal.arg().to_string());
-        }
-
         return fmt::format("({}*{})", arg1().to_string(), arg2().to_string());
     }
 
@@ -113,17 +113,18 @@ namespace Sym {
     }
 
     __host__ __device__ void Product::eliminate_ones() {
-        if (arg1().is(Type::Product)) {
-            arg1().product.eliminate_ones();
-        }
+        for (auto* last = last_in_tree(); last >= this;
+             last = (last->symbol() - 1)->as_ptr<Product>()) {
+            if (last->arg2().is(Type::NumericConstant) &&
+                last->arg2().numeric_constant.value == 1.0) {
+                last->arg1().copy_to(last->symbol());
+                continue;
+            }
 
-        if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value == 1.0) {
-            arg1().copy_to(symbol());
-            return;
-        }
-
-        if (arg1().is(Type::NumericConstant) && arg1().numeric_constant.value == 1.0) {
-            arg2().copy_to(symbol());
+            if (last->arg1().is(Type::NumericConstant) &&
+                last->arg1().numeric_constant.value == 1.0) {
+                last->arg2().copy_to(last->symbol());
+            }
         }
     }
 
@@ -138,7 +139,19 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
 
-    DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) { arg().simplify_in_place(help_space); }
+    DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) {
+        if (arg().is(Type::Reciprocal)) {
+            arg().as<Reciprocal>().arg().copy_to(symbol());
+            return true;
+        }
+
+        if (arg().is(1)) {
+            symbol()->init_from(NumericConstant::with_value(1));
+            return true;
+        }
+
+        return true;
+    }
 
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);
@@ -146,13 +159,13 @@ namespace Sym {
         return res;
     }
 
+    std::vector<Symbol> inv(const std::vector<Symbol>& arg) {
+        std::vector<Symbol> res(arg.size() + 1);
+        Inv<Copy>::init(*res.data(), {*arg.data()});
+        return res;
+    }
+
     std::vector<Symbol> operator/(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
-        std::vector<Symbol> res(rhs.size() + 1);
-
-        Reciprocal* const reciprocal = res.data() << Reciprocal::builder();
-        rhs.data()->copy_to(&reciprocal->arg());
-        reciprocal->seal();
-
-        return lhs * res;
+        return lhs * inv(rhs);
     }
 }

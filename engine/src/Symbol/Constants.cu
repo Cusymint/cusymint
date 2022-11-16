@@ -1,24 +1,29 @@
 #include "Constants.cuh"
 
+#include <cstring>
 #include <fmt/core.h>
 #include <stdexcept>
 #include <string>
 
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 #include "Utils/Cuda.cuh"
 
 namespace Sym {
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(NumericConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(NumericConstant);
     DEFINE_IS_FUNCTION_OF(NumericConstant) { return true; } // NOLINT
+    DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(NumericConstant)
 
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(KnownConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(KnownConstant);
     DEFINE_IS_FUNCTION_OF(KnownConstant) { return true; } // NOLINT
+    DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(KnownConstant)
 
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(UnknownConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(UnknownConstant);
     DEFINE_IS_FUNCTION_OF(UnknownConstant) { return true; } // NOLINT
+    DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(UnknownConstant)
 
     DEFINE_COMPARE(NumericConstant) {
         return BASE_COMPARE(NumericConstant) && symbol->numeric_constant.value == value;
@@ -26,7 +31,7 @@ namespace Sym {
 
     DEFINE_COMPARE(UnknownConstant) {
         return BASE_COMPARE(UnknownConstant) &&
-               Util::compare_mem(symbol->unknown_constant.name, name, NAME_LEN);
+               Util::compare_str(symbol->unknown_constant.name, name, NAME_LEN);
     }
 
     DEFINE_COMPARE(KnownConstant) {

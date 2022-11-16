@@ -10,7 +10,8 @@ dependencies:
     sdk: flutter
 
   flutter_svg: ^1.1.4
-  flutter_gen: ^4.3.0
+  flutter_gen: ^5.0.3
+  google_fonts: ^3.0.1
 
 dev_dependencies:
   flutter_test:
@@ -18,17 +19,40 @@ dev_dependencies:
   flutter_lints: ^2.0.0
 
   build_runner: ^2.2.0
-  flutter_gen_runner: ^4.3.0
+  flutter_gen_runner: ^5.0.3
 
 flutter:
+  uses-material-design: true
   assets:
     - assets/
     - assets/svg/
     - assets/images/
+    - assets/icons/
+    - assets/fonts/
+
+  fonts:
+    - family: MavenPro
+      fonts:
+        - asset: assets/fonts/MavenPro-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/MavenPro-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/MavenPro-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/MavenPro-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/MavenPro-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/MavenPro-Black.ttf
+          weight: 900
 
 flutter_gen:
   integrations:
     flutter_svg: true
 
   assets:
-    package_parameter_enabled: true
+    enabled: true
+    outputs:
+      class_name: CuAssets
+      package_parameter_enabled: true
+      

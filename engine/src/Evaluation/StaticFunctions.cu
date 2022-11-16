@@ -3,10 +3,13 @@
 #include "Utils/DeviceArray.cuh"
 #include "Utils/Meta.cuh"
 
+#include "Symbol/MetaOperators.cuh"
+
 namespace Sym::Static {
     namespace {
         using StaticFunctionInitializer = void (*)(Symbol&);
 
+        // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
         __device__ Symbol IDENTITY[1];
 
         __device__ Symbol SIN_X[2];
@@ -21,6 +24,7 @@ namespace Sym::Static {
         __device__ Symbol UNIVERSAL_DERIVATIVE[2];
 
         __device__ Symbol E_TO_X[3];
+        // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
         __device__ Symbol* const STATIC_FUNCTIONS[] = {
             IDENTITY,        SIN_X,
@@ -31,111 +35,33 @@ namespace Sym::Static {
             E_TO_X,
         };
 
-        __device__ void init_identity(Symbol& dst) { dst.init_from(Variable::create()); }
-
-        template <class T> __device__ void init_one_arg_function(Symbol& dst) {
-            T* const sine = dst << T::builder();
-            sine->arg().variable = Variable::create();
-            sine->seal();
-        }
-
-        __device__ void init_sin_x(Symbol& dst) { init_one_arg_function<Sine>(dst); }
-        __device__ void init_cos_x(Symbol& dst) { init_one_arg_function<Cosine>(dst); }
-        __device__ void init_tan_x(Symbol& dst) { init_one_arg_function<Tangent>(dst); }
-        __device__ void init_cot_x(Symbol& dst) { init_one_arg_function<Cotangent>(dst); }
-
-        __device__ void init_1_plus_x2(Symbol& dst) {
-            Addition* const addition = dst << Addition::builder();
-
-            addition->arg1().init_from(NumericConstant::with_value(1.0));
-            addition->seal_arg1();
-
-            Power* const power = addition->arg2() << Power::builder();
-            power->arg1().init_from(Variable::create());
-            power->seal_arg1();
-            power->arg2().init_from(NumericConstant::with_value(2.0));
-            power->seal();
-
-            addition->seal();
-        }
-
-        __device__ void init_1_minus_x2(Symbol& dst) {
-            Addition* const addition = dst << Addition::builder();
-
-            addition->arg1().init_from(NumericConstant::with_value(1.0));
-            addition->seal_arg1();
-
-            Negation* const negation = addition->arg2() << Negation::builder();
-
-            Power* const power = negation->arg() << Power::builder();
-            power->arg1().init_from(Variable::create());
-            power->seal_arg1();
-            power->arg2().init_from(NumericConstant::with_value(2.0));
-            power->seal();
-
-            negation->seal();
-
-            addition->seal();
-        }
-
-        __device__ void init_2x(Symbol& dst) {
-            Product* const product = dst << Product::builder();
-
-            product->arg1().init_from(NumericConstant::with_value(2.0));
-            product->seal_arg1();
-
-            product->arg2().init_from(Variable::create());
-            product->seal();
-        }
-
-        template <void (*I1)(Symbol&), void (*I2)(Symbol&)>
-        __device__ void init_quotient(Symbol& dst) {
-            Product* const product = dst << Product::builder();
-
-            I1(product->arg1());
-            product->seal_arg1();
-
-            Reciprocal* const reciprocal = product->arg2() << Reciprocal::builder();
-            I2(reciprocal->arg());
-            reciprocal->seal();
-            product->seal();
-        }
-
         __device__ void init_universal_sin_x(Symbol& dst) {
-            init_quotient<init_2x, init_1_plus_x2>(dst);
+            Frac<Prod<Integer<2>, Var>, Add<Integer<1>, Pow<Var, Integer<2>>>>::init(dst, {});
         }
 
         __device__ void init_universal_cos_x(Symbol& dst) {
-            init_quotient<init_1_minus_x2, init_1_plus_x2>(dst);
+            Frac<Sub<Integer<1>, Pow<Var, Integer<2>>>,
+                 Add<Integer<1>, Pow<Var, Integer<2>>>>::init(dst, {});
         }
 
         __device__ void init_universal_tan_x(Symbol& dst) {
-            init_quotient<init_2x, init_1_minus_x2>(dst);
-
-            init_quotient<init_quotient<init_2x, init_2x>, init_1_minus_x2>(dst);
+            Frac<Prod<Integer<2>, Var>, Sub<Integer<1>, Pow<Var, Integer<2>>>>::init(dst, {});
         }
 
         __device__ void init_universal_cot_x(Symbol& dst) {
-            init_quotient<init_1_minus_x2, init_2x>(dst);
+            Frac<Sub<Integer<1>, Pow<Var, Integer<2>>>, Prod<Integer<2>, Var>>::init(dst, {});
         }
 
         __device__ void init_universal_derivative(Symbol& dst) {
-            Product* const product = dst << Product::builder();
-
-            init_1_plus_x2(product->arg1());
-            product->seal_arg1();
-
-            product->arg2().init_from(NumericConstant::with_value(0.5));
-            product->seal();
+            Frac<Add<Integer<1>, Pow<Var, Integer<2>>>, Integer<2>>::init(dst, {});
         }
 
-        __device__ void init_e_to_x(Symbol& dst) {
-            Power* const power = dst << Power::builder();
-            power->arg1().known_constant = KnownConstant::with_value(KnownConstantValue::E);
-            power->seal_arg1();
-            power->arg2().variable = Variable::create();
-            power->seal();
-        }
+        __device__ void init_identity(Symbol& dst) { Var::init(dst); }
+        __device__ void init_sin_x(Symbol& dst) { Sin<Var>::init(dst); }
+        __device__ void init_cos_x(Symbol& dst) { Cos<Var>::init(dst); }
+        __device__ void init_tan_x(Symbol& dst) { Tan<Var>::init(dst); }
+        __device__ void init_cot_x(Symbol& dst) { Cot<Var>::init(dst); }
+        __device__ void init_e_to_x(Symbol& dst) { Pow<E, Var>::init(dst); }
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
             init_identity,        init_sin_x,
@@ -161,7 +87,6 @@ namespace Sym::Static {
     };
 
     __device__ const Symbol& identity() { return *IDENTITY; }
-
     __device__ const Symbol& sin_x() { return *SIN_X; }
     __device__ const Symbol& cos_x() { return *COS_X; }
     __device__ const Symbol& tan_x() { return *TAN_X; }

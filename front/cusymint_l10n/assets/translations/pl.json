@@ -1,5 +1,25 @@
 {
-    "enterIntegral": "Wpisz całkę",
+    "enterIntegral": "Wpisz tutaj całkę",
     "tryExamples": "Lub spróbuj przykładów",
-    "foundResult": "Znaleziono wynik w {timeInMs} ms"
+    "foundResult": "Znaleziono wynik w {timeInMs} ms",
+    "encounteredErrors": "Wystąpiły błędy:",
+    "copiedToClipboard": "Skopiowano do schowka",
+    "subtitle": "Symboliczne całkowanie na Cuda",
+    "solve": "Rozwiąż",
+    "interpreting": "Interpretowanie",
+    "retry": "Spróbuj ponownie",
+    "home": "Strona główna",
+    "about": "O projekcie",
+    "settings": "Ustawienia",
+    "interpretedAs": "Zinterpretowano jako",
+    "calculating": "Obliczanie",
+    "language": "Język",
+    "ipAddress": "Adres IP",
+    "ipAddressError": "Adres niepoprawny",
+    "licenses": "Licencje",
+    "languagePolish": "Polski",
+    "languageEnglish": "English",
+    "languageCurrent": "Polski",
+    "cancel": "Anuluj",
+    "ok": "OK"
 }

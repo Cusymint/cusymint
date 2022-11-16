@@ -1,8 +1,14 @@
 #include "Symbol.cuh"
 
+#include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/StaticStack.cuh"
 
 namespace Sym {
+    [[nodiscard]] __host__ __device__ bool Symbol::is(const double number) const {
+        return is(Type::NumericConstant) && as<NumericConstant>().value == number;
+    }
+
     __host__ __device__ void Symbol::copy_symbol_sequence(Symbol* const destination,
                                                           const Symbol* const source,
                                                           size_t symbol_count) {
@@ -17,8 +23,8 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ bool Symbol::compare_symbol_sequences(const Symbol* sequence1,
-                                                              const Symbol* sequence2,
+    __host__ __device__ bool Symbol::compare_symbol_sequences(const Symbol* const sequence1,
+                                                              const Symbol* const sequence2,
                                                               size_t symbol_count) {
         // Cannot simply use Util::compare_mem because padding can differ
         for (size_t i = 0; i < symbol_count; ++i) {
@@ -87,18 +93,65 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) const {
-        return VIRTUAL_CALL(*this, compress_reverse_to, destination);
+    __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) {
+        mark_to_be_copied_and_propagate_additional_size(destination);
+
+        Symbol* compressed_reversed_destination = destination;
+        for (ssize_t i = size() - 1; i >= 0; --i) {
+            if (at(i)->to_be_copied()) {
+                at(i)->to_be_copied() = false;
+
+                const size_t new_size =
+                    VIRTUAL_CALL(*at(i), compress_reverse_to, compressed_reversed_destination);
+                compressed_reversed_destination += new_size;
+            }
+        }
+
+        // Corrects the size of copied `this` (if additional demanded)
+        Symbol* const last_copied_symbol = compressed_reversed_destination - 1;
+        last_copied_symbol->size() += last_copied_symbol->additional_required_size();
+        last_copied_symbol->additional_required_size() = 0;
+
+        return compressed_reversed_destination - destination;
+    }
+
+    __host__ __device__ void
+    Symbol::mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space) {
+        Util::StaticStack<Symbol*> stack(reinterpret_cast<Symbol**>(help_space));
+
+        stack.push(this);
+
+        while (!stack.empty()) {
+            Symbol* const sym = stack.pop();
+
+            sym->to_be_copied() = true;
+            VIRTUAL_CALL(*sym, put_children_on_stack_and_propagate_additional_size, stack);
+        }
+    }
+
+    __host__ __device__ size_t Symbol::compress_to(Symbol& destination) {
+        const size_t new_size = compress_reverse_to(&destination);
+        reverse_symbol_sequence(&destination, new_size);
+        return new_size;
     }
 
     __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
-        simplify_in_place(help_space);
-        const size_t new_size = compress_reverse_to(help_space);
-        copy_and_reverse_symbol_sequence(this, help_space, new_size);
+        bool success = false;
+
+        while (!success) {
+            success = true;
+
+            for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
+                success = at(i)->simplify_in_place(help_space) && success;
+            }
+
+            const size_t new_size = compress_reverse_to(help_space);
+            copy_and_reverse_symbol_sequence(this, help_space, new_size);
+        }
     }
 
-    __host__ __device__ void Symbol::simplify_in_place(Symbol* const help_space) {
-        VIRTUAL_CALL(*this, simplify_in_place, help_space);
+    __host__ __device__ bool Symbol::simplify_in_place(Symbol* const help_space) {
+        return VIRTUAL_CALL(*this, simplify_in_place, help_space);
     }
 
     void Symbol::substitute_variable_with(const Symbol symbol) {

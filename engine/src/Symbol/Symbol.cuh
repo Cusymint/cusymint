@@ -130,12 +130,28 @@ namespace Sym {
             return type() == other_type;
         }
 
+        [[nodiscard]] __host__ __device__ bool is(const double number) const;
+
         template <class T> [[nodiscard]] __host__ __device__ inline bool is() const {
             return type() == T::TYPE;
         }
 
         [[nodiscard]] __host__ __device__ inline size_t& size() { return unknown.size; }
         [[nodiscard]] __host__ __device__ inline size_t size() const { return unknown.size; }
+
+        [[nodiscard]] __host__ __device__ inline size_t& additional_required_size() {
+            return unknown.additional_required_size;
+        }
+        [[nodiscard]] __host__ __device__ inline size_t additional_required_size() const {
+            return unknown.additional_required_size;
+        }
+
+        [[nodiscard]] __host__ __device__ inline bool& to_be_copied() {
+            return unknown.to_be_copied;
+        }
+        [[nodiscard]] __host__ __device__ inline bool to_be_copied() const {
+            return unknown.to_be_copied;
+        }
 
         template <class T> __host__ __device__ inline T& init_from(const T& other) {
             // Not using `as<>` to prevent errors, as in this case
@@ -184,7 +200,8 @@ namespace Sym {
                 // checks
                 if (size() != BUILDER_SIZE && size() <= idx) {
                     Util::crash(
-                        "Trying to access %lu element after a symbol, but the symbol's size is %lu",
+                        "Trying to access element at index %lu after a symbol, but the symbol's "
+                        "size is %lu and it is not under construction",
                         idx, size());
                 }
             }
@@ -350,7 +367,17 @@ namespace Sym {
          *
          * @return New size of the symbol tree
          */
-        __host__ __device__ size_t compress_reverse_to(Symbol* const destination) const;
+        __host__ __device__ size_t compress_reverse_to(Symbol* const destination);
+
+        /*
+         * @brief Removes holes from symbol tree and copies it to `destination`.
+         *
+         * @param destination Location to which the tree is going to be copied. Cannot be same as
+         * `this`.
+         *
+         * @return New size of the symbol tree
+         */
+        __host__ __device__ size_t compress_to(Symbol& destination);
 
         /*
          * @brief Zwraca funkcję podcałkową jeśli `this` jest całką. Undefined behavior w przeciwnym
@@ -365,6 +392,9 @@ namespace Sym {
             return integral.integrand();
         }
 
+        __host__ __device__ void
+        mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space);
+
         /*
          * @brief Wykonuje uproszcznie wyrażenia
          * Wykorzystuje założenie, że wyrażenie uproszczone jest krótsze od pierwotnego.
@@ -378,8 +408,11 @@ namespace Sym {
          * Wykorzystuje założenie, że wyrażenie uproszczone jest krótsze od pierwotnego.
          *
          * @param help_space Pamięć pomocnicza
+         *
+         * @return `true` if expression was simplified, `false` if simplified result
+         * would take more space than `size()` or expression needs to be simplified again.
          */
-        __host__ __device__ void simplify_in_place(Symbol* const help_space);
+        __host__ __device__ bool simplify_in_place(Symbol* const help_space);
 
         /*
          * @brief Substitutes all occurences of variable with `symbol`

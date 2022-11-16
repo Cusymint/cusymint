@@ -9,20 +9,62 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  auto_route: any
+  flutter_bloc: ^8.1.1
+  flutter_math_fork: ^0.6.3+1
+  flutter_native_splash: ^2.2.14
+  fluttertoast: ^8.0.9
+  provider: ^6.0.3
+  share_plus: ^6.0.0
+  shared_preferences: ^2.0.15
 
   cusymint_l10n:
     path: ../cusymint_l10n
-    
-  flutter_math_fork: ^0.6.3+1
+  cusymint_client_mock:
+    path: ../cusymint_client/cusymint_client_mock
+  cusymint_client_json_rpc:
+    path: ../cusymint_client/cusymint_client_json_rpc
+  cusymint_ui:
+    path: ../cusymint_ui
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  auto_route_generator: any
+  build_runner: ^2.3.0
   golden_toolkit: ^0.13.0
 
+  bloc_test: ^9.1.0
+
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.10.0
+
+  mockito: ^5.3.2
 
 flutter:
   uses-material-design: true
+  
+flutter_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: "../cusymint_assets/assets/icons/app_icon_ios.png"
+  adaptive_icon_background: "../cusymint_assets/assets/icons/app_icon_background.png"
+  adaptive_icon_foreground: "../cusymint_assets/assets/icons/app_icon_foreground.png"
+  
+  windows:
+    generate: true
+    image_path: "../cusymint_assets/assets/icons/app_icon_curved_edges.png"
+    icon_size: 256
+  
+  web:
+    generate: true
+    image_path: "../cusymint_assets/assets/icons/app_icon_curved_edges.png"
+
+flutter_native_splash:
+  color: "#b9ded2"
+  image: "../cusymint_assets/assets/images/logo_wide.png"
   

@@ -1,4 +1,7 @@
+# melos_managed_dependency_overrides: cusymint_l10n
 # melos_managed_dependency_overrides: cusymint_assets
 dependency_overrides:
   cusymint_assets:
     path: ../cusymint_assets
+  cusymint_l10n: 
+    path: ../cusymint_l10n

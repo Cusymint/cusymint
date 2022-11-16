@@ -21,6 +21,9 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
+# Golden failed test results
+/test/features/tex_rendering/failures/*
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
