@@ -42,11 +42,16 @@ namespace Sym {
         return integrand()->is_function_of(expressions, expression_count);
     } // NOLINT
 
-    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Integral) {
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(Integral) {
         if (substitution_count > 0) {
             stack.push(first_substitution()->symbol());
         }
+
         stack.push(integrand());
+    }
+
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Integral) {
+        push_children_onto_stack(stack);
         integrand()->additional_required_size() += additional_required_size;
     }
 

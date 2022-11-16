@@ -261,7 +261,7 @@ namespace Sym {
     /*
      * @brief Encapsulates procedure of creating `TwoArgOp` symbol tree from existing `SymbolTree`,
      * where every leaf of a tree (term of sum/factor of a product) is mapped by function of type
-     * `OneArgOp`. Note that `TwoArgOp` and `SymbolTree` may be different types.
+     * `OneArgOp`. Note that `TwoArgOp` and `SymbolTree` may be of different types.
      */
     template <class SymbolTree> struct From {
         template <class TwoArgOp> struct Create {
@@ -274,6 +274,7 @@ namespace Sym {
                     size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
                     Symbol* terms = &dst + count - 1;
                     TreeIterator<SymbolTree> iterator(&tree);
+
                     while (iterator.is_valid()) {
                         OneArgOp* operator_ = terms << OneArgOp::builder();
                         iterator.current()->copy_to(&operator_->arg());
@@ -281,6 +282,7 @@ namespace Sym {
                         terms += terms->size();
                         iterator.advance();
                     }
+
                     for (ssize_t i = static_cast<ssize_t>(count) - 2; i >= 0; --i) {
                         TwoArgOp* const operator_ = &dst + i << TwoArgOp::builder();
                         operator_->seal_arg1();

@@ -34,14 +34,14 @@
             Util::crash("Trying to access a virtual function (%s) on a pure Symbol",       \
                         #_member_function);                                                \
             break;                                                                         \
-        case Type::Variable:                                                               \
-            return (_instance).variable._member_function(__VA_ARGS__);                     \
         case Type::NumericConstant:                                                        \
             return (_instance).numeric_constant._member_function(__VA_ARGS__);             \
         case Type::KnownConstant:                                                          \
             return (_instance).known_constant._member_function(__VA_ARGS__);               \
         case Type::UnknownConstant:                                                        \
             return (_instance).unknown_constant._member_function(__VA_ARGS__);             \
+        case Type::Variable:                                                               \
+            return (_instance).variable._member_function(__VA_ARGS__);                     \
         case Type::ExpanderPlaceholder:                                                    \
             return (_instance).expander_placeholder._member_function(__VA_ARGS__);         \
         case Type::SubexpressionCandidate:                                                 \
@@ -95,10 +95,10 @@
 namespace Sym {
     union Symbol {
         Unknown unknown;
-        Variable variable;
         NumericConstant numeric_constant;
         KnownConstant known_constant;
         UnknownConstant unknown_constant;
+        Variable variable;
         ExpanderPlaceholder expander_placeholder;
         Integral integral;
         Solution solution;
@@ -471,17 +471,20 @@ namespace Sym {
         are_expressions_equal(const Symbol* const expr1, const Symbol* const expr2);
 
         /*
-         * @brief Compares two expressions
+         * @brief Compares two expressions. Size fields in expressions do not need to be valid, but
+         * have to indicate a size that is not smaller than the real size.
          *
          * @param expr1 First expression
          * @param expr2 Second expression
+         * @param help_space Help space used for comparing (necessary because expressions are
+         * allowed to have invalid sizes)
          *
          * @return `Util::Order::Less` if `expr1` comes before `expr2` in the expression
          * order, `Util::Order::Greater` if `expr2` comes before `expr1`, and
          * `Util::Order::Equal`, if expressions are equal
          */
         [[nodiscard]] __host__ __device__ static Util::Order
-        compare_expressions(const Symbol& expr1, const Symbol& expr2);
+        compare_expressions(const Symbol& expr1, const Symbol& expr2, Symbol& help_space);
 
         /*
          * @brief String formatting of the expression

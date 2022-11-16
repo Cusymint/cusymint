@@ -26,6 +26,22 @@ namespace Util {
         }
     }
 
+    __host__ __device__ void move_mem(void* const dst, void* const src, const size_t n) {
+        auto* const dst_8 = reinterpret_cast<uint8_t*>(dst);
+        const auto* const src_8 = reinterpret_cast<const uint8_t*>(src);
+
+        if (dst < src) {
+            for (size_t i = 0; i < n; ++i) {
+                dst_8[i] = src_8[i];
+            }
+        }
+        else if (dst > src) {
+            for (size_t i = n; i > 0; --i) {
+                dst_8[i - 1] = src_8[i - 1];
+            }
+        }
+    }
+
     __host__ __device__ void swap_mem(void* const mem1, void* const mem2, const size_t n) {
         auto* const p1_8 = reinterpret_cast<uint8_t*>(mem1);
         auto* const p2_8 = reinterpret_cast<uint8_t*>(mem2);

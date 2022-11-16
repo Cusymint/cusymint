@@ -21,19 +21,13 @@ namespace Test {
                        << expected_result.data()->to_string();
             }
 
-            if (Sym::Symbol::are_expressions_equal(
-                    result.value().data(), // NOLINT(bugprone-unchecked-optional-access)
-                    expected_result.data())) {
+            if (Sym::Symbol::are_expressions_equal(result.value().data(), expected_result.data())) {
                 return testing::AssertionSuccess();
             }
 
             return testing::AssertionFailure()
                    << "Tried to calculate the integral:\n  " << integral.data()->to_string()
-                   << "\n  but got an unexpected result:\n  "
-                   << result // NOLINT(bugprone-unchecked-optional-access)
-                          .value()
-                          .data()
-                          ->to_string()
+                   << "\n  but got an unexpected result:\n  " << result.value().data()->to_string()
                    << " <- got\n  " << expected_result.data()->to_string() << " <- expected\n";
         }
     }

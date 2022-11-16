@@ -11,6 +11,7 @@ namespace Sym {
     DEFINE_INVALID_IS_FUNCTION_OF(ExpanderPlaceholder)
     DEFINE_INVALID_COMPARE_TO(ExpanderPlaceholder)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(ExpanderPlaceholder)
+    DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(ExpanderPlaceholder)
 
     __host__ __device__ ExpanderPlaceholder ExpanderPlaceholder::with_size(size_t size) {
         return {

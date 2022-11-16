@@ -12,6 +12,7 @@ namespace Sym {
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(SubexpressionVacancy)
     DEFINE_INVALID_IS_FUNCTION_OF(SubexpressionVacancy)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(SubexpressionVacancy)
+    DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(SubexpressionVacancy)
 
     [[nodiscard]] std::string SubexpressionVacancy::to_string() const {
         std::string solved_info;

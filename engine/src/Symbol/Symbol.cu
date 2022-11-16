@@ -1,5 +1,7 @@
 #include "Symbol.cuh"
 
+#include <cuda/std/utility>
+
 #include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/StaticStack.cuh"
@@ -179,33 +181,34 @@ namespace Sym {
         return compare_symbol_sequences(expr1, expr2, expr1->size());
     }
 
-    __host__ __device__ Util::Order Symbol::compare_expressions(const Symbol& expr1,
-                                                                const Symbol& expr2) {
+    __host__ __device__ Util::Order
+    Symbol::compare_expressions(const Symbol& expr1, const Symbol& expr2, Symbol& help_space) {
+        Util::StaticStack<const Symbol*> expr1_stack(reinterpret_cast<const Symbol**>(&help_space));
+        Util::StaticStack<const Symbol*> expr2_stack(reinterpret_cast<const Symbol**>(
+            expr1.size() + &help_space)); // expr1.size() should not be smaller than the actual size
 
-        const size_t smaller_size = Util::min(expr1.size(), expr2.size());
+        expr1_stack.push(&expr1);
+        expr2_stack.push(&expr2);
 
-        for (size_t i = 0; i < smaller_size; ++i) {
-            if (expr1[i].type_ordinal() < expr2[i].type_ordinal()) {
+        while (!expr1_stack.empty() && !expr2_stack.empty()) {
+            const Symbol* const expr1_sym = expr1_stack.pop();
+            const Symbol* const expr2_sym = expr2_stack.pop();
+
+            if (expr1_sym->type_ordinal() < expr2_sym->type_ordinal()) {
                 return Util::Order::Less;
             }
 
-            if (expr1[i].type_ordinal() > expr2[i].type_ordinal()) {
+            if (expr1_sym->type_ordinal() > expr2_sym->type_ordinal()) {
                 return Util::Order::Greater;
             }
 
-            const auto order = VIRTUAL_CALL(expr1, compare_to, expr2);
+            const auto order = VIRTUAL_CALL(*expr1_sym, compare_to, *expr2_sym);
             if (order != Util::Order::Equal) {
                 return order;
             }
-        }
 
-        if constexpr (Consts::DEBUG) {
-            if (expr1.size() != expr2.size()) {
-                Util::crash("Comparing expressions of different length found out that one of them "
-                            "is a prefix of the other one, this should not be possible in "
-                            "well-formed expressions. (sizes: %lu, %lu)",
-                            expr1.size(), expr2.size());
-            }
+            VIRTUAL_CALL(*expr1_sym, push_children_onto_stack, expr1_stack);
+            VIRTUAL_CALL(*expr2_sym, push_children_onto_stack, expr2_stack);
         }
 
         return Util::Order::Equal;

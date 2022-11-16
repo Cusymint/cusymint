@@ -40,11 +40,15 @@ namespace Sym {
         return expression()->is_function_of(expressions, expression_count);
     } // NOLINT
 
-    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Substitution) {
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(Substitution) {
         if (!is_last_substitution()) {
             stack.push(next_substitution()->symbol());
         }
         stack.push(expression());
+    }
+
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Substitution) {
+        push_children_onto_stack(stack);
         expression()->additional_required_size() += additional_required_size;
     }
 

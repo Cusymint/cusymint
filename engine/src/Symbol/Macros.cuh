@@ -38,12 +38,11 @@ namespace Sym {
     __host__ __device__ bool _is_function_of(const Symbol* const* const expressions, \
                                              const size_t expression_count) const
 
+#define PUSH_CHILDREN_ONTO_STACK_HEADER(_fname, _const) \
+    __host__ __device__ void _fname(Util::StaticStack<_const Symbol*>& stack) _const
+
 #define PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(_fname) \
     __host__ __device__ void _fname(Util::StaticStack<Symbol*>& stack)
-
-#define DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
-    PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(           \
-        _name::put_children_on_stack_and_propagate_additional_size)
 
 #define DECLARE_SYMBOL(_name, _simple)                                            \
     struct _name {                                                                \
@@ -97,6 +96,8 @@ namespace Sym {
         COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                          \
         SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                              \
         IS_FUNCTION_OF_HEADER(is_function_of);                                    \
+        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, );              \
+        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, const);         \
         PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                        \
             put_children_on_stack_and_propagate_additional_size);
 
@@ -116,6 +117,20 @@ namespace Sym {
     void _name::seal() {}
 
 #define DEFINE_ARE_EQUAL(_name) ARE_EQUAL_HEADER(_name::are_equal)
+
+#define DEFINE_PUSH_CHILDREN_ONTO_STACK(_name)                           \
+    PUSH_CHILDREN_ONTO_STACK_HEADER(_name::push_children_onto_stack, ) { \
+        const_cast<const _name*>(this)->push_children_onto_stack(        \
+            reinterpret_cast<Util::StaticStack<const Symbol*>&>(stack)); \
+    }                                                                    \
+    PUSH_CHILDREN_ONTO_STACK_HEADER(_name::push_children_onto_stack, const)
+
+#define DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(_name) \
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(_name) {}
+
+#define DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
+    PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(           \
+        _name::put_children_on_stack_and_propagate_additional_size)
 
 #define DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
     DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {}
@@ -168,7 +183,7 @@ namespace Sym {
 #define DEFINE_INVALID_COMPARE_TO(_name)                                         \
     COMPARE_TO_HEADER(_name::compare_to) {                                       \
         Util::crash("compare_to called on %s, this should not happen!", #_name); \
-        return Util::Order::Equal; /* Just to silence warnings */                             \
+        return Util::Order::Equal; /* Just to silence warnings */                \
     }
 
 #define DEFINE_TO_STRING(_str) \
@@ -261,38 +276,41 @@ namespace Sym {
         one_arg_op->seal();                                                                      \
     }                                                                                            \
                                                                                                  \
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(_name) { stack.push(&arg()); }                               \
+                                                                                                 \
     DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
-        stack.push(&arg());                                                                      \
+        push_children_onto_stack(stack);                                                         \
         arg().additional_required_size() += additional_required_size;                            \
     }
 
-#define TWO_ARGUMENT_OP_SYMBOL                                                                 \
-    /* W 95% przypadków second_arg_offset == 1 + arg1().size(), ale nie zawsze                \
-     * Przykładowo w `compress_reverse_to` pierwszy argument może nie mieć poprawnej        \
-     * struktury, a potrzebny jest tam offset do drugiego argumentu (implicite w arg2())       \
-     */                                                                                        \
-    size_t second_arg_offset;                                                                  \
-    __host__ __device__ const Symbol& arg1() const;                                            \
-    __host__ __device__ Symbol& arg1();                                                        \
-    __host__ __device__ const Symbol& arg2() const;                                            \
-    __host__ __device__ Symbol& arg2();                                                        \
-    __host__ __device__ void seal_arg1();                                                      \
-    __host__ __device__ void swap_args(Symbol* const help_space);                              \
-    __host__ __device__ static void create(const Symbol* const arg1, const Symbol* const arg2, \
+#define TWO_ARGUMENT_OP_SYMBOL                                                                   \
+    /* In most cases second_arg_offset == 1 + arg1().size(), but not always.                     \
+     * For example in `compress_reverse_to` the first argument may not have a correct structure, \
+     * but we may need the offset to the second one.                                             \
+     */                                                                                          \
+    size_t second_arg_offset;                                                                    \
+    __host__ __device__ const Symbol& arg1() const;                                              \
+    __host__ __device__ Symbol& arg1();                                                          \
+    __host__ __device__ const Symbol& arg2() const;                                              \
+    __host__ __device__ Symbol& arg2();                                                          \
+    __host__ __device__ void seal_arg1();                                                        \
+    __host__ __device__ void swap_args(Symbol* const help_space);                                \
+    __host__ __device__ static void create(const Symbol* const arg1, const Symbol* const arg2,   \
                                            Symbol* const destination);
 
 #define TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(_name)                                               \
     TWO_ARGUMENT_OP_SYMBOL                                                                      \
     /*                                                                                          \
-     * @brief W uproszczonym drzewie operatora zwraca operację najniżej w drzewie             \
+     * @brief Operation that is the lowest one in an operator tree                              \
      *                                                                                          \
-     * @return Wskaźnik do ostatniego operator. Jeśli `arg1()` nie jest tego samego typu co   \
-     * `*this`, to zwraca `this`                                                                \
+     * @return Pointer to the last operator                                                     \
      */                                                                                         \
     __host__ __device__ const _name* last_in_tree() const;                                      \
                                                                                                 \
     /*                                                                                          \
-     * @brief Przeładowanie bez `const`                                                        \
+     * @brief Operation that is the lowest one in an operator tree                              \
+     *                                                                                          \
+     * @return Pointer to the last operator                                                     \
      */                                                                                         \
     __host__ __device__ _name* last_in_tree();                                                  \
                                                                                                 \
@@ -371,10 +389,13 @@ namespace Sym {
         arg2->copy_to(&two_arg_op->arg2());                                                      \
         two_arg_op->seal();                                                                      \
     }                                                                                            \
-                                                                                                 \
-    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(_name) {                                                     \
         stack.push(&arg1());                                                                     \
         stack.push(&arg2());                                                                     \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
+        push_children_onto_stack(stack);                                                         \
         arg2().additional_required_size() += additional_required_size;                           \
     }
 
@@ -394,34 +415,72 @@ namespace Sym {
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                         \
-        /* TODO: Potrzebne sortowanie, inaczej nie będą poprawnie działać porównania drzew */         \
-        if (!arg2().is(Type::_name)) {                                                                     \
+        if (!symbol()->is(_name::TYPE)) {                                                                  \
             return;                                                                                        \
         }                                                                                                  \
                                                                                                            \
-        if (!arg1().is(Type::_name)) {                                                                     \
-            swap_args(help_space);                                                                         \
-            return;                                                                                        \
+        /* We can merge the subtrees like in merge sort, as both should already be                         \
+         * simplified and sorted */                                                                        \
+        auto left_tree_iter = ConstTreeIterator<_name>(&arg1());                                           \
+        auto right_tree_iter = ConstTreeIterator<_name>(&arg2());                                          \
+        const size_t arg1_height =                                                                         \
+            arg1().is(_name::TYPE) ? arg1().as<_name>().tree_size() - 1 : 0;                               \
+        const size_t arg2_height =                                                                         \
+            arg2().is(_name::TYPE) ? arg2().as<_name>().tree_size() - 1 : 0;                               \
+        const size_t new_tree_size = 1 + arg1_height + arg2_height;                                        \
+                                                                                                           \
+        /* Initialize a sufficient number of tree iterators */                                             \
+        for (size_t i = 0; i < new_tree_size; ++i) {                                                       \
+            help_space[i].init_from(_name::builder());                                                     \
         }                                                                                                  \
                                                                                                            \
-        Symbol* const last_left = &arg1().as<_name>().last_in_tree()->arg1();                              \
+        /* Because the iterators traverse the tree starting with the leaf with the largest                 \
+         * distance from the root, we have to copy them to `help_space` in the same order, so that         \
+         * we do not reverse the order. Also, `size` may not be equal to actual size in here               \
+         * (expression may actually be smaller), this this is just an upper bound on the memory            \
+         * used. */                                                                                        \
+        Symbol* const help_space_back = help_space + size;                                                 \
+        Symbol* current_dst_back = help_space_back;                                                        \
+        while (left_tree_iter.is_valid() && right_tree_iter.is_valid()) {                                  \
+            const auto ordering = Symbol::compare_expressions(                                             \
+                *left_tree_iter.current(), *right_tree_iter.current(), *help_space_back);                  \
+            Symbol* current;                                                                               \
+            if (ordering == Util::Order::Greater) {                                                        \
                                                                                                            \
-        Symbol* const last_left_copy = help_space;                                                         \
-        last_left->copy_to(last_left_copy);                                                                \
-        last_left->expander_placeholder = ExpanderPlaceholder::with_size(arg2().size());                   \
+                current = left_tree_iter.current();                                                        \
+                left_tree_iter.advance();                                                                  \
+            }                                                                                              \
+            else {                                                                                         \
+                current = right_tree_iter.current();                                                       \
+                right_tree_iter.advance();                                                                 \
+            }                                                                                              \
                                                                                                            \
-        Symbol* const right_copy = help_space + last_left_copy->size();                                    \
-        arg2().copy_to(right_copy);                                                                        \
-        arg2().expander_placeholder = ExpanderPlaceholder::with_size(last_left_copy->size());              \
+            Symbol* const current_dst = current_dst_back - current->size();                                \
+            current->copy_to(current_dst);                                                                 \
+            current_dst_back = current_dst;                                                                \
+        }                                                                                                  \
                                                                                                            \
-        Symbol* const resized_reversed_this = right_copy + right_copy->size();                             \
-        const size_t new_size = symbol()->compress_reverse_to(resized_reversed_this);                      \
+        auto remaining_tree_iter = left_tree_iter.is_valid() ? left_tree_iter : right_tree_iter;           \
                                                                                                            \
-        /* Zmiany w strukturze mogą zmienić całkowity rozmiar `this`, bo                                \
-         * compress_reverse_to skróci wcześniej uproszczone wyrażenia*/                                 \
-        Symbol::copy_and_reverse_symbol_sequence(symbol(), resized_reversed_this, new_size);               \
-        right_copy->copy_to(last_left);                                                                    \
-        last_left_copy->copy_to(&arg2());                                                                  \
+        while (remaining_tree_iter.is_valid()) {                                                           \
+            Symbol* const current_dst = current_dst_back - remaining_tree_iter.current()->size();          \
+            remaining_tree_iter.current()->copy_to(current_dst);                                           \
+            remaining_tree_iter.advance();                                                                 \
+            current_dst_back = current_dst;                                                                \
+        }                                                                                                  \
+                                                                                                           \
+        /*Now we have to make sure that the copied expressions are right after the created tree            \
+         * operators, otherwise the `seal`s would fail. */                                                 \
+        const size_t symbols_copied = help_space_back - current_dst_back;                                  \
+        Util::move_mem(help_space + new_tree_size, current_dst_back,                                       \
+                       symbols_copied * sizeof(Symbol));                                                   \
+                                                                                                           \
+        for (size_t i = new_tree_size; i > 0; --i) {                                                       \
+            help_space[i - 1].as<_name>().seal_arg1();                                                     \
+            help_space[i - 1].as<_name>().seal();                                                          \
+        }                                                                                                  \
+                                                                                                           \
+        help_space->copy_to(symbol());                                                                     \
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_pairs() {                                                     \
@@ -450,11 +509,14 @@ namespace Sym {
         }                                                                                                  \
     }                                                                                                      \
                                                                                                            \
+    /*                                                                                                     \
+     * @brief Number of leaves in a two argument operator tree                                             \
+     */                                                                                                    \
     __host__ __device__ size_t _name::tree_size() {                                                        \
-        /* In every sum, number of terms is equal to number of `+` signs plus 1.                           \
-         * When an addition tree is simplified, all `Addition` symbols are placed in a row,                \
-         * so it suffices to calculate address of the last `Addition` symbol. The offset between           \
-         * `this` and last plus 1 is the number of `+` signs in the sum.                                   \
+        /* In every sum, number of terms is equal to number of operator signs plus 1.                      \
+         * When an addition tree is simplified, all operator symbols are placed in a row,                  \
+         * so it suffices to calculate address of the last operator symbol. The offset between             \
+         * `this` and last plus 1 is the number of operator signs in the sum.                              \
          * Thus, the offset plus 2 is the number of terms in the sum.                                      \
          * Conversion to `Symbol*` with `symbol()` function is necessary, because `_name`                  \
          * structure may be smaller than `Symbol` union.                                                   \

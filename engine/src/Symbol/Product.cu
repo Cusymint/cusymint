@@ -33,6 +33,7 @@ namespace Sym {
         }
 
         eliminate_ones();
+        simplify_structure(help_space);
 
         return true;
     }
@@ -149,8 +150,9 @@ namespace Sym {
             return true;
         }
 
-        if (arg().is(1)) {
-            symbol()->init_from(NumericConstant::with_value(1));
+        if (arg().is(Type::NumericConstant)) {
+            symbol()->init_from(
+                NumericConstant::with_value(1.0 / arg().as<NumericConstant>().value));
             return true;
         }
 

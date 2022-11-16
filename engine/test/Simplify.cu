@@ -5,22 +5,30 @@
 #include "Symbol/Symbol.cuh"
 
 #define SIMPLIFY_TEST(_name, _input, _expected) \
-    TEST(SimplifyTest, _name) { EXPECT_TRUE(simplifies_to(_input, _expected)); }
+    TEST(Simplify, _name) { EXPECT_TRUE(simplifies_to(_input, _expected)); }
 
 #define SIMPLIFY_TEST_NO_ACTION(_name, _input) SIMPLIFY_TEST(_name, _input, _input)
 
+#define EQUALITY_TEST(_name, _expression1, _expression2) \
+    TEST(Simplify, _name) { EXPECT_TRUE(are_equal(_expression1, _expression2)); }
+
 namespace Test {
     namespace {
+        std::vector<Sym::Symbol> simplify(std::vector<Sym::Symbol> expression) {
+            // Sometimes simplified expressions take more space than before, so this is necessary
+            expression.resize(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+
+            std::vector<Sym::Symbol> simplification_memory(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+            expression.data()->simplify(simplification_memory.data());
+            expression.resize(expression.data()->size());
+
+            return expression;
+        }
+
         testing::AssertionResult
         simplifies_to(const std::vector<Sym::Symbol>& expression,
                       const std::vector<Sym::Symbol>& expected_simplification) {
-            auto simplified_expression = expression;
-            // Sometimes simplified expressions take more space than before, so this is necessary
-            simplified_expression.resize(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
-
-            std::vector<Sym::Symbol> simplification_memory(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
-            simplified_expression.data()->simplify(simplification_memory.data());
-            simplified_expression.resize(simplified_expression.data()->size());
+            const auto simplified_expression = simplify(expression);
 
             if (Sym::Symbol::are_expressions_equal(simplified_expression.data(),
                                                    expected_simplification.data())) {
@@ -45,6 +53,38 @@ namespace Test {
 
             return simplifies_to(expression, expected_simplification);
         }
+
+        testing::AssertionResult are_equal(const std::vector<Sym::Symbol>& expression1,
+                                           const std::vector<Sym::Symbol>& expression2) {
+            auto simplified_expression1 = simplify(expression1);
+            auto simplified_expression2 = simplify(expression2);
+
+            if (Sym::Symbol::are_expressions_equal(simplified_expression1.data(),
+                                                   simplified_expression2.data())) {
+                return testing::AssertionSuccess();
+            }
+
+            return testing::AssertionFailure()
+                   << "Tried to simplify and assert equality of expressions:\n  "
+                   << expression1.data()->to_string() << "\n  " << expression2.data()->to_string()
+                   << "\n  but they got simplified to:\n  "
+                   << simplified_expression1 // NOLINT(bugprone-unchecked-optional-access)
+                          .data()
+                          ->to_string()
+                   << "\n  "
+                   << simplified_expression2 // NOLINT(bugprone-unchecked-optional-access)
+                          .data()
+                          ->to_string()
+                   << "\n";
+        }
+
+        testing::AssertionResult are_equal(const std::string& expression1_str,
+                                           const std::string& expression2_str) {
+            const auto expression1 = Parser::parse_function(expression1_str);
+            const auto expression2 = Parser::parse_function(expression2_str);
+
+            return are_equal(expression1, expression2);
+        }
     }
 
     SIMPLIFY_TEST_NO_ACTION(NoActionSubexpressionCandidate,
@@ -57,7 +97,7 @@ namespace Test {
     SIMPLIFY_TEST_NO_ACTION(NoActionKnownConstant, "pi")
     SIMPLIFY_TEST_NO_ACTION(NoActionExp, "e^x")
     SIMPLIFY_TEST_NO_ACTION(NoActionConst, "a")
-    SIMPLIFY_TEST_NO_ACTION(NoActionReciprocal, "132/x")
+    SIMPLIFY_TEST_NO_ACTION(NoActionReciprocal, Sym::num(132) * Sym::inv(Sym::var()))
     SIMPLIFY_TEST_NO_ACTION(NoActionSine, "sin(cos(x))")
     SIMPLIFY_TEST_NO_ACTION(NoActionCosine, "cos(e)")
     SIMPLIFY_TEST_NO_ACTION(NoActionTangen, "tan(x)")
@@ -69,7 +109,7 @@ namespace Test {
     SIMPLIFY_TEST_NO_ACTION(NoActionLn, "ln(5)")
     SIMPLIFY_TEST_NO_ACTION(NoActionLong, "ln(10)^x^10^e^cos(e^pi)^sin(cos(tan(cot(x))))")
 
-    SIMPLIFY_TEST(NumberAddition, "10+5+2+3", "20")
+    SIMPLIFY_TEST(NumberAddition, "10+1+2+3+20+5+9+11+1", "62")
     // Parsing creates `Negation` symbol, so explicit symbol creation necessary
     SIMPLIFY_TEST(NumberNegation, -Sym::num(1), Sym::num(-1))
     SIMPLIFY_TEST(NumberSubtraction, Sym::num(10) - Sym::num(30), Sym::num(-20))
@@ -82,11 +122,11 @@ namespace Test {
     SIMPLIFY_TEST(MultipleOddNegations, "-----x", "-x")
     SIMPLIFY_TEST(IdenticalSubtraction, "(sin(x)+cos(x)-20^e)-(sin(x)+cos(x)-20^e)", "0")
     SIMPLIFY_TEST(OneReciprocal, "tan(x)/1", "tan(x)")
-    SIMPLIFY_TEST(ComplicatedSum, "0+cos(x)^2+10-(e^e^x)+sin(x)^2-0+e^e^x", "11")
+    EQUALITY_TEST(ComplicatedSum, "cos(x)^2+10-x+sin(x)^2+x", "11")
     SIMPLIFY_TEST(LongFraction, "(1+3+4)/(4-5+2/(6-1-4/(2-1-1+1)))", "8")
     // Negation distribution inverses terms order
-    SIMPLIFY_TEST(NegationDistribution, "-(e+x+cos(x))", "-cos(x)-x-e")
-    SIMPLIFY_TEST(NegationDistributionWithNegation, "-(e-pi^x+x+sin(x)-tan(x))",
+    EQUALITY_TEST(NegationDistribution, "-(e+x+cos(x))", "-cos(x)-x-e")
+    EQUALITY_TEST(NegationDistributionWithNegation, "-(e-pi^x+x+sin(x)-tan(x))",
                   "tan(x)-sin(x)-x+pi^x-e")
 
     SIMPLIFY_TEST(OneMultiplicationLeft, "1*x", "x")
@@ -101,7 +141,7 @@ namespace Test {
     SIMPLIFY_TEST(ComplicatedProduct, "1*(1/x)*2*1*(1/10)*x*10/1", "2")
 
     SIMPLIFY_TEST(ZeroPower, "(10*x+pi-cos(sin(x)))^0", "1")
-    SIMPLIFY_TEST(OnePower, "(x+e*cos(x))^1", "x+e*cos(x)")
+    EQUALITY_TEST(OnePower, "(x+e*cos(x))^1", "x+e*cos(x)")
     SIMPLIFY_TEST(PowerOfPower, "((x^10)^pi)^e", "x^(10*pi*e)")
 
     SIMPLIFY_TEST(SineOfArcsine, "sin(arcsin(10))", "10")
@@ -116,6 +156,6 @@ namespace Test {
     SIMPLIFY_TEST(EToLogarithm, "e^ln(x)", "x")
     SIMPLIFY_TEST(PowerInLogarithm, "ln(10^x)", "ln(10)*x")
     SIMPLIFY_TEST(PowerOfLogarithmReciprocal, "10^(1/ln(10))", "e")
-    SIMPLIFY_TEST(PowerWithLogarithm, "e^(sin(x)*x*ln(10)*pi)", "10^(sin(x)*x*pi)")
-    SIMPLIFY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
+    EQUALITY_TEST(PowerWithLogarithm, "e^(sin(x)*x*ln(10)*pi)", "10^(sin(x)*x*pi)")
+    EQUALITY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
 }

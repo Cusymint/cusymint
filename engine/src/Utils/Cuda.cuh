@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <limits>
+#include <stdexcept>
 
 namespace Util {
     /*
@@ -37,6 +38,15 @@ namespace Util {
      * @param n Number of bytes to copy
      */
     __host__ __device__ void copy_mem(void* const dst, const void* const src, const size_t n);
+
+    /*
+     * @brief Works like `copy_mem`, but its arguments can overlap and the original may be changed
+     *
+     * @param dst Destination of the copy
+     * @param src Source of the copy
+     * @param n Number of bytes to move
+     */
+    __host__ __device__ void move_mem(void* const dst, void* const src, const size_t n);
 
     /*
      * @brief Swaps two memory blocks
@@ -95,7 +105,11 @@ namespace Util {
         printf("\n[ERROR]: ");
         printf(head, tail...);
         printf("\n");
+#ifdef __CUDA_ARCH__
         assert(false);
+#else
+        throw std::runtime_error("Fatal error");
+#endif
     }
 }
 
