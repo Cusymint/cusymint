@@ -106,8 +106,6 @@ endif()
 
 # Additional packages
 
-find_package(fmt REQUIRED)
-
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -123,7 +121,13 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/cesanta/mongoose.git
   GIT_TAG 7.8)
 
-FetchContent_MakeAvailable(googletest mongoose)
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG 8.1.1)
+FetchContent_MakeAvailable(fmt)
+
+FetchContent_MakeAvailable(googletest mongoose fmt)
 
 add_library(libmongoose ${mongoose_SOURCE_DIR}/mongoose.c)
 
