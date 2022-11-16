@@ -22,6 +22,7 @@ namespace Sym::Static {
         __device__ Symbol UNIVERSAL_TAN_X[9];
         __device__ Symbol UNIVERSAL_COT_X[9];
         __device__ Symbol UNIVERSAL_DERIVATIVE[7];
+        __device__ Symbol TAN_X_OVER_2[4];
 
         __device__ Symbol E_TO_X[3];
         // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
@@ -32,7 +33,7 @@ namespace Sym::Static {
             COT_X,           UNIVERSAL_SIN_X,
             UNIVERSAL_COS_X, UNIVERSAL_TAN_X,
             UNIVERSAL_COT_X, UNIVERSAL_DERIVATIVE,
-            E_TO_X,
+            TAN_X_OVER_2,    E_TO_X,
         };
 
         __device__ void init_identity(Symbol& dst) { Var::init(dst); }
@@ -62,6 +63,8 @@ namespace Sym::Static {
             Frac<Add<Integer<1>, Pow<Var, Integer<2>>>, Integer<2>>::init(dst, {});
         }
 
+        __device__ void init_tan_x_over_2(Symbol& dst) { Tan<Prod<Num, Var>>::init(dst, {0.5}); }
+
         __device__ void init_e_to_x(Symbol& dst) { Pow<E, Var>::init(dst); }
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
@@ -70,7 +73,7 @@ namespace Sym::Static {
             init_cot_x,           init_universal_sin_x,
             init_universal_cos_x, init_universal_tan_x,
             init_universal_cot_x, init_universal_derivative,
-            init_e_to_x,
+            init_tan_x_over_2,    init_e_to_x,
         };
 
         constexpr size_t STATIC_FUNCTION_COUNT =
@@ -98,6 +101,7 @@ namespace Sym::Static {
     __device__ const Symbol& universal_tan_x() { return *UNIVERSAL_TAN_X; }
     __device__ const Symbol& universal_cot_x() { return *UNIVERSAL_COT_X; }
     __device__ const Symbol& universal_derivative() { return *UNIVERSAL_DERIVATIVE; }
+    __device__ const Symbol& tan_x_over_2() { return *TAN_X_OVER_2; }
 
     __device__ const Symbol& e_to_x() { return *E_TO_X; }
 
