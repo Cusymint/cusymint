@@ -12,6 +12,7 @@
 #include "Integral.cuh"
 #include "InverseTrigonometric.cuh"
 #include "Logarithm.cuh"
+#include "Polynomial.cuh"
 #include "Power.cuh"
 #include "Product.cuh"
 #include "Solution.cuh"
@@ -25,6 +26,7 @@
 
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/OptionalNumber.cuh"
 
 // Also works when `_member_function` returns void
 #define VIRTUAL_CALL(_instance, _member_function, ...)                                     \
@@ -82,6 +84,8 @@
             return (_instance).arccotangent._member_function(__VA_ARGS__);                 \
         case Type::Logarithm:                                                              \
             return (_instance).logarithm._member_function(__VA_ARGS__);                    \
+        case Type::Polynomial:                                                             \
+            return (_instance).polynomial._member_function(__VA_ARGS__);                   \
         case Type::Unknown:                                                                \
             return (_instance).unknown._member_function(__VA_ARGS__);                      \
         }                                                                                  \
@@ -119,6 +123,7 @@ namespace Sym {
         Arctangent arctangent;
         Arccotangent arccotangent;
         Logarithm logarithm;
+        Polynomial polynomial;
 
         constexpr static Sym::Type TYPE = Sym::Type::Symbol;
 
@@ -473,6 +478,17 @@ namespace Sym {
          * @brief Zwraca zapis wyrażenia w formacie TeX-a.
          */
         [[nodiscard]] std::string to_tex() const;
+
+        /*
+         * @brief Checks if `this` is a polynomial. Returns its rank if yes. Otherwise, returns
+         * `-1`.
+         */
+        __host__ __device__ Util::OptionalNumber<ssize_t> is_polynomial(Symbol* const help_space) const;
+
+        /*
+         * @brief If `this` is a monomial, returns its coefficient. Otherwise, returns `NaN`.
+         */
+        __host__ __device__ Util::OptionalNumber<double> get_monomial_coefficient(Symbol* const help_space) const;
     };
 
     /*
@@ -494,6 +510,7 @@ namespace Sym {
      * @return `true` jeśli symbole nie są równe, `false` jeśli są
      */
     __host__ __device__ bool operator!=(const Symbol& sym1, const Symbol& sym2);
+
 }
 
 #endif

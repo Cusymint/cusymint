@@ -35,7 +35,9 @@ namespace Sym {
         Arctangent,
         Arccotangent,
         // Logarithm
-        Logarithm
+        Logarithm,
+        // Polynomials
+        Polynomial
     };
 
     __host__ __device__ inline const char* type_name(Type type) {
@@ -93,6 +95,8 @@ namespace Sym {
             return "Arccotangent";
         case Type::Logarithm:
             return "Logarithm";
+        case Type::Polynomial:
+            return "Polynomial";
         }
 
         return "Invalid type";

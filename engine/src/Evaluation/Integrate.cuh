@@ -7,8 +7,6 @@
 
 #include "Symbol/Symbol.cuh"
 
-#include <optional>
-
 namespace Sym {
     /*
      * @brief Maximum number of symbols in a single expression
