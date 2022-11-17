@@ -65,6 +65,7 @@ add_executable(
 add_executable(
   srvcusymint
   ${SRC_DIR}/main_server.cu ${SERVER_DIR}/JsonFormatter.cu
+  ${SERVER_DIR}/ResponseBuilder.cu
   ${SERVER_DIR}/Server.cu ${SOLVER_DIR}/CachedParser.cu
   ${SOLVER_DIR}/Expression.cu ${SOLVER_DIR}/Solver.cu)
 
