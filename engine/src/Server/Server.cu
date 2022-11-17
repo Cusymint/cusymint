@@ -1,6 +1,5 @@
 #include "Server.cuh"
 
-#include "JsonFormatter.cuh"
 #include "ResponseBuilder.cuh"
 #include "Parser/Parser.cuh"
 #include "Utils/CompileConstants.cuh"
@@ -63,24 +62,7 @@ static void solve(struct mg_rpc_req* r) {
 
     print_debug("[Server] Solve input {}\n", input);
 
-    auto parser_result = global_cached_parser->parse(input);
-
-    print_debug("[Server] Parser result {}\n", parser_result.to_string());
-
-    auto solver_result = global_solver->solve(parser_result);
-
-    auto formatter = JsonFormatter();
-
-    if (solver_result.has_value()) {
-        auto json = formatter.format(&parser_result, &solver_result.value(), nullptr);
-        print_debug("[Server] Solver found solution, returning response {}\n", json);
-        mg_rpc_ok(r, "%s", json.c_str());
-    }
-    else {
-        auto json = formatter.format(&parser_result, nullptr, nullptr);
-        print_debug("[Server] Solver failed to find solution, returning response {}\n", json);
-        mg_rpc_ok(r, "%s", json.c_str());
-    }
+    
     free(input);
 }
 
