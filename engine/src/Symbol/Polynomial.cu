@@ -27,14 +27,7 @@ namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Polynomial)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Polynomial)
 
-    DEFINE_IS_FUNCTION_OF(Polynomial) {
-        for (size_t i = 0; i < expression_count; ++i) {
-            if (!expressions[i]->is(Type::Variable) && !expressions[i]->is_constant()) {
-                return false;
-            }
-        }
-        return true;
-    }
+    DEFINE_INVALID_IS_FUNCTION_OF(Polynomial) // NOLINT
 
     __host__ __device__ bool are_coefficients_equal(const Polynomial& poly1,
                                                     const Polynomial& poly2) {
