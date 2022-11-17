@@ -18,7 +18,7 @@ namespace Sym {
      * @param symbol Symbol which has been checked with `is_polynomial` function
      * @param destination Pointer to memory where `Polynomial` symbol will be created.
      */
-    __host__ __device__ static void make_polynomial_to(const Symbol* const symbol, Symbol* const destination);
+    __host__ __device__ static void make_polynomial_at(const Symbol* const symbol, Symbol* const destination);
 
     __host__ __device__ static void divide_polynomials(Polynomial& numerator, Polynomial& denominator, Polynomial& result);
 

@@ -75,10 +75,10 @@ namespace Sym {
 
         // here we start dividing polynomials
         auto* const poly1 = help_space;
-        Polynomial::make_polynomial_to(numerator, poly1);
+        Polynomial::make_polynomial_at(numerator, poly1);
 
         auto* const poly2 = poly1 + poly1->size();
-        Polynomial::make_polynomial_to(denominator, poly2);
+        Polynomial::make_polynomial_at(denominator, poly2);
 
         auto* const result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
         Polynomial::divide_polynomials(poly1->as<Polynomial>(), poly2->as<Polynomial>(), *result);

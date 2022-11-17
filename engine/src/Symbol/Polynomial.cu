@@ -45,7 +45,7 @@ namespace Sym {
                are_coefficients_equal(*this, symbol->polynomial);
     }
 
-    __host__ __device__ void Polynomial::make_polynomial_to(const Symbol* const symbol,
+    __host__ __device__ void Polynomial::make_polynomial_at(const Symbol* const symbol,
                                                             Symbol* const destination) {
         auto* const term_ranks = reinterpret_cast<ssize_t*>(destination);
         auto* const term_coefficients_dst =
@@ -82,7 +82,7 @@ namespace Sym {
             dst_coefs[term_ranks[0]] = term_coefficients[0];
             break;
         default:
-            Util::crash("Improper use of make_polynomial_to() function on symbol type %s.",
+            Util::crash("Improper use of make_polynomial_at() function on symbol type %s.",
                         type_name(symbol->type()));
         }
 
