@@ -418,7 +418,6 @@ namespace Sym {
                 __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}) {
                     SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
                     size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
-                    Symbol* terms = &dst + count - 1;
                     TreeIterator<SymbolTree> iterator(&tree);
 
                     Symbol* destination_back = &dst + tree.size + count;
@@ -429,6 +428,9 @@ namespace Sym {
                         destination_back = destination;
                         iterator.advance();
                     }
+
+                    Util::move_mem(&dst + count - 1, destination_back,
+                                   &dst + tree.size + count - destination_back);
 
                     for (ssize_t i = static_cast<ssize_t>(count) - 2; i >= 0; --i) {
                         TwoArgOp* const operator_ = &dst + i << TwoArgOp::builder();
