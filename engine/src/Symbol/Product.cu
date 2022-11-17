@@ -49,15 +49,15 @@ namespace Sym {
             numerator = &arg1();
             denominator = &arg2().reciprocal.arg();
         }
-        if (!arg2().is(Type::Reciprocal) && arg1().is(Type::Reciprocal)) {
+        else if (!arg2().is(Type::Reciprocal) && arg1().is(Type::Reciprocal)) {
             numerator = &arg2();
             denominator = &arg1().reciprocal.arg();
         }
         if (numerator == nullptr || denominator == nullptr) {
             return true;
         }
-        ssize_t const rank1 = numerator->is_polynomial(help_space);
-        ssize_t const rank2 = denominator->is_polynomial(help_space);
+        const ssize_t rank1 = numerator->is_polynomial(help_space);
+        const ssize_t rank2 = denominator->is_polynomial(help_space);
 
         if (rank1 < 1 || rank2 < 1 || rank1 <= rank2) {
             return true;
@@ -74,13 +74,13 @@ namespace Sym {
         }
 
         // here we start dividing polynomials
-        auto* poly1 = help_space;
+        auto* const poly1 = help_space;
         Polynomial::make_polynomial_to(numerator, poly1);
 
-        auto* poly2 = poly1 + poly1->size();
+        auto* const poly2 = poly1 + poly1->size();
         Polynomial::make_polynomial_to(denominator, poly2);
 
-        auto* result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
+        auto* const result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
         Polynomial::divide_polynomials(poly1->as<Polynomial>(), poly2->as<Polynomial>(), *result);
 
         if (poly1->as<Polynomial>().is_zero()) {
@@ -88,15 +88,15 @@ namespace Sym {
             return false; // maybe additional simplify required
         }
 
-        Addition* plus = symbol() << Addition::builder();
+        Addition* const plus = symbol() << Addition::builder();
         result->expand_to(&plus->arg1());
         plus->seal_arg1();
 
-        Product* prod = &plus->arg2() << Product::builder();
+        Product* const prod = &plus->arg2() << Product::builder();
         poly1->as<Polynomial>().expand_to(&prod->arg1());
         prod->seal_arg1();
 
-        Reciprocal* rec = &prod->arg2() << Reciprocal::builder();
+        Reciprocal* const rec = &prod->arg2() << Reciprocal::builder();
         poly2->as<Polynomial>().expand_to(&rec->arg());
         rec->seal();
         
