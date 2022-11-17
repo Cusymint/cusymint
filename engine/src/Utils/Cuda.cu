@@ -24,7 +24,7 @@ namespace Util {
         const auto* const src_8 = reinterpret_cast<const uint8_t*>(src);
 
         if constexpr (Consts::DEBUG) {
-            if (dst_8 <= src_8 && dst_8 + n > src || dst_8 >= src_8 && src_8 + n > dst_8) {
+            if (dst_8 <= src_8 && dst_8 + n > src_8 || dst_8 >= src_8 && src_8 + n > dst_8) {
                 crash("Memory blocks passed to copy_mem alias!");
             }
         }
