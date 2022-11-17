@@ -29,10 +29,24 @@ static void interpret(struct mg_rpc_req* r) {
     }
 
     print_debug("[Server] Interpret input {}\n", input);
-
-    auto parser_result = global_cached_parser->parse(input);
     auto formatter = JsonFormatter();
-    auto json = formatter.format(&parser_result, nullptr);
+
+    Expression* parser_result;
+    std::vector<std::string> errors;
+
+    try {
+        *parser_result = global_cached_parser->parse(input);
+    } catch (const std::invalid_argument& e) {
+        errors.push_back(e.what());
+
+        print_debug("[Server] Interpret couldn't parse input {}\n", input);
+    } catch (const std::exception& e) {
+        errors.push_back("Internal error.");
+
+        print_debug("[Server] Interpret couldn't parse input {}\n", input);
+    }
+
+    auto json = formatter.format(parser_result, nullptr, &errors);
 
     print_debug("[Server] Interpret result {}\n", json);
 
@@ -60,12 +74,12 @@ static void solve(struct mg_rpc_req* r) {
     auto formatter = JsonFormatter();
 
     if (solver_result.has_value()) {
-        auto json = formatter.format(&parser_result, &solver_result.value());
+        auto json = formatter.format(&parser_result, &solver_result.value(), nullptr);
         print_debug("[Server] Solver found solution, returning response {}\n", json);
         mg_rpc_ok(r, "%s", json.c_str());
     }
     else {
-        auto json = formatter.format(&parser_result, nullptr);
+        auto json = formatter.format(&parser_result, nullptr, nullptr);
         print_debug("[Server] Solver failed to find solution, returning response {}\n", json);
         mg_rpc_ok(r, "%s", json.c_str());
     }

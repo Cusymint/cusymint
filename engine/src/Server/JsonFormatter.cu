@@ -1,5 +1,6 @@
 #include "JsonFormatter.cuh"
 #include <fmt/core.h>
+#include <fmt/format.h>
 
 inline std::string escape_backslashes(const std::string& str) {
     std::string result;
@@ -23,7 +24,7 @@ inline std::string generate_key_value(const std::string& key, const std::string&
     return fmt::format("{}: {}", quote(key), quote(value));
 }
 
-std::string JsonFormatter::format(Expression* input, Expression* output) const {
+std::string JsonFormatter::format(Expression* input, Expression* output, std::vector<std::string>* errors) const {
     std::string json = "{";
 
     if (input != nullptr) {
@@ -38,6 +39,16 @@ std::string JsonFormatter::format(Expression* input, Expression* output) const {
         auto output_in_tex_pair = generate_key_value("outputInTex", output->to_tex());
 
         json += fmt::format("{}, {},", output_in_utf_pair, output_in_tex_pair);
+    }
+
+    if (errors != nullptr) {
+        auto errors_with_quotes = std::vector<std::string>();
+
+        for (const auto& error : *errors) {
+            errors_with_quotes.push_back(quote(error));
+        }
+
+        json += fmt::format("errors: [{}],", fmt::join(errors_with_quotes, ", "));
     }
 
     if (json.back() == ',') {

@@ -6,5 +6,5 @@
 
 class JsonFormatter {
   public:
-    std::string format(Expression* input, Expression* output) const;
+    std::string format(Expression* input, Expression* output, std::vector<std::string>* errors) const;
 };

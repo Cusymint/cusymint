@@ -5,8 +5,8 @@ dependency_overrides:
     path: ../cusymint_assets
   cusymint_client_interface:
     path: ../cusymint_client/cusymint_client_interface
-  cusymint_client_json_rpc:
-    path: ..\\cusymint_client\\cusymint_client_json_rpc
+  cusymint_client_json_rpc: 
+    path: ../cusymint_client/cusymint_client_json_rpc
   cusymint_client_mock:
     path: ../cusymint_client/cusymint_client_mock
   cusymint_l10n:
