@@ -21,6 +21,12 @@ namespace Sym {
         Util::copy_mem(destination, source, symbol_count * sizeof(Symbol));
     }
 
+    __host__ __device__ void Symbol::move_symbol_sequence(Symbol* const destination,
+                                                          Symbol* const source,
+                                                          size_t symbol_count) {
+        Util::move_mem(destination, source, symbol_count * sizeof(Symbol));
+    }
+
     __host__ __device__ void Symbol::copy_and_reverse_symbol_sequence(Symbol* const destination,
                                                                       const Symbol* const source,
                                                                       size_t symbol_count) {
@@ -59,6 +65,10 @@ namespace Sym {
 
     __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {
         copy_symbol_sequence(destination, this, size());
+    }
+
+    __host__ __device__ void Symbol::move_to(Symbol* const destination) {
+        move_symbol_sequence(destination, this, size());
     }
 
     __host__ __device__ bool Symbol::is_constant() const {
@@ -222,7 +232,8 @@ namespace Sym {
 
     std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
 
-    __host__ __device__ Util::OptionalNumber<ssize_t> Symbol::is_polynomial(Symbol* const help_space) const {
+    __host__ __device__ Util::OptionalNumber<ssize_t>
+    Symbol::is_polynomial(Symbol* const help_space) const {
         auto* ranks = reinterpret_cast<Util::OptionalNumber<ssize_t>*>(help_space);
         for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
             const Symbol* const current = at(i);
@@ -272,7 +283,8 @@ namespace Sym {
         return ranks[0];
     }
 
-    __host__ __device__ Util::OptionalNumber<double> Symbol::get_monomial_coefficient(Symbol* const help_space) const {
+    __host__ __device__ Util::OptionalNumber<double>
+    Symbol::get_monomial_coefficient(Symbol* const help_space) const {
         auto* coefficients = reinterpret_cast<Util::OptionalNumber<double>*>(help_space);
         for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
             const Symbol* const current = at(i);

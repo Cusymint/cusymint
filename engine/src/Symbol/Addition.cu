@@ -90,13 +90,13 @@ namespace Sym {
              last = (last->symbol() - 1)->as_ptr<Addition>()) {
             if (last->arg2().is(Type::NumericConstant) &&
                 last->arg2().as<NumericConstant>().value == 0.0) {
-                last->arg1().copy_to(last->symbol());
+                last->arg1().move_to(last->symbol());
                 continue;
             }
 
             if (last->arg1().is(Type::NumericConstant) &&
                 last->arg1().as<NumericConstant>().value == 0.0) {
-                last->arg2().copy_to(last->symbol());
+                last->arg2().move_to(last->symbol());
             }
         }
     }
@@ -109,7 +109,7 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Negation) {
         if (arg().is(Type::Negation)) {
-            arg().as<Negation>().arg().copy_to(symbol());
+            arg().as<Negation>().arg().move_to(symbol());
             return true;
         }
 

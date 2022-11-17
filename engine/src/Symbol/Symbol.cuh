@@ -254,13 +254,24 @@ namespace Sym {
         }
 
         /*
-         * @brief Copies symbol sequence from `source` to `destination`.
+         * @brief Copies symbol sequence from `source` to `destination`.Source and destination
+         * cannot alias.
          *
          * @param seq Symbol sequence to copy. Doesn't need to be semantically correct.
          * @param n number of symbols to copy
          */
         __host__ __device__ static void copy_symbol_sequence(Symbol* const destination,
                                                              const Symbol* const source, size_t n);
+
+        /*
+         * @brief Moves symbol sequence from `source` to `destination`. Source and destination can
+         * alias.
+         *
+         * @param seq Symbol sequence to copy. Doesn't need to be semantically correct.
+         * @param n number of symbols to copy
+         */
+        __host__ __device__ static void
+        move_symbol_sequence(Symbol* const destination, Symbol* const source, size_t symbol_count);
 
         /*
          * @brief Copies symbol sequence from `source` to `destination` in reverse.
@@ -312,9 +323,16 @@ namespace Sym {
         /*
          * @brief Copies `this` into `destination`. Copies the whole tree.
          *
-         * @param destination Copy destination
+         * @param destination Copy destination. Cannot alias with `this`.
          */
         __host__ __device__ void copy_to(Symbol* const destination) const;
+
+        /*
+         * @brief Copies `this` into `destination`. Copies the whole tree.
+         *
+         * @param destination Copy destination. Can alias with `this`.
+         */
+        __host__ __device__ void move_to(Symbol* const destination);
 
         /*
          * @brief Checks if `this` is an expression composed only of constants
@@ -333,14 +351,14 @@ namespace Sym {
         /*
          * @brief Checks if `this` expression is a function of expressions in `expressions`.
          * More formally, if `this` is expressed as `f(x)` and expressions in `expressions` are
-         * expressed as `g1(x), g2(x), ..., gn(x)`, this function checks if there exists a function
-         * `h(x1, x2, ..., xn)`, such that `f(x) = h(g1(x), g2(x), ..., gn(x))`.
+         * expressed as `g1(x), g2(x), ..., gn(x)`, this function checks if there exists a
+         * function `h(x1, x2, ..., xn)`, such that `f(x) = h(g1(x), g2(x), ..., gn(x))`.
          *
          * @param expressions Expressions to check
          *
-         * @return `true` if `this` is a function of `expressions`, false otherwise. Returns false
-         * also when `this` is constant. In particular, it returns true if `this` is a constant
-         * expression
+         * @return `true` if `this` is a function of `expressions`, false otherwise. Returns
+         * false also when `this` is constant. In particular, it returns true if `this` is a
+         * constant expression
          */
         template <class... Args, std::enable_if_t<(std::is_same_v<Args, Symbol> && ...), int> = 0>
         [[nodiscard]] __host__ __device__ bool is_function_of(const Args&... expressions) const {
@@ -349,8 +367,9 @@ namespace Sym {
         }
 
         /*
-         * @brief Another version of `is_function_of` that is the same as the functions defined in
-         * concrete symbols. It should be called only when the templated version cannot be used.
+         * @brief Another version of `is_function_of` that is the same as the functions defined
+         * in concrete symbols. It should be called only when the templated version cannot be
+         * used.
          *
          * @param expressions Array of pointers to expressions to check
          * @param expression_count Number of expressions in `expressions`
@@ -372,7 +391,8 @@ namespace Sym {
                                                                 const Symbol& expression) const;
 
         /*
-         * @brief Removes holes from symbol tree and copies it in reverse order to `destination`.
+         * @brief Removes holes from symbol tree and copies it in reverse order to
+         * `destination`.
          *
          * @param destination Location to which the tree is going to be copied
          *
@@ -383,16 +403,16 @@ namespace Sym {
         /*
          * @brief Removes holes from symbol tree and copies it to `destination`.
          *
-         * @param destination Location to which the tree is going to be copied. Cannot be same as
-         * `this`.
+         * @param destination Location to which the tree is going to be copied. Cannot be same
+         * as `this`.
          *
          * @return New size of the symbol tree
          */
         __host__ __device__ size_t compress_to(Symbol& destination);
 
         /*
-         * @brief Zwraca funkcję podcałkową jeśli `this` jest całką. Undefined behavior w przeciwnym
-         * wypadku.
+         * @brief Zwraca funkcję podcałkową jeśli `this` jest całką. Undefined behavior w
+         * przeciwnym wypadku.
          *
          * @return Wskaźnik do funkcji podcałkowej
          */
@@ -443,8 +463,8 @@ namespace Sym {
         /*
          * @brief Jeśli ten symbol jest typu T, to wykonaj na nim `function`
          *
-         * @param function Funkcja która się wykona jeśli `this` jest typu T. Jako argument podawane
-         * jest `this`
+         * @param function Funkcja która się wykona jeśli `this` jest typu T. Jako argument
+         * podawane jest `this`
          */
         template <class T, class F> __host__ __device__ void if_is_do(F function) {
             if (T::TYPE == type()) {
@@ -455,8 +475,8 @@ namespace Sym {
         /*
          * @brief Jeśli ten symbol jest typu T, to wykonaj na nim `function`
          *
-         * @param function Funkcja która się wykona jeśli `this` jest typu T. Jako argument podawane
-         * jest `this`
+         * @param function Funkcja która się wykona jeśli `this` jest typu T. Jako argument
+         * podawane jest `this`
          */
         template <class T, class F> __host__ __device__ void if_is_do(F function) const {
             if (T::TYPE == type()) {
@@ -476,8 +496,8 @@ namespace Sym {
         are_expressions_equal(const Symbol* const expr1, const Symbol* const expr2);
 
         /*
-         * @brief Compares two expressions. Size fields in expressions do not need to be valid, but
-         * have to indicate a size that is not smaller than the real size.
+         * @brief Compares two expressions. Size fields in expressions do not need to be valid,
+         * but have to indicate a size that is not smaller than the real size.
          *
          * @param expr1 First expression
          * @param expr2 Second expression
@@ -505,12 +525,14 @@ namespace Sym {
          * @brief Checks if `this` is a polynomial. Returns its rank if yes. Otherwise, returns
          * `-1`.
          */
-        __host__ __device__ Util::OptionalNumber<ssize_t> is_polynomial(Symbol* const help_space) const;
+        __host__ __device__ Util::OptionalNumber<ssize_t>
+        is_polynomial(Symbol* const help_space) const;
 
         /*
          * @brief If `this` is a monomial, returns its coefficient. Otherwise, returns `NaN`.
          */
-        __host__ __device__ Util::OptionalNumber<double> get_monomial_coefficient(Symbol* const help_space) const;
+        __host__ __device__ Util::OptionalNumber<double>
+        get_monomial_coefficient(Symbol* const help_space) const;
     };
 
     /*
@@ -532,7 +554,6 @@ namespace Sym {
      * @return `true` jeśli symbole nie są równe, `false` jeśli są
      */
     __host__ __device__ bool operator!=(const Symbol& sym1, const Symbol& sym2);
-
 }
 
 #endif

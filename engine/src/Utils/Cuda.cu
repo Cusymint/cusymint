@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "Utils/CompileConstants.cuh"
+
 namespace Util {
     __host__ __device__ bool compare_mem(const void* const mem1, const void* const mem2,
                                          const size_t n) {
@@ -20,6 +22,12 @@ namespace Util {
     __host__ __device__ void copy_mem(void* const dst, const void* const src, const size_t n) {
         auto* const dst_8 = reinterpret_cast<uint8_t*>(dst);
         const auto* const src_8 = reinterpret_cast<const uint8_t*>(src);
+
+        if constexpr (Consts::DEBUG) {
+            if (dst_8 <= src_8 && dst_8 + n > src || dst_8 >= src_8 && src_8 + n > dst_8) {
+                crash("Memory blocks passed to copy_mem alias!");
+            }
+        }
 
         for (size_t i = 0; i < n; ++i) {
             dst_8[i] = src_8[i];

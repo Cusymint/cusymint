@@ -31,7 +31,7 @@ namespace Util {
                                          const size_t n);
 
     /*
-     * @brief GPU compatible alternative to memcpy
+     * @brief GPU compatible alternative to memcpy. `dst` and `src` cannot alias.
      *
      * @param dst Destination of the copy
      * @param src Source of the copy

@@ -198,13 +198,13 @@ namespace Sym {
              last = (last->symbol() - 1)->as_ptr<Product>()) {
             if (last->arg2().is(Type::NumericConstant) &&
                 last->arg2().numeric_constant.value == 1.0) {
-                last->arg1().copy_to(last->symbol());
+                last->arg1().move_to(last->symbol());
                 continue;
             }
 
             if (last->arg1().is(Type::NumericConstant) &&
                 last->arg1().numeric_constant.value == 1.0) {
-                last->arg2().copy_to(last->symbol());
+                last->arg2().move_to(last->symbol());
             }
         }
     }
