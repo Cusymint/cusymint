@@ -1,12 +1,17 @@
 #include <gtest/gtest.h>
 
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "Evaluation/Integrate.cuh"
 #include "Parser/Parser.cuh"
+#include "Symbol/Integral.cuh"
 #include "Symbol/MetaOperators.cuh"
 #include "Symbol/Product.cuh"
+#include "Symbol/Solution.cuh"
+#include "Symbol/SubexpressionCandidate.cuh"
+#include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Symbol/Variable.cuh"
 
@@ -87,6 +92,7 @@ namespace Test {
         }
     }
 
+    // Init
     META_TEST_INIT(Variable, Sym::Var, "x")
     META_TEST_INIT(Pi, Sym::Pi, "pi")
     META_TEST_INIT(E, Sym::E, "e")
@@ -111,8 +117,13 @@ namespace Test {
     META_TEST_INIT(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Mul<Sym::Num, Sym::Var>>>, Sym::E, Sym::Integer<1>>), "x+(cos(ln(2*x))+(e+1))", 2)
     META_TEST_INIT(LongProduct, (Sym::Prod<Sym::Add<Sym::Var, Sym::Num>, Sym::Var, Sym::Pow<Sym::E, Sym::Var>>), "(x+5.6)*(x*e^x)", 5.6)
     META_TEST_INIT(EToXTower, (Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Var>>>>>>), "e^e^e^e^e^e^x")
-    // solution, candidate, integral, vacancy, singleIntegralVacancy
-    
+    // Solution, Candidate, Integral, Vacancy, SingleIntegralVacancy
+    META_TEST_INIT(Solution, Sym::SolutionOfIntegral<Sym::Neg<Sym::Cos<Sym::Var>>>, Sym::solution(-Sym::cos(Sym::var())), Sym::integral(Sym::var()).data()->as<Sym::Integral>())
+    META_TEST_INIT(SubexpressionCandidate, Sym::Candidate<Sym::Neg<Sym::Cos<Sym::Var>>>, Sym::first_expression_candidate(-Sym::cos(Sym::var())), (cuda::std::make_tuple(0UL, 0UL, 1)))
+    META_TEST_INIT(Integral, Sym::Int<Sym::Neg<Sym::Cos<Sym::Var>>>, Sym::integral(-Sym::cos(Sym::var())), Sym::integral(Sym::var()).data()->as<Sym::Integral>())
+    META_TEST_INIT(SubexpressionVacancy, Sym::Vacancy, Sym::single_integral_vacancy(), 0, 1, 0)
+    META_TEST_INIT(SingleVacancy, Sym::SingleIntegralVacancy, Sym::single_integral_vacancy())
+
     // From::Create::WithMap
     TEST(MetaOperatorsInitTest, FromCreateWithMap) { // NOLINT
         auto expression = Parser::parse_function("x+4+x^6+e^(2*x)+9+cos(sin(x))+2*u");
@@ -183,7 +194,9 @@ namespace Test {
     META_TEST_MATCH(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Const>>, Sym::E, Sym::Integer<1>>), "x+(cos(ln(2+3+c))+(e+1))")
     META_TEST_MATCH(LongProduct, (Sym::Prod<Sym::Add<Sym::Var, Sym::Num>, Sym::Var, Sym::Pow<Sym::E, Sym::Var>>), "(x+5.6)*(x*e^x)")
     META_TEST_MATCH(EToXTower, (Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Var>>>>>>), "e^e^e^e^e^e^x")
-        
-    // solution, candidate, integral, vacancy, singleIntegralVacancy
-    
+    // Solution, Candidate, Integral, Vacancy, SingleIntegralVacancy
+    META_TEST_MATCH(Solution, Sym::SolutionOfIntegral<Sym::Neg<Sym::Cos<Sym::Var>>>, Sym::solution(-Sym::cos(Sym::var())))
+    META_TEST_MATCH(SubexpressionCandidate, Sym::Candidate<Sym::Neg<Sym::Cos<Sym::Var>>>, Sym::first_expression_candidate(-Sym::cos(Sym::var())))
+    META_TEST_MATCH(Integral, Sym::Int<Sym::Neg<Sym::Cos<Sym::Var>>>, Sym::integral(-Sym::cos(Sym::var())))
+    META_TEST_MATCH(SingleVacancy, Sym::SingleIntegralVacancy, Sym::single_integral_vacancy())
 }
