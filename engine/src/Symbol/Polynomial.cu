@@ -1,11 +1,14 @@
+#include "Polynomial.cuh"
+
+#include <fmt/core.h>
+
+#include "Addition.cuh"
 #include "Macros.cuh"
 #include "MetaOperators.cuh"
-#include "Polynomial.cuh"
 #include "Symbol.cuh"
-#include "Symbol/Addition.cuh"
-#include "Symbol/SymbolType.cuh"
+#include "SymbolType.cuh"
+
 #include "Utils/CompileConstants.cuh"
-#include <fmt/core.h>
 
 namespace {
     __host__ __device__ size_t size_from_rank(size_t rank) {
@@ -25,9 +28,29 @@ namespace Sym {
 
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Polynomial)
     DEFINE_INTO_DESTINATION_OPERATOR(Polynomial)
+    DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(Polynomial)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Polynomial)
+    DEFINE_INVALID_IS_FUNCTION_OF(Polynomial)
 
-    DEFINE_INVALID_IS_FUNCTION_OF(Polynomial) // NOLINT
+    DEFINE_COMPARE_TO(Polynomial) {
+        if (rank < other.as<Polynomial>().rank) {
+            return Util::Order::Less;
+        }
+
+        if (rank > other.as<Polynomial>().rank) {
+            return Util::Order::Greater;
+        }
+
+        for (size_t i = 0; i < rank; ++i) {
+            const auto rank_compare = Util::compare(rank, other.as<Polynomial>().rank);
+
+            if (rank_compare != Util::Order::Equal) {
+                return rank_compare;
+            }
+        }
+
+        return Util::Order::Equal;
+    }
 
     __host__ __device__ bool are_coefficients_equal(const Polynomial& poly1,
                                                     const Polynomial& poly2) {
@@ -40,8 +63,8 @@ namespace Sym {
         return true;
     }
 
-    DEFINE_COMPARE(Polynomial) {
-        return BASE_COMPARE(Polynomial) && symbol->polynomial.rank == rank &&
+    DEFINE_ARE_EQUAL(Polynomial) {
+        return BASE_ARE_EQUAL(Polynomial) && symbol->polynomial.rank == rank &&
                are_coefficients_equal(*this, symbol->polynomial);
     }
 
@@ -49,8 +72,10 @@ namespace Sym {
                                                             Symbol* const destination) {
         auto* const term_ranks = reinterpret_cast<Util::OptionalNumber<ssize_t>*>(destination);
         auto* const term_coefficients_dst =
-            destination + symbol->size() * sizeof(Util::OptionalNumber<ssize_t>) / sizeof(Symbol) + 1;
-        auto* const term_coefficients = reinterpret_cast<Util::OptionalNumber<double>*>(term_coefficients_dst);
+            destination + symbol->size() * sizeof(Util::OptionalNumber<ssize_t>) / sizeof(Symbol) +
+            1;
+        auto* const term_coefficients =
+            reinterpret_cast<Util::OptionalNumber<double>*>(term_coefficients_dst);
         auto* const dst_coefs = reinterpret_cast<double*>(term_coefficients + symbol->size());
 
         symbol->is_polynomial(destination);
