@@ -80,7 +80,7 @@ namespace Test {
             std::vector<Sym::Symbol> expression(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
             T::init(*expression.data(), {args...});
             expression.resize(expression[0].size());
-            EXPECT_TRUE(Sym::Symbol::compare_trees(expression.data(), expected_expression.data()))
+            EXPECT_TRUE(Sym::Symbol::are_expressions_equal(expression.data(), expected_expression.data()))
                 << "Expressions do not match:\n"
                 << expression.data()->to_string() << " <- got,\n"
                 << expected_expression.data()->to_string() << " <- expected\n";
@@ -128,17 +128,20 @@ namespace Test {
     TEST(MetaOperatorsInitTest, FromCreateWithMap) { // NOLINT
         auto expression = Parser::parse_function("x+4+x^6+e^(2*x)+9+cos(sin(x))+2*u");
         auto expected_expression = Parser::parse_function(
-            "arcsin(2*u)*arcsin(cos(sin(x)))*arcsin(9)*arcsin(e^(2*x))*arcsin(x^6)*arcsin(4)*arcsin(x)");
+            "arcsin(x)*arcsin(4)*arcsin(x^6)*arcsin(e^(2*x))*arcsin(9)*arcsin(cos(sin(x)))*arcsin(2*u)");
 
         size_t const count = expression.data()->as<Sym::Addition>().tree_size();
         std::vector<Sym::Symbol> destination(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
 
-        Sym::From<Sym::Addition>::Create<Sym::Product>::WithMap<Sym::Arcsine>::init(
+        Sym::From<Sym::Addition>::Create<Sym::Product>::WithMap<Sym::Arcsin>::init(
             *destination.data(), {{expression.data()->as<Sym::Addition>(), count}});
 
         destination.resize(destination.data()->size());
 
-        EXPECT_TRUE(Sym::Symbol::compare_trees(destination.data(), expected_expression.data()));
+        EXPECT_TRUE(Sym::Symbol::are_expressions_equal(destination.data(), expected_expression.data())) 
+            << "Expressions do not match:\n"
+            << destination.data()->to_string() << " <- got,\n"
+            << expected_expression.data()->to_string() << " <- expected\n";
     }
 
     // Match
