@@ -206,8 +206,8 @@ namespace Sym {
             return -1;
         }
 
-        ssize_t const rank1 = ranks[&arg1() - symbol()];
-        ssize_t const rank2 = ranks[&arg2() - symbol()];
+        const ssize_t rank1 = ranks[&arg1() - symbol()];
+        const ssize_t rank2 = ranks[&arg2() - symbol()];
 
         return rank1 < 0 || rank2 < 0 ? -1 : (rank1 + rank2);
     }

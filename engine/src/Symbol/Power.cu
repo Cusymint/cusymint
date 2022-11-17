@@ -148,7 +148,7 @@ namespace Sym {
 
     __host__ __device__ ssize_t Power::is_polynomial(const ssize_t* const  /*ranks*/) const {
         if (arg1().is(Type::Variable) && arg2().is(Type::NumericConstant)) {
-            double const rank = arg2().numeric_constant.value;
+            const double rank = arg2().numeric_constant.value;
             if (rank >= 0 && rank == abs(rank)) {
                 return static_cast<ssize_t>(rank);
             }
