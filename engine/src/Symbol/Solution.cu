@@ -8,6 +8,8 @@
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Solution)
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Solution)
+    DEFINE_INVALID_SEAL_WHOLE(Solution)
 
     DEFINE_COMPRESS_REVERSE_TO(Solution) {
         size_t new_substitutions_size = 0;
@@ -34,8 +36,6 @@ namespace Sym {
                symbol->solution.substitution_count == substitution_count &&
                symbol->solution.expression_offset == expression_offset;
     }
-
-    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Solution)
 
     DEFINE_IS_FUNCTION_OF(Solution) {
         return expression()->is_function_of(expressions, expression_count);

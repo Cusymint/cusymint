@@ -3,9 +3,10 @@
 
 #include "Symbol.cuh"
 
+#include <type_traits>
+
 #include "Symbol/TreeIterator.cuh"
 #include "Utils/Meta.cuh"
-#include <type_traits>
 
 #define DEFINE_GET_SAME                                                    \
     template <typename U = void, std::enable_if_t<HAS_SAME, U>* = nullptr> \

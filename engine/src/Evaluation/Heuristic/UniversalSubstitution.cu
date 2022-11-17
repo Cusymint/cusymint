@@ -12,8 +12,9 @@ namespace Sym::Heuristic {
     __device__ void do_universal_substitution(const SubexpressionCandidate& integral,
                                               const ExpressionArray<>::Iterator& integral_dst,
                                               const ExpressionArray<>::Iterator& /*expression_dst*/,
-                                              Symbol& help_space) {
+                                              Symbol& /*help_space*/) {
         const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
+            Util::Pair(&Static::tan_x_over_2(), &Static::identity()),
             Util::Pair(&Static::sin_x(), &Static::universal_sin_x()),
             Util::Pair(&Static::cos_x(), &Static::universal_cos_x()),
             Util::Pair(&Static::tan_x(), &Static::universal_tan_x()),
@@ -24,7 +25,7 @@ namespace Sym::Heuristic {
         new_candidate->copy_metadata_from(integral);
 
         integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-            substitution_pairs, Static::universal_derivative(), *integral_dst->child(), help_space);
+            substitution_pairs, Static::universal_derivative(), *integral_dst->child());
 
         new_candidate->seal();
     }

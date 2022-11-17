@@ -17,11 +17,11 @@ namespace Sym::Static {
         __device__ Symbol TAN_X[2];
         __device__ Symbol COT_X[2];
 
-        __device__ Symbol UNIVERSAL_SIN_X[9];
-        __device__ Symbol UNIVERSAL_COS_X[11];
-        __device__ Symbol UNIVERSAL_TAN_X[9];
-        __device__ Symbol UNIVERSAL_COT_X[9];
-        __device__ Symbol UNIVERSAL_DERIVATIVE[7];
+        __device__ Symbol UNIVERSAL_SIN_X[10];
+        __device__ Symbol UNIVERSAL_COS_X[13];
+        __device__ Symbol UNIVERSAL_TAN_X[11];
+        __device__ Symbol UNIVERSAL_COT_X[11];
+        __device__ Symbol UNIVERSAL_DERIVATIVE[8];
         __device__ Symbol TAN_X_OVER_2[4];
 
         __device__ Symbol E_TO_X[3];

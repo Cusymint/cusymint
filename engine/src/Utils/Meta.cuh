@@ -5,6 +5,11 @@
 
 namespace Util {
     /*
+     * @brief Structure sometimes useful in metaprogramming
+     */
+    struct Empty {};
+
+    /*
      * @brief Returns length of a static array
      *
      * @tparam T Type of array elements (autodeduced)

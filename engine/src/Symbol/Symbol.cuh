@@ -415,6 +415,14 @@ namespace Sym {
         __host__ __device__ bool simplify_in_place(Symbol* const help_space);
 
         /*
+         * @brief Recalculates sizes and argument offsets in the given expression. There cannot be
+         * any holes in the expression.
+         *
+         * @param expr Expression to seal
+         */
+        __host__ __device__ static void seal_whole(Symbol& expr, const size_t size);
+
+        /*
          * @brief Substitutes all occurences of variable with `symbol`
          *
          * @param symbol Symbol to substitute variables with, cannot have any children

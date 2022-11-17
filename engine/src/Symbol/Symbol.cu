@@ -80,6 +80,14 @@ namespace Sym {
         return VIRTUAL_CALL(*this, is_function_of, expressions, expression_count);
     }
 
+    __host__ __device__ void Symbol::seal_whole(Symbol& expr, const size_t size) {
+        expr.size() = BUILDER_SIZE;
+
+        for (size_t i = size; i > 0; --i) {
+            VIRTUAL_CALL(expr[i - 1], seal_whole);
+        }
+    }
+
     __host__ __device__ void
     Symbol::substitute_with_var_with_holes(Symbol& destination, const Symbol& expression) const {
         ssize_t first_var_offset = expression.first_var_occurence();

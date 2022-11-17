@@ -14,16 +14,19 @@ namespace Sym {
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(NumericConstant);
     DEFINE_IS_FUNCTION_OF(NumericConstant) { return true; } // NOLINT
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(NumericConstant)
+    DEFINE_SIMPLE_SEAL_WHOLE(NumericConstant)
 
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(KnownConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(KnownConstant);
     DEFINE_IS_FUNCTION_OF(KnownConstant) { return true; } // NOLINT
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(KnownConstant)
+    DEFINE_SIMPLE_SEAL_WHOLE(KnownConstant)
 
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(UnknownConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(UnknownConstant);
     DEFINE_IS_FUNCTION_OF(UnknownConstant) { return true; } // NOLINT
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(UnknownConstant)
+    DEFINE_SIMPLE_SEAL_WHOLE(UnknownConstant)
 
     DEFINE_COMPARE(NumericConstant) {
         return BASE_COMPARE(NumericConstant) && symbol->numeric_constant.value == value;

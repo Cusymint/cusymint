@@ -19,17 +19,16 @@ namespace Sym {
     union Symbol;
 }
 
-#define COMPRESS_REVERSE_TO_HEADER(_compress_reverse_to) \
-    __host__ __device__ size_t _compress_reverse_to(Symbol* const destination) const
+#define COMPRESS_REVERSE_TO_HEADER(_fname) \
+    __host__ __device__ size_t _fname(Symbol* const destination) const
 
-#define COMPARE_HEADER(_compare) __host__ __device__ bool _compare(const Symbol* const symbol) const
+#define COMPARE_HEADER(_fname) __host__ __device__ bool _fname(const Symbol* const symbol) const
 
-#define SIMPLIFY_IN_PLACE_HEADER(_simplify_in_place) \
-    __host__ __device__ bool _simplify_in_place(Symbol* const help_space)
+#define SIMPLIFY_IN_PLACE_HEADER(_fname) __host__ __device__ bool _fname(Symbol* const help_space)
 
-#define IS_FUNCTION_OF_HEADER(_is_function_of)                                       \
-    __host__ __device__ bool _is_function_of(const Symbol* const* const expressions, \
-                                             const size_t expression_count) const
+#define IS_FUNCTION_OF_HEADER(_fname)                                       \
+    __host__ __device__ bool _fname(const Symbol* const* const expressions, \
+                                    const size_t expression_count) const
 
 #define PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(_fname) \
     __host__ __device__ void _fname(Util::StaticStack<Symbol*>& stack)
@@ -37,6 +36,8 @@ namespace Sym {
 #define DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
     PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(           \
         _name::put_children_on_stack_and_propagate_additional_size)
+
+#define SEAL_WHOLE_HEADER(_fname) __host__ __device__ void _fname()
 
 #define DECLARE_SYMBOL(_name, _simple)                                            \
     struct _name {                                                                \
@@ -90,7 +91,8 @@ namespace Sym {
         SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                              \
         IS_FUNCTION_OF_HEADER(is_function_of);                                    \
         PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                        \
-            put_children_on_stack_and_propagate_additional_size);
+            put_children_on_stack_and_propagate_additional_size);                 \
+        SEAL_WHOLE_HEADER(seal_whole);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.
 // standard-layout jest wymagany by zagwarantować, że wszystkie symbole mają pole `type` na offsecie
@@ -119,10 +121,10 @@ namespace Sym {
 
 #define DEFINE_IS_FUNCTION_OF(_name) IS_FUNCTION_OF_HEADER(_name::is_function_of)
 
-#define DEFINE_INVALID_IS_FUNCTION_OF(_name)                                         \
-    IS_FUNCTION_OF_HEADER(_name::is_function_of) {                                   \
-        Util::crash("Is function of called on %s, this should not happen!", #_name); \
-        return false; /* Just to silence warnings */                                 \
+#define DEFINE_INVALID_IS_FUNCTION_OF(_name)                                            \
+    IS_FUNCTION_OF_HEADER(_name::is_function_of) /* NOLINT(misc-unused-parameters) */ { \
+        Util::crash("Is function of called on %s, this should not happen!", #_name);    \
+        return false; /* Just to silence warnings */                                    \
     }
 
 #define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                       \
@@ -223,6 +225,16 @@ namespace Sym {
         return &destination.as<_name>();                                               \
     }
 
+#define DEFINE_SEAL_WHOLE(_name) SEAL_WHOLE_HEADER(_name::seal_whole)
+
+#define DEFINE_SIMPLE_SEAL_WHOLE(_name) \
+    DEFINE_SEAL_WHOLE(_name) { size = 1; }
+
+#define DEFINE_INVALID_SEAL_WHOLE(_name)                                                 \
+    DEFINE_SEAL_WHOLE(_name) {                                                           \
+        Util::crash("Trying to call seal_whole on '" #_name "', which is not defined."); \
+    }
+
 #define ONE_ARGUMENT_OP_SYMBOL                     \
     __host__ __device__ const Symbol& arg() const; \
     __host__ __device__ Symbol& arg();             \
@@ -245,7 +257,9 @@ namespace Sym {
     DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
         stack.push(&arg());                                                                      \
         arg().additional_required_size() += additional_required_size;                            \
-    }
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_SEAL_WHOLE(_name) { seal(); }
 
 #define TWO_ARGUMENT_OP_SYMBOL                                                                 \
     /* W 95% przypadków second_arg_offset == 1 + arg1().size(), ale nie zawsze                \
@@ -357,6 +371,11 @@ namespace Sym {
         stack.push(&arg1());                                                                     \
         stack.push(&arg2());                                                                     \
         arg2().additional_required_size() += additional_required_size;                           \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_SEAL_WHOLE(_name) {                                                                   \
+        seal_arg1();                                                                             \
+        seal();                                                                                  \
     }
 
 #define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
@@ -431,15 +450,17 @@ namespace Sym {
         }                                                                                                  \
     }                                                                                                      \
                                                                                                            \
+    /* In every sum, number of terms is equal to number of `+` signs plus 1.                               \
+     * When an addition tree is simplified, all `Addition` symbols are placed                              \
+     * in a row, so it suffices to calculate address of the last `Addition`                                \
+     * symbol. The offset between `this` and last plus 1 is the number of `+`                              \
+     * signs in the sum. Thus, the offset plus 2 is the number of terms in                                 \
+     * the sum. Conversion to `Symbol*` with `symbol()` function is                                        \
+     * necessary, because                                                                                  \
+     * `_name`                                                                                             \
+     * structure may be smaller than `Symbol` union.                                                       \
+     */                                                                                                    \
     __host__ __device__ size_t _name::tree_size() {                                                        \
-        /* In every sum, number of terms is equal to number of `+` signs plus 1.                           \
-         * When an addition tree is simplified, all `Addition` symbols are placed in a row,                \
-         * so it suffices to calculate address of the last `Addition` symbol. The offset between           \
-         * `this` and last plus 1 is the number of `+` signs in the sum.                                   \
-         * Thus, the offset plus 2 is the number of terms in the sum.                                      \
-         * Conversion to `Symbol*` with `symbol()` function is necessary, because `_name`                  \
-         * structure may be smaller than `Symbol` union.                                                   \
-         */                                                                                                \
         return last_in_tree()->symbol() - symbol() + 2;                                                    \
     }
 
