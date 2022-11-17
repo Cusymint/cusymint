@@ -125,7 +125,7 @@ namespace Sym {
                 return false;
             }
 
-            From<Addition>::Create<Addition>::WithMap<Negation>::init(
+            From<Addition>::Create<Addition>::WithMap<Neg>::init(
                 *help_space, {{arg().as<Addition>(), term_count}});
             help_space->copy_to(symbol());
 

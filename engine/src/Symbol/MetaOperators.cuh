@@ -410,7 +410,7 @@ namespace Sym {
      */
     template <class SymbolTree> struct From {
         template <class TwoArgOp> struct Create {
-            template <class OneArgOp> struct WithMap {
+            template <template <class Inner> class OneArgOp> struct WithMap {
                 using AdditionalArgs = cuda::std::tuple<
                     cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
                 static constexpr bool HAS_SAME = false;
@@ -421,11 +421,12 @@ namespace Sym {
                     Symbol* terms = &dst + count - 1;
                     TreeIterator<SymbolTree> iterator(&tree);
 
+                    Symbol* destination_back = &dst + tree.size + count;
                     while (iterator.is_valid()) {
-                        OneArgOp* operator_ = terms << OneArgOp::builder();
-                        iterator.current()->copy_to(&operator_->arg());
-                        operator_->seal();
-                        terms += terms->size();
+                        Symbol* const destination =
+                            destination_back - iterator.current()->size() - 1;
+                        OneArgOp<Copy>::init(*destination, {*iterator.current()});
+                        destination_back = destination;
                         iterator.advance();
                     }
 
