@@ -7,8 +7,6 @@
 #include <limits>
 
 namespace Util {
-    constexpr double EPS = 1e-10;
-
     /*
      * @brief The number of threads running in the current kernel
      */

@@ -4,7 +4,7 @@
 #include "Symbol.cuh"
 #include "Symbol/Addition.cuh"
 #include "Symbol/SymbolType.cuh"
-#include "Utils/Cuda.cuh"
+#include "Utils/CompileConstants.cuh"
 #include <fmt/core.h>
 
 namespace {
@@ -160,7 +160,7 @@ namespace Sym {
 
     __host__ __device__ void Polynomial::make_proper() {
         auto i = static_cast<ssize_t>(rank);
-        while (i > 0 && abs(coefficients()[i--]) < Util::EPS) {
+        while (i > 0 && abs(coefficients()[i--]) < Consts::EPS) {
             --rank;
         }
         size = size_from_rank(rank);

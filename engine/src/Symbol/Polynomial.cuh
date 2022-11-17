@@ -26,7 +26,7 @@ namespace Sym {
     __host__ __device__ inline size_t expanded_size() const;
     __host__ __device__ static size_t expanded_size_from_rank(size_t rank);
 
-    __host__ __device__ bool is_zero() const { return rank == 0 && coefficients()[0] < Util::EPS; }
+    __host__ __device__ bool is_zero() const { return rank == 0 && coefficients()[0] < Consts::EPS; }
 
     __host__ __device__ void make_proper();
 
