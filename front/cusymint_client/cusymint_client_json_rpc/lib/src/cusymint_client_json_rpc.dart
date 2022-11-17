@@ -16,6 +16,15 @@ class CusymintClientJsonRpc implements CusymintClient {
 
   @override
   Future<Response> solveIntegral(Request request) async {
+    return await _handleRequest(_solveMethodName, request);
+  }
+
+  @override
+  Future<Response> interpretIntegral(Request request) async {
+    return await _handleRequest(_interpretMethodName, request);
+  }
+
+  Future<Response> _handleRequest(String methodName, Request request) async {
     var socket = WebSocketChannel.connect(uri);
     var client = json_rpc.Client(socket.cast<String>());
 
@@ -24,43 +33,7 @@ class CusymintClientJsonRpc implements CusymintClient {
     try {
       // this should return result, but for some reason it doesn't
       final result = await client.sendRequest(
-        _solveMethodName,
-        {'input': request.integralToBeSolved},
-      );
-
-      final errors = result['errors'] != null
-          ? (result['errors'] as List)
-              .map((e) => ResponseError(e['errorMessage']))
-              .toList()
-          : List<ResponseError>.empty();
-
-      return Response(
-        inputInUtf: result['inputInUtf'],
-        inputInTex: result['inputInTex'],
-        outputInUtf: result['outputInUtf'],
-        outputInTex: result['outputInTex'],
-        errors: errors,
-      );
-    } on json_rpc.RpcException catch (e) {
-      return Response(
-        errors: [ResponseError(e.message)],
-      );
-    } finally {
-      client.close();
-    }
-  }
-
-  @override
-  Future<Response> interpretIntegral(Request request) async {
-    var socket = WebSocketChannel.connect(uri);
-    var client = json_rpc.Client(socket.cast<String>());
-
-    unawaited(client.listen());
-
-    try {
-      // this returns result
-      final result = await client.sendRequest(
-        _interpretMethodName,
+        methodName,
         {'input': request.integralToBeSolved},
       );
 

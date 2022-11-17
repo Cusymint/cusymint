@@ -41,6 +41,22 @@ void main() {
     expect(response.errors, isEmpty);
   }, skip: true);
 
+  test('Interpret method returns errors', () async {
+    final client = CusymintClientJsonRpc(uri: uri);
+
+    final request = Request('unparsable');
+
+    final response = await client.interpretIntegral(request);
+
+    expect(response.inputInUtf, isNull);
+    expect(response.inputInTex, isNull);
+
+    expect(response.outputInUtf, isNull);
+    expect(response.outputInTex, isNull);
+
+    expect(response.errors, isNotEmpty);
+  }, skip: true);
+
   test('Test rpc.list', () async {
     var socket = WebSocketChannel.connect(uri);
     var client = Client(socket.cast<String>());
