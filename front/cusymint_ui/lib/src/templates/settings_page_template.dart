@@ -4,7 +4,6 @@ import 'package:cusymint_ui/cusymint_ui.dart';
 class SettingsPageTemplate<TLocale> extends StatelessWidget {
   const SettingsPageTemplate({
     super.key,
-    required this.drawer,
     required this.chosenLanguage,
     required this.ipAddress,
     required this.onIpAddressTap,
@@ -13,7 +12,6 @@ class SettingsPageTemplate<TLocale> extends StatelessWidget {
     this.selectedLocale,
   });
 
-  final CuDrawer drawer;
   final String chosenLanguage;
   final String ipAddress;
   final VoidCallback onIpAddressTap;
@@ -25,7 +23,6 @@ class SettingsPageTemplate<TLocale> extends StatelessWidget {
   Widget build(BuildContext context) {
     return CuScaffold(
       appBar: CuAppBar(),
-      drawer: drawer,
       body: Center(
         child: CuSettingsList(
           settingTiles: [

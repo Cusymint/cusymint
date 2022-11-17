@@ -1,5 +1,4 @@
 import 'package:cusymint_app/features/client/client_factory.dart';
-import 'package:cusymint_app/features/navigation/navigation.dart';
 import 'package:cusymint_app/features/settings/blocs/client_url_cubit.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
@@ -35,7 +34,6 @@ class _SettingsPageBody extends StatelessWidget {
     return BlocBuilder<ClientUrlCubit, ClientUrlState>(
       bloc: clientUrlCubit,
       builder: (context, state) => SettingsPageTemplate<Locale>(
-        drawer: WiredDrawer(context: context),
         chosenLanguage: Strings.languageCurrent.tr(),
         ipAddress: state.isValid ? state.url : clientFactory.uri.toString(),
         onIpAddressTap: () {

@@ -1,9 +1,12 @@
+#include "Symbol/Addition.cuh"
+#include "Symbol/Constants.cuh"
 #include "Symbol/Product.cuh"
 
 #include <fmt/core.h>
 
 #include "Symbol/MetaOperators.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
 
 namespace {
@@ -33,9 +36,85 @@ namespace Sym {
         }
 
         eliminate_ones();
+
+        if (type == Type::Product) {
+            if (!try_dividing_polynomials(help_space)) {
+                return false;
+            }
+        }
+
         simplify_structure(help_space);
 
         return true;
+    }
+
+    __host__ __device__ bool Product::try_dividing_polynomials(Symbol* const help_space) {
+        Symbol* numerator = nullptr;
+        Symbol* denominator = nullptr;
+        if (!arg1().is(Type::Reciprocal) && arg2().is(Type::Reciprocal)) {
+            numerator = &arg1();
+            denominator = &arg2().reciprocal.arg();
+        }
+        else if (!arg2().is(Type::Reciprocal) && arg1().is(Type::Reciprocal)) {
+            numerator = &arg2();
+            denominator = &arg1().reciprocal.arg();
+        }
+        if (numerator == nullptr || denominator == nullptr) {
+            return true;
+        }
+        const auto optional_rank1 = numerator->is_polynomial(help_space);
+        const auto optional_rank2 = denominator->is_polynomial(help_space);
+
+        if (!optional_rank1.has_value() || optional_rank1.value() == 0 ||
+            !optional_rank2.has_value() || optional_rank2.value() == 0 ||
+            optional_rank1.value() <= optional_rank2.value()) {
+            return true;
+        }
+
+        const auto rank1 = optional_rank1.value();
+        const auto rank2 = optional_rank2.value();
+
+        const size_t size_for_simplified_expression =
+            3 + Polynomial::expanded_size_from_rank(rank1 - rank2) +
+            Polynomial::expanded_size_from_rank(rank2 - 1) +
+            Polynomial::expanded_size_from_rank(rank2);
+
+        if (size < size_for_simplified_expression) {
+            additional_required_size = size_for_simplified_expression - 1;
+            return false;
+        }
+
+        // here we start dividing polynomials
+        auto* const poly1 = help_space;
+        Polynomial::make_polynomial_at(numerator, poly1);
+
+        auto* const poly2 = poly1 + poly1->size();
+        Polynomial::make_polynomial_at(denominator, poly2);
+
+        auto* const result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
+        Polynomial::divide_polynomials(poly1->as<Polynomial>(), poly2->as<Polynomial>(), *result);
+
+        if (poly1->as<Polynomial>().is_zero()) {
+            result->expand_to(symbol());
+            return false; // maybe additional simplify required
+        }
+
+        Addition* const plus = symbol() << Addition::builder();
+        result->expand_to(&plus->arg1());
+        plus->seal_arg1();
+
+        Product* const prod = &plus->arg2() << Product::builder();
+        poly1->as<Polynomial>().expand_to(&prod->arg1());
+        prod->seal_arg1();
+
+        Reciprocal* const rec = &prod->arg2() << Reciprocal::builder();
+        poly2->as<Polynomial>().expand_to(&rec->arg());
+        rec->seal();
+
+        prod->seal();
+        plus->seal();
+
+        return false; // maybe additional simplify required
     }
 
     DEFINE_IS_FUNCTION_OF(Product) {

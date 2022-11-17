@@ -2,6 +2,7 @@
 
 #include "MetaOperators.cuh"
 #include "Symbol.cuh"
+#include "Symbol/SymbolType.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/ExpanderPlaceholder.cuh"
 #include "Symbol/TreeIterator.cuh"

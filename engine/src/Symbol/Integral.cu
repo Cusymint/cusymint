@@ -23,7 +23,7 @@ namespace Sym {
         substitution->size() += substitution->additional_required_size();
         substitution->additional_required_size() = 0;
 
-        size_t const new_integrand_size = substitution->size();
+        const size_t new_integrand_size = substitution->size();
 
         symbol()->copy_single_to(destination);
         destination->integral.size = new_integrand_size + new_substitutions_size + 1;

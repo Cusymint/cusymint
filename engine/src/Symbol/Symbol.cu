@@ -6,6 +6,10 @@
 #include "Utils/Cuda.cuh"
 #include "Utils/StaticStack.cuh"
 
+namespace {
+    __host__ __device__ bool is_nonnegative_integer(double d) { return d >= 0 && floor(d) == d; }
+}
+
 namespace Sym {
     [[nodiscard]] __host__ __device__ bool Symbol::is(const double number) const {
         return is(Type::NumericConstant) && as<NumericConstant>().value == number;
@@ -217,6 +221,89 @@ namespace Sym {
     std::string Symbol::to_string() const { return VIRTUAL_CALL(*this, to_string); }
 
     std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
+
+    __host__ __device__ Util::OptionalNumber<ssize_t> Symbol::is_polynomial(Symbol* const help_space) const {
+        auto* ranks = reinterpret_cast<Util::OptionalNumber<ssize_t>*>(help_space);
+        for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
+            const Symbol* const current = at(i);
+            switch (current->type()) {
+            case Type::Addition: {
+                const auto& addition = current->as<Addition>();
+                const auto& rank1 = ranks[i + 1];
+                const auto& rank2 = ranks[i + addition.second_arg_offset];
+                ranks[i] = Util::max(rank1, rank2); // TODO
+            } break;
+            case Type::Negation:
+                ranks[i] = ranks[i + 1];
+                break;
+            case Type::NumericConstant:
+                ranks[i] = 0;
+                break;
+            // case Type::Polynomial:
+            //     ranks[i] = static_cast<ssize_t>(current->as<Polynomial>().rank);
+            //     break;
+            case Type::Power: {
+                const auto& power = current->as<Power>();
+                if (power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
+                    is_nonnegative_integer(power.arg2().as<NumericConstant>().value)) {
+                    ranks[i] = static_cast<ssize_t>(power.arg2().as<NumericConstant>().value);
+                }
+                else {
+                    ranks[i] = Util::empty_num;
+                }
+            } break;
+            case Type::Product: {
+                const auto& product = current->as<Product>();
+                if (product.arg1().is(Type::Addition) || product.arg2().is(Type::Addition)) {
+                    ranks[i] = Util::empty_num;
+                    break;
+                }
+                const auto& rank1 = ranks[i + 1];
+                const auto& rank2 = ranks[i + product.second_arg_offset];
+                ranks[i] = rank1 + rank2;
+            } break;
+            case Type::Variable:
+                ranks[i] = 1;
+                break;
+            default:
+                ranks[i] = Util::empty_num;
+            }
+        }
+        return ranks[0];
+    }
+
+    __host__ __device__ Util::OptionalNumber<double> Symbol::get_monomial_coefficient(Symbol* const help_space) const {
+        auto* coefficients = reinterpret_cast<Util::OptionalNumber<double>*>(help_space);
+        for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
+            const Symbol* const current = at(i);
+            switch (current->type()) {
+            case Type::Negation:
+                coefficients[i] = -coefficients[i + 1];
+                break;
+            case Type::NumericConstant:
+                coefficients[i] = current->as<NumericConstant>().value;
+                break;
+            // case Type::Polynomial: {
+            //     const auto& polynomial = current->as<Polynomial>();
+            //     coefficients[i] = polynomial.rank == 0 ? polynomial[0] : Util::empty_num;
+            //     break;
+            // }
+            case Type::Power:
+                coefficients[i] = 1;
+                break;
+            case Type::Product: {
+                const auto& product = current->as<Product>();
+                coefficients[i] = coefficients[i + 1] * coefficients[i + product.second_arg_offset];
+            } break;
+            case Type::Variable:
+                coefficients[i] = 1;
+                break;
+            default:
+                coefficients[i] = Util::empty_num;
+            }
+        }
+        return coefficients[0];
+    }
 
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {
         return VIRTUAL_CALL(sym1, are_equal, &sym2);

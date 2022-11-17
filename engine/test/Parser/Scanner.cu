@@ -13,7 +13,7 @@ namespace {
                             std::string expected_read_text) {
         std::string read_text;
         Parser::Scanner scanner(input);
-        auto const read_token = scanner.scan(read_text);
+        const auto read_token = scanner.scan(read_text);
         EXPECT_EQ(read_token, expected_token);
         EXPECT_EQ(read_text, expected_read_text);
     }

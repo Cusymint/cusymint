@@ -18,6 +18,12 @@ namespace Sym {
     static constexpr size_t BUILDER_SIZE = std::numeric_limits<size_t>::max();
 
     union Symbol;
+
+    enum class SimplifyResult {
+        Success,
+        ResizeRequest,
+
+    };
 }
 
 #define COMPRESS_REVERSE_TO_HEADER(_compress_reverse_to) \
@@ -333,6 +339,11 @@ namespace Sym {
     __host__ __device__ void simplify_structure(Symbol* const help_space);                      \
                                                                                                 \
     /*                                                                                          \
+     * @brief Checks if an operator tree is sorted                                              \
+     */                                                                                         \
+    __host__ __device__ bool is_tree_sorted(Symbol& help_space);                                \
+                                                                                                \
+    /*                                                                                          \
      * @brief W drzewie o uproszczonej strukturze wyszukuje par upraszczalnych wyrażeń.       \
      */                                                                                         \
     __host__ __device__ void simplify_pairs();                                                  \
@@ -415,7 +426,8 @@ namespace Sym {
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                         \
-        if (!symbol()->is(_name::TYPE)) {                                                                  \
+        if (!symbol()->is(_name::TYPE) ||                                                                  \
+            !arg2().is(Type::_name) && is_tree_sorted(*help_space)) {                                      \
             return;                                                                                        \
         }                                                                                                  \
                                                                                                            \
@@ -481,6 +493,24 @@ namespace Sym {
         }                                                                                                  \
                                                                                                            \
         help_space->copy_to(symbol());                                                                     \
+    }                                                                                                      \
+                                                                                                           \
+    __host__ __device__ bool _name::is_tree_sorted(Symbol& help_space) {                                   \
+        TreeIterator<_name> iterator(this);                                                                \
+        Symbol* last = iterator.current();                                                                 \
+        iterator.advance();                                                                                \
+                                                                                                           \
+        while (iterator.is_valid()) {                                                                      \
+            if (Symbol::compare_expressions(*last, *iterator.current(), help_space) ==                     \
+                Util::Order::Less) {                                                                       \
+                return false;                                                                              \
+            }                                                                                              \
+                                                                                                           \
+            last = iterator.current();                                                                     \
+            iterator.advance();                                                                            \
+        }                                                                                                  \
+                                                                                                           \
+        return true;                                                                                       \
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_pairs() {                                                     \

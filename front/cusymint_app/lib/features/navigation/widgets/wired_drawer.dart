@@ -8,14 +8,23 @@ class WiredDrawer extends CuDrawer {
     super.key,
     required this.context,
   }) : super(
-          onAboutPressed: () {},
-          onHomePressed: () {
+          onAboutPressed: () async {
+            _hideDrawer(context);
+            await context.navigateTo(AboutRoute());
+          },
+          onHomePressed: () async {
+            await _hideDrawer(context);
             context.router.popUntilRoot();
           },
-          onSettingsPressed: () {
-            context.router.navigate(const SettingsRoute());
+          onSettingsPressed: () async {
+            _hideDrawer(context);
+            await context.navigateTo(const SettingsRoute());
           },
         );
+
+  static Future<void> _hideDrawer(BuildContext context) async {
+    await context.router.pop();
+  }
 
   final BuildContext context;
 }
