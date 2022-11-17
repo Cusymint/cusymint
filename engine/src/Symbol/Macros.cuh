@@ -175,7 +175,7 @@ namespace Sym {
 #define DEFINE_SIMPLE_ARE_EQUAL(_name) \
     DEFINE_ARE_EQUAL(_name) { return BASE_ARE_EQUAL(_name); }
 
-#define DEFINE_SIMPLE_ONE_ARGUMETN_OP_ARE_EQUAL(_name) \
+#define DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(_name) \
     DEFINE_ARE_EQUAL(_name) { return BASE_ARE_EQUAL(_name) && ONE_ARGUMENT_OP_ARE_EQUAL(_name); }
 
 #define DEFINE_SIMPLE_TWO_ARGUMENT_OP_ARE_EQUAL(_name) \
