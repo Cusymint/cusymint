@@ -1,4 +1,5 @@
 import 'package:cusymint_ui/cusymint_ui.dart';
+import 'package:flutter/gestures.dart';
 
 class CuText extends StatelessWidget {
   const CuText(
@@ -41,11 +42,66 @@ class CuText extends StatelessWidget {
 
     return Text(
       data,
-      style: TextStyle(
+      style: CuTextStyle(
         color: textColor,
         fontWeight: fontWeight,
         fontSize: fontSize,
       ),
     );
   }
+}
+
+class CuTextSpan extends TextSpan {
+  const CuTextSpan({
+    String? text,
+    CuTextStyle? style,
+    List<InlineSpan>? children,
+  }) : super(
+          text: text,
+          style: style,
+          children: children,
+        );
+
+  CuTextSpan.med14({
+    String? text,
+    CuColor? color,
+    List<InlineSpan>? children,
+  }) : super(
+          text: text,
+          style: CuTextStyle.med14(color: color),
+          children: children,
+        );
+
+  CuTextSpan.link14({
+    String? text,
+    required VoidCallback onTap,
+    CuColor? color,
+    List<InlineSpan>? children,
+  }) : super(
+          text: text,
+          style: CuTextStyle.med14(color: color),
+          children: children,
+          recognizer: TapGestureRecognizer()..onTap = onTap,
+          mouseCursor: SystemMouseCursors.click,
+        );
+}
+
+class CuTextStyle extends TextStyle {
+  const CuTextStyle({
+    CuColor? color,
+    FontWeight fontWeight = FontWeight.normal,
+    double fontSize = 14.0,
+  }) : super(color: color, fontWeight: fontWeight, fontSize: fontSize);
+
+  const CuTextStyle.med14({
+    CuColor? color,
+  }) : super(fontWeight: FontWeight.normal, fontSize: 14.0, color: color);
+
+  const CuTextStyle.bold14({
+    CuColor? color,
+  }) : super(fontWeight: FontWeight.bold, fontSize: 14.0, color: color);
+
+  const CuTextStyle.med24({
+    CuColor? color,
+  }) : super(fontWeight: FontWeight.normal, fontSize: 24.0, color: color);
 }
