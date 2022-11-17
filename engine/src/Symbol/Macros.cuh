@@ -9,6 +9,7 @@
 
 #include "SymbolType.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/SimplificationResult.cuh"
 #include "Utils/StaticStack.cuh"
 
 namespace Sym {
@@ -262,62 +263,72 @@ namespace Sym {
     __host__ __device__ static void create(const Symbol* const arg1, const Symbol* const arg2, \
                                            Symbol* const destination);
 
-#define TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(_name)                                               \
-    TWO_ARGUMENT_OP_SYMBOL                                                                      \
-    /*                                                                                          \
-     * @brief W uproszczonym drzewie operatora zwraca operację najniżej w drzewie             \
-     *                                                                                          \
-     * @return Wskaźnik do ostatniego operator. Jeśli `arg1()` nie jest tego samego typu co   \
-     * `*this`, to zwraca `this`                                                                \
-     */                                                                                         \
-    __host__ __device__ const _name* last_in_tree() const;                                      \
-                                                                                                \
-    /*                                                                                          \
-     * @brief Przeładowanie bez `const`                                                        \
-     */                                                                                         \
-    __host__ __device__ _name* last_in_tree();                                                  \
-                                                                                                \
-    /*                                                                                          \
-     * @brief Uproszczenie struktury operatora `$` do drzewa w postaci:                         \
-     *                 $                                                                        \
-     *                / \                                                                       \
-     *               $   e                                                                      \
-     *              / \                                                                         \
-     *             $   d                                                                        \
-     *            / \                                                                           \
-     *           $   c                                                                          \
-     *          / \                                                                             \
-     *         a   b                                                                            \
-     *                                                                                          \
-     * Zakładamy, że oba argumenty są w uproszczonej postaci                                 \
-     *                                                                                          \
-     * @param help_space Pamięć pomocnicza                                                    \
-     */                                                                                         \
-    __host__ __device__ void simplify_structure(Symbol* const help_space);                      \
-                                                                                                \
-    /*                                                                                          \
-     * @brief W drzewie o uproszczonej strukturze wyszukuje par upraszczalnych wyrażeń.       \
-     */                                                                                         \
-    __host__ __device__ void simplify_pairs();                                                  \
-                                                                                                \
-    /*                                                                                          \
-     * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi     \
-     *                                                                                          \
-     * @param expr1 Pierwszy argument operatora                                                 \
-     * @param expr2 Drugi argument operatora                                                    \
-     *                                                                                          \
-     * @return `true` jeśli wykonano uproszczenie, `false` w przeciwnym wypadku                \
-     */                                                                                         \
-    __host__ __device__ static bool try_fuse_symbols(Symbol* const expr1, Symbol* const expr2); \
-    /*                                                                                          \
-     * @brief Counts symbols in simplified tree.                                                \
-     *                                                                                          \
-     * @return Count of symbols in the tree.                                                    \
-     */                                                                                         \
+#define TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(_name)                                             \
+    TWO_ARGUMENT_OP_SYMBOL                                                                    \
+    /*                                                                                        \
+     * @brief W uproszczonym drzewie operatora zwraca operację najniżej w drzewie           \
+     *                                                                                        \
+     * @return Wskaźnik do ostatniego operator. Jeśli `arg1()` nie jest tego samego typu co \
+     * `*this`, to zwraca `this`                                                              \
+     */                                                                                       \
+    __host__ __device__ const _name* last_in_tree() const;                                    \
+                                                                                              \
+    /*                                                                                        \
+     * @brief Przeładowanie bez `const`                                                      \
+     */                                                                                       \
+    __host__ __device__ _name* last_in_tree();                                                \
+                                                                                              \
+    /*                                                                                        \
+     * @brief Uproszczenie struktury operatora `$` do drzewa w postaci:                       \
+     *                 $                                                                      \
+     *                / \                                                                     \
+     *               $   e                                                                    \
+     *              / \                                                                       \
+     *             $   d                                                                      \
+     *            / \                                                                         \
+     *           $   c                                                                        \
+     *          / \                                                                           \
+     *         a   b                                                                          \
+     *                                                                                        \
+     * Zakładamy, że oba argumenty są w uproszczonej postaci                               \
+     *                                                                                        \
+     * @param help_space Pamięć pomocnicza                                                  \
+     */                                                                                       \
+    __host__ __device__ void simplify_structure(Symbol* const help_space);                    \
+                                                                                              \
+    /*                                                                                        \
+     * @brief W drzewie o uproszczonej strukturze wyszukuje par upraszczalnych wyrażeń.     \
+     *                                                                                        \
+     * @param help_space The help space                                                       \
+     *                                                                                        \
+     * @return `NeedsSpace` if at least one symbol needed additional space to fuse,           \
+     * `NeedsSimplification` if whole expression needs to be simplified again,                \
+     * `Success` otherwise. Never returns `Failure`.                                          \
+     */                                                                                       \
+    __host__ __device__ Util::SimplificationResult simplify_pairs(Symbol* const help_space);  \
+                                                                                              \
+    /*                                                                                        \
+     * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi   \
+     *                                                                                        \
+     * @param expr1 Pierwszy argument operatora                                               \
+     * @param expr2 Drugi argument operatora                                                  \
+     * @param help_space The help space                                                       \
+     *                                                                                        \
+     * @return `Success` jeśli wykonano uproszczenie, `Failure`, jeśli nie,                 \
+     * `NeedsSpace`, jeśli potrzeba dodatkowego miejsca na uproszczenie.                     \
+     */                                                                                       \
+    __host__ __device__ static Util::SimplificationResult try_fuse_symbols(                   \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);                  \
+    /*                                                                                        \
+     * @brief Counts symbols in simplified tree.                                              \
+     *                                                                                        \
+     * @return Count of symbols in the tree.                                                  \
+     */                                                                                       \
     __host__ __device__ size_t tree_size();
 
-#define DEFINE_TRY_FUSE_SYMBOLS(_name) \
-    __host__ __device__ bool _name::try_fuse_symbols(Symbol* const expr1, Symbol* const expr2)
+#define DEFINE_TRY_FUSE_SYMBOLS(_name)                                      \
+    __host__ __device__ Util::SimplificationResult _name::try_fuse_symbols( \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const help_space)
 
 #define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                  \
     DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                      \
@@ -405,8 +416,10 @@ namespace Sym {
         last_left_copy->copy_to(&arg2());                                                                  \
     }                                                                                                      \
                                                                                                            \
-    __host__ __device__ void _name::simplify_pairs() {                                                     \
+    __host__ __device__ Util::SimplificationResult _name::simplify_pairs(                                  \
+        Symbol* const help_space) {                                                                        \
         bool expression_changed = true;                                                                    \
+        Util::SimplificationResult result = Util::SimplificationResult::Success;                           \
         while (expression_changed) {                                                                       \
             expression_changed = false;                                                                    \
             TreeIterator<_name> first(this);                                                               \
@@ -415,12 +428,22 @@ namespace Sym {
                 second.advance();                                                                          \
                                                                                                            \
                 while (second.is_valid()) {                                                                \
-                    if (try_fuse_symbols(first.current(), second.current())) {                             \
+                    switch (try_fuse_symbols(first.current(), second.current(), help_space)) {             \
+                    case Util::SimplificationResult::Success:                                              \
                         /* Jeśli udało się coś połączyć, to upraszczanie trzeba rozpocząć od nowa \
                          * (możnaby tylko dla zmienionego elementu, jest to opytmalizacja TODO),          \
                          * bo być może tę sumę można połączyć z czymś, co było już rozważane.  \
                          */                                                                                \
                         expression_changed = true;                                                         \
+                        break;                                                                             \
+                    case Util::SimplificationResult::NeedsSimplification:                                  \
+                        result = Util::SimplificationResult::NeedsSimplification;                          \
+                        break;                                                                             \
+                    case Util::SimplificationResult::NeedsSpace:                                           \
+                        result = Util::SimplificationResult::NeedsSpace;                                   \
+                        break;                                                                             \
+                    case Util::SimplificationResult::Failure:                                              \
+                        break;                                                                             \
                     }                                                                                      \
                                                                                                            \
                     second.advance();                                                                      \
@@ -429,15 +452,19 @@ namespace Sym {
                 first.advance();                                                                           \
             }                                                                                              \
         }                                                                                                  \
+        return result;                                                                                     \
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ size_t _name::tree_size() {                                                        \
         /* In every sum, number of terms is equal to number of `+` signs plus 1.                           \
-         * When an addition tree is simplified, all `Addition` symbols are placed in a row,                \
-         * so it suffices to calculate address of the last `Addition` symbol. The offset between           \
+         * When an addition tree is simplified, all `Addition` symbols are placed in a                     \
+         * row,                                                                                            \
+         * so it suffices to calculate address of the last `Addition` symbol. The                          \
+         * offset between                                                                                  \
          * `this` and last plus 1 is the number of `+` signs in the sum.                                   \
          * Thus, the offset plus 2 is the number of terms in the sum.                                      \
-         * Conversion to `Symbol*` with `symbol()` function is necessary, because `_name`                  \
+         * Conversion to `Symbol*` with `symbol()` function is necessary, because                          \
+         * `_name`                                                                                         \
          * structure may be smaller than `Symbol` union.                                                   \
          */                                                                                                \
         return last_in_tree()->symbol() - symbol() + 2;                                                    \

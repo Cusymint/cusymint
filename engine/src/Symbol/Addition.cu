@@ -15,9 +15,9 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
         simplify_structure(help_space);
-        simplify_pairs();
+        const auto result = simplify_pairs(help_space);
         eliminate_zeros();
-        return true;
+        return !Util::is_another_loop_required(result);
     }
 
     DEFINE_IS_FUNCTION_OF(Addition) {
@@ -43,16 +43,14 @@ namespace Sym {
 
     __host__ __device__ bool Addition::is_sine_cosine_squared_sum(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
-        return PatternPair<
-            Pow<Sin<Same>, Integer<2>>,
-            Pow<Cos<Same>, Integer<2>>>::match_pair(*expr1, *expr2);
-
+        return PatternPair<Pow<Sin<Same>, Integer<2>>, Pow<Cos<Same>, Integer<2>>>::match_pair(
+            *expr1, *expr2);
     }
 
     __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
-        return PatternPair<Neg<Same>, Same>::match_pair(*expr1, *expr2)
-            || PatternPair<Same, Neg<Same>>::match_pair(*expr1, *expr2);
+        return PatternPair<Neg<Same>, Same>::match_pair(*expr1, *expr2) ||
+               PatternPair<Same, Neg<Same>>::match_pair(*expr1, *expr2);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Addition) {
@@ -63,26 +61,26 @@ namespace Sym {
             expr2->as<NumericConstant>().value != 0.0) {
             expr1->as<NumericConstant>().value += expr2->as<NumericConstant>().value;
             expr2->as<NumericConstant>().value = 0.0;
-            return true;
+            return Util::SimplificationResult::Success;
         }
 
         if (are_equal_of_opposite_sign(expr1, expr2)) {
             expr1->init_from(NumericConstant::with_value(0.0));
             expr2->init_from(NumericConstant::with_value(0.0));
-            return true;
+            return Util::SimplificationResult::Success;
         }
 
         // TODO: Jakieś inne tożsamości trygonometryczne
         if (is_sine_cosine_squared_sum(expr1, expr2)) {
             expr1->init_from(NumericConstant::with_value(1.0));
             expr2->init_from(NumericConstant::with_value(0.0));
-            return true;
+            return Util::SimplificationResult::Success;
         }
 
         // TODO: Dodawanie gdy to samo jest tylko przemnożone przez stałą
         // TODO: Jedynka hiperboliczna
 
-        return false;
+        return Util::SimplificationResult::Failure;
     }
 
     __host__ __device__ void Addition::eliminate_zeros() {
