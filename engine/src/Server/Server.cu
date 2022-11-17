@@ -1,6 +1,8 @@
-#include "JsonFormatter.cuh"
-#include "Parser/Parser.cuh"
 #include "Server.cuh"
+
+#include "JsonFormatter.cuh"
+#include "ResponseBuilder.cuh"
+#include "Parser/Parser.cuh"
 #include "Utils/CompileConstants.cuh"
 
 #include <fmt/core.h>
@@ -29,29 +31,24 @@ static void interpret(struct mg_rpc_req* r) {
     }
 
     print_debug("[Server] Interpret input {}\n", input);
-    auto formatter = JsonFormatter();
-
-    std::vector<std::string> errors;
-    std::string json;
+    auto response_builder = ResponseBuilder(); 
 
     try {
         auto parser_result = global_cached_parser->parse(input);
-        json = formatter.format(&parser_result, nullptr, nullptr);
+        response_builder.set_input(parser_result);
     } catch (const std::invalid_argument& e) {
-        errors.push_back(e.what());
-
-        json = formatter.format(nullptr, nullptr, &errors);
         print_debug("[Server] Interpret invalid argument {}, couldn't parse input: {}\n", e.what(), input);
+        response_builder.add_error(e.what());
     } catch (const std::exception& e) {
-        errors.push_back("Internal error.");
-
-        json = formatter.format(nullptr, nullptr, &errors);
         print_debug("[Server] Interpret internal error, couldn't parse input {}\n", input);
+        response_builder.add_error("Internal error");
     }
 
-    print_debug("[Server] Interpret result {}\n", json);
+    auto response = response_builder.get_json_response();
 
-    mg_rpc_ok(r, "%s", json.c_str());
+    print_debug("[Server] Interpret result {}\n", response);
+
+    mg_rpc_ok(r, "%s", response.c_str());
     free(input);
 }
 
