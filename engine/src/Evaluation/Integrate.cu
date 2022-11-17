@@ -17,16 +17,16 @@ namespace Sym {
         constexpr size_t MAX_EXPRESSION_COUNT = 128;
 
         /*
-         * @brief Podejmuje próbę ustawienia `expressions[potential_solver_idx]` (będącego
-         * SubexpressionCandidate) jako rozwiązania wskazywanego przez siebie SubexpressionVacancy
+         * @brief Try to set `expressions[potential_solver_idx]` (SubexpressionCandidate)
+         * as a solution to this SubexpressionVacancy
          *
-         * @param expressions Talbica wyrażeń z kandydatem do rozwiązania i brakującym podwyrażeniem
-         * @param potential_solver_idx Indeks kandydata do rozwiązania
+         * @param expressions Expressions array with a candidate to solve and missing subexpression
+         * @param potential_solver_idx Id of the potential solver
          *
-         * @return `false` jeśli nie udało się ustawić wybranego kandydata jako rozwiązanie
-         * podwyrażenia, lub udało się, ale w nadwyrażeniu są jeszcze inne nierozwiązane
-         * podwyrażenia. `true` jeśli się udało i było to ostatnie nierozwiązane podwyrażenie w
-         * nadwyrażeniu.
+         * @return `false` when haven't managed to set chosen candidate as a solution to
+         * the subexpression or whetether there are still unsolved subexpressions in the parent.
+         * `true` when managed to set chosen candidate as a solution and parent doesn't have any
+         * unsolved subexpressions left. 
          */
         __device__ bool try_set_solver_idx(Sym::ExpressionArray<>& expressions,
                                            const size_t potential_solver_idx) {
@@ -97,10 +97,10 @@ namespace Sym {
         }
 
         /*
-         * @brief Upraszcza wyrażenia w `expressions`. Wynik zastępuje stare wyrażenia.
+         * @brief Simplifies `expressions`. Result overrides `expressions` data.
          *
-         * @param expressions Wyrażenia do uproszczenia
-         * @param help_spaces Dodatkowa pamięć pomocnicza przy upraszczaniu wyrażeń
+         * @param expressions Expressions to simplify
+         * @param help_spaces Help space required is some simplifications
          */
         __global__ void simplify(ExpressionArray<> expressions, ExpressionArray<> help_spaces) {
             const size_t thread_count = Util::thread_count();
@@ -113,13 +113,13 @@ namespace Sym {
         }
 
         /*
-         * @brief Sprawdza, czy całki w `integrals` mają znane rozwiązania
+         * @brief Checks whether `integrals` have known solutions
          *
-         * @param integrals Całki do sprawdzenia znanych form
-         * @param applicability Wynik sprawdzania dla każdej całki w `integrals` i każdej znanej
-         * całki. Informacja, czy całka pod `int_idx` ma postać o indeksie `form_idx` zapisywana
-         * jest w `applicability[MAX_EXPRESSION_COUNT * form_idx + int_idx]`, gdzie
-         * MAX_EXPRESSION_COUNT jest maksymalną liczbą wyrażeń dopuszczalną w `integrals`
+         * @param integrals Integrals to be checked
+         * @param applicability Solution to checking all `integrals` against known integrals.
+         * `applicability[MAX_EXPRESSION_COUNT * form_idx + int_idx]` stores information whether
+         * `KnownIntegral::APPLICATIONS[form_idx]` can be applied to `integral[int_idx]`, where
+         * `MAX_EXPRESSION_COUNT` is the maximum size of the `integrals` array. 
          */
         __global__ void
         check_for_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
@@ -141,15 +141,14 @@ namespace Sym {
         }
 
         /*
-         * @brief Na podstawie informacji z `check_for_known_integrals` przekształca całki na ich
-         * rozwiązania.
+         * @brief Solves integrals in place using the `applicability` information from `check_for_known_integrals`
          *
-         * @param integrals Całki o potencjalnie znanych rozwiązaniach
-         * @param expressions Wyrażenia zawierające SubexpressionVacancy do których odnoszą się
-         * całki. Rozwiązania całek są zapisywane w pamięci za ostatnim wyrażeniem w expressions
-         * @param help_spaces Pamięć pomocnicza do wykonania przekształceń
-         * @param applicability Tablica która jest wynikiem `inclusive_scan` na tablicy o tej samej
-         * nazwie zwróconej przez `check_for_known_integrals`
+         * @param integrals Integrals with potentially known solutions
+         * @param expressions Expressions containing SubexpressionVacancies.
+         * Solutions are written after the last expression in `expressions`.
+         * 
+         * @param help_spaces Help space used in applying known integrals
+         * @param applicability Result of `inclusive_scan` on `check_for_known_integrals()` applicability array
          */
         __global__ void
         apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
@@ -187,22 +186,21 @@ namespace Sym {
         }
 
         /*
-         * @brief Ustawia `is_solved` i `solver_id` w SubexpressionVacancy na które wskazują
-         * SubexpressionCandidate w których wszystkie SubexpressionVacancy są rozwiązane
+         * @brief Marks SubexpressionsVacancies as solved (sets `is_solved` and `solver_id`)
+         * when there is a SubexpressionCandidate with all its SubexpressionVacancies solved.
          *
-         * @param expressions Wyrażenia do propagacji informacji o rozwiązaniach
+         * @param expressions Expressions to propagate information about being solved
          */
         __global__ void propagate_solved_subexpressions(ExpressionArray<> expressions) {
             const size_t thread_count = Util::thread_count();
             const size_t thread_idx = Util::thread_idx();
 
-            // W każdym węźle drzewa zależności wyrażeń zaczyna jeden wątek. Jeśli jego węzeł jest
-            // rozwiązany, to próbuje się ustawić jako rozwiązanie swojego podwyrażenia w rodzicu.
-            // Jeśli mu się to uda i nie pozostaną w rodzicu inne nierozwiązane podwyrażenia, to
-            // przechodzi do niego i powtaża wszystko. W skrócie następuje propagacja informacji o
-            // rozwiązaniu z dołu drzewa na samą górę.
+            // For each tree node there is a seperate starting thread.
+            // If it's node is solved it moves to it's parent.
+            // It tries to tell that there is a solution to fill the vacancy.
+            // If all the vacancies are filled it repeats this operation upwards.
 
-            // Na expr_idx = 0 jest tylko SubexpressionVacancy oryginalnej całki, więc pomijamy
+            // Since `expr_idx = 0` is SubexpressionVacancy of the original integral, it is skipped
             for (size_t expr_idx = thread_idx + 1; expr_idx < expressions.size();
                  expr_idx += thread_count) {
                 size_t current_expr_idx = expr_idx;
@@ -216,10 +214,11 @@ namespace Sym {
                         break;
                     }
 
-                    // Przechodzimy w drzewie zależności do rodzica. Być może będziemy tam razem z
-                    // wątkiem, który tam zaczął pętlę. `try_set_solver_idx` jest jednak atomowe,
-                    // więc tylko jednemu z wątków uda się ustawić `solver_idx` na kolejnym rodzicu,
-                    // więc tylko jeden wątek tam przetrwa.
+                    // We iterate tree upwards.
+                    // There is a possibility of race condition when we will reach the same node,
+                    // as the thread which started the loop.
+                    // However, since `try_set_solver_idx` is atomic, only one thread would be able
+                    // to set `solver_idx` on the next parent and continue its journey upwards.
                     current_expr_idx = expressions[current_expr_idx]
                                            .subexpression_candidate.vacancy_expression_idx;
                 }
@@ -227,12 +226,11 @@ namespace Sym {
         }
 
         /*
-         * @brief Oznacza SubexpressionCandidate wskazujące na SubexpressionVacancy rozwiązane przez
-         * innych kandydatów
+         * @brief Finds redundant SubexpressionCandidates which are children of already solved SubexpressionVacancies.
+         * SubexpressionCandidates that are solutions to SubexpressionsVacancies are not marked.
          *
-         * @param expressions Wyrażenia do sprawdzenia
-         * @param removability Wynik sprawdzania. `0` dla wyrażeń, dla których istnieje przodek
-         * rozwiązany w innej linii.
+         * @param expressions Expressions containing redundant SubexpressionCandidates
+         * @param removability Solution. `0` is set for redundant SubexpresionCandidates
          */
         __global__ void find_redundand_expressions(const ExpressionArray<> expressions,
                                                    Util::DeviceArray<uint32_t> removability) {
@@ -266,15 +264,14 @@ namespace Sym {
         }
 
         /*
-         * @brief Oznacza całki wskazujące na wyrażenia, które będą usunięte lub wskazujące na
-         * SubexpressionVacancy, które są rozwiązane
+         * @brief Find integrals solving redundant SubexpressionVacancies
          *
-         * @param integrals Całki do sprawdzenia
-         * @param expressions Wyrażenia, na które wskazują całki
-         * @param expressions_removability Wyrażenia, które mają być usunięte. `0` dla tych, które
-         * zostaną usunięte, `1` dla pozostałych
-         * @param integrals_removability Wynik sprawdzania. `0` dla całek, które wskazują na
-         * rozwiązane podwyrażenia, `1` w przeciwnym wypadku
+         * @param integrals Integrals to be checked against
+         * @param expressions Expressions pointing to integrals
+         * @param expressions_removability Result of `find_redundand_expression()`. 
+         * `0` for expressions to be deleted, `1` for the rest
+         * @param integrals_removability Result. `0` for redundant integrals, 
+         * `1` otherwise
          */
         __global__ void
         find_redundand_integrals(const ExpressionArray<> integrals,
@@ -299,17 +296,15 @@ namespace Sym {
         }
 
         /*
-         * @brief Przenosi wyrażenia z `expressions` do `destinations` pomijając te, które wyznacza
-         * `removability`. Aktualizuje też `solver_idx` i `vacancy_expression_idx`, oraz zeruje
-         * `candidate_integral_count` (przygotowanie do sprawdzania heurystyk)
+         * @brief Moves `expressions` to `destinations` skipping those marked by `removability`.
+         * Updates `solver_idx` and `vacancy_expression_idx`. Zeroes `candidate_integral_count`.
          *
          * @tparam ZERO_CANDIDATE_INTEGRAL_COUNT Whether to zero `candidate_integral_count` of
          * candidates that are moved to `destinations`
-         * @param expressions Wyrażenia do przeniesienia
-         * @param removability Lokalizacje wyrażeń w `destinations`. Jeśli `removability[i] ==
-         * removability[i - 1]` lub `i == 0 && removability[i] != 0` to wyrażenie przenoszone jest
-         * na `destinations[removability[i] - 1]`.
-         * @param destinations Docelowe miejsce zapisu wyrażeń
+         * @param expressions Expressions to be moved
+         * @param removability New locations indices of `expressions`. If `removability[i] == removability[i - 1]`
+         * or `i == 0 && removability[i] != 0` then expression is moved to `destination[removability[i] - 1]`. 
+         * @param destinations Destination to move integrals to
          */
         template <bool ZERO_CANDIDATE_INTEGRAL_COUNT = false>
         __global__ void remove_expressions(const ExpressionArray<> expressions,
@@ -347,17 +342,15 @@ namespace Sym {
         }
 
         /*
-         * @brief Przenosi całki z `integrals` do `destinations` pomijając te, które wyznacza
-         * `removability`. Aktualizuje też `vacancy_expression_idx`.
+         * @brief Moves `integrals` to `destinations` removing those specified by
+         * `removability` and updates `vacancy_expression_idx`.
          *
-         * @param integrals Całki do przeniesienia
-         * @param integrals_removability Lokalizacje wyrażeń w `destinations`. Jeśli
-         * `integrals_removability[i] == integrals_removability[i - 1]` lub `i == 0 &&
-         * removability[i]
-         * != 0` to wyrażenie przenoszone jest na `destinations[removability[i] - 1]`.
-         * @param expressions_removability To samo co `integrals_removability`, tylko że dla wyrażeń
-         * na które wskazuję SubexpressionCandidate w `integrals`
-         * @param destinations Docelowe miejsce zapisu całek
+         * @param integrals Integrals to be moved
+         * @param integrals_removability Indexes of integrals in `destinations`.
+         * When `integrals_removability[i] == integrals_removability[i - 1]`
+         * or `i == 0 && removability[i] != 0` the expression is moved to
+         * `destinations[removability[i] - 1]`.
+         * @param destinations Place to move correct integrals to
          */
         __global__ void remove_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                                          const Util::DeviceArray<uint32_t> integrals_removability,
@@ -381,18 +374,15 @@ namespace Sym {
         }
 
         /*
-         * @brief Sprawdza, które heurystyki pasują do których całek oraz aktualizuje
-         * `candidate_integral_count` i `candidate_expression_count` w wyrażeniach, na które
-         * wskazywać będą utworzone później całki.
+         * @brief Checks which heuristics are applicable to which integrals and updates
+         * `candidate_integral_count` and `candidate_expression_count` in correct expressions 
          *
-         * @param integrals Całki do sprawdzenia
-         * @param expressions Wyrażenia na które wskazują SubexpressionCandidate w `integrals`.
-         * @param new_integrals_flags Jeśli całka na indeksie `i` pasuje do heurystyki na indeksie
-         * `j`, która przekształca na inną całkę, to new_integrals_flags[MAX_EXPRESSION_COUNT * j +
-         * i] będzie ustawione na `1`.
-         * @param new_expressions_flags Jeśli całka na indeksie `i` pasuje do heurystyki na indeksie
-         * `j`, która przekształca ją na wyrażenie z całek, to
-         * `new_expressions_flags[MAX_EXPRESSION_COUNT * j + i]` będzie ustawione na `1`.
+         * @param integrals Integrals to be checked
+         * @param expressions Parents of SubexpressionCandidate in `integrals`.
+         * @param new_integrals_flags Solution. When `integrals[i]` matches `Heuristic::CHECKS[j]`
+         * sets `new_integrals_flags[MAX_EXPRESSION_COUNT * j + i]` to `1`, otherwise `0`. 
+         * @param new_expressions_flags  Solution. When `integrals[i]` matches `Heuristic::CHECKS[j]`
+         * sets `new_expressions_flags[MAX_EXPRESSION_COUNT * j + i]` to `1`, otherwise `0`. 
          */
         __global__ void
         check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
@@ -434,20 +424,18 @@ namespace Sym {
         }
 
         /*
-         * @brief Stosuje heurystyki na całkach
+         * @brief Applies heuristics to integrals
          *
-         * @param integrals Całki, na których zastosowane zostaną heurystyki
-         * @param integrals_destinations Miejsce, gdzie zapisane będą nowe całki
-         * @param expressions_destinations Miejsce, gdzie zapisane będą nowe wyrażenia. Wyrażenia
-         * zapisywane są od pierwszego niezajętego miesca za końcem tablicy (czyli obecna zawartość
-         * jest nienaruszona).
-         * @param help_spaces Pamięć pomocnicza do wykonywania przekształceń
-         * @param new_integrals_indices Indeksy nowych całek powiększone o 1. Jeśli jakiś indeks
-         * jest równy poprzedniemu, to wskazywane przez niego połączenie całki i heurystyki
-         * (indeksowanie opisane przy `check_heuristics_applicability`) nie dało żadnego wyniku. Dla
-         * `new_integrals_indices[0]` jest to sygnalizowane przez zapisaną tam wartość 0 (zamiast 1)
-         * @param new_expressions_indices Inteksy nowych wyrażeń powiększone o 1. Zasady takie same
-         * jak w `new_integrals_indices`
+         * @param integrals Integrals on which heuristics will be applied
+         * @param integrals_destinations Solutions destination
+         * @param expressions_destinations Destination for new expressions. 
+         * New expressions will be appended to already existing ones.
+         * @param help_spaces Help space for transformations
+         * @param new_integrals_indices Indices of new integrals incremented by 1.
+         * If given index is equal to its predecessor, then its integral and heuristic
+         * (specified in `check_heuristics_applicability()`) haven't found any solution.
+         * `new_integrals_indices[0]` will override `1` to `0`.
+         * @param new_expressions_indices Analogical to `new_integrals_indices` for `expressions`
          */
         __global__ void
         apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
