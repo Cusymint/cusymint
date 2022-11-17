@@ -36,6 +36,6 @@ std::string get_result(std::string input) {
         std::string result = exec(command);
         return result;
     } catch (const std::exception& e) {
-        return "{\"errors\": [\"Internal runtime error.\"]}";
+        return R"({"errors": ["Internal runtime error."]})";
     }
 }
