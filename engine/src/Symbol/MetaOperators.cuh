@@ -262,11 +262,11 @@ namespace Sym {
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
-            return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression());
+            return dst.is(Type::Solution) && Inner::match(*dst.as<Solution>().expression());
         }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
-            return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression(), other_same);
+            return dst.is(Type::Solution) && Inner::match(*dst.as<Solution>().expression(), other_same);
         }
     };
 
