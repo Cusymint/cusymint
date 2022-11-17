@@ -8,7 +8,7 @@
 #include <fmt/core.h>
 
 namespace {
-    __host__ __device__ inline size_t size_from_rank(size_t rank) {
+    __host__ __device__ size_t size_from_rank(size_t rank) {
         return 2 + sizeof(double) * (rank + 1) / sizeof(Sym::Symbol);
     }
 }
