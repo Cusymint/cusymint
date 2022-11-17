@@ -38,14 +38,15 @@ namespace Sym {
                                                              const Symbol* const expr2);
 
     /*
-     * @brief Checks if `this` is a rational function and tries to simplify it.
+     * @brief Checks if `this` is a rational function and tries to transform it
+     * by dividing numerator by denominator. Does not simplify the fraction by GCD.
      *
      * @param `help_space` a help space
      *
-     * @return `true` if simplification was successful or didn't happen.
-     * `false` if simplification requires additional space.
+     * @return `true` if division was successful or didn't happen.
+     * `false` if division requires additional space.
      */
-    __host__ __device__ bool try_simplify_polynomials(Symbol* const help_space);
+    __host__ __device__ bool try_dividing_polynomials(Symbol* const help_space);
 
     END_DECLARE_SYMBOL(Product)
 

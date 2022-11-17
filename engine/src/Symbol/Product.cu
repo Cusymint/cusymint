@@ -37,12 +37,12 @@ namespace Sym {
         eliminate_ones();
 
         if (type == Type::Product) {
-            return try_simplify_polynomials(help_space);
+            return try_dividing_polynomials(help_space);
         }
         return true;        
     }
 
-    __host__ __device__ bool Product::try_simplify_polynomials(Symbol* const help_space) {
+    __host__ __device__ bool Product::try_dividing_polynomials(Symbol* const help_space) {
         Symbol* numerator = nullptr;
         Symbol* denominator = nullptr;
         if (!arg1().is(Type::Reciprocal) && arg2().is(Type::Reciprocal)) {
