@@ -15,8 +15,14 @@
     "calculating": "Obliczanie",
     "language": "Język",
     "ipAddress": "Adres IP",
+    "ipAddressError": "Adres niepoprawny",
     "licenses": "Licencje",
     "languagePolish": "Polski",
     "languageEnglish": "English",
-    "languageCurrent": "Polski"
+    "languageCurrent": "Polski",
+    "aboutText": "Cusymint zostało zainspirowane wykładem o sztucznej inteligencji wykładanym na MIT przez prof. Patricka H. Winstona. Cusymint różni się od typowych kalkulatorów symbolicznych. Poza CPU, uzywa także GPU. Badania na temat obliczeń symbolicznych na GPU zostały rozpoczęte na przedmiocie „Projekt Badawczy - algorytmy na GPU\" prowadzonego przez dra Krzysztofa Kaczmarskiego na Politechnice Warszawskiej. Aplikacja powstała jako część pracy inżynierskiej. Kod źródłowy jest dostępny na",
+    "aboutTextGithub": "GitHubie",
+    "madeBy": "Stworzone przez",
+    "cancel": "Anuluj",
+    "ok": "OK"
 }

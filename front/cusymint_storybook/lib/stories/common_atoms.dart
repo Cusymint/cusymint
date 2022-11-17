@@ -90,7 +90,7 @@ class CommonAtoms extends StorybookPart {
           },
         ),
         Story(
-          name: 'Atoms/ElevatedButton',
+          name: 'Atoms/Buttons/ElevatedButton',
           builder: (context) {
             final text = context.knobs.text(
               label: 'Text',
@@ -98,6 +98,20 @@ class CommonAtoms extends StorybookPart {
             );
 
             return CuElevatedButton(
+              text: text,
+              onPressed: () {},
+            );
+          },
+        ),
+        Story(
+          name: 'Atoms/Buttons/TextButton',
+          builder: (context) {
+            final text = context.knobs.text(
+              label: 'Text',
+              initial: 'Cancel',
+            );
+
+            return CuTextButton(
               text: text,
               onPressed: () {},
             );

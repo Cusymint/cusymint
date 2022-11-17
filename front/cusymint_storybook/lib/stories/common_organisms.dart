@@ -20,6 +20,14 @@ class CommonOrganisms extends StorybookPart {
           ),
         ),
         Story(
+          name: 'Organisms/AboutWidget',
+          builder: (context) => CuAboutWidget(onGithubTap: () {}),
+        ),
+        Story(
+          name: 'Organisms/AuthorsWidget',
+          builder: (context) => const CuAuthorsWidget(),
+        ),
+        Story(
           name: 'Organisms/SettingsList',
           builder: (context) {
             return CuSettingsList(
@@ -37,10 +45,31 @@ class CommonOrganisms extends StorybookPart {
                 CuSettingTile(
                   onTap: () {},
                   title: const CuText('Licenses'),
-                )
+                ),
               ],
             );
           },
         ),
+        Story(
+          name: 'Organisms/TextFieldAlertDialog',
+          builder: (context) {
+            final title = context.knobs.text(
+              label: 'Title',
+              initial: 'Title',
+            );
+
+            final isEnabled = context.knobs.boolean(
+              label: 'Is enabled',
+              initial: true,
+            );
+
+            return CuTextFieldAlertDialog(
+              title: title,
+              onCancelPressed: () {},
+              onOkPressed: isEnabled ? () {} : null,
+              textField: const CuTextField(),
+            );
+          },
+        )
       ];
 }

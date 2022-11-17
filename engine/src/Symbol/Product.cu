@@ -57,10 +57,8 @@ namespace Sym {
 
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol* const expr1,
                                                                const Symbol* const expr2) {
-        return expr1->is(Type::Reciprocal) &&
-                   Symbol::compare_trees(&expr1->reciprocal.arg(), expr2) ||
-               expr2->is(Type::Reciprocal) &&
-                   Symbol::compare_trees(&expr2->reciprocal.arg(), expr1);
+        return PatternPair<Inv<Same>, Same>::match_pair(*expr1, *expr2)
+            || PatternPair<Same, Inv<Same>>::match_pair(*expr1, *expr2);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {
