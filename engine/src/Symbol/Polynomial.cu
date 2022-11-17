@@ -54,11 +54,11 @@ namespace Sym {
 
     __host__ __device__ void Polynomial::make_polynomial_to(const Symbol* const symbol,
                                                             Symbol* const destination) {
-        auto* term_ranks = reinterpret_cast<ssize_t*>(destination);
-        auto* term_coefficients_dst =
+        auto* const term_ranks = reinterpret_cast<ssize_t*>(destination);
+        auto* const term_coefficients_dst =
             destination + symbol->size() * sizeof(double) / sizeof(Symbol) + 1;
-        auto* term_coefficients = reinterpret_cast<double*>(term_coefficients_dst);
-        auto* dst_coefs = term_coefficients + symbol->size();
+        auto* const term_coefficients = reinterpret_cast<double*>(term_coefficients_dst);
+        auto* const dst_coefs = term_coefficients + symbol->size();
 
         symbol->is_polynomial(destination);
         symbol->get_monomial_coefficient(term_coefficients_dst);
@@ -80,8 +80,11 @@ namespace Sym {
             }
         } break;
         case Type::Product:
+            [[fallthrough]];
         case Type::Power:
+            [[fallthrough]];
         case Type::Negation:
+            [[fallthrough]];
         case Type::Variable:
             dst_coefs[term_ranks[0]] = term_coefficients[0];
             break;
@@ -92,7 +95,7 @@ namespace Sym {
 
         auto& dest_poly = destination->init_from(Polynomial::with_rank(rank));
 
-        double* coefs = dest_poly.coefficients();
+        double* const coefs = dest_poly.coefficients();
 
         for (ssize_t i = 0; i <= rank; ++i) {
             coefs[i] = dst_coefs[i];
@@ -116,7 +119,7 @@ namespace Sym {
             coefficient_dst += coefficient_dst->size();
         }
 
-        for (ssize_t i = rank - 1; i >= 0; --i) {
+        for (ssize_t i = static_cast<ssize_t>(rank) - 1; i >= 0; --i) {
             Addition* const plus = (destination + i) << Addition::builder();
             plus->seal_arg1();
             plus->seal();
@@ -143,29 +146,20 @@ namespace Sym {
     __host__ __device__ void Polynomial::divide_polynomials(Polynomial& numerator,
                                                             Polynomial& denominator,
                                                             Polynomial& result) {
-        // for (ssize_t i=0;i<=result.rank;++i) {
-        //     printf("%f\t",result[i]);
-        // }
-        // printf("\n");
-
-        for (ssize_t i = numerator.rank - denominator.rank; i >= 0; --i) {
+        for (auto i = static_cast<ssize_t>(numerator.rank - denominator.rank); i >= 0; --i) {
             double& num_first = numerator[i + denominator.rank];
             double& res_current = result[i];
             res_current = num_first / denominator[denominator.rank];
             num_first = 0;
-            for (ssize_t j = denominator.rank - 1; j >= 0; --j) {
+            for (ssize_t j = static_cast<ssize_t>(denominator.rank) - 1; j >= 0; --j) {
                 numerator[i + j] -= res_current * denominator[j];
             }
-            //     for (ssize_t i=0;i<=result.rank;++i) {
-            //     printf("%f\t",result[i]);
-            // }
-            // printf("\n");
         }
         numerator.make_proper();
     }
 
     __host__ __device__ void Polynomial::make_proper() {
-        ssize_t i = rank;
+        auto i = static_cast<ssize_t>(rank);
         while (i > 0 && abs(coefficients()[i--]) < Util::EPS) {
             --rank;
         }
@@ -177,7 +171,7 @@ namespace Sym {
             fmt::format(rank == 0 ? "Poly[size={}]({}"
                                   : (rank == 1 ? "Poly[size={}]({}^x" : "Poly[size={}]({}x^({})"),
                         size, coefficients()[rank], rank);
-        for (int i = rank - 1; i > 1; --i) {
+        for (auto i = static_cast<ssize_t>(rank) - 1; i > 1; --i) {
             if (coefficients()[i] != 0) {
                 coefficients_str += fmt::format("{}{}*x^({})", coefficients()[i] < 0 ? "" : "+",
                                                 coefficients()[i], i);
@@ -196,7 +190,7 @@ namespace Sym {
 
     std::string Polynomial::to_tex() const { // TODO popraw!
         std::string coefficients_str = fmt::format("{}x^{{ {} }}", coefficients()[rank], rank);
-        for (int i = rank - 1; i >= 0; --i) {
+        for (auto i = static_cast<ssize_t>(rank) - 1; i >= 0; --i) {
             coefficients_str += fmt::format("{}{}x^{{ {} }}", coefficients()[i] < 0 ? "" : "+",
                                             coefficients()[i], i);
         }
