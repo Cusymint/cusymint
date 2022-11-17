@@ -5,7 +5,7 @@
 
 namespace Sym {
     /*
-     * @brief Iterator kolejnych wyrażeń w uproszczonym drzewie operatora
+     * @brief Iterator of expressions in a simplified expression tree
      */
     template <class T, class S> class GenericTreeIterator {
         T* current_op;
@@ -13,19 +13,41 @@ namespace Sym {
 
       public:
         /*
-         * @brief Tworzy iterator dla drzewa wyrażenia
+         * @brief Creates a tree iterator
          *
-         * @param op Symbol po którego dzieciach miejsce będzie mieć iteracja
+         * @param tree Operator over which children the iterator will iterate
          */
         __host__ __device__ explicit GenericTreeIterator(T* const tree) :
             current_op(tree), current_symbol(&tree->arg2()) {}
 
         /*
-         * @brief Przesuwa iterator do przodu.
+         * @brief Creates a tree iterator if tree points to an element of type T, otherwise creates
+         * a dummy iterator with no current_op over a single expression
          *
-         * @return `true` jeśli przesunięty na kolejny element, `false` w przeciwnym wypadku.
+         * @param tree Operator over which children the iterator will iterate
+         */
+        __host__ __device__ explicit GenericTreeIterator(S* const expression) {
+            if (expression->is(T::TYPE)) {
+                current_op = expression->template as_ptr<T>();
+                current_symbol = &expression->template as<T>().arg2();
+            }
+            else {
+                current_op = nullptr;
+                current_symbol = expression;
+            }
+        }
+
+        /*
+         * @brief Moves the iterator forward
+         *
+         * @return `true` if the iterator is still valid after the move, `false` otherwise
          */
         __host__ __device__ bool advance() {
+            if (current_op == nullptr) {
+                current_symbol = nullptr;
+                return false;
+            }
+
             if (current_op->arg1().is(T::TYPE)) {
                 current_op = &current_op->arg1().template as<T>();
                 current_symbol = &current_op->arg2();
@@ -43,18 +65,18 @@ namespace Sym {
         }
 
         /*
-         * @brief Zwraca informacje o ważności iteratora.
+         * @brief Wheather the iterator is valid
          *
-         * @return `true` jeśli `current() != nullptr`, `false` w przeciwnym wypadku.
+         * @return `true` if `current() != nullptr`, `false` otherwise
          */
         [[nodiscard]] __host__ __device__ bool is_valid() const {
             return current_symbol != nullptr;
         }
 
         /*
-         * @brief Zwraca obecny element
+         * @brief Current element
          *
-         * @return Element na który obecnie wskazuje iterator. Zwraca `nullptr` gdy koniec.
+         * @return Element pointed to by the iterator. `nullptr` if the iterator has been exhaused.
          */
         [[nodiscard]] __host__ __device__ const Symbol* current() const {
             if constexpr (Consts::DEBUG) {
@@ -67,9 +89,9 @@ namespace Sym {
         }
 
         /*
-         * @brief Zwraca obecny element
+         * @brief Current element
          *
-         * @return Element na który obecnie wskazuje iterator. Zwraca `nullptr` gdy koniec.
+         * @return Element pointed to by the iterator. `nullptr` if the iterator has been exhaused.
          */
         [[nodiscard]] __host__ __device__ Symbol* current() {
             return const_cast<Symbol*>(const_cast<const GenericTreeIterator*>(this)->current());

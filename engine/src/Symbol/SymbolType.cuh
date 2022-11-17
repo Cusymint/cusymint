@@ -6,10 +6,10 @@ namespace Sym {
         // Basic types
         Symbol = 0,
         Unknown,
-        Variable,
         NumericConstant, // Constants with given numeric value, e.g. 5, 1.345, 12.44
         KnownConstant,   // Well known real constants, e.g. pi, e (Euler's number)
         UnknownConstant, // Constants marked with letters, e.g. a, phi, delta
+        Variable,
         // Placeholders
         ExpanderPlaceholder,
         // Meta structures
@@ -35,8 +35,21 @@ namespace Sym {
         Arctangent,
         Arccotangent,
         // Logarithm
-        Logarithm
+        Logarithm,
+        // Polynomials
+        Polynomial
     };
+
+    /*
+     * @brief A unique number for every symbol type that can be used for ordering
+     *
+     * @param type Type to get the number for
+     *
+     * @return A number uniquely identifying the type
+     */
+    __host__ __device__ inline size_t type_ordinal(const Type type) {
+        return static_cast<size_t>(type);
+    }
 
     __host__ __device__ inline const char* type_name(Type type) {
         // I could not find a better way to this that would work on both CPU and GPU
@@ -45,14 +58,14 @@ namespace Sym {
             return "Symbol";
         case Type::Unknown:
             return "Unknown";
-        case Type::Variable:
-            return "Variable";
         case Type::NumericConstant:
             return "NumericConstant";
         case Type::KnownConstant:
             return "KnownConstant";
         case Type::UnknownConstant:
             return "UnknownConstant";
+        case Type::Variable:
+            return "Variable";
         case Type::ExpanderPlaceholder:
             return "ExpanderPlaceholder";
         case Type::Integral:
@@ -93,6 +106,8 @@ namespace Sym {
             return "Arccotangent";
         case Type::Logarithm:
             return "Logarithm";
+        case Type::Polynomial:
+            return "Polynomial";
         }
 
         return "Invalid type";

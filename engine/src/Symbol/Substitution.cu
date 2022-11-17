@@ -10,6 +10,8 @@
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Substitution)
+    DEFINE_IDENTICAL_COMPARE_TO(Substitution)
+    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Substitution)
 
     DEFINE_COMPRESS_REVERSE_TO(Substitution) {
         const size_t new_expression_size = (destination - 1)->size();
@@ -29,22 +31,24 @@ namespace Sym {
         return new_substitution_size + offset;
     }
 
-    DEFINE_COMPARE(Substitution) {
-        return BASE_COMPARE(Substitution) &&
+    DEFINE_ARE_EQUAL(Substitution) {
+        return BASE_ARE_EQUAL(Substitution) &&
                symbol->substitution.substitution_idx == substitution_idx;
     }
-
-    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Substitution)
 
     DEFINE_IS_FUNCTION_OF(Substitution) {
         return expression()->is_function_of(expressions, expression_count);
     } // NOLINT
 
-    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Substitution) {
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(Substitution) {
         if (!is_last_substitution()) {
             stack.push(next_substitution()->symbol());
         }
         stack.push(expression());
+    }
+
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Substitution) {
+        push_children_onto_stack(stack);
         expression()->additional_required_size() += additional_required_size;
     }
 

@@ -7,7 +7,7 @@
 #include "Utils/Meta.cuh"
 #include <type_traits>
 
-#define DEFINE_GET_SAME                                                   \
+#define DEFINE_GET_SAME                                                    \
     template <typename U = void, std::enable_if_t<HAS_SAME, U>* = nullptr> \
     __host__ __device__ static const Symbol& get_same(const Symbol& dst)
 
@@ -20,8 +20,7 @@ namespace Sym {
         };
     };
 
-    template <class T, class U>
-    struct PatternPair {
+    template <class T, class U> struct PatternPair {
         __host__ __device__ static bool match_pair(const Symbol& expr1, const Symbol& expr2) {
             if constexpr (T::HAS_SAME) {
                 return T::match(expr1) && U::match(expr2, T::get_same(expr1));
@@ -41,7 +40,7 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol&) { return true; }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
-            return Symbol::compare_trees(&dst, &other_same);
+            return Symbol::are_expressions_equal(&dst, &other_same);
         }
     };
 
@@ -95,7 +94,9 @@ namespace Sym {
         using AdditionalArgs = cuda::std::tuple<>;
         static constexpr bool HAS_SAME = false;
         __host__ __device__ static bool match(const Symbol& /*dst*/) { return true; };
-        __host__ __device__ static bool match(const Symbol& /*dst*/, const Symbol&) { return true; };
+        __host__ __device__ static bool match(const Symbol& /*dst*/, const Symbol&) {
+            return true;
+        };
     };
 
     template <class Op, class Inner> struct OneArgOperator {
@@ -154,13 +155,15 @@ namespace Sym {
                    RInner::match(dst.as<Op>().arg2(), other_same);
         }
 
-        template <typename U = void, std::enable_if_t<LInner::HAS_SAME && RInner::HAS_SAME, U>* = nullptr>
+        template <typename U = void,
+                  std::enable_if_t<LInner::HAS_SAME && RInner::HAS_SAME, U>* = nullptr>
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1()) &&
                    RInner::match(dst.as<Op>().arg2(), LInner::get_same(dst.as<Op>().arg1()));
         }
 
-        template <typename U = void, std::enable_if_t<!(LInner::HAS_SAME && RInner::HAS_SAME), U>* = nullptr>
+        template <typename U = void,
+                  std::enable_if_t<!(LInner::HAS_SAME && RInner::HAS_SAME), U>* = nullptr>
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1()) &&
                    RInner::match(dst.as<Op>().arg2());
@@ -177,7 +180,9 @@ namespace Sym {
 
         __host__ __device__ static bool match(const Symbol& dst) { return dst.is(Type::Variable); }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) { return match(dst); }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     struct Num {
@@ -190,14 +195,18 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::NumericConstant);
         }
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) { return match(dst); }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     struct Const {
         using AdditionalArgs = cuda::std::tuple<>;
         static constexpr bool HAS_SAME = false;
         __host__ __device__ static bool match(const Symbol& dst) { return dst.is_constant(); }
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) { return match(dst); }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     // In C++17, doubles can't be template parameters.
@@ -212,7 +221,9 @@ namespace Sym {
             return dst.is(Type::NumericConstant) && dst.as<NumericConstant>().value == V;
         }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) { return match(dst); }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     template <KnownConstantValue V> struct KnownConstantOperator {
@@ -226,7 +237,9 @@ namespace Sym {
             return dst.is(Type::KnownConstant) && dst.as<KnownConstant>().value == V;
         }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) { return match(dst); }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     using Pi = KnownConstantOperator<KnownConstantValue::Pi>;
@@ -242,9 +255,7 @@ namespace Sym {
         using AdditionalArgs = Util::TupleCat<SolutionArgs, IAdditionalArgs>;
         static constexpr bool HAS_SAME = Inner::HAS_SAME;
 
-        DEFINE_GET_SAME {
-            return Inner::get_same(*dst.as<Solution>().expression());
-        }
+        DEFINE_GET_SAME { return Inner::get_same(*dst.as<Solution>().expression()); }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             auto& integral = cuda::std::get<0>(args).get();
@@ -280,9 +291,7 @@ namespace Sym {
         using AdditionalArgs = Util::TupleCat<CandidateArgs, IAdditionalArgs>;
         static constexpr bool HAS_SAME = Inner::HAS_SAME;
 
-        DEFINE_GET_SAME {
-            return Inner::get_same(dst.as<SubexpressionCandidate>().arg());
-        }
+        DEFINE_GET_SAME { return Inner::get_same(dst.as<SubexpressionCandidate>().arg()); }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             auto* const candidate = dst << SubexpressionCandidate::builder();
@@ -317,9 +326,7 @@ namespace Sym {
         using AdditionalArgs = Util::TupleCat<IntegralArgs, IAdditionalArgs>;
         static constexpr bool HAS_SAME = Inner::HAS_SAME;
 
-        DEFINE_GET_SAME {
-            return Inner::get_same(*dst.as<Integral>().integrand());
-        }
+        DEFINE_GET_SAME { return Inner::get_same(*dst.as<Integral>().integrand()); }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             cuda::std::get<0>(args).get().copy_without_integrand_to(&dst);
@@ -335,7 +342,8 @@ namespace Sym {
         }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
-            return dst.is(Type::Integral) && Inner::match(*dst.as<Integral>().integrand(), other_same);
+            return dst.is(Type::Integral) &&
+                   Inner::match(*dst.as<Integral>().integrand(), other_same);
         }
     };
 
@@ -364,7 +372,9 @@ namespace Sym {
             return dst.is(Type::SubexpressionVacancy);
         }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) { return match(dst); }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+            return match(dst);
+        }
     };
 
     template <class L, class R> using Add = TwoArgOperator<Addition, L, R>;
@@ -395,11 +405,11 @@ namespace Sym {
     /*
      * @brief Encapsulates procedure of creating `TwoArgOp` symbol tree from existing `SymbolTree`,
      * where every leaf of a tree (term of sum/factor of a product) is mapped by function of type
-     * `OneArgOp`. Note that `TwoArgOp` and `SymbolTree` may be different types.
+     * `OneArgOp`. Note that `TwoArgOp` and `SymbolTree` may be of different types.
      */
     template <class SymbolTree> struct From {
         template <class TwoArgOp> struct Create {
-            template <class OneArgOp> struct WithMap {
+            template <template <class Inner> class OneArgOp> struct WithMap {
                 using AdditionalArgs = cuda::std::tuple<
                     cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
                 static constexpr bool HAS_SAME = false;
@@ -407,15 +417,20 @@ namespace Sym {
                 __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
                     SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
                     size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
-                    Symbol* terms = &dst + count - 1;
                     TreeIterator<SymbolTree> iterator(&tree);
+
+                    Symbol* destination_back = &dst + tree.size + count;
                     while (iterator.is_valid()) {
-                        OneArgOp* operator_ = terms << OneArgOp::builder();
-                        iterator.current()->copy_to(&operator_->arg());
-                        operator_->seal();
-                        terms += terms->size();
+                        Symbol* const destination =
+                            destination_back - iterator.current()->size() - 1;
+                        OneArgOp<Copy>::init(*destination, {*iterator.current()});
+                        destination_back = destination;
                         iterator.advance();
                     }
+
+                    Util::move_mem(&dst + count - 1, destination_back,
+                                   &dst + tree.size + count - destination_back);
+
                     for (ssize_t i = static_cast<ssize_t>(count) - 2; i >= 0; --i) {
                         TwoArgOp* const operator_ = &dst + i << TwoArgOp::builder();
                         operator_->seal_arg1();

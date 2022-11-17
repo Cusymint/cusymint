@@ -8,5 +8,5 @@
 class Solver {
   public:
     Solver();
-    std::optional<Expression> solve(const Expression& integral) const;
+    [[nodiscard]] std::optional<Expression> solve(const Expression& integral) const;
 };

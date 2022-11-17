@@ -2,6 +2,7 @@
 
 #include "MetaOperators.cuh"
 #include "Symbol.cuh"
+#include "Symbol/SymbolType.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/ExpanderPlaceholder.cuh"
 #include "Symbol/TreeIterator.cuh"
@@ -17,7 +18,8 @@ namespace {
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(Power)
-    DEFINE_SIMPLE_TWO_ARGUMENT_OP_COMPARE(Power)
+    DEFINE_SIMPLE_TWO_ARGUMENT_OP_ARE_EQUAL(Power)
+    DEFINE_IDENTICAL_COMPARE_TO(Power)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Power)
 
     DEFINE_SIMPLIFY_IN_PLACE(Power) {
@@ -130,7 +132,7 @@ namespace Sym {
     }
 
     std::string Power::to_string() const {
-        return fmt::format("({}^{})", arg1().to_string(), arg2().to_string());
+        return fmt::format("{}^{}", arg1().to_string(), arg2().to_string());
     }
 
     std::string Power::to_tex() const {
