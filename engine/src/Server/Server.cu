@@ -31,22 +31,23 @@ static void interpret(struct mg_rpc_req* r) {
     print_debug("[Server] Interpret input {}\n", input);
     auto formatter = JsonFormatter();
 
-    Expression* parser_result;
     std::vector<std::string> errors;
+    std::string json;
 
     try {
-        *parser_result = global_cached_parser->parse(input);
+        auto parser_result = global_cached_parser->parse(input);
+        json = formatter.format(&parser_result, nullptr, nullptr);
     } catch (const std::invalid_argument& e) {
         errors.push_back(e.what());
 
-        print_debug("[Server] Interpret couldn't parse input {}\n", input);
+        json = formatter.format(nullptr, nullptr, &errors);
+        print_debug("[Server] Interpret invalid argument {}, couldn't parse input: {}\n", e.what(), input);
     } catch (const std::exception& e) {
         errors.push_back("Internal error.");
 
-        print_debug("[Server] Interpret couldn't parse input {}\n", input);
+        json = formatter.format(nullptr, nullptr, &errors);
+        print_debug("[Server] Interpret internal error, couldn't parse input {}\n", input);
     }
-
-    auto json = formatter.format(parser_result, nullptr, &errors);
 
     print_debug("[Server] Interpret result {}\n", json);
 
@@ -136,7 +137,7 @@ Server::Server(std::string listen_on, CachedParser cached_parser, Solver solver)
 }
 
 void Server::run() {
-    fmt::print("Starting server on {}\n", _listen_on);
+    fmt::print("[Server] Starting on {}\n", _listen_on);
 
     mg_http_listen(&_mgr, _listen_on.c_str(), handler, NULL);
     for (;;) {

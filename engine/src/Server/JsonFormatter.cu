@@ -48,7 +48,7 @@ std::string JsonFormatter::format(Expression* input, Expression* output, std::ve
             errors_with_quotes.push_back(quote(error));
         }
 
-        json += fmt::format("errors: [{}],", fmt::join(errors_with_quotes, ", "));
+        json += fmt::format("\"errors\": [{}],", fmt::join(errors_with_quotes, ", "));
     }
 
     if (json.back() == ',') {
