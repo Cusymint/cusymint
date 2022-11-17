@@ -12,30 +12,65 @@
 namespace Sym {
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(NumericConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(NumericConstant);
-    DEFINE_IS_FUNCTION_OF(NumericConstant) { return true; } // NOLINT
+    DEFINE_IS_FUNCTION_OF(NumericConstant) { return true; } // NOLINT(misc-unused-parameters)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(NumericConstant)
+    DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(NumericConstant)
 
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(KnownConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(KnownConstant);
-    DEFINE_IS_FUNCTION_OF(KnownConstant) { return true; } // NOLINT
+    DEFINE_IS_FUNCTION_OF(KnownConstant) { return true; } // NOLINT(misc-unused-parameters)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(KnownConstant)
+    DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(KnownConstant)
 
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(UnknownConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(UnknownConstant);
-    DEFINE_IS_FUNCTION_OF(UnknownConstant) { return true; } // NOLINT
+    DEFINE_IS_FUNCTION_OF(UnknownConstant) { return true; } // NOLINT(misc-unused-parameters)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(UnknownConstant)
+    DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(UnknownConstant)
 
-    DEFINE_COMPARE(NumericConstant) {
-        return BASE_COMPARE(NumericConstant) && symbol->numeric_constant.value == value;
+    DEFINE_ARE_EQUAL(NumericConstant) {
+        return BASE_ARE_EQUAL(NumericConstant) && symbol->numeric_constant.value == value;
     }
 
-    DEFINE_COMPARE(UnknownConstant) {
-        return BASE_COMPARE(UnknownConstant) &&
+    DEFINE_COMPARE_TO(NumericConstant) {
+        return Util::compare(value, other.as<NumericConstant>().value);
+    }
+
+    DEFINE_ARE_EQUAL(UnknownConstant) {
+        return BASE_ARE_EQUAL(UnknownConstant) &&
                Util::compare_str(symbol->unknown_constant.name, name, NAME_LEN);
     }
 
-    DEFINE_COMPARE(KnownConstant) {
-        return BASE_COMPARE(KnownConstant) && symbol->known_constant.value == value;
+    DEFINE_COMPARE_TO(UnknownConstant) {
+        const auto& other_name = other.as<UnknownConstant>().name;
+        for (size_t i = 0; i < NAME_LEN; ++i) {
+            if (name[i] == '\0' && other_name[i] == '\0') {
+                break;
+            }
+
+            // This generalizes to the case when both strings are of different length. If name[i] ==
+            // '\0' and other.name[i] does not, then this condition will be true. Similarly in the
+            // case when the first string is longer.
+            if (name[i] < other_name[i]) {
+                return Util::Order::Less;
+            }
+
+            if (name[i] > other_name[i]) {
+                return Util::Order::Greater;
+            }
+        }
+
+        return Util::Order::Equal;
+    }
+
+    DEFINE_ARE_EQUAL(KnownConstant) {
+        return BASE_ARE_EQUAL(KnownConstant) && symbol->known_constant.value == value;
+    }
+
+    DEFINE_COMPARE_TO(KnownConstant) {
+        return Util::compare(
+            static_cast<std::underlying_type_t<decltype(value)>>(value),
+            static_cast<std::underlying_type_t<decltype(value)>>(other.as<KnownConstant>().value));
     }
 
     __host__ __device__ NumericConstant NumericConstant::with_value(double value) {

@@ -59,9 +59,13 @@ add_executable(cusymint ${SRC_DIR}/main.cu)
 
 add_executable(
   testcusymint
-  ${TEST_PARSER_DIR}/Scanner.cu ${TEST_PARSER_DIR}/Parser.cu
-  ${TEST_DIR}/Heuristic.cu ${TEST_DIR}/IntegralCommons.cu
-  ${TEST_DIR}/KnownIntegral.cu ${TEST_DIR}/Simplify.cu)
+  ${TEST_PARSER_DIR}/Scanner.cu
+  ${TEST_PARSER_DIR}/Parser.cu
+  ${TEST_DIR}/Heuristic.cu
+  ${TEST_DIR}/IntegralCommons.cu
+  ${TEST_DIR}/KnownIntegral.cu
+  ${TEST_DIR}/Simplify.cu
+  ${TEST_DIR}/Symbol.cu)
 
 add_executable(
   srvcusymint
@@ -106,8 +110,6 @@ endif()
 
 # Additional packages
 
-find_package(fmt REQUIRED)
-
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -123,7 +125,13 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/cesanta/mongoose.git
   GIT_TAG 7.8)
 
-FetchContent_MakeAvailable(googletest mongoose)
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG 9.1.0)
+FetchContent_MakeAvailable(fmt)
+
+FetchContent_MakeAvailable(googletest mongoose fmt)
 
 add_library(libmongoose ${mongoose_SOURCE_DIR}/mongoose.c)
 

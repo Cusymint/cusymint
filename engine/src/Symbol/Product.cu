@@ -22,7 +22,8 @@ namespace {
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Product)
-    DEFINE_SIMPLE_TWO_ARGUMENT_OP_COMPARE(Product)
+    DEFINE_SIMPLE_TWO_ARGUMENT_OP_ARE_EQUAL(Product)
+    DEFINE_IDENTICAL_COMPARE_TO(Product)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Product)
 
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
@@ -36,6 +37,7 @@ namespace Sym {
 
         eliminate_ones();
 
+        simplify_structure(help_space);
         return !Util::is_another_loop_required(result);
     }
 
@@ -137,8 +139,8 @@ namespace Sym {
 
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol* const expr1,
                                                                const Symbol* const expr2) {
-        return PatternPair<Inv<Same>, Same>::match_pair(*expr1, *expr2) ||
-               PatternPair<Same, Inv<Same>>::match_pair(*expr1, *expr2);
+        using Matcher = PatternPair<Inv<Same>, Same>;
+        return Matcher::match_pair(*expr1, *expr2) || Matcher::match_pair(*expr2, *expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {
@@ -203,13 +205,13 @@ namespace Sym {
              last = (last->symbol() - 1)->as_ptr<Product>()) {
             if (last->arg2().is(Type::NumericConstant) &&
                 last->arg2().numeric_constant.value == 1.0) {
-                last->arg1().copy_to(last->symbol());
+                last->arg1().move_to(last->symbol());
                 continue;
             }
 
             if (last->arg1().is(Type::NumericConstant) &&
                 last->arg1().numeric_constant.value == 1.0) {
-                last->arg2().copy_to(last->symbol());
+                last->arg2().move_to(last->symbol());
             }
         }
     }
@@ -221,7 +223,8 @@ namespace Sym {
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)
-    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Reciprocal)
+    DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Reciprocal)
+    DEFINE_IDENTICAL_COMPARE_TO(Reciprocal)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
 
@@ -231,8 +234,9 @@ namespace Sym {
             return true;
         }
 
-        if (arg().is(1)) {
-            symbol()->init_from(NumericConstant::with_value(1));
+        if (arg().is(Type::NumericConstant)) {
+            symbol()->init_from(
+                NumericConstant::with_value(1.0 / arg().as<NumericConstant>().value));
             return true;
         }
 

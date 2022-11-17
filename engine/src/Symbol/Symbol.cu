@@ -1,5 +1,7 @@
 #include "Symbol.cuh"
 
+#include <cuda/std/utility>
+
 #include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/StaticStack.cuh"
@@ -17,6 +19,12 @@ namespace Sym {
                                                           const Symbol* const source,
                                                           size_t symbol_count) {
         Util::copy_mem(destination, source, symbol_count * sizeof(Symbol));
+    }
+
+    __host__ __device__ void Symbol::move_symbol_sequence(Symbol* const destination,
+                                                          Symbol* const source,
+                                                          size_t symbol_count) {
+        Util::move_mem(destination, source, symbol_count * sizeof(Symbol));
     }
 
     __host__ __device__ void Symbol::copy_and_reverse_symbol_sequence(Symbol* const destination,
@@ -57,6 +65,10 @@ namespace Sym {
 
     __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {
         copy_symbol_sequence(destination, this, size());
+    }
+
+    __host__ __device__ void Symbol::move_to(Symbol* const destination) {
+        move_symbol_sequence(destination, this, size());
     }
 
     __host__ __device__ bool Symbol::is_constant() const {
@@ -174,8 +186,8 @@ namespace Sym {
         substitute_variable_with(substitute);
     }
 
-    __host__ __device__ bool Symbol::compare_trees(const Symbol* const expr1,
-                                                   const Symbol* const expr2) {
+    __host__ __device__ bool Symbol::are_expressions_equal(const Symbol* const expr1,
+                                                           const Symbol* const expr2) {
         if (expr1->size() != expr2->size()) {
             return false;
         }
@@ -183,11 +195,45 @@ namespace Sym {
         return compare_symbol_sequences(expr1, expr2, expr1->size());
     }
 
+    __host__ __device__ Util::Order
+    Symbol::compare_expressions(const Symbol& expr1, const Symbol& expr2, Symbol& help_space) {
+        Util::StaticStack<const Symbol*> expr1_stack(reinterpret_cast<const Symbol**>(&help_space));
+        Util::StaticStack<const Symbol*> expr2_stack(reinterpret_cast<const Symbol**>(
+            expr1.size() + &help_space)); // expr1.size() should not be smaller than the actual size
+
+        expr1_stack.push(&expr1);
+        expr2_stack.push(&expr2);
+
+        while (!expr1_stack.empty() && !expr2_stack.empty()) {
+            const Symbol* const expr1_sym = expr1_stack.pop();
+            const Symbol* const expr2_sym = expr2_stack.pop();
+
+            if (expr1_sym->type_ordinal() < expr2_sym->type_ordinal()) {
+                return Util::Order::Less;
+            }
+
+            if (expr1_sym->type_ordinal() > expr2_sym->type_ordinal()) {
+                return Util::Order::Greater;
+            }
+
+            const auto order = VIRTUAL_CALL(*expr1_sym, compare_to, *expr2_sym);
+            if (order != Util::Order::Equal) {
+                return order;
+            }
+
+            VIRTUAL_CALL(*expr1_sym, push_children_onto_stack, expr1_stack);
+            VIRTUAL_CALL(*expr2_sym, push_children_onto_stack, expr2_stack);
+        }
+
+        return Util::Order::Equal;
+    }
+
     std::string Symbol::to_string() const { return VIRTUAL_CALL(*this, to_string); }
 
     std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
 
-    __host__ __device__ Util::OptionalNumber<ssize_t> Symbol::is_polynomial(Symbol* const help_space) const {
+    __host__ __device__ Util::OptionalNumber<ssize_t>
+    Symbol::is_polynomial(Symbol* const help_space) const {
         auto* ranks = reinterpret_cast<Util::OptionalNumber<ssize_t>*>(help_space);
         for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
             const Symbol* const current = at(i);
@@ -234,7 +280,8 @@ namespace Sym {
         return ranks[0];
     }
 
-    __host__ __device__ Util::OptionalNumber<double> Symbol::get_monomial_coefficient(Symbol* const help_space) const {
+    __host__ __device__ Util::OptionalNumber<double>
+    Symbol::get_monomial_coefficient(Symbol* const help_space) const {
         auto* coefficients = reinterpret_cast<Util::OptionalNumber<double>*>(help_space);
         for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
             const Symbol* const current = at(i);
@@ -263,7 +310,7 @@ namespace Sym {
     }
 
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {
-        return VIRTUAL_CALL(sym1, compare, &sym2);
+        return VIRTUAL_CALL(sym1, are_equal, &sym2);
     }
 
     __host__ __device__ bool operator!=(const Symbol& sym1, const Symbol& sym2) {

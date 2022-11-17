@@ -10,13 +10,15 @@
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Addition)
-    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Addition)
+    DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Addition)
+    DEFINE_IDENTICAL_COMPARE_TO(Addition)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Addition)
 
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
         simplify_structure(help_space);
         const auto result = simplify_pairs(help_space);
         eliminate_zeros();
+        simplify_structure(help_space);
         return !Util::is_another_loop_required(result);
     }
 
@@ -43,7 +45,7 @@ namespace Sym {
 
     __host__ __device__ bool Addition::is_sine_cosine_squared_sum(const Symbol* const expr1,
                                                                   const Symbol* const expr2) {
-        return PatternPair<Pow<Sin<Same>, Integer<2>>, Pow<Cos<Same>, Integer<2>>>::match_pair(
+        return PatternPair<Pow<Cos<Same>, Integer<2>>, Pow<Sin<Same>, Integer<2>>>::match_pair(
             *expr1, *expr2);
     }
 
@@ -88,25 +90,26 @@ namespace Sym {
              last = (last->symbol() - 1)->as_ptr<Addition>()) {
             if (last->arg2().is(Type::NumericConstant) &&
                 last->arg2().as<NumericConstant>().value == 0.0) {
-                last->arg1().copy_to(last->symbol());
+                last->arg1().move_to(last->symbol());
                 continue;
             }
 
             if (last->arg1().is(Type::NumericConstant) &&
                 last->arg1().as<NumericConstant>().value == 0.0) {
-                last->arg2().copy_to(last->symbol());
+                last->arg2().move_to(last->symbol());
             }
         }
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Negation)
-    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Negation)
+    DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Negation)
+    DEFINE_IDENTICAL_COMPARE_TO(Negation)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Negation)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Negation)
 
     DEFINE_SIMPLIFY_IN_PLACE(Negation) {
         if (arg().is(Type::Negation)) {
-            arg().as<Negation>().arg().copy_to(symbol());
+            arg().as<Negation>().arg().move_to(symbol());
             return true;
         }
 
@@ -122,7 +125,7 @@ namespace Sym {
                 return false;
             }
 
-            From<Addition>::Create<Addition>::WithMap<Negation>::init(
+            From<Addition>::Create<Addition>::WithMap<Neg>::init(
                 *help_space, {{arg().as<Addition>(), term_count}});
             help_space->copy_to(symbol());
 
