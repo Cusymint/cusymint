@@ -159,14 +159,14 @@ namespace Sym {
         size = size_from_rank(rank);
     }
 
-    std::string Polynomial::to_string() const { // TODO lepiej!
+    std::string Polynomial::to_string() const {
         std::string coefficients_str =
             fmt::format(rank == 0 ? "Poly[size={}]({}"
-                                  : (rank == 1 ? "Poly[size={}]({}^x" : "Poly[size={}]({}x^({})"),
+                                  : (rank == 1 ? "Poly[size={}]({}*x" : "Poly[size={}]({}*x^{}"),
                         size, coefficients()[rank], rank);
         for (auto i = static_cast<ssize_t>(rank) - 1; i > 1; --i) {
             if (coefficients()[i] != 0) {
-                coefficients_str += fmt::format("{}{}*x^({})", coefficients()[i] < 0 ? "" : "+",
+                coefficients_str += fmt::format("{}{}*x^{}", coefficients()[i] < 0 ? "" : "+",
                                                 coefficients()[i], i);
             }
         }
@@ -181,11 +181,14 @@ namespace Sym {
         return coefficients_str + ")";
     }
 
-    std::string Polynomial::to_tex() const { // TODO popraw!
-        std::string coefficients_str = fmt::format("{}x^{{ {} }}", coefficients()[rank], rank);
-        for (auto i = static_cast<ssize_t>(rank) - 1; i >= 0; --i) {
-            coefficients_str += fmt::format("{}{}x^{{ {} }}", coefficients()[i] < 0 ? "" : "+",
-                                            coefficients()[i], i);
+    std::string Polynomial::to_tex() const {
+        std::string coefficients_str = fmt::format(
+            rank == 0 ? "{}" : (rank == 1 ? "{}x" : "{}x^{{ {} }}"), coefficients()[rank], rank);
+        for (auto i = static_cast<ssize_t>(rank) - 1; i > 1; --i) {
+            if (coefficients()[i] != 0) {
+                coefficients_str += fmt::format("{}{}x^{{ {} }}", coefficients()[i] < 0 ? "" : "+",
+                                                coefficients()[i], i);
+            }
         }
         if (rank > 0 && coefficients()[1] != 0) {
             coefficients_str +=
