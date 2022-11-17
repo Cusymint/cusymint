@@ -26,6 +26,15 @@ template <class T, class U> struct macro_type<T(U)> {
 #define META_TEST_NOT_MATCH(_name, _pattern, _expression) \
     _META_TEST_MATCH(_name, _pattern, _expression, false)
 
+#define _META_TEST_MATCH_PAIR(_name, _pattern1, _pattern2, _expression1, _expression2, _should_match) \
+    TEST(MetaOperatorsMatchTest, _name) { test_meta_match_pair<MACRO_TYPE(_pattern1), MACRO_TYPE(_pattern2), _should_match>(_expression1, _expression2); } // NOLINT
+
+#define META_TEST_MATCH_PAIR(_name, _pattern1, _pattern2, _expression1, _expression2) \
+    _META_TEST_MATCH_PAIR(_name, _pattern1, _pattern2, _expression1, _expression2, true)
+
+#define META_TEST_NOT_MATCH_PAIR(_name, _pattern1, _pattern2, _expression1, _expression2) \
+    _META_TEST_MATCH_PAIR(_name, _pattern1, _pattern2, _expression1, _expression2, false)
+
 #define META_TEST_INIT(_name, _pattern, ...)               \
     TEST(MetaOperatorsInitTest, _name) { test_meta_init<MACRO_TYPE(_pattern)>(__VA_ARGS__); } // NOLINT
 
@@ -45,13 +54,31 @@ namespace Test {
             test_meta_match<T, SHOULD_MATCH>(Parser::parse_function(expression));
         }
 
+        template <class T1, class T2, bool SHOULD_MATCH>
+        void test_meta_match_pair(const std::vector<Sym::Symbol>& expression1, const std::vector<Sym::Symbol>& expression2) {
+            if constexpr (SHOULD_MATCH) {
+                EXPECT_TRUE(MACRO_TYPE((Sym::PatternPair<T1, T2>))::match_pair(*expression1.data(), *expression2.data()));
+            }
+            else {
+                EXPECT_FALSE(MACRO_TYPE((Sym::PatternPair<T1, T2>))::match_pair(*expression1.data(), *expression2.data()));
+            }
+        }
+
+        template <class T1, class T2, bool SHOULD_MATCH>
+        void test_meta_match_pair(const std::string& expression1, const std::string& expression2) {
+            test_meta_match_pair<T1, T2, SHOULD_MATCH>(Parser::parse_function(expression1), Parser::parse_function(expression2));
+        }
+
         template <class T, class... Args>
         void test_meta_init(const std::vector<Sym::Symbol>& expected_expression,
                             const Args&... args) {
             std::vector<Sym::Symbol> expression(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
             T::init(*expression.data(), {args...});
             expression.resize(expression[0].size());
-            EXPECT_TRUE(Sym::Symbol::compare_trees(expression.data(), expected_expression.data()));
+            EXPECT_TRUE(Sym::Symbol::compare_trees(expression.data(), expected_expression.data()))
+                << "Expressions do not match:\n"
+                << expression.data()->to_string() << " <- got,\n"
+                << expected_expression.data()->to_string() << " <- expected\n";
         }
 
         template <class T, class... Args>
@@ -81,8 +108,8 @@ namespace Test {
     META_TEST_INIT(Product, (Sym::Mul<Sym::Cos<Sym::Var>, Sym::Pi>), "cos(x)*pi")
     META_TEST_INIT(Power, (Sym::Pow<Sym::Cos<Sym::E>, Sym::Pi>), "cos(e)^pi")
     // Advanced expressions
-    META_TEST_INIT(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Const>>, Sym::E, Sym::Int<1>>), "x+cos(ln(2+3+c))+e+1")
-    META_TEST_INIT(LongProduct, (Sym::Prod<Sym::Add<Sym::Var, Sym::Num>, Sym::Var, Sym::Pow<Sym::E, Sym::Var>>), "(x+5.6)*x*e^x")
+    META_TEST_INIT(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Mul<Sym::Num, Sym::Var>>>, Sym::E, Sym::Integer<1>>), "x+(cos(ln(2*x))+(e+1))", 2)
+    META_TEST_INIT(LongProduct, (Sym::Prod<Sym::Add<Sym::Var, Sym::Num>, Sym::Var, Sym::Pow<Sym::E, Sym::Var>>), "(x+5.6)*(x*e^x)", 5.6)
     META_TEST_INIT(EToXTower, (Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Var>>>>>>), "e^e^e^e^e^e^x")
     // solution, candidate, integral, vacancy, singleIntegralVacancy
     
@@ -135,8 +162,15 @@ namespace Test {
     META_TEST_NOT_MATCH(NotMatchAllOf, (Sym::AllOf<Sym::Cos<Sym::Var>, Sym::E, Sym::Integer<3>>), "e")
     META_TEST_MATCH(SingleAllOf, (Sym::AllOf<Sym::Cos<Sym::Var>>), "cos(x)")
 
+    META_TEST_MATCH(NotMatchesFalse, (Sym::Not<Sym::AllOf<Sym::Cos<Sym::Var>>>), "cos(x)")
+    META_TEST_NOT_MATCH(NotWithTrueCondition, (Sym::Not<Sym::Arcsin<Sym::E>>), "arcsin(e)")
     // Same, PatternPair
-    
+    META_TEST_MATCH(SimpleSame, (Sym::Mul<Sym::Same, Sym::Same>), "(e^x*345+1)*(e^x*345+1)")
+    META_TEST_NOT_MATCH(NotSame, (Sym::Mul<Sym::Same, Sym::Same>), "(e^x*345+1)*(e^x*345)")
+    META_TEST_MATCH(AdvancedSame, (Sym::Add<Sym::Ln<Sym::Mul<Sym::Same, Sym::Num>>, Sym::Sin<Sym::Add<Sym::E, Sym::Same>>>), "ln((x+sin(x)+4^x)*5.7)+sin(e+(x+sin(x)+4^x))")
+    META_TEST_MATCH(FourSameSymbols, (Sym::Mul<Sym::Add<Sym::Same, Sym::Same>, Sym::Add<Sym::Same, Sym::Mul<Sym::Integer<4>, Sym::Same>>>), "(e^c^x+e^c^x)*(e^c^x+4*e^c^x)")
+
+    META_TEST_MATCH_PAIR(PairWithIndependentPatterns, Sym::Ln<Sym::Var>, Sym::Arccot<Sym::E>, "ln(x)", "arccot(x)")
     // Advanced expressions
     META_TEST_MATCH(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Const>>, Sym::E, Sym::Integer<1>>), "x+cos(ln(2+3+c))+e+1")
     META_TEST_MATCH(LongProduct, (Sym::Prod<Sym::Add<Sym::Var, Sym::Num>, Sym::Var, Sym::Pow<Sym::E, Sym::Var>>), "(x+5.6)*x*e^x")
