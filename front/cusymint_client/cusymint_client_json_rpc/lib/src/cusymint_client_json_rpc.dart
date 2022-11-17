@@ -38,9 +38,7 @@ class CusymintClientJsonRpc implements CusymintClient {
       );
 
       final errors = result['errors'] != null
-          ? (result['errors'] as List)
-              .map((e) => ResponseError(e['errorMessage']))
-              .toList()
+          ? (result['errors'] as List).map((e) => ResponseError(e)).toList()
           : List<ResponseError>.empty();
 
       return Response(
