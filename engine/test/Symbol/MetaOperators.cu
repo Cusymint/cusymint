@@ -127,11 +127,18 @@ namespace Test {
     META_TEST_MATCH(Product, (Sym::Mul<Sym::Cos<Sym::Var>, Sym::Pi>), "cos(x)*pi")
     META_TEST_MATCH(Power, (Sym::Pow<Sym::Cos<Sym::E>, Sym::Pi>), "cos(e)^pi")
     // AnyOf, AllOf, Not
-        
+    META_TEST_MATCH(AnyOfFirstCorrect, (Sym::AnyOf<Sym::Cos<Sym::Var>, Sym::E, Sym::Integer<3>>), "cos(x)")
+    META_TEST_MATCH(AnyOfSecondCorrect, (Sym::AnyOf<Sym::Cos<Sym::Var>, Sym::E, Sym::Integer<3>>), "e")
+    META_TEST_MATCH(AnyOfLastCorrect, (Sym::AnyOf<Sym::Cos<Sym::Var>, Sym::E, Sym::Integer<3>>), "3")
+    META_TEST_NOT_MATCH(AnyOfNoneCorrect, (Sym::AnyOf<Sym::Cos<Sym::Var>, Sym::E, Sym::Integer<3>>), "sin(e)")
+
+    META_TEST_NOT_MATCH(NotMatchAllOf, (Sym::AllOf<Sym::Cos<Sym::Var>, Sym::E, Sym::Integer<3>>), "e")
+    META_TEST_MATCH(SingleAllOf, (Sym::AllOf<Sym::Cos<Sym::Var>>), "cos(x)")
+
     // Same, PatternPair
     
     // Advanced expressions
-    META_TEST_MATCH(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Const>>, Sym::E, Sym::Int<1>>), "x+cos(ln(2+3+c))+e+1")
+    META_TEST_MATCH(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Const>>, Sym::E, Sym::Integer<1>>), "x+cos(ln(2+3+c))+e+1")
     META_TEST_MATCH(LongProduct, (Sym::Prod<Sym::Add<Sym::Var, Sym::Num>, Sym::Var, Sym::Pow<Sym::E, Sym::Var>>), "(x+5.6)*x*e^x")
     META_TEST_MATCH(EToXTower, (Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Pow<Sym::E, Sym::Var>>>>>>), "e^e^e^e^e^e^x")
         
