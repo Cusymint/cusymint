@@ -376,7 +376,7 @@ namespace Sym {
     template <class L, class R> using Mul = TwoArgOperator<Product, L, R>;
     template <class I> using Inv = OneArgOperator<Reciprocal, I>;
 
-    template <class Head, class... Tail> struct Prod : Mul<Head, Sum<Tail...>> {};
+    template <class Head, class... Tail> struct Prod : Mul<Head, Prod<Tail...>> {};
     template <class T> struct Prod<T> : T {};
 
     template <class L, class R> using Pow = TwoArgOperator<Power, L, R>;
