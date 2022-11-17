@@ -173,17 +173,16 @@ namespace Test {
     SIMPLIFY_TEST(DivisiblePolynomials, "(x^4-1)/(x^2+1)",
                   Sym::num(-1) + (Sym::var() ^ Sym::num(2)))
     SIMPLIFY_TEST(DivideMonomialByMonomial, "x^5/x", "x^4")
-    SIMPLIFY_TEST_NO_ACTION(DivideByConstant, "x^5/2")
-    SIMPLIFY_TEST_NO_ACTION(DivideConstantByPolynomial, "2/(x^5+1-x^2)")
-    // TODO: Doesn't work because polynomial division doesn't work with complicated product trees
+    SIMPLIFY_TEST(DivideByConstant, "x^5/2", "0.5*x^5")
+    SIMPLIFY_TEST_NO_ACTION(DivideConstantByPolynomial, "2/(1-x^2+x^5)")
     SIMPLIFY_TEST(DivideAdvancedMonomialByMonomial, "2*5*7*x^5/(---(14*x^2))",
-                  (Sym::var() ^ Sym::num(3)) * Sym::num(-5))
+                  Sym::num(-5) * (Sym::var() ^ Sym::num(3)))
     SIMPLIFY_TEST(PolynomialsDivisibleWithRemainder, "x^4/(x^2+1)",
-                  Sym::num(-1) + (Sym::var() ^ Sym::num(2)) +
-                      Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2))))
+                  Sym::num(-1) + Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2))) +
+                      (Sym::var() ^ Sym::num(2)))
     SIMPLIFY_TEST(LongPolynomialsDivisibleWithRemainder, "(x^5+6*x^2+x+9)/(x^2+x+1)",
-                  Sym::num(7) + Sym::num(-1) * (Sym::var() ^ Sym::num(2)) +
-                      (Sym::var() ^ Sym::num(3)) +
+                  Sym::num(7) +
                       (Sym::num(2) + Sym::num(-6) * Sym::var()) /
-                          (Sym::num(1) + Sym::var() + (Sym::var() ^ Sym::num(2))))
+                          (Sym::num(1) + Sym::var() + (Sym::var() ^ Sym::num(2))) +
+                      Sym::num(-1) * (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(3)))
 }

@@ -46,7 +46,7 @@ namespace Sym {
                                       Symbol* const help_space) {
         Symbol* numerator = nullptr;
         Symbol* denominator = nullptr;
-        if (!expr1->is(Type::Reciprocal) && expr1->is(Type::Reciprocal)) {
+        if (!expr1->is(Type::Reciprocal) && expr2->is(Type::Reciprocal)) {
             numerator = expr1;
             denominator = &expr2->as<Reciprocal>().arg();
         }
@@ -57,6 +57,7 @@ namespace Sym {
         if (numerator == nullptr || denominator == nullptr) {
             return Util::SimplificationResult::Failure;
         }
+
         const auto optional_rank1 = numerator->is_polynomial(help_space);
         const auto optional_rank2 = denominator->is_polynomial(help_space);
 
