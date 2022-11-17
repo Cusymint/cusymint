@@ -11,9 +11,6 @@ namespace Sym {
     std::string to_string() const;
     std::string to_tex() const;
 
-    __host__ __device__ ssize_t is_polynomial(const ssize_t* const ranks) const;
-    __host__ __device__ double get_monomial_coefficient(const double* const coefficients) const;
-
     /*
      * @brief W drzewie mnożenia usuwa mnożenia, których jednym z argumentów jest 1.0. Mnożenie
      * takie jest zamieniane na niejedynkowy argument lub 1.0, jeśli oba argumenty były jedynką.
@@ -55,8 +52,6 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
-
-    DEFINE_IS_NOT_POLYNOMIAL
 
     END_DECLARE_SYMBOL(Reciprocal)
 

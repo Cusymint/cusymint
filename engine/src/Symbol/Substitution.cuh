@@ -49,7 +49,6 @@ namespace Sym {
     [[nodiscard]] std::string to_tex_this() const;
     [[nodiscard]] std::string to_tex() const;
 
-    DEFINE_IS_NOT_POLYNOMIAL
     /*
      * @brief Applies this substitution to `expession`
      *

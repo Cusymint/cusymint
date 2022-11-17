@@ -39,7 +39,7 @@ namespace Sym {
         if (type == Type::Product) {
             return try_dividing_polynomials(help_space);
         }
-        return true;        
+        return true;
     }
 
     __host__ __device__ bool Product::try_dividing_polynomials(Symbol* const help_space) {
@@ -56,12 +56,17 @@ namespace Sym {
         if (numerator == nullptr || denominator == nullptr) {
             return true;
         }
-        const ssize_t rank1 = numerator->is_polynomial(help_space);
-        const ssize_t rank2 = denominator->is_polynomial(help_space);
+        const auto optional_rank1 = numerator->is_polynomial(help_space);
+        const auto optional_rank2 = denominator->is_polynomial(help_space);
 
-        if (rank1 < 1 || rank2 < 1 || rank1 <= rank2) {
+        if (!optional_rank1.has_value() || optional_rank1.value() == 0 ||
+            !optional_rank2.has_value() || optional_rank2.value() == 0 ||
+            optional_rank1.value() <= optional_rank2.value()) {
             return true;
         }
+
+        const auto rank1 = optional_rank1.value();
+        const auto rank2 = optional_rank2.value();
 
         const size_t size_for_simplified_expression =
             3 + Polynomial::expanded_size_from_rank(rank1 - rank2) +
@@ -99,7 +104,7 @@ namespace Sym {
         Reciprocal* const rec = &prod->arg2() << Reciprocal::builder();
         poly2->as<Polynomial>().expand_to(&rec->arg());
         rec->seal();
-        
+
         prod->seal();
         plus->seal();
 
@@ -198,22 +203,6 @@ namespace Sym {
                 last->arg2().copy_to(last->symbol());
             }
         }
-    }
-
-    __host__ __device__ ssize_t Product::is_polynomial(const ssize_t* const ranks) const {
-        // Checks if product is a monomial (maybe TODO check eg. (x+2)^5*(x+1)*x^2)
-        if (arg1().is(Type::Addition) || arg2().is(Type::Addition)) {
-            return -1;
-        }
-
-        const ssize_t rank1 = ranks[&arg1() - symbol()];
-        const ssize_t rank2 = ranks[&arg2() - symbol()];
-
-        return rank1 < 0 || rank2 < 0 ? -1 : (rank1 + rank2);
-    }
-
-    __host__ __device__ double Product::get_monomial_coefficient(const double* const coefficients) const {
-        return coefficients[&arg1() - symbol()] * coefficients[&arg2() - symbol()];
     }
 
     std::string Reciprocal::to_string() const { return fmt::format("(1/{})", arg().to_string()); }

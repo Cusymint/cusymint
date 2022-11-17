@@ -26,6 +26,7 @@
 
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/OptionalNumber.cuh"
 
 // Also works when `_member_function` returns void
 #define VIRTUAL_CALL(_instance, _member_function, ...)                                     \
@@ -482,12 +483,12 @@ namespace Sym {
          * @brief Checks if `this` is a polynomial. Returns its rank if yes. Otherwise, returns
          * `-1`.
          */
-        __host__ __device__ ssize_t is_polynomial(Symbol* const help_space) const;
+        __host__ __device__ Util::OptionalNumber<ssize_t> is_polynomial(Symbol* const help_space) const;
 
         /*
          * @brief If `this` is a monomial, returns its coefficient. Otherwise, returns `NaN`.
          */
-        __host__ __device__ double get_monomial_coefficient(Symbol* const help_space) const;
+        __host__ __device__ Util::OptionalNumber<double> get_monomial_coefficient(Symbol* const help_space) const;
     };
 
     /*

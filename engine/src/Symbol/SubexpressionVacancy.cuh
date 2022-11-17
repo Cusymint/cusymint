@@ -14,7 +14,6 @@ namespace Sym {
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     __host__ __device__ static SubexpressionVacancy for_single_integral();
-    DEFINE_IS_NOT_POLYNOMIAL
     END_DECLARE_SYMBOL(SubexpressionVacancy)
 
     std::vector<Symbol> single_integral_vacancy();

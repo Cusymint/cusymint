@@ -163,13 +163,6 @@ namespace Sym {
         return fmt::format("{}+{}", arg1().to_tex(), arg2().to_tex());
     }
 
-    __host__ __device__ ssize_t Addition::is_polynomial(const ssize_t* const ranks) const {
-        const ssize_t rank1 = ranks[&arg1() - symbol()];
-        const ssize_t rank2 = ranks[&arg2() - symbol()];
-
-        return rank1 < 0 || rank2 < 0 ? -1 : (rank1 < rank2 ? rank2 : rank1);
-    }
-
     std::string Negation::to_string() const { return fmt::format("-({})", arg().to_string()); }
 
     std::string Negation::to_tex() const {
@@ -178,10 +171,6 @@ namespace Sym {
         }
         return fmt::format("-{}", arg().to_tex());
     }
-
-    __host__ __device__ ssize_t Negation::is_polynomial(const ssize_t* const ranks) const { return ranks[&arg()-symbol()]; }
-
-    __host__ __device__ double Negation::get_monomial_coefficient(const double* const coefficients) const { return -coefficients[&arg()-symbol()]; }
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);

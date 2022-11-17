@@ -11,9 +11,6 @@ namespace Sym {
     std::string to_string() const;
     std::string to_tex() const;
 
-    __host__ __device__ ssize_t is_polynomial(const ssize_t* const ranks) const;
-    DEFINE_IS_NOT_MONOMIAL
-
   private:
     /*
      * @brief Sprawdza, czy `expr1 == sin^2(x)` i `expr2 == cos^2(x)`
@@ -50,8 +47,6 @@ namespace Sym {
     ONE_ARGUMENT_OP_SYMBOL
     std::string to_string() const;
     std::string to_tex() const;
-    __host__ __device__ ssize_t is_polynomial(const ssize_t* const ranks) const;
-    __host__ __device__ double get_monomial_coefficient(const double* const coefficients) const;
     END_DECLARE_SYMBOL(Negation)
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);

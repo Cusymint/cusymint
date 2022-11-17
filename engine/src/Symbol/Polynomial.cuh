@@ -33,9 +33,6 @@ namespace Sym {
     std::string to_string() const;
     std::string to_tex() const;
 
-    DEFINE_IS_POLYNOMIAL(rank)
-    DEFINE_IS_MONOMIAL(rank == 0 ? coefficients()[0] : NAN)
-
     __host__ __device__ double* coefficients();
     __host__ __device__ const double* coefficients() const;
     template <class T>

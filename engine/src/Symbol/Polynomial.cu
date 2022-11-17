@@ -47,16 +47,16 @@ namespace Sym {
 
     __host__ __device__ void Polynomial::make_polynomial_at(const Symbol* const symbol,
                                                             Symbol* const destination) {
-        auto* const term_ranks = reinterpret_cast<ssize_t*>(destination);
+        auto* const term_ranks = reinterpret_cast<Util::OptionalNumber<ssize_t>*>(destination);
         auto* const term_coefficients_dst =
-            destination + symbol->size() * sizeof(double) / sizeof(Symbol) + 1;
-        auto* const term_coefficients = reinterpret_cast<double*>(term_coefficients_dst);
-        auto* const dst_coefs = term_coefficients + symbol->size();
+            destination + symbol->size() * sizeof(Util::OptionalNumber<ssize_t>) / sizeof(Symbol) + 1;
+        auto* const term_coefficients = reinterpret_cast<Util::OptionalNumber<double>*>(term_coefficients_dst);
+        auto* const dst_coefs = reinterpret_cast<double*>(term_coefficients + symbol->size());
 
         symbol->is_polynomial(destination);
         symbol->get_monomial_coefficient(term_coefficients_dst);
 
-        const size_t rank = term_ranks[0];
+        const size_t rank = term_ranks[0].value();
 
         for (ssize_t i = 0; i <= rank; ++i) {
             dst_coefs[i] = 0;
@@ -67,7 +67,7 @@ namespace Sym {
             ConstTreeIterator<Addition> iterator(symbol->as_ptr<Addition>());
             while (iterator.is_valid()) {
                 const size_t offset = iterator.current() - symbol;
-                dst_coefs[term_ranks[offset]] = term_coefficients[offset];
+                dst_coefs[term_ranks[offset].value()] = term_coefficients[offset].value();
 
                 iterator.advance();
             }
@@ -79,7 +79,7 @@ namespace Sym {
         case Type::Negation:
             [[fallthrough]];
         case Type::Variable:
-            dst_coefs[term_ranks[0]] = term_coefficients[0];
+            dst_coefs[rank] = term_coefficients[0].value();
             break;
         default:
             Util::crash("Improper use of make_polynomial_at() function on symbol type %s.",
