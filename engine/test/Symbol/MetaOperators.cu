@@ -170,7 +170,15 @@ namespace Test {
     META_TEST_MATCH(AdvancedSame, (Sym::Add<Sym::Ln<Sym::Mul<Sym::Same, Sym::Num>>, Sym::Sin<Sym::Add<Sym::E, Sym::Same>>>), "ln((x+sin(x)+4^x)*5.7)+sin(e+(x+sin(x)+4^x))")
     META_TEST_MATCH(FourSameSymbols, (Sym::Mul<Sym::Add<Sym::Same, Sym::Same>, Sym::Add<Sym::Same, Sym::Mul<Sym::Integer<4>, Sym::Same>>>), "(e^c^x+e^c^x)*(e^c^x+4*e^c^x)")
 
+    META_TEST_MATCH(SumOfNotSameTerms, (Sym::Add<Sym::Same, Sym::Not<Sym::Same>>), "x+y")
+    META_TEST_NOT_MATCH(NotMatchSumOfSameTerms, (Sym::Add<Sym::Same, Sym::Not<Sym::Same>>), "x+x")
+
+    META_TEST_MATCH(SameWithAllOf, (Sym::Add<Sym::Same, Sym::AllOf<Sym::Sin<Sym::E>, Sym::Sin<Sym::Same>>>), "e+sin(e)")
+    META_TEST_MATCH(SameWithAnyOf, (Sym::Add<Sym::Same, Sym::AnyOf<Sym::Sin<Sym::E>, Sym::Sin<Sym::Same>>>), "22+sin(22)")
+    META_TEST_MATCH(SameWithAnyOf2, (Sym::Add<Sym::Same, Sym::AnyOf<Sym::Sin<Sym::E>, Sym::Sin<Sym::Same>>>), "22+sin(e)")
+
     META_TEST_MATCH_PAIR(PairWithIndependentPatterns, Sym::Ln<Sym::Var>, Sym::Arccot<Sym::E>, "ln(x)", "arccot(e)")
+    META_TEST_MATCH_PAIR(PairTangentCotangent, Sym::Tan<Sym::Same>, Sym::Cot<Sym::Same>, "tg(2*x)", "ctg(2*x)")
     // Advanced expressions
     META_TEST_MATCH(LongSum, (Sym::Sum<Sym::Var, Sym::Cos<Sym::Ln<Sym::Const>>, Sym::E, Sym::Integer<1>>), "x+(cos(ln(2+3+c))+(e+1))")
     META_TEST_MATCH(LongProduct, (Sym::Prod<Sym::Add<Sym::Var, Sym::Num>, Sym::Var, Sym::Pow<Sym::E, Sym::Var>>), "(x+5.6)*(x*e^x)")
