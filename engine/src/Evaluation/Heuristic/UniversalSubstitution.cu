@@ -5,8 +5,9 @@
 
 namespace Sym::Heuristic {
     __device__ CheckResult is_function_of_trigs(const Integral& integral) {
-        const bool is_function_of_trigs = integral.integrand()->is_function_of(
-            Static::sin_x(), Static::cos_x(), Static::tan_x(), Static::cot_x());
+        const bool is_function_of_trigs =
+            integral.integrand()->is_function_of(Static::tan_x_over_2(), Static::sin_x(),
+                                                 Static::cos_x(), Static::tan_x(), Static::cot_x());
         return {is_function_of_trigs ? 1UL : 0UL, 0UL};
     }
 
