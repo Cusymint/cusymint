@@ -39,7 +39,7 @@ class CusymintClientJsonRpc implements CusymintClient {
       );
 
       final errors = result['errors'] != null
-          ? (result['errors'] as List).map((e) => ResponseError(e)).toList()
+          ? parseErrors(result['errors'])
           : List<ResponseError>.empty();
 
       return Response(
@@ -56,5 +56,30 @@ class CusymintClientJsonRpc implements CusymintClient {
     } finally {
       client.close();
     }
+  }
+
+  static ResponseError parseError(String errorMessage) {
+    const unexpectedTokenPrefix = 'Unexpected token: ';
+    const noSolutionFoundPrefix = 'No solution found';
+    const internalErrorPrefix = 'Internal error';
+
+    if (errorMessage.startsWith(unexpectedTokenPrefix)) {
+      final token = errorMessage.substring(unexpectedTokenPrefix.length);
+      return UnexpectedTokenError(token: token);
+    }
+
+    if (errorMessage.startsWith(noSolutionFoundPrefix)) {
+      return NoSolutionFoundError();
+    }
+
+    if (errorMessage.startsWith(internalErrorPrefix)) {
+      return InternalError();
+    }
+
+    return ResponseError(errorMessage);
+  }
+
+  static List<ResponseError> parseErrors(List<dynamic> errors) {
+    return errors.map((e) => parseError(e)).toList();
   }
 }

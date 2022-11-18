@@ -47,7 +47,22 @@ class ResponseError {
 }
 
 class InternalError extends ResponseError {
-  const InternalError(String errorMessage) : super(errorMessage);
+  const InternalError({String errorMessage = "Internal error"})
+      : super(errorMessage);
+}
+
+class NoSolutionFoundError extends ResponseError {
+  const NoSolutionFoundError({String errorMessage = "No solution found"})
+      : super(errorMessage);
+}
+
+class UnexpectedTokenError extends ResponseError {
+  const UnexpectedTokenError({
+    String errorMessage = "Unexpected token",
+    required this.token,
+  }) : super(errorMessage);
+
+  final String token;
 }
 
 abstract class CusymintClient {
