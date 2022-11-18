@@ -23,12 +23,19 @@ std::string exec(const std::string cmd) {
 }
 
 std::string SolverProcessManager::create_command(const std::string& input) const {
-    return fmt::format("./{} --solve-json {}", executable_name, input);
+    return fmt::format("./{} --solve-json \"{}\"", executable_name, input);
 }
 
 std::string SolverProcessManager::try_solve(const std::string& input) const {
     try {
-        return exec(create_command(input));
+        auto result = exec(create_command(input));
+        if(result.back() == '\n') {
+            result.pop_back();
+        }
+        if(result[0] != '{' || result.back() != '}') {
+            throw std::runtime_error("Solver returned invalid JSON");
+        }
+        return result;
     } catch (const std::exception& e) {
         return R"({"errors": ["Internal runtime error."]})";
     }

@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 
         auto json_solver = JsonSolver(solver, parser);
 
-        fmt::print("{}", json_solver.try_solve(input));
+        fmt::print("{}\n", json_solver.try_solve(input));
         return EXIT_SUCCESS;
     }
 

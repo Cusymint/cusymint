@@ -1,6 +1,7 @@
 #include "Server.cuh"
 
 #include "ResponseBuilder.cuh"
+#include "SolverProcessManager.cuh"
 #include "Parser/Parser.cuh"
 #include "Utils/CompileConstants.cuh"
 
@@ -62,7 +63,13 @@ static void solve(struct mg_rpc_req* r) {
 
     print_debug("[Server] Solve input {}\n", input);
 
-    
+    auto solver_process_manager = SolverProcessManager();
+    auto result = solver_process_manager.try_solve(input);
+
+    print_debug("[Server] Solve result {}\n", result);
+
+    mg_rpc_ok(r, "%s", result.c_str());
+
     free(input);
 }
 
