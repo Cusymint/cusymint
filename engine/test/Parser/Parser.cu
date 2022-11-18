@@ -1,8 +1,10 @@
-#include <gtest/gtest.h>
 #include <stdexcept>
 #include <vector>
 
+#include <gtest/gtest.h>
+
 #include "Parser/Parser.cuh"
+
 #include "Symbol/Constants.cuh"
 #include "Symbol/Hyperbolic.cuh"
 #include "Symbol/Integral.cuh"
@@ -21,7 +23,7 @@
 namespace {
     void test_parse(std::string input, std::vector<Sym::Symbol> expected_result) {
         auto result = Parser::parse_function(input);
-        EXPECT_TRUE(Sym::Symbol::compare_trees(result.data(), expected_result.data()))
+        EXPECT_TRUE(Sym::Symbol::are_expressions_equal(result.data(), expected_result.data()))
             << "Invalid parse result:\n\twas: " << result.data()->to_string()
             << ", expression size = " << result.data()->size()
             << ",\n\texpected: " << expected_result.data()->to_string()
@@ -29,7 +31,8 @@ namespace {
     }
 
     void test_parser_error(std::string input) {
-        EXPECT_THROW(Parser::parse_function(input), std::invalid_argument);
+        EXPECT_THROW(Parser::parse_function(input),
+                     std::invalid_argument); // NOLINT(hicpp-avoid-goto)
     }
 }
 
@@ -117,10 +120,14 @@ namespace Test {
 
     PARSER_TEST(IntWithDifferential, "int x^2 dx", Sym::integral(Sym::var() ^ Sym::num(2)))
     PARSER_TEST(IntWithoutDifferential, "int x^2", Sym::integral(Sym::var() ^ Sym::num(2)))
-    PARSER_TEST(IntegralWithDifferential, "integral x^2 dx", Sym::integral(Sym::var() ^ Sym::num(2)))
-    PARSER_TEST(IntegralWithoutDifferential, "integral x^2", Sym::integral(Sym::var() ^ Sym::num(2)))
-    PARSER_TEST(IntegrateWithDifferential, "integrate x^2 dx", Sym::integral(Sym::var() ^ Sym::num(2)))
-    PARSER_TEST(IntegrateWithoutDifferential, "integrate x^2", Sym::integral(Sym::var() ^ Sym::num(2)))
+    PARSER_TEST(IntegralWithDifferential, "integral x^2 dx",
+                Sym::integral(Sym::var() ^ Sym::num(2)))
+    PARSER_TEST(IntegralWithoutDifferential, "integral x^2",
+                Sym::integral(Sym::var() ^ Sym::num(2)))
+    PARSER_TEST(IntegrateWithDifferential, "integrate x^2 dx",
+                Sym::integral(Sym::var() ^ Sym::num(2)))
+    PARSER_TEST(IntegrateWithoutDifferential, "integrate x^2",
+                Sym::integral(Sym::var() ^ Sym::num(2)))
     PARSER_TEST_ERR(ErrorOnDifferentialWithoutIntegral, "x^2 dx")
 
 }

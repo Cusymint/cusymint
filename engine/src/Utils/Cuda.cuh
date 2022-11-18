@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <limits>
+#include <stdexcept>
 
 namespace Util {
     /*
@@ -30,13 +31,22 @@ namespace Util {
                                          const size_t n);
 
     /*
-     * @brief GPU compatible alternative to memcpy
+     * @brief GPU compatible alternative to memcpy. `dst` and `src` cannot alias.
      *
      * @param dst Destination of the copy
      * @param src Source of the copy
      * @param n Number of bytes to copy
      */
     __host__ __device__ void copy_mem(void* const dst, const void* const src, const size_t n);
+
+    /*
+     * @brief Works like `copy_mem`, but its arguments can overlap and the original may be changed
+     *
+     * @param dst Destination of the copy
+     * @param src Source of the copy
+     * @param n Number of bytes to move
+     */
+    __host__ __device__ void move_mem(void* const dst, void* const src, const size_t n);
 
     /*
      * @brief Swaps two memory blocks
@@ -60,6 +70,29 @@ namespace Util {
     __host__ __device__ bool compare_str(const char* const str1, const char* const str2,
                                          const size_t n = std::numeric_limits<size_t>::max());
 
+    /*
+     * @brief Compares two values and returns the smaller one
+     *
+     * @param first First value to compare
+     * @param second First value to compare
+     *
+     * @return the smaller of the two values
+     */
+    template <class T> __host__ __device__ T min(const T& first, const T& second) {
+        return first < second ? first : second;
+    }
+
+    /*
+     * @brief Compares two values and returns the greater one
+     *
+     * @param first First value to compare
+     * @param second First value to compare
+     *
+     * @return the greater of the two values
+     */
+    template <class T> __host__ __device__ T max(const T& first, const T& second) {
+        return first > second ? first : second;
+    }
 
     /*
      * @brief Crashes the program in case of irreversible errors
@@ -72,7 +105,11 @@ namespace Util {
         printf("\n[ERROR]: ");
         printf(head, tail...);
         printf("\n");
+#ifdef __CUDA_ARCH__
         assert(false);
+#else
+        throw std::runtime_error("Fatal error");
+#endif
     }
 }
 

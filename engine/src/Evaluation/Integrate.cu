@@ -702,12 +702,12 @@ namespace Sym {
         std::vector<Sym::Symbol> collapse(const std::vector<std::vector<Sym::Symbol>>& tree) {
             auto collapsed = collapse_nth(tree, 0);
             std::vector<Sym::Symbol> reversed(collapsed.size());
-
             const size_t new_size = collapsed.data()->compress_reverse_to(reversed.data());
             Sym::Symbol::copy_and_reverse_symbol_sequence(collapsed.data(), reversed.data(),
                                                           new_size);
 
-            collapsed.data()->simplify(reversed.data());
+            std::vector<Sym::Symbol> help_space(EXPRESSION_MAX_SYMBOL_COUNT);
+            collapsed.data()->simplify(help_space.data());
             collapsed.resize(collapsed.data()->size());
 
             return collapsed;
@@ -757,7 +757,6 @@ namespace Sym {
 
             std::vector<Symbol> first_expression = expressions.to_vector(0);
             if (first_expression.data()->as<SubexpressionVacancy>().is_solved == 1) {
-                simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, help_spaces);
                 return collapse(expressions.to_vector());
             }
 

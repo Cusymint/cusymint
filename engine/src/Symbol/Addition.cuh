@@ -40,6 +40,7 @@ namespace Sym {
      * po wywołaniu tej funkcji wywoływać już żadnych innych funkcji składowych z Addition!
      */
     __host__ __device__ void eliminate_zeros();
+
     END_DECLARE_SYMBOL(Addition)
 
     DECLARE_SYMBOL(Negation, false)

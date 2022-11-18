@@ -1,0 +1,50 @@
+CompileFlags:
+  Remove: [-forward-unknown-to-host-compiler, --gpu-architecture=sm_50]
+
+Diagnostics:
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - cert-*
+      - clang-analyzer-*
+      - concurrency-*
+      - cppcoreguidelines-*
+      - google-*
+      - hicpp-*
+      - misc-*
+      - modernize-*
+      - performance-*
+      - portability-*
+      - readability-*
+    Remove:
+      - bugprone-macro-parentheses
+      - bugprone-easily-swappable-parameters
+      - cert-err58-cpp
+      - cppcoreguidelines-avoid-c-arrays
+      - cppcoreguidelines-avoid-magic-numbers
+      - cppcoreguidelines-avoid-non-const-global-variables
+      - cppcoreguidelines-macro-usage
+      - cppcoreguidelines-non-private-member-variables-in-classes
+      - cppcoreguidelines-owning-memory
+      - cppcoreguidelines-pro-bounds-array-to-pointer-decay
+      - cppcoreguidelines-pro-bounds-constant-array-index
+      - cppcoreguidelines-pro-bounds-pointer-arithmetic
+      - cppcoreguidelines-pro-type-const-cast
+      - cppcoreguidelines-pro-type-union-access
+      - cppcoreguidelines-pro-type-reinterpret-cast
+      - cppcoreguidelines-pro-type-vararg
+      - google-readability-namespace-comments
+      - google-readability-todo
+      - hicpp-avoid-c-arrays
+      - hicpp-explicit-conversions
+      - hicpp-no-array-decay
+      - hicpp-vararg
+      - modernize-avoid-c-arrays
+      - modernize-use-trailing-return-type
+      - misc-non-private-member-variables-in-classes
+      - misc-no-recursion
+      - performance-unnecessary-copy-initialization
+      - performance-unnecessary-value-param
+      - readability-avoid-const-params-in-decls
+      - readability-magic-numbers
+      - readability-suspicious-call-argument
