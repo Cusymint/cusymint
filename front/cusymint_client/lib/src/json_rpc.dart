@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:json_rpc_2/json_rpc_2.dart' as json_rpc;
-import 'package:cusymint_client_interface/cusymint_client_interface.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+import 'interface.dart';
 
 // TODO: reuse channel
 class CusymintClientJsonRpc implements CusymintClient {

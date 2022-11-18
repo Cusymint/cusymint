@@ -1,17 +1,14 @@
-name: cusymint_client_json_rpc
-description: JSON RPC client for communication with the cusymint engine.
+name: cusymint_client
+description: Library for communicating with the cusymint engine.
 
 environment:
-  sdk: '>=2.18.0 <3.0.0'
+  sdk: '>=2.18.2 <3.0.0'
 
 dependencies:
   # Temporal fix, doesn't check for "jsonrpc": "2.0" in the response
   json_rpc_2:
     git: https://github.com/TortillaZHawaii/json_rpc_2.git
   web_socket_channel: ^2.2.0
-
-  cusymint_client_interface:
-    path: ../cusymint_client_interface
 
 dev_dependencies:
   lints: ^2.0.0

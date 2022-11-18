@@ -1,5 +1,3 @@
-library cusymint_client_interface;
-
 class Request {
   final String integralToBeSolved;
 
@@ -46,6 +44,10 @@ class ResponseError {
   final String errorMessage;
 
   const ResponseError(this.errorMessage);
+}
+
+class InternalError extends ResponseError {
+  const InternalError(String errorMessage) : super(errorMessage);
 }
 
 abstract class CusymintClient {

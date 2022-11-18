@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:cusymint_client_interface/cusymint_client_interface.dart';
-import 'package:cusymint_client_json_rpc/src/cusymint_client_json_rpc.dart';
+import 'package:cusymint_client/cusymint_client.dart';
 import 'package:json_rpc_2/json_rpc_2.dart';
 import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';

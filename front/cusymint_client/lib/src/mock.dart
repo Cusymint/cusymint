@@ -1,4 +1,4 @@
-import 'package:cusymint_client_interface/cusymint_client_interface.dart';
+import 'interface.dart';
 
 class CusymintClientMock implements CusymintClient {
   final Response fakeResponse;
