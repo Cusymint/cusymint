@@ -54,7 +54,7 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol&) { return true; }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
-            return Symbol::compare_trees(dst, other_same);
+            return Symbol::are_expressions_equal(dst, other_same);
         }
     };
 
@@ -482,11 +482,11 @@ namespace Sym {
     /*
      * @brief Encapsulates procedure of creating `TwoArgOp` symbol tree from existing `SymbolTree`,
      * where every leaf of a tree (term of sum/factor of a product) is mapped by function of type
-     * `OneArgOp`. Note that `TwoArgOp` and `SymbolTree` may be different types.
+     * `OneArgOp`. Note that `TwoArgOp` and `SymbolTree` may be of different types.
      */
     template <class SymbolTree> struct From {
         template <class TwoArgOp> struct Create {
-            template <class OneArgOp> struct WithMap {
+            template <template <class Inner> class OneArgOp> struct WithMap {
                 using AdditionalArgs = cuda::std::tuple<
                     cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
                 static constexpr bool HAS_SAME = false;
@@ -494,15 +494,20 @@ namespace Sym {
                 __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}) {
                     SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
                     size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
-                    Symbol* terms = &dst + count - 1;
                     TreeIterator<SymbolTree> iterator(&tree);
+
+                    Symbol* destination_back = &dst + tree.size + count;
                     while (iterator.is_valid()) {
-                        OneArgOp* operator_ = terms << OneArgOp::builder();
-                        iterator.current()->copy_to(&operator_->arg());
-                        operator_->seal();
-                        terms += terms->size();
+                        Symbol* const destination =
+                            destination_back - iterator.current()->size() - 1;
+                        OneArgOp<Copy>::init(*destination, {*iterator.current()});
+                        destination_back = destination;
                         iterator.advance();
                     }
+
+                    Util::move_mem(&dst + count - 1, destination_back,
+                                   &dst + tree.size + count - destination_back);
+
                     for (ssize_t i = static_cast<ssize_t>(count) - 2; i >= 0; --i) {
                         TwoArgOp* const operator_ = &dst + i << TwoArgOp::builder();
                         operator_->seal_arg1();

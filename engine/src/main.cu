@@ -10,8 +10,11 @@
 #include "Evaluation/Integrate.cuh"
 #include "Evaluation/StaticFunctions.cuh"
 
+#include "Symbol/Constants.cuh"
+#include "Symbol/ExpressionArray.cuh"
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Symbol/Variable.cuh"
 
 #include "Parser/Parser.cuh"
 
@@ -47,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function(e_tower(11)));
+    const auto integral = Sym::integral(Parser::parse_function("x^4/(1+x^2)"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 

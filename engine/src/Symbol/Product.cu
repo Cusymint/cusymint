@@ -1,9 +1,12 @@
+#include "Symbol/Addition.cuh"
+#include "Symbol/Constants.cuh"
 #include "Symbol/Product.cuh"
 
 #include <fmt/core.h>
 
 #include "Symbol/MetaOperators.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
 
 namespace {
@@ -19,7 +22,8 @@ namespace {
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Product)
-    DEFINE_SIMPLE_TWO_ARGUMENT_OP_COMPARE(Product)
+    DEFINE_SIMPLE_TWO_ARGUMENT_OP_ARE_EQUAL(Product)
+    DEFINE_IDENTICAL_COMPARE_TO(Product)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Product)
 
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
@@ -33,7 +37,84 @@ namespace Sym {
 
         eliminate_ones();
 
+        if (type == Type::Product) {
+            if (!try_dividing_polynomials(help_space)) {
+                return false;
+            }
+        }
+
+        simplify_structure(help_space);
+
         return true;
+    }
+
+    __host__ __device__ bool Product::try_dividing_polynomials(Symbol* const help_space) {
+        Symbol* numerator = nullptr;
+        Symbol* denominator = nullptr;
+        if (!arg1().is(Type::Reciprocal) && arg2().is(Type::Reciprocal)) {
+            numerator = &arg1();
+            denominator = &arg2().reciprocal.arg();
+        }
+        else if (!arg2().is(Type::Reciprocal) && arg1().is(Type::Reciprocal)) {
+            numerator = &arg2();
+            denominator = &arg1().reciprocal.arg();
+        }
+        if (numerator == nullptr || denominator == nullptr) {
+            return true;
+        }
+        const auto optional_rank1 = numerator->is_polynomial(help_space);
+        const auto optional_rank2 = denominator->is_polynomial(help_space);
+
+        if (!optional_rank1.has_value() || optional_rank1.value() == 0 ||
+            !optional_rank2.has_value() || optional_rank2.value() == 0 ||
+            optional_rank1.value() <= optional_rank2.value()) {
+            return true;
+        }
+
+        const auto rank1 = optional_rank1.value();
+        const auto rank2 = optional_rank2.value();
+
+        const size_t size_for_simplified_expression =
+            3 + Polynomial::expanded_size_from_rank(rank1 - rank2) +
+            Polynomial::expanded_size_from_rank(rank2 - 1) +
+            Polynomial::expanded_size_from_rank(rank2);
+
+        if (size < size_for_simplified_expression) {
+            additional_required_size = size_for_simplified_expression - 1;
+            return false;
+        }
+
+        // here we start dividing polynomials
+        auto* const poly1 = help_space;
+        Polynomial::make_polynomial_at(numerator, poly1);
+
+        auto* const poly2 = poly1 + poly1->size();
+        Polynomial::make_polynomial_at(denominator, poly2);
+
+        auto* const result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
+        Polynomial::divide_polynomials(poly1->as<Polynomial>(), poly2->as<Polynomial>(), *result);
+
+        if (poly1->as<Polynomial>().is_zero()) {
+            result->expand_to(symbol());
+            return false; // maybe additional simplify required
+        }
+
+        Addition* const plus = symbol() << Addition::builder();
+        result->expand_to(&plus->arg1());
+        plus->seal_arg1();
+
+        Product* const prod = &plus->arg2() << Product::builder();
+        poly1->as<Polynomial>().expand_to(&prod->arg1());
+        prod->seal_arg1();
+
+        Reciprocal* const rec = &prod->arg2() << Reciprocal::builder();
+        poly2->as<Polynomial>().expand_to(&rec->arg());
+        rec->seal();
+
+        prod->seal();
+        plus->seal();
+
+        return false; // maybe additional simplify required
     }
 
     DEFINE_IS_FUNCTION_OF(Product) {
@@ -57,8 +138,8 @@ namespace Sym {
 
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol& expr1,
                                                                const Symbol& expr2) {
-        return PatternPair<Inv<Same>, Same>::match_pair(expr1, expr2) ||
-               PatternPair<Same, Inv<Same>>::match_pair(expr1, expr2);
+        using Matcher = PatternPair<Inv<Same>, Same>;
+        return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {
@@ -117,13 +198,13 @@ namespace Sym {
              last = (last->symbol() - 1)->as_ptr<Product>()) {
             if (last->arg2().is(Type::NumericConstant) &&
                 last->arg2().numeric_constant.value == 1.0) {
-                last->arg1().copy_to(last->symbol());
+                last->arg1().move_to(last->symbol());
                 continue;
             }
 
             if (last->arg1().is(Type::NumericConstant) &&
                 last->arg1().numeric_constant.value == 1.0) {
-                last->arg2().copy_to(last->symbol());
+                last->arg2().move_to(last->symbol());
             }
         }
     }
@@ -135,7 +216,8 @@ namespace Sym {
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)
-    DEFINE_SIMPLE_ONE_ARGUMETN_OP_COMPARE(Reciprocal)
+    DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Reciprocal)
+    DEFINE_IDENTICAL_COMPARE_TO(Reciprocal)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
 
@@ -145,8 +227,9 @@ namespace Sym {
             return true;
         }
 
-        if (arg().is(1)) {
-            symbol()->init_from(NumericConstant::with_value(1));
+        if (arg().is(Type::NumericConstant)) {
+            symbol()->init_from(
+                NumericConstant::with_value(1.0 / arg().as<NumericConstant>().value));
             return true;
         }
 

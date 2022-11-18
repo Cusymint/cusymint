@@ -14,6 +14,7 @@
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Integral)
+    DEFINE_IDENTICAL_COMPARE_TO(Integral)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Integral)
     DEFINE_INVALID_SEAL_WHOLE(Integral)
 
@@ -29,7 +30,7 @@ namespace Sym {
         substitution->size() += substitution->additional_required_size();
         substitution->additional_required_size() = 0;
 
-        size_t const new_integrand_size = substitution->size();
+        const size_t new_integrand_size = substitution->size();
 
         symbol()->copy_single_to(destination);
         destination->integral.size = new_integrand_size + new_substitutions_size + 1;
@@ -38,8 +39,8 @@ namespace Sym {
         return 1;
     }
 
-    DEFINE_COMPARE(Integral) {
-        return BASE_COMPARE(Integral) &&
+    DEFINE_ARE_EQUAL(Integral) {
+        return BASE_ARE_EQUAL(Integral) &&
                symbol->integral.substitution_count == substitution_count &&
                symbol->integral.integrand_offset == integrand_offset;
     }
@@ -48,11 +49,16 @@ namespace Sym {
         return integrand()->is_function_of(expressions, expression_count);
     } // NOLINT
 
-    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Integral) {
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(Integral) {
         if (substitution_count > 0) {
             stack.push(first_substitution()->symbol());
         }
+
         stack.push(integrand());
+    }
+
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Integral) {
+        push_children_onto_stack(stack);
         integrand()->additional_required_size() += additional_required_size;
     }
 
@@ -126,7 +132,8 @@ namespace Sym {
         for (size_t symbol_idx = 0; symbol_idx < integrand()->size(); ++symbol_idx) {
             bool found_match = false;
             for (size_t pattern_idx = 0; pattern_idx < pattern_count; ++pattern_idx) {
-                if (!Symbol::compare_trees(integrand()[symbol_idx], *patterns[pattern_idx].first)) {
+                if (!Symbol::are_expressions_equal(integrand()[symbol_idx],
+                                                   *patterns[pattern_idx].first)) {
                     continue;
                 }
 

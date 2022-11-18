@@ -33,6 +33,18 @@ namespace Sym {
      */
     __host__ __device__ static bool are_inverse_of_eachother(const Symbol& expr1,
                                                              const Symbol& expr2);
+
+    /*
+     * @brief Checks if `this` is a rational function and tries to transform it
+     * by dividing numerator by denominator. Does not simplify the fraction by GCD.
+     *
+     * @param `help_space` a help space
+     *
+     * @return `true` if division was successful or didn't happen.
+     * `false` if division requires additional space.
+     */
+    __host__ __device__ bool try_dividing_polynomials(Symbol* const help_space);
+
     END_DECLARE_SYMBOL(Product)
 
     DECLARE_SYMBOL(Reciprocal, false)
@@ -40,6 +52,7 @@ namespace Sym {
 
     std::string to_string() const;
     std::string to_tex() const;
+
     END_DECLARE_SYMBOL(Reciprocal)
 
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);
