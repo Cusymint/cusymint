@@ -4,10 +4,34 @@
 #include <cuda/std/tuple>
 
 namespace Util {
+    template <class... Optionals> struct MetaOptionalsSum;
+
     /*
-     * @brief Structure sometimes useful in metaprogramming
+     * @brief Like std::optional but everything is kept at compile time
      */
-    struct Empty {};
+    template <auto V, bool H = true> class MetaOptional {
+      public:
+        using ValueType = decltype(V);
+
+      private:
+        static constexpr ValueType VALUE = V;
+
+      public:
+        static constexpr bool HAS_VALUE = H;
+
+        static constexpr ValueType get_value() {
+            static_assert(HAS_VALUE, "This MetaOptional is empty");
+            return VALUE;
+        };
+
+        static constexpr ValueType get_value_unchecked() { return VALUE; };
+    };
+
+    template <class V> using MetaEmpty = MetaOptional<V{}, false>;
+
+    template <class... Optionals>
+    struct MetaOptionalsSum
+        : MetaOptional<(Optionals::get_value_unchecked() + ...), (Optionals::HAS_VALUE && ...)> {};
 
     /*
      * @brief Returns length of a static array
@@ -65,6 +89,8 @@ namespace Util {
     template <class... Tuples>
     using TupleCat =
         typename std::invoke_result_t<decltype(cuda::std::tuple_cat<Tuples...>), Tuples...>;
+
+    template <class Tuple> constexpr bool is_empty_tuple = cuda::std::tuple_size_v<Tuple> == 0;
 }
 
 #endif

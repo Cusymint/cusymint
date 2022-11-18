@@ -9,23 +9,40 @@ namespace Sym::Static {
     namespace {
         using StaticFunctionInitializer = void (*)(Symbol&);
 
-        // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
-        __device__ Symbol IDENTITY[1];
+        // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables, cert-err58-cpp)
+        __device__ Symbol IDENTITY[Var::Size::get_value()];
 
-        __device__ Symbol SIN_X[2];
-        __device__ Symbol COS_X[2];
-        __device__ Symbol TAN_X[2];
-        __device__ Symbol COT_X[2];
+        using SinX = Sin<Var>;
+        __device__ Symbol SIN_X[SinX::Size::get_value()];
+        using CosX = Cos<Var>;
+        __device__ Symbol COS_X[CosX::Size::get_value()];
+        using TanX = Tan<Var>;
+        __device__ Symbol TAN_X[TanX::Size::get_value()];
+        using CotX = Cot<Var>;
+        __device__ Symbol COT_X[CotX::Size::get_value()];
 
-        __device__ Symbol UNIVERSAL_SIN_X[10];
-        __device__ Symbol UNIVERSAL_COS_X[13];
-        __device__ Symbol UNIVERSAL_TAN_X[11];
-        __device__ Symbol UNIVERSAL_COT_X[11];
-        __device__ Symbol UNIVERSAL_DERIVATIVE[8];
-        __device__ Symbol TAN_X_OVER_2[4];
+        using UniversalSinX = Frac<Prod<Integer<2>, Var>, Add<Integer<1>, Pow<Var, Integer<2>>>>;
+        __device__ Symbol UNIVERSAL_SIN_X[UniversalSinX::Size::get_value()];
 
-        __device__ Symbol E_TO_X[3];
-        // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
+        using UniversalCosX =
+            Frac<Sub<Integer<1>, Pow<Var, Integer<2>>>, Add<Integer<1>, Pow<Var, Integer<2>>>>;
+        __device__ Symbol UNIVERSAL_COS_X[UniversalCosX::Size::get_value()];
+
+        using UniversalTanX = Frac<Prod<Integer<2>, Var>, Sub<Integer<1>, Pow<Var, Integer<2>>>>;
+        __device__ Symbol UNIVERSAL_TAN_X[UniversalTanX::Size::get_value()];
+
+        using UniversalCotX = Frac<Sub<Integer<1>, Pow<Var, Integer<2>>>, Prod<Integer<2>, Var>>;
+        __device__ Symbol UNIVERSAL_COT_X[UniversalCotX::Size::get_value()];
+
+        using UniversalDerivative = Frac<Add<Integer<1>, Pow<Var, Integer<2>>>, Integer<2>>;
+        __device__ Symbol UNIVERSAL_DERIVATIVE[UniversalDerivative::Size::get_value()];
+
+        using TanXOver2 = Tan<Frac<Var, Integer<2>>>;
+        __device__ Symbol TAN_X_OVER_2[TanXOver2::Size::get_value()];
+
+        using EToX = Pow<E, Var>;
+        __device__ Symbol E_TO_X[EToX::Size::get_value()];
+        // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables, cert-err58-cpp)
 
         __device__ Symbol* const STATIC_FUNCTIONS[] = {
             IDENTITY,        SIN_X,
@@ -36,44 +53,13 @@ namespace Sym::Static {
             TAN_X_OVER_2,    E_TO_X,
         };
 
-        __device__ void init_identity(Symbol& dst) { Var::init(dst); }
-        __device__ void init_sin_x(Symbol& dst) { Sin<Var>::init(dst); }
-        __device__ void init_cos_x(Symbol& dst) { Cos<Var>::init(dst); }
-        __device__ void init_tan_x(Symbol& dst) { Tan<Var>::init(dst); }
-        __device__ void init_cot_x(Symbol& dst) { Cot<Var>::init(dst); }
-
-        __device__ void init_universal_sin_x(Symbol& dst) {
-            Frac<Prod<Integer<2>, Var>, Add<Integer<1>, Pow<Var, Integer<2>>>>::init(dst, {});
-        }
-
-        __device__ void init_universal_cos_x(Symbol& dst) {
-            Frac<Sub<Integer<1>, Pow<Var, Integer<2>>>,
-                 Add<Integer<1>, Pow<Var, Integer<2>>>>::init(dst, {});
-        }
-
-        __device__ void init_universal_tan_x(Symbol& dst) {
-            Frac<Prod<Integer<2>, Var>, Sub<Integer<1>, Pow<Var, Integer<2>>>>::init(dst, {});
-        }
-
-        __device__ void init_universal_cot_x(Symbol& dst) {
-            Frac<Sub<Integer<1>, Pow<Var, Integer<2>>>, Prod<Integer<2>, Var>>::init(dst, {});
-        }
-
-        __device__ void init_universal_derivative(Symbol& dst) {
-            Frac<Add<Integer<1>, Pow<Var, Integer<2>>>, Integer<2>>::init(dst, {});
-        }
-
-        __device__ void init_tan_x_over_2(Symbol& dst) { Tan<Prod<Num, Var>>::init(dst, {0.5}); }
-
-        __device__ void init_e_to_x(Symbol& dst) { Pow<E, Var>::init(dst); }
-
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
-            init_identity,        init_sin_x,
-            init_cos_x,           init_tan_x,
-            init_cot_x,           init_universal_sin_x,
-            init_universal_cos_x, init_universal_tan_x,
-            init_universal_cot_x, init_universal_derivative,
-            init_tan_x_over_2,    init_e_to_x,
+            Var::init,           SinX::init,
+            CosX::init,          TanX::init,
+            CotX::init,          UniversalSinX::init,
+            UniversalCosX::init, UniversalTanX::init,
+            UniversalCotX::init, UniversalDerivative::init,
+            TanXOver2::init,     EToX::init,
         };
 
         constexpr size_t STATIC_FUNCTION_COUNT =
