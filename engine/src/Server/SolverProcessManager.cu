@@ -22,19 +22,13 @@ std::string exec(const std::string cmd) {
     return result;
 }
 
-std::string create_command(std::string input) {
-    std::string executable_name = "cusymint";
-
-    std::string command = fmt::format("./{} --solve-json {}", executable_name, input);
-    
-    return command;
+std::string SolverProcessManager::create_command(const std::string& input) const {
+    return fmt::format("./{} --solve-json {}", executable_name, input);
 }
 
-std::string get_result(std::string input) {
+std::string SolverProcessManager::try_solve(const std::string& input) const {
     try {
-        std::string command = create_command(input);
-        std::string result = exec(command);
-        return result;
+        return exec(create_command(input));
     } catch (const std::exception& e) {
         return R"({"errors": ["Internal runtime error."]})";
     }
