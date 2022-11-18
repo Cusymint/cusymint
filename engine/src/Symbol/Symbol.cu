@@ -88,19 +88,6 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ void
-    Symbol::substitute_with_var_with_holes(Symbol& destination, const Symbol& expression) const {
-        ssize_t first_var_offset = expression.first_var_occurence();
-        copy_to(&destination);
-
-        for (size_t i = 0; i < size(); ++i) {
-            if (destination[i].is(Type::Variable)) {
-                destination[i - first_var_offset].variable = Variable::create();
-                i += expression.size() - first_var_offset - 1;
-            }
-        }
-    }
-
     __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) {
         mark_to_be_copied_and_propagate_additional_size(destination);
 

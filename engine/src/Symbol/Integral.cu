@@ -1,12 +1,16 @@
 #include "Integral.cuh"
 
 #include <cstddef>
+
 #include <fmt/core.h>
 
 #include "Macros.cuh"
 #include "MetaOperators.cuh"
 #include "Substitution.cuh"
 #include "Symbol.cuh"
+
+#include "Evaluation/StaticFunctions.cuh"
+#include "Utils/Pair.cuh"
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Integral)
@@ -91,28 +95,16 @@ namespace Sym {
         destination->as<Integral>().size = BUILDER_SIZE;
     }
 
-    __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
-        const Symbol& substitution, const Symbol& derivative, Symbol& destination,
-        Symbol& help_space) const {
-        integrand()->substitute_with_var_with_holes(destination, substitution);
-        size_t new_incomplete_integrand_size = destination.compress_reverse_to(&help_space);
-        Symbol::reverse_symbol_sequence(&help_space, new_incomplete_integrand_size);
+    __device__ void Integral::integrate_by_substitution_with_derivative(const Symbol& substitution,
+                                                                        const Symbol& derivative,
+                                                                        Symbol& destination) const {
+        const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
+            Util::Pair(&substitution, &Static::identity())};
 
-        // Teraz w `help_space` jest docelowa funkcja podcałkowa, ale jeszcze bez mnożenia przez
-        // pochodną. W `destination` są niepotrzebne dane.
-
-        const auto old_integrand_size = static_cast<ssize_t>(integrand()->size());
-        const auto new_integrand_size =
-            static_cast<ssize_t>(new_incomplete_integrand_size + 2 + derivative.size());
-        const ssize_t size_diff = new_integrand_size - old_integrand_size;
-
-        copy_substitutions_with_an_additional_one(substitution, destination);
-
-        destination.size() += size_diff;
-        Prod<Inv<Copy>, Copy>::init(*destination.integrand(), {derivative, help_space});
+        integrate_by_substitution_with_derivative(substitution_pairs, 1, derivative, destination);
     }
 
-    __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
+    __device__ void Integral::integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
         const size_t pattern_count, const Symbol& derivative, Symbol& destination) const {
 

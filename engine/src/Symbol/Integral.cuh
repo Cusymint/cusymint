@@ -50,12 +50,10 @@ namespace Sym {
      * @param derivative Derivative of `substitution` in terms of u, e.g. if u=x^2 then
      * `derivative`=2*(var^(1/2))
      * @param destination Pointer to where the result is going to be saved
-     * @param help_space Additional memory for internal usage
      */
-    __host__ __device__ void integrate_by_substitution_with_derivative(const Symbol& substitution,
-                                                                       const Symbol& derivative,
-                                                                       Symbol& destination,
-                                                                       Symbol& help_space) const;
+    __device__ void integrate_by_substitution_with_derivative(const Symbol& substitution,
+                                                              const Symbol& derivative,
+                                                              Symbol& destination) const;
 
     /*
      * @brief Integrate `this` by substitution and save the result in `destination`.
@@ -66,9 +64,8 @@ namespace Sym {
      * @param derivative Derivative of `substitution` in terms of u, e.g. if u=x^2 then
      * `derivative`=2*(var^(1/2))
      * @param destination Where the result is going to be saved
-     * @param help_space Additional memory for internal usage
      */
-    __host__ __device__ void integrate_by_substitution_with_derivative(
+    __device__ void integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
         const size_t pattern_count, const Symbol& derivative, Symbol& destination) const;
 

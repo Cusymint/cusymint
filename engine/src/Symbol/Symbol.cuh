@@ -350,17 +350,6 @@ namespace Sym {
                                                 const size_t expression_count) const;
 
         /*
-         * @brief Replaces every occurence of `expr` (which has to contain a variable) in `this`
-         * with variable and copies the result to `destination`. If size of `expr` is larger
-         * than 1, holes are left where symbols were before.
-         *
-         * @param destination Destination of copy
-         * @param expr Expression to replace in `this`. Has to contain a variable.
-         */
-        __host__ __device__ void substitute_with_var_with_holes(Symbol& destination,
-                                                                const Symbol& expression) const;
-
-        /*
          * @brief Removes holes from symbol tree and copies it in reverse order to `destination`.
          *
          * @param destination Location to which the tree is going to be copied
