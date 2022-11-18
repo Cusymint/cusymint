@@ -113,35 +113,42 @@ namespace Sym {
     }
 
     __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
-        const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const substitutions,
-        const Symbol& derivative, Symbol& destination) const {
+        const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
+        const size_t pattern_count, const Symbol& derivative, Symbol& destination) const {
 
         if constexpr (Consts::DEBUG) {
-            if (!substitutions[0].second->is(Type::Variable)) {
+            if (!patterns[0].second->is(Type::Variable)) {
                 Util::crash("The first element of `substitutions` passed to "
                             "`integrate_by_substitution_with_derivative` should be a pair in the "
                             "form of (f(x), x)!");
             }
         }
 
-        copy_substitutions_with_an_additional_one(*substitutions[0].first, destination);
+        copy_substitutions_with_an_additional_one(*patterns[0].first, destination);
         Symbol& destination_integrand = *destination.as<Integral>().integrand();
         Symbol* current_dst = &destination_integrand;
 
-        Prod<Inv<Copy>, Copy>::init(*current_dst, {derivative, *Unknown::create().symbol()});
+        Mul<Inv<Copy>, Copy>::init(*current_dst, {derivative, *Unknown::create().symbol()});
         current_dst += 2 + derivative.size();
 
         for (size_t symbol_idx = 0; symbol_idx < integrand()->size(); ++symbol_idx) {
-            for (size_t pattern_idx = 0; pattern_idx < substitution_count; ++pattern_idx) {
-                if (!Symbol::compare_trees(integrand()[symbol_idx],
-                                           *substitutions[pattern_idx].first)) {
-                    substitutions[pattern_idx].second->copy_to(current_dst);
-                    current_dst += current_dst->size();
+            bool found_match = false;
+            for (size_t pattern_idx = 0; pattern_idx < pattern_count; ++pattern_idx) {
+                if (!Symbol::compare_trees(integrand()[symbol_idx], *patterns[pattern_idx].first)) {
+                    continue;
                 }
-                else {
-                    integrand()[symbol_idx].copy_single_to(current_dst);
-                    current_dst += 1;
-                }
+
+                patterns[pattern_idx].second->copy_to(current_dst);
+                current_dst += current_dst->size();
+                // -1 because +1 is going to be added by loop control
+                symbol_idx += integrand()[symbol_idx].size() - 1;
+                found_match = true;
+                break;
+            }
+
+            if (!found_match) {
+                integrand()[symbol_idx].copy_single_to(current_dst);
+                current_dst += 1;
             }
         }
 

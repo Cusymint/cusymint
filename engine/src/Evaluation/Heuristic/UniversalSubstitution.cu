@@ -1,6 +1,7 @@
 #include "UniversalSubstitution.cuh"
 
 #include "Evaluation/StaticFunctions.cuh"
+#include "Utils/Meta.cuh"
 
 namespace Sym::Heuristic {
     __device__ CheckResult is_function_of_trigs(const Integral& integral) {
@@ -25,7 +26,8 @@ namespace Sym::Heuristic {
         new_candidate->copy_metadata_from(integral);
 
         integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-            substitution_pairs, Static::universal_derivative(), *integral_dst->child());
+            substitution_pairs, Util::array_len(substitution_pairs), Static::universal_derivative(),
+            new_candidate->arg());
 
         new_candidate->seal();
     }

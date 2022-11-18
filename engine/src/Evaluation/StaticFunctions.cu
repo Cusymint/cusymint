@@ -21,17 +21,17 @@ namespace Sym::Static {
         using CotX = Cot<Var>;
         __device__ Symbol COT_X[CotX::Size::get_value()];
 
-        using UniversalSinX = Frac<Prod<Integer<2>, Var>, Add<Integer<1>, Pow<Var, Integer<2>>>>;
+        using UniversalSinX = Frac<Mul<Integer<2>, Var>, Add<Integer<1>, Pow<Var, Integer<2>>>>;
         __device__ Symbol UNIVERSAL_SIN_X[UniversalSinX::Size::get_value()];
 
         using UniversalCosX =
             Frac<Sub<Integer<1>, Pow<Var, Integer<2>>>, Add<Integer<1>, Pow<Var, Integer<2>>>>;
         __device__ Symbol UNIVERSAL_COS_X[UniversalCosX::Size::get_value()];
 
-        using UniversalTanX = Frac<Prod<Integer<2>, Var>, Sub<Integer<1>, Pow<Var, Integer<2>>>>;
+        using UniversalTanX = Frac<Mul<Integer<2>, Var>, Sub<Integer<1>, Pow<Var, Integer<2>>>>;
         __device__ Symbol UNIVERSAL_TAN_X[UniversalTanX::Size::get_value()];
 
-        using UniversalCotX = Frac<Sub<Integer<1>, Pow<Var, Integer<2>>>, Prod<Integer<2>, Var>>;
+        using UniversalCotX = Frac<Sub<Integer<1>, Pow<Var, Integer<2>>>, Mul<Integer<2>, Var>>;
         __device__ Symbol UNIVERSAL_COT_X[UniversalCotX::Size::get_value()];
 
         using UniversalDerivative = Frac<Add<Integer<1>, Pow<Var, Integer<2>>>, Integer<2>>;
