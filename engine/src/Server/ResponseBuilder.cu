@@ -42,7 +42,7 @@ void ResponseBuilder::add_error(const std::string& error) {
 }
 
 std::string ResponseBuilder::get_errors_in_json() const {
-    return fmt::format("errors: [{}]", fmt::join(errors, ", "));
+    return fmt::format("\"errors\": [{}]", fmt::join(errors, ", "));
 }
 
 std::string ResponseBuilder::get_json_response() const {
