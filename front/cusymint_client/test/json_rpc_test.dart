@@ -9,7 +9,7 @@ void main() {
   group('json_rpc integration tests', () {
     final uri = Uri.parse('ws://localhost:8000/websocket');
 
-    test('Solve method returns input in Utf', () async {
+    test('Correct solve method returns result', () async {
       final client = CusymintClientJsonRpc(uri: uri);
 
       final request = Request('x^2');
@@ -23,6 +23,58 @@ void main() {
       expect(response.outputInTex, isNotNull);
 
       expect(response.errors, isEmpty);
+    });
+
+    test('Incorrect solve method returns UnexpectedToken error', () async {
+      final client = CusymintClientJsonRpc(uri: uri);
+
+      final request = Request('x^2 +');
+
+      final response = await client.solveIntegral(request);
+
+      expect(response.inputInUtf, isNull);
+      expect(response.inputInTex, isNull);
+
+      expect(response.outputInUtf, isNull);
+      expect(response.outputInTex, isNull);
+
+      expect(response.errors, isNotEmpty);
+      expect(
+        response.errors,
+        allOf(
+          isNotEmpty,
+          contains(
+            isA<UnexpectedTokenError>()
+                .having((err) => err.token, 'End token', '<end>'),
+          ),
+        ),
+      );
+    });
+
+    test('Incorrect interpret method returns UnexpectedToken error', () async {
+      final client = CusymintClientJsonRpc(uri: uri);
+
+      final request = Request('x^2 +');
+
+      final response = await client.interpretIntegral(request);
+
+      expect(response.inputInUtf, isNull);
+      expect(response.inputInTex, isNull);
+
+      expect(response.outputInUtf, isNull);
+      expect(response.outputInTex, isNull);
+
+      expect(response.errors, isNotEmpty);
+      expect(
+        response.errors,
+        allOf(
+          isNotEmpty,
+          contains(
+            isA<UnexpectedTokenError>()
+                .having((err) => err.token, 'End token', '<end>'),
+          ),
+        ),
+      );
     });
 
     test('Interpret method returns input in Utf and Tex', () async {
