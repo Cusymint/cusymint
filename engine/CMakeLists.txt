@@ -65,7 +65,8 @@ add_executable(
   ${TEST_DIR}/IntegralCommons.cu
   ${TEST_DIR}/KnownIntegral.cu
   ${TEST_DIR}/Simplify.cu
-  ${TEST_DIR}/Symbol.cu)
+  ${TEST_DIR}/Symbol.cu
+  ${TEST_DIR}/Derivatives.cu)
 
 add_executable(
   srvcusymint

@@ -1,8 +1,13 @@
 #include "InverseTrigonometric.cuh"
 
+#include <fmt/core.h>
+
 #include "Symbol.cuh"
 #include "Symbol/Macros.cuh"
-#include <fmt/core.h>
+#include "Symbol/MetaOperators.cuh"
+#include "Symbol/Power.cuh"
+#include "Symbol/Product.cuh"
+#include "Utils/Cuda.cuh"
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arcsine)
@@ -32,6 +37,62 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arccotangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arccotangent)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arccotangent)
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arcsine) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') 0.5 2 (expr) ^ - 1 + ^ inv *
+        (destination)->init_from(NumericConstant::with_value(0.5));   // power exponent for sqrt
+        (destination + 1)->init_from(NumericConstant::with_value(2)); // power exponent for x^2
+        Symbol::copy_and_reverse_symbol_sequence(destination + 2, &arg(), arg().size());
+        ManySymbols<Power, Negation, NumericConstant, Addition, Power, Reciprocal,
+                    Product>::create_reversed_at(destination + arg().size() + 2);
+        (destination + arg().size() + 4)->as<NumericConstant>().value = 1;
+        return arg().size() + 9;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arccosine) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') 0.5 2 (expr) ^ - 1 + ^ inv - *
+        (destination)->init_from(NumericConstant::with_value(0.5));   // power exponent for sqrt
+        (destination + 1)->init_from(NumericConstant::with_value(2)); // power exponent for x^2
+        Symbol::copy_and_reverse_symbol_sequence(destination + 2, &arg(), arg().size());
+        ManySymbols<Power, Negation, NumericConstant, Addition, Power, Reciprocal, Negation,
+                    Product>::create_reversed_at(destination + arg().size() + 2);
+        (destination + arg().size() + 4)->as<NumericConstant>().value = 1;
+        return arg().size() + 10;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arctangent) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') 2 (expr) ^ 1 + inv *
+        (destination)->init_from(NumericConstant::with_value(2)); // power exponent for x^2
+        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
+        Power::create_reversed_at(destination + arg().size() + 1);
+        (destination + arg().size() + 2)->init_from(NumericConstant::with_value(1));
+        ManySymbols<Addition, Reciprocal, Product>::create_reversed_at(destination + arg().size() +
+                                                                       3);
+        return arg().size() + 6;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arccotangent) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') 2 (expr) ^ 1 + inv - *
+        (destination)->init_from(NumericConstant::with_value(2)); // power exponent for x^2
+        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
+        Power::create_reversed_at(destination + arg().size() + 1);
+        (destination + arg().size() + 2)->init_from(NumericConstant::with_value(1));
+        ManySymbols<Addition, Reciprocal, Negation, Product>::create_reversed_at(destination +
+                                                                                 arg().size() + 3);
+        return arg().size() + 7;
+    }
 
     std::string Arcsine::to_string() const { return fmt::format("arcsin({})", arg().to_string()); }
 

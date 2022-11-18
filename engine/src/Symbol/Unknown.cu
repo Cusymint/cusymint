@@ -12,6 +12,7 @@ namespace Sym {
     DEFINE_INVALID_IS_FUNCTION_OF(Unknown);
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Unknown)
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(Unknown)
+    DEFINE_INVALID_DERIVATIVE(Unknown)
 
     [[nodiscard]] std::string Unknown::to_string() const {
         return fmt::format("Unknown(type={},size={})",

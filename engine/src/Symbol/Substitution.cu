@@ -12,6 +12,7 @@ namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Substitution)
     DEFINE_IDENTICAL_COMPARE_TO(Substitution)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Substitution)
+    DEFINE_INVALID_DERIVATIVE(Substitution)
 
     DEFINE_COMPRESS_REVERSE_TO(Substitution) {
         const size_t new_expression_size = (destination - 1)->size();

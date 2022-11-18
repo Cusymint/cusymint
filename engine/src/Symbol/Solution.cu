@@ -10,6 +10,7 @@ namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Solution)
     DEFINE_IDENTICAL_COMPARE_TO(Solution)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Solution)
+    DEFINE_INVALID_DERIVATIVE(Solution)
 
     DEFINE_COMPRESS_REVERSE_TO(Solution) {
         size_t new_substitutions_size = 0;

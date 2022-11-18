@@ -1,7 +1,11 @@
+#include "Symbol/Macros.cuh"
+#include "Symbol/Product.cuh"
 #include "Trigonometric.cuh"
 
-#include "Symbol.cuh"
 #include <fmt/core.h>
+
+#include "Symbol.cuh"
+#include "Symbol/MetaOperators.cuh"
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Sine)
@@ -58,6 +62,50 @@ namespace Sym {
             help_space->copy_to(symbol());
         }
         return true;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Sine) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') (expr) cos *
+        Symbol::copy_and_reverse_symbol_sequence(destination, &arg(), arg().size());
+        ManySymbols<Cosine, Product>::create_reversed_at(destination + arg().size());
+        return arg().size() + 2;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Cosine) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') (expr) sin - *
+        Symbol::copy_and_reverse_symbol_sequence(destination, &arg(), arg().size());
+        ManySymbols<Sine, Negation, Product>::create_reversed_at(destination + arg().size());
+        return arg().size() + 3;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Tangent) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') 2 (expr) cos ^ inv *
+        destination->init_from(NumericConstant::with_value(2));
+        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
+        ManySymbols<Cosine, Power, Reciprocal, Product>::create_reversed_at(destination +
+                                                                            arg().size() + 1);
+        return arg().size() + 5;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Cotangent) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') 2 (expr) sin ^ inv - *
+        destination->init_from(NumericConstant::with_value(2));
+        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
+        ManySymbols<Sine, Power, Reciprocal, Negation, Product>::create_reversed_at(
+            destination + arg().size() + 1);
+        return arg().size() + 6;
     }
 
     std::string Sine::to_string() const { return fmt::format("sin({})", arg().to_string()); }

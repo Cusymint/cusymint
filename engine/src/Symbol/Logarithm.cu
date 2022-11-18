@@ -1,8 +1,12 @@
 #include "InverseTrigonometric.cuh"
 
+#include <fmt/core.h>
+
 #include "Symbol.cuh"
 #include "Symbol/Constants.cuh"
-#include <fmt/core.h>
+#include "Symbol/Macros.cuh"
+#include "Symbol/MetaOperators.cuh"
+#include "Symbol/Product.cuh"
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Logarithm)
@@ -36,6 +40,16 @@ namespace Sym {
             return true;
         }
         return true;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Logarithm) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') (expr) inv *
+        Symbol::copy_and_reverse_symbol_sequence(destination, &arg(), arg().size());
+        ManySymbols<Reciprocal, Product>::create_reversed_at(destination + arg().size());
+        return arg().size() + 2;
     }
 
     [[nodiscard]] std::string Logarithm::to_string() const {

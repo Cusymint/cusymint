@@ -1,5 +1,6 @@
 #include "Symbol/Addition.cuh"
 #include "Symbol/Constants.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
 
 #include <fmt/core.h>
@@ -46,6 +47,38 @@ namespace Sym {
         simplify_structure(help_space);
 
         return true;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Product) {
+        // Multiplication by constant
+        const size_t d_arg1_size = (destination - 1)->size();
+        Symbol* const rev_arg2 = destination - 1 - d_arg1_size;
+        if ((destination - 1)->is(0)) { // arg1() is constant
+            if (rev_arg2->is(0)) {      // arg2() is constant
+                return -1;
+            }
+            Symbol::copy_and_reverse_symbol_sequence(destination - 1, &arg1(), arg1().size());
+            Product::create_reversed_at(destination + arg1().size() - 1);
+            return arg1().size();
+        }
+        if (rev_arg2->is(0)) { // arg2() is constant
+            Symbol::move_symbol_sequence(
+                rev_arg2, rev_arg2 + 1,
+                d_arg1_size); // move derivative of arg1() one index back
+            Symbol::copy_and_reverse_symbol_sequence(destination - 1, &arg2(), arg2().size());
+            Product::create_reversed_at(destination + arg2().size() - 1);
+            return arg2().size();
+        }
+        // General case: (expr2') (expr1) * (expr1') (expr2) * +
+        
+        Symbol::move_symbol_sequence(rev_arg2 + 2 + arg1().size(), rev_arg2 + 1, d_arg1_size); // copy (expr1')
+        Symbol::copy_and_reverse_symbol_sequence(rev_arg2+1, &arg1(), arg1().size());
+        Product::create_reversed_at(rev_arg2 + arg1().size() + 1);
+
+        Symbol* const arg2_dst = rev_arg2 + 2 + arg1().size() + d_arg1_size;
+        Symbol::copy_and_reverse_symbol_sequence(arg2_dst, &arg2(), arg2().size());
+        ManySymbols<Product,Addition>::create_reversed_at(arg2_dst + arg2().size());
+        return size + 2;
     }
 
     __host__ __device__ bool Product::try_dividing_polynomials(Symbol* const help_space) {
@@ -234,6 +267,18 @@ namespace Sym {
         }
 
         return true;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Reciprocal) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        // (expr') 2 (expr) ^ inv - *
+        destination->init_from(NumericConstant::with_value(2));
+        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
+        ManySymbols<Power, Reciprocal, Negation, Product>::create_reversed_at(destination +
+                                                                              arg().size() + 1);
+        return arg().size() + 5;
     }
 
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {

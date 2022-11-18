@@ -441,6 +441,14 @@ namespace Sym {
             };
         };
     };
+
+    template <class Head, class... Tail> struct ManySymbols {
+        __host__ __device__ static void create_reversed_at(Symbol* const destination) {
+            Head::create_reversed_at(destination);
+            ManySymbols<Tail...>::create_reversed_at(destination + 1);
+        }
+    };
+    template <class T> struct ManySymbols<T> : T {};
 }
 
 #endif

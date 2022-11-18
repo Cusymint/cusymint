@@ -4,6 +4,7 @@
 #include "Symbol.cuh"
 
 namespace Sym {
+    DEFINE_ZERO_ARGUMENT_OP_FUNCTIONS(Variable)
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(Variable)
     DEFINE_SIMPLE_ARE_EQUAL(Variable)
     DEFINE_IDENTICAL_COMPARE_TO(Variable)
@@ -19,6 +20,11 @@ namespace Sym {
         }
 
         return true;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Variable) {
+        destination->init_from(NumericConstant::with_value(1));
+        return 1;
     }
 
     std::vector<Symbol> var() {

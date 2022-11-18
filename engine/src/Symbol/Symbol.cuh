@@ -533,6 +533,15 @@ namespace Sym {
          */
         __host__ __device__ Util::OptionalNumber<double>
         get_monomial_coefficient(Symbol* const help_space) const;
+
+        /*
+         * @brief Calculates derivative of `this` and places it in reversed order at `destination`.
+         *
+         * @param `destination` This is what it is.
+         *
+         * @return Number of symbols inserted.
+         */
+        __host__ __device__ size_t derivate_reverse_to(Symbol* const destination);
     };
 
     /*
