@@ -18,10 +18,10 @@ namespace Sym {
 
         /*
          * @brief Try to set `expressions[potential_solver_idx]` (SubexpressionCandidate)
-         * as a solution to this SubexpressionVacancy
+         * as a solution to its SubexpressionVacancy
          *
-         * @param expressions Expressions array with a candidate to solve and missing subexpression
-         * @param potential_solver_idx Id of the potential solver
+         * @param expressions Expressions array with a candidate to solve and a missing subexpression
+         * @param potential_solver_idx Index of the potential solver
          *
          * @return `false` when haven't managed to set chosen candidate as a solution to
          * the subexpression or whetether there are still unsolved subexpressions in the parent.
@@ -100,7 +100,7 @@ namespace Sym {
          * @brief Simplifies `expressions`. Result overrides `expressions` data.
          *
          * @param expressions Expressions to simplify
-         * @param help_spaces Help space required is some simplifications
+         * @param help_spaces Help space required for some simplifications
          */
         __global__ void simplify(ExpressionArray<> expressions, ExpressionArray<> help_spaces) {
             const size_t thread_count = Util::thread_count();
@@ -196,9 +196,11 @@ namespace Sym {
             const size_t thread_idx = Util::thread_idx();
 
             // For each tree node there is a seperate starting thread.
-            // If it's node is solved it moves to it's parent.
-            // It tries to tell that there is a solution to fill the vacancy.
-            // If all the vacancies are filled it repeats this operation upwards.
+            // If its node is solved it moves to it's parent.
+            // It tries to fill the parent's vacancy with it's own solution.
+            // If it succeeds and all of the parent's vacancies are solved, it moves to the parent.
+            // This operation upwards is repeated upwards while all solutions to the current node exists
+            // and the parent's vacancy is not solved and ends at the root.
 
             // Since `expr_idx = 0` is SubexpressionVacancy of the original integral, it is skipped
             for (size_t expr_idx = thread_idx + 1; expr_idx < expressions.size();
@@ -215,8 +217,8 @@ namespace Sym {
                     }
 
                     // We iterate tree upwards.
-                    // There is a possibility of race condition when we will reach the same node,
-                    // as the thread which started the loop.
+                    // It may seem that there is a possibility of race condition
+                    // when we will reach the same node, as the thread which has started the loop.
                     // However, since `try_set_solver_idx` is atomic, only one thread would be able
                     // to set `solver_idx` on the next parent and continue its journey upwards.
                     current_expr_idx = expressions[current_expr_idx]
