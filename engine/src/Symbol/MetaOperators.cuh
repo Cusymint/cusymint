@@ -37,9 +37,8 @@ namespace Sym {
             if constexpr (T::HAS_SAME) {
                 return T::match(expr1) && U::match(expr2, T::get_same(expr1));
             }
-            else {
-                return T::match(expr1) && U::match(expr2);
-            }
+
+            return T::match(expr1) && U::match(expr2);
         }
     };
 
@@ -343,7 +342,8 @@ namespace Sym {
         }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
-            return dst.is(Type::Solution) && Inner::match(*dst.as<Solution>().expression(), other_same);
+            return dst.is(Type::Solution) &&
+                   Inner::match(*dst.as<Solution>().expression(), other_same);
         }
     };
 

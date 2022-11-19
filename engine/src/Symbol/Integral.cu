@@ -47,7 +47,7 @@ namespace Sym {
 
     DEFINE_IS_FUNCTION_OF(Integral) {
         return integrand()->is_function_of(expressions, expression_count);
-    } // NOLINT
+    }
 
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Integral) {
         if (substitution_count > 0) {
