@@ -90,6 +90,8 @@ else()
 endif()
 
 # Compilation options
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 target_compile_features(libcusymint PUBLIC cxx_std_17)
 set_target_properties(
@@ -143,6 +145,9 @@ target_link_libraries(libcusymint PUBLIC fmt::fmt)
 
 target_link_libraries(cusymint PRIVATE libcusymint)
 
-target_link_libraries(srvcusymint PRIVATE libcusymint libmongoose)
+target_link_libraries(srvcusymint PRIVATE
+  libcusymint 
+  libmongoose
+  Threads::Threads)
 
 target_link_libraries(testcusymint PRIVATE libcusymint gtest_main)

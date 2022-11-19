@@ -130,7 +130,7 @@ void main() {
         ]),
       );
     });
-  }, skip: true);
+  });
 
   group('json_rpc error parsing', () {
     group('Unexpected Tokens', () {

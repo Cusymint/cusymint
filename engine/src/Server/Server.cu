@@ -6,6 +6,7 @@
 #include "Utils/CompileConstants.cuh"
 
 #include <fmt/core.h>
+#include <thread>
 
 // https://mongoose.ws/tutorials/json-rpc-over-websocket/
 
@@ -73,6 +74,16 @@ static void solve(struct mg_rpc_req* r) {
     free(input);
 }
 
+void websocket_message_handler(struct mg_connection* c, void* ev_data) {
+    struct mg_ws_message* wm = (struct mg_ws_message*)ev_data;
+    struct mg_iobuf io = {0, 0, 0, 512};
+    struct mg_rpc_req r = {&s_rpc_head, 0, mg_pfn_iobuf, &io, 0, wm->data};
+    mg_rpc_process(&r);
+    if (io.buf)
+        mg_ws_send(c, (char*)io.buf, io.len, WEBSOCKET_OP_TEXT);
+    mg_iobuf_free(&io);
+}
+
 // This RESTful server implements the following endpoints:
 //   /websocket - upgrade to Websocket, and implement websocket echo server
 void handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
@@ -95,13 +106,8 @@ void handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
     }
     else if (ev == MG_EV_WS_MSG) {
         // Got websocket frame. Received data is wm->data
-        struct mg_ws_message* wm = (struct mg_ws_message*)ev_data;
-        struct mg_iobuf io = {0, 0, 0, 512};
-        struct mg_rpc_req r = {&s_rpc_head, 0, mg_pfn_iobuf, &io, 0, wm->data};
-        mg_rpc_process(&r);
-        if (io.buf)
-            mg_ws_send(c, (char*)io.buf, io.len, WEBSOCKET_OP_TEXT);
-        mg_iobuf_free(&io);
+        std::thread websocket_thread(websocket_message_handler, c, ev_data);
+        websocket_thread.detach();
     }
     (void)fn_data;
 }
