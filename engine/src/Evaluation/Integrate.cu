@@ -20,13 +20,14 @@ namespace Sym {
          * @brief Try to set `expressions[potential_solver_idx]` (SubexpressionCandidate)
          * as a solution to its SubexpressionVacancy
          *
-         * @param expressions Expressions array with a candidate to solve and a missing subexpression
+         * @param expressions Expressions array with a candidate to solve and a missing
+         * subexpression
          * @param potential_solver_idx Index of the potential solver
          *
          * @return `false` when haven't managed to set chosen candidate as a solution to
          * the subexpression or whetether there are still unsolved subexpressions in the parent.
          * `true` when managed to set chosen candidate as a solution and parent doesn't have any
-         * unsolved subexpressions left. 
+         * unsolved subexpressions left.
          */
         __device__ bool try_set_solver_idx(Sym::ExpressionArray<>& expressions,
                                            const size_t potential_solver_idx) {
@@ -119,7 +120,7 @@ namespace Sym {
          * @param applicability Solution to checking all `integrals` against known integrals.
          * `applicability[MAX_EXPRESSION_COUNT * form_idx + int_idx]` stores information whether
          * `KnownIntegral::APPLICATIONS[form_idx]` can be applied to `integral[int_idx]`, where
-         * `MAX_EXPRESSION_COUNT` is the maximum size of the `integrals` array. 
+         * `MAX_EXPRESSION_COUNT` is the maximum size of the `integrals` array.
          */
         __global__ void
         check_for_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
@@ -141,14 +142,16 @@ namespace Sym {
         }
 
         /*
-         * @brief Solves integrals in place using the `applicability` information from `check_for_known_integrals`
+         * @brief Solves integrals in place using the `applicability` information from
+         * `check_for_known_integrals`
          *
          * @param integrals Integrals with potentially known solutions
          * @param expressions Expressions containing SubexpressionVacancies.
          * Solutions are written after the last expression in `expressions`.
-         * 
+         *
          * @param help_spaces Help space used in applying known integrals
-         * @param applicability Result of `inclusive_scan` on `check_for_known_integrals()` applicability array
+         * @param applicability Result of `inclusive_scan` on `check_for_known_integrals()`
+         * applicability array
          */
         __global__ void
         apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
@@ -199,8 +202,8 @@ namespace Sym {
             // If its node is solved it moves to it's parent.
             // It tries to fill the parent's vacancy with it's own solution.
             // If it succeeds and all of the parent's vacancies are solved, it moves to the parent.
-            // This operation upwards is repeated upwards while all solutions to the current node exists
-            // and the parent's vacancy is not solved and ends at the root.
+            // This operation upwards is repeated upwards while all solutions to the current node
+            // exists and the parent's vacancy is not solved and ends at the root.
 
             // Since `expr_idx = 0` is SubexpressionVacancy of the original integral, it is skipped
             for (size_t expr_idx = thread_idx + 1; expr_idx < expressions.size();
@@ -228,8 +231,9 @@ namespace Sym {
         }
 
         /*
-         * @brief Finds redundant SubexpressionCandidates which are children of already solved SubexpressionVacancies.
-         * SubexpressionCandidates that are solutions to SubexpressionsVacancies are not marked.
+         * @brief Finds redundant SubexpressionCandidates which are children of already solved
+         * SubexpressionVacancies. SubexpressionCandidates that are solutions to
+         * SubexpressionsVacancies are not marked.
          *
          * @param expressions Expressions containing redundant SubexpressionCandidates
          * @param removability Solution. `0` is set for redundant SubexpresionCandidates
@@ -270,9 +274,9 @@ namespace Sym {
          *
          * @param integrals Integrals to be checked against
          * @param expressions Expressions pointing to integrals
-         * @param expressions_removability Result of `find_redundand_expression()`. 
+         * @param expressions_removability Result of `find_redundand_expression()`.
          * `0` for expressions to be deleted, `1` for the rest
-         * @param integrals_removability Result. `0` for redundant integrals, 
+         * @param integrals_removability Result. `0` for redundant integrals,
          * `1` otherwise
          */
         __global__ void
@@ -304,8 +308,9 @@ namespace Sym {
          * @tparam ZERO_CANDIDATE_INTEGRAL_COUNT Whether to zero `candidate_integral_count` of
          * candidates that are moved to `destinations`
          * @param expressions Expressions to be moved
-         * @param removability New locations indices of `expressions`. If `removability[i] == removability[i - 1]`
-         * or `i == 0 && removability[i] != 0` then expression is moved to `destination[removability[i] - 1]`. 
+         * @param removability New locations indices of `expressions`. If `removability[i] ==
+         * removability[i - 1]` or `i == 0 && removability[i] != 0` then expression is moved to
+         * `destination[removability[i] - 1]`.
          * @param destinations Destination to move integrals to
          */
         template <bool ZERO_CANDIDATE_INTEGRAL_COUNT = false>
@@ -377,14 +382,15 @@ namespace Sym {
 
         /*
          * @brief Checks which heuristics are applicable to which integrals and updates
-         * `candidate_integral_count` and `candidate_expression_count` in correct expressions 
+         * `candidate_integral_count` and `candidate_expression_count` in correct expressions
          *
          * @param integrals Integrals to be checked
          * @param expressions Parents of SubexpressionCandidate in `integrals`.
          * @param new_integrals_flags Solution. When `integrals[i]` matches `Heuristic::CHECKS[j]`
-         * sets `new_integrals_flags[MAX_EXPRESSION_COUNT * j + i]` to `1`, otherwise `0`. 
-         * @param new_expressions_flags  Solution. When `integrals[i]` matches `Heuristic::CHECKS[j]`
-         * sets `new_expressions_flags[MAX_EXPRESSION_COUNT * j + i]` to `1`, otherwise `0`. 
+         * sets `new_integrals_flags[MAX_EXPRESSION_COUNT * j + i]` to `1`, otherwise `0`.
+         * @param new_expressions_flags  Solution. When `integrals[i]` matches
+         * `Heuristic::CHECKS[j]` sets `new_expressions_flags[MAX_EXPRESSION_COUNT * j + i]` to `1`,
+         * otherwise `0`.
          */
         __global__ void
         check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
@@ -430,7 +436,7 @@ namespace Sym {
          *
          * @param integrals Integrals on which heuristics will be applied
          * @param integrals_destinations Solutions destination
-         * @param expressions_destinations Destination for new expressions. 
+         * @param expressions_destinations Destination for new expressions.
          * New expressions will be appended to already existing ones.
          * @param help_spaces Help space for transformations
          * @param new_integrals_indices Indices of new integrals incremented by 1.
@@ -754,7 +760,6 @@ namespace Sym {
             find_redundand_expressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1);
             cudaDeviceSynchronize();
 
-            scan_array_2.zero_mem(); // TODO: Not necessary?
             find_redundand_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
                                                                   scan_array_1, scan_array_2);
             cudaDeviceSynchronize();
