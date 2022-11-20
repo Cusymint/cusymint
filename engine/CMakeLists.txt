@@ -41,6 +41,7 @@ add_library(
   ${SYMBOL_DIR}/SubexpressionCandidate.cu
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
   ${EVALUATION_DIR}/Integrate.cu
+  ${EVALUATION_DIR}/IntegrateKernels.cu
   ${EVALUATION_DIR}/StaticFunctions.cu
   ${EVALUATION_DIR}/Heuristic/Heuristic.cu
   ${EVALUATION_DIR}/Heuristic/SplitSum.cu
