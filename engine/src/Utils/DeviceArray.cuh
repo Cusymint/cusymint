@@ -35,7 +35,7 @@ namespace Util {
         T* data_ptr = nullptr;
         bool is_data_owner = false;
 
-        void allocate_data() {
+        void allocate_memory() {
             cudaError_t result = cudaMalloc(&data_ptr, size_in_bytes());
             if (result == cudaErrorMemoryAllocation) {
                 throw std::bad_alloc();
@@ -56,7 +56,7 @@ namespace Util {
          */
         explicit DeviceArray(const size_t size, const bool zero_mem = false) :
             data_size(size), is_data_owner(true) {
-            allocate_data();
+            allocate_memory();
 
             if (zero_mem) {
                 this->zero_mem();
@@ -70,7 +70,7 @@ namespace Util {
          */
         explicit DeviceArray(const std::vector<T>& vector) :
             data_size(vector.size()), is_data_owner(true) {
-            allocate_data();
+            allocate_memory();
             cudaMemcpy(data_ptr, vector.data(), size_in_bytes(), cudaMemcpyHostToDevice);
         }
 
@@ -112,6 +112,30 @@ namespace Util {
             other.is_data_owner = false;
 
             return *this;
+        }
+
+        /*
+         * @brief Reallocates the memory. The array has to own the memory it points to. If the new
+         * size is greater or equal to the old size, all elements are copied over. If not, then only
+         * the ones that fit (starting with the first one) are copied.
+         *
+         * @param new_size New size of the array (number of elements of type T)
+         */
+        void resize(const size_t new_size) {
+            if (!is_data_owner) {
+                throw std::logic_error("Resizing unowned array");
+            }
+
+            T* const old_data_ptr = data_ptr;
+            const size_t old_size = data_size;
+
+            data_size = new_size;
+            allocate_memory();
+
+            cudaMemcpy(data_ptr, old_data_ptr, std::min(new_size, old_size) * sizeof(T),
+                       cudaMemcpyDeviceToDevice);
+
+            cudaFree(old_data_ptr);
         }
 
         /*
