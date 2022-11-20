@@ -98,18 +98,21 @@ namespace Sym {
         }
 
         /*
-         * @brief Simplifies `expressions`. Result overrides `expressions` data.
+         * @brief Simplifies `expressions`
          *
          * @param expressions Expressions to simplify
+         * @param destination Destination to save the simplified expressions
          * @param help_spaces Help space required for some simplifications
          */
-        __global__ void simplify(ExpressionArray<> expressions, ExpressionArray<> help_spaces) {
+        __global__ void simplify(const ExpressionArray<> expressions, ExpressionArray<> destination,
+                                 ExpressionArray<> help_spaces) {
             const size_t thread_count = Util::thread_count();
             const size_t thread_idx = Util::thread_idx();
 
             for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
                  expr_idx += thread_count) {
-                expressions[expr_idx].simplify(help_spaces.at(expr_idx));
+                expressions[expr_idx].copy_to(&destination[expr_idx]);
+                destination[expr_idx].simplify(help_spaces.at(expr_idx));
             }
         }
 
@@ -733,8 +736,10 @@ namespace Sym {
         Util::DeviceArray<uint32_t> scan_array_2(SCAN_ARRAY_SIZE, true);
 
         for (size_t i = 0;; ++i) {
-            simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, help_spaces);
+            integrals_swap.resize(integrals.size());
+            simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_spaces);
             cudaDeviceSynchronize();
+            std::swap(integrals, integrals_swap);
 
             check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_1);
             cudaDeviceSynchronize();
