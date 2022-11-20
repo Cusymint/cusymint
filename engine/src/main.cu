@@ -7,7 +7,7 @@
 
 #include <fmt/core.h>
 
-#include "Evaluation/Integrate.cuh"
+#include "Evaluation/Integrator.cuh"
 #include "Evaluation/StaticFunctions.cuh"
 
 #include "Symbol/Constants.cuh"
@@ -54,7 +54,8 @@ int main() {
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
-    const auto solution = Sym::solve_integral(integral);
+    Sym::Integrator integrator;
+    const auto solution = integrator.solve_integral(integral);
 
     if (solution.has_value()) {
         fmt::print("Success! Solution:\n{} + C\n", solution.value().data()->to_tex());

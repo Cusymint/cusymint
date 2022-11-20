@@ -1,4 +1,4 @@
-#include "IntegrateKernels.cuh"
+#include "IntegratorKernels.cuh"
 
 #include "Heuristic/Heuristic.cuh"
 #include "KnownIntegral/KnownIntegral.cuh"

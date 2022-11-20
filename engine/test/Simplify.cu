@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "Evaluation/Integrate.cuh"
+#include "Evaluation/Integrator.cuh"
 #include "Parser/Parser.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/Symbol.cuh"

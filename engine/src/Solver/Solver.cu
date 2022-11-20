@@ -1,6 +1,6 @@
 #include "Solver.cuh"
 
-#include "Evaluation/Integrate.cuh"
+#include "Evaluation/Integrator.cuh"
 #include "Evaluation/StaticFunctions.cuh"
 
 #include "Symbol/Integral.cuh"
@@ -17,7 +17,8 @@ std::optional<Expression> Solver::solve(const Expression& integral) const {
         integral_input = Sym::integral(integral.symbols);
     }
 
-    auto solve_result = Sym::solve_integral(integral_input);
+    Sym::Integrator integrator;
+    auto solve_result = integrator.solve_integral(integral_input);
 
     if (solve_result.has_value()) {
         return Expression(solve_result.value());
