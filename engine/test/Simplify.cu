@@ -32,8 +32,8 @@ namespace Test {
                       const std::vector<Sym::Symbol>& expected_simplification) {
             const auto simplified_expression = simplify(expression);
 
-            if (Sym::Symbol::are_expressions_equal(simplified_expression.data(),
-                                                   expected_simplification.data())) {
+            if (Sym::Symbol::are_expressions_equal(*simplified_expression.data(),
+                                                   *expected_simplification.data())) {
                 return testing::AssertionSuccess();
             }
 
@@ -66,8 +66,8 @@ namespace Test {
             auto simplified_expression1 = simplify(expression1);
             auto simplified_expression2 = simplify(expression2);
 
-            if (Sym::Symbol::are_expressions_equal(simplified_expression1.data(),
-                                                   simplified_expression2.data())) {
+            if (Sym::Symbol::are_expressions_equal(*simplified_expression1.data(),
+                                                   *simplified_expression2.data())) {
                 return testing::AssertionSuccess();
             }
 

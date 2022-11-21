@@ -31,8 +31,8 @@ namespace Sym {
      *
      * @return `true` jeśli `expr1 == 1/expr2`, `false` w przeciwnym wypadku
      */
-    __host__ __device__ static bool are_inverse_of_eachother(const Symbol* const expr1,
-                                                             const Symbol* const expr2);
+    __host__ __device__ static bool are_inverse_of_eachother(const Symbol& expr1,
+                                                             const Symbol& expr2);
 
     /*
      * @brief Checks if `this` is a rational function with numerator rank higher than

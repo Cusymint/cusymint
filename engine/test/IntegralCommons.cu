@@ -21,7 +21,8 @@ namespace Test {
                        << expected_result.data()->to_string();
             }
 
-            if (Sym::Symbol::are_expressions_equal(result.value().data(), expected_result.data())) {
+            if (Sym::Symbol::are_expressions_equal(*result.value().data(),
+                                                   *expected_result.data())) {
                 return testing::AssertionSuccess();
             }
 

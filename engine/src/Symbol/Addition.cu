@@ -34,7 +34,8 @@ namespace Sym {
             // arg1() and arg2() (See the comment in the same function for Power symbol).
             // Although in this case, this might not be important, as checking whether something is
             // a function of `f(x)+g(x)` is quite rare
-            if (arg1() == addition_expression.arg1() && arg2() == addition_expression.arg2()) {
+            if (Symbol::are_expressions_equal(arg1(), addition_expression.arg1()) &&
+                Symbol::are_expressions_equal(arg2(), addition_expression.arg2())) {
                 return true;
             }
         }
@@ -49,10 +50,10 @@ namespace Sym {
             *expr1, *expr2);
     }
 
-    __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol* const expr1,
-                                                                  const Symbol* const expr2) {
-        return PatternPair<Neg<Same>, Same>::match_pair(*expr1, *expr2) ||
-               PatternPair<Same, Neg<Same>>::match_pair(*expr1, *expr2);
+    __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol& expr1,
+                                                                  const Symbol& expr2) {
+        return PatternPair<Neg<Same>, Same>::match_pair(expr1, expr2) ||
+               PatternPair<Same, Neg<Same>>::match_pair(expr1, expr2);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Addition) {
@@ -66,7 +67,7 @@ namespace Sym {
             return SimplificationResult::Success;
         }
 
-        if (are_equal_of_opposite_sign(expr1, expr2)) {
+        if (are_equal_of_opposite_sign(*expr1, *expr2)) {
             expr1->init_from(NumericConstant::with_value(0.0));
             expr2->init_from(NumericConstant::with_value(0.0));
             return SimplificationResult::Success;

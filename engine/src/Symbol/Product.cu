@@ -129,7 +129,8 @@ namespace Sym {
 
             // TODO: In the future, this should look for correspondences in the product tree (See
             // the comment in the same function for Power symbol).
-            if (arg1() == product_expression.arg1() && arg2() == product_expression.arg2()) {
+            if (Symbol::are_expressions_equal(arg1(), product_expression.arg1()) &&
+                Symbol::are_expressions_equal(arg2(), product_expression.arg2())) {
                 return true;
             }
         }
@@ -138,10 +139,10 @@ namespace Sym {
                arg2().is_function_of(expressions, expression_count);
     }
 
-    __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol* const expr1,
-                                                               const Symbol* const expr2) {
+    __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol& expr1,
+                                                               const Symbol& expr2) {
         using Matcher = PatternPair<Inv<Same>, Same>;
-        return Matcher::match_pair(*expr1, *expr2) || Matcher::match_pair(*expr2, *expr1);
+        return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {
@@ -155,7 +156,7 @@ namespace Sym {
             return SimplificationResult::Success;
         }
 
-        if (are_inverse_of_eachother(expr1, expr2)) {
+        if (are_inverse_of_eachother(*expr1, *expr2)) {
             expr1->init_from(NumericConstant::with_value(1.0));
             expr2->init_from(NumericConstant::with_value(1.0));
             return SimplificationResult::Success;

@@ -10,6 +10,7 @@ namespace Sym {
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Variable);
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Variable)
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(Variable)
+    DEFINE_SIMPLE_SEAL_WHOLE(Variable)
 
     DEFINE_IS_FUNCTION_OF(Variable) {
         for (size_t i = 0; i < expression_count; ++i) {

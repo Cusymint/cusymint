@@ -21,29 +21,33 @@ namespace Sym {
     union Symbol;
 }
 
-#define COMPRESS_REVERSE_TO_HEADER(_compress_reverse_to) \
-    __host__ __device__ size_t _compress_reverse_to(Symbol* const destination) const
+#define COMPRESS_REVERSE_TO_HEADER(_fname) \
+    __host__ __device__ size_t _fname(Symbol* const destination) const
 
-#define ARE_EQUAL_HEADER(_are_equal) \
-    __host__ __device__ bool _are_equal(const Symbol* const symbol) const
+#define ARE_EQUAL_HEADER(_fname) __host__ __device__ bool _fname(const Symbol* const symbol) const
 
-#define COMPARE_TO_HEADER(_compare_to)                            \
-    __host__ __device__ Util::Order _compare_to(                  \
+#define COMPARE_TO_HEADER(_fname)                                 \
+    __host__ __device__ Util::Order _fname(                       \
         const Symbol& other) /* NOLINT(misc-unused-parameters) */ \
         const
 
-#define SIMPLIFY_IN_PLACE_HEADER(_simplify_in_place) \
-    __host__ __device__ bool _simplify_in_place(Symbol* const help_space)
+#define SIMPLIFY_IN_PLACE_HEADER(_fname) __host__ __device__ bool _fname(Symbol* const help_space)
 
-#define IS_FUNCTION_OF_HEADER(_is_function_of)                                       \
-    __host__ __device__ bool _is_function_of(const Symbol* const* const expressions, \
-                                             const size_t expression_count) const
+#define IS_FUNCTION_OF_HEADER(_fname)                                       \
+    __host__ __device__ bool _fname(const Symbol* const* const expressions, \
+                                    const size_t expression_count) const
 
 #define PUSH_CHILDREN_ONTO_STACK_HEADER(_fname, _const) \
     __host__ __device__ void _fname(Util::StaticStack<_const Symbol*>& stack) _const
 
 #define PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(_fname) \
     __host__ __device__ void _fname(Util::StaticStack<Symbol*>& stack)
+
+#define DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) \
+    PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(           \
+        _name::put_children_on_stack_and_propagate_additional_size)
+
+#define SEAL_WHOLE_HEADER(_fname) __host__ __device__ void _fname()
 
 #define DECLARE_SYMBOL(_name, _simple)                                            \
     struct _name {                                                                \
@@ -100,7 +104,8 @@ namespace Sym {
         PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, );              \
         PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, const);         \
         PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                        \
-            put_children_on_stack_and_propagate_additional_size);
+            put_children_on_stack_and_propagate_additional_size);                 \
+        SEAL_WHOLE_HEADER(seal_whole);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.
 // standard-layout jest wymagany by zagwarantować, że wszystkie symbole mają pole `type` na offsecie
@@ -149,15 +154,16 @@ namespace Sym {
         return false; /* Just to silence warnings */                                    \
     }
 
-#define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                       \
-    DEFINE_IS_FUNCTION_OF(_name) {                                             \
-        for (size_t i = 0; i < expression_count; ++i) {                        \
-            if (expressions[i]->is<_name>() && *symbol() == *expressions[i]) { \
-                return true;                                                   \
-            }                                                                  \
-        }                                                                      \
-                                                                               \
-        return arg().is_function_of(expressions, expression_count);            \
+#define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                     \
+    DEFINE_IS_FUNCTION_OF(_name) {                                           \
+        for (size_t i = 0; i < expression_count; ++i) {                      \
+            if (expressions[i]->is<_name>() &&                               \
+                Symbol::are_expressions_equal(*symbol(), *expressions[i])) { \
+                return true;                                                 \
+            }                                                                \
+        }                                                                    \
+                                                                             \
+        return arg().is_function_of(expressions, expression_count);          \
     }
 
 #define BASE_ARE_EQUAL(_name) \
@@ -258,6 +264,16 @@ namespace Sym {
         return &destination.as<_name>();                                               \
     }
 
+#define DEFINE_SEAL_WHOLE(_name) SEAL_WHOLE_HEADER(_name::seal_whole)
+
+#define DEFINE_SIMPLE_SEAL_WHOLE(_name) \
+    DEFINE_SEAL_WHOLE(_name) { size = 1; }
+
+#define DEFINE_INVALID_SEAL_WHOLE(_name)                                                 \
+    DEFINE_SEAL_WHOLE(_name) {                                                           \
+        Util::crash("Trying to call seal_whole on '" #_name "', which is not defined."); \
+    }
+
 #define ONE_ARGUMENT_OP_SYMBOL                     \
     __host__ __device__ const Symbol& arg() const; \
     __host__ __device__ Symbol& arg();             \
@@ -282,7 +298,9 @@ namespace Sym {
     DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
         push_children_onto_stack(stack);                                                         \
         arg().additional_required_size() += additional_required_size;                            \
-    }
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_SEAL_WHOLE(_name) { seal(); }
 
 #define TWO_ARGUMENT_OP_SYMBOL                                                                   \
     /* In most cases second_arg_offset == 1 + arg1().size(), but not always.                     \
@@ -412,6 +430,11 @@ namespace Sym {
     DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
         push_children_onto_stack(stack);                                                         \
         arg2().additional_required_size() += additional_required_size;                           \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_SEAL_WHOLE(_name) {                                                                   \
+        seal_arg1();                                                                             \
+        seal();                                                                                  \
     }
 
 #define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \

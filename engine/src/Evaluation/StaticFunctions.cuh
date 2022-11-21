@@ -7,8 +7,20 @@
 
 namespace Sym::Static {
     __device__ const Symbol& identity();
+
     __device__ const Symbol& sin_x();
     __device__ const Symbol& cos_x();
+    __device__ const Symbol& tan_x();
+    __device__ const Symbol& cot_x();
+
+    // Functions used in the universal substitution
+    __device__ const Symbol& universal_sin_x();
+    __device__ const Symbol& universal_cos_x();
+    __device__ const Symbol& universal_tan_x();
+    __device__ const Symbol& universal_cot_x();
+    __device__ const Symbol& universal_derivative();
+    __device__ const Symbol& tan_x_over_2();
+
     __device__ const Symbol& e_to_x();
 
     /*
