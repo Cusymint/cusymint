@@ -69,6 +69,54 @@ namespace Sym {
          */
         std::vector<Sym::Symbol> collapse(const std::vector<std::vector<Sym::Symbol>>& tree);
 
+        /*
+         * @brief Simplifies integrals `integrals`
+         */
+        void simplify_integrals();
+
+        /*
+         * @brief Fills in `scan_array_1` with known integrals information
+         */
+        void check_for_known_integrals();
+
+        /*
+         * @brief Applies known integrals specified by `scan_array_1` and propagates successes
+         */
+        void apply_known_integrals();
+
+        /*
+         * @brief Checks if the first expression in `expressions` is solved
+         */
+        bool is_original_expression_solved();
+
+        /*
+         * @brief Removes candidates to already solved expressions.
+         */
+        void remove_unnecessary_candidates();
+
+        /*
+         * @brief Checks applicability of heuristics. Saves results for integrals in `scan_array_1`
+         * and in `scan_array_2` for expressions.
+         */
+        void check_heuristics_applicability();
+
+        /*
+         * @brief Applies heuristics using information in `scan_array_1` and `scan_array_2`.
+         * Propagates failures upwards.
+         */
+        void apply_heuristics();
+
+        /*
+         * @brief Checks if the first expression in `expressions` is failed. Uses information put
+         * into `scan_array_1` by apply_heuristics.
+         */
+        bool has_original_expression_failed();
+
+        /*
+         * @brief Removes candidates to failed expressions.
+         */
+        void remove_failed_candidates();
+
       public:
         /*
          * @brief Block size of CUDA kernels used by `solve_integral`
