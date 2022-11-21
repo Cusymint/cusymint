@@ -1,8 +1,8 @@
-#include "Symbol/Macros.cuh"
 #include "Symbol/Unknown.cuh"
 
-#include "Symbol/Symbol.cuh"
 #include <fmt/core.h>
+
+#include "Symbol/Symbol.cuh"
 
 namespace Sym {
     DEFINE_SIMPLE_ARE_EQUAL(Unknown);
@@ -13,6 +13,7 @@ namespace Sym {
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Unknown)
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(Unknown)
     DEFINE_INVALID_DERIVATIVE(Unknown)
+    DEFINE_INVALID_SEAL_WHOLE(Unknown)
 
     [[nodiscard]] std::string Unknown::to_string() const {
         return fmt::format("Unknown(type={},size={})",

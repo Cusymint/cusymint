@@ -32,7 +32,7 @@ namespace Test {
             derivative.data()->simplify(help_space.data());
 
             EXPECT_TRUE(
-                Sym::Symbol::are_expressions_equal(derivative.data(), expected_derivative.data()))
+                Sym::Symbol::are_expressions_equal(*derivative.data(), *expected_derivative.data()))
                 << "Tried to calculate derivative of:\n  " << expression.data()->to_string()
                 << "\n  but got an unexpected result:\n  " << derivative.data()->to_string()
                 << " <- got\n  " << expected_derivative.data()->to_string() << " <- expected\n";

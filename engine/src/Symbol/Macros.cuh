@@ -7,6 +7,7 @@
 #include <string>
 #include <type_traits>
 
+#include "SimplificationResult.cuh"
 #include "SymbolType.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/Order.cuh"
@@ -18,38 +19,30 @@ namespace Sym {
     static constexpr size_t BUILDER_SIZE = std::numeric_limits<size_t>::max();
 
     union Symbol;
-
-    enum class SimplifyResult {
-        Success,
-        ResizeRequest,
-
-    };
 }
 
 // This is a workaround for use of commas in template types in macros
-template <class T> struct macro_type;
-template <class T, class U> struct macro_type<T(U)> {
+template <class T> struct MacroType;
+template <class T, class U> struct MacroType<T(U)> {
     using type = U;
 };
-#define MACRO_TYPE(_pattern) macro_type<void(_pattern)>::type
+#define MACRO_TYPE(_pattern) MacroType<void(_pattern)>::type
 
-#define COMPRESS_REVERSE_TO_HEADER(_compress_reverse_to) \
-    __host__ __device__ size_t _compress_reverse_to(Symbol* const destination) const
+#define COMPRESS_REVERSE_TO_HEADER(_fname) \
+    __host__ __device__ size_t _fname(Symbol* const destination) const
 
-#define ARE_EQUAL_HEADER(_are_equal) \
-    __host__ __device__ bool _are_equal(const Symbol* const symbol) const
+#define ARE_EQUAL_HEADER(_fname) __host__ __device__ bool _fname(const Symbol* const symbol) const
 
-#define COMPARE_TO_HEADER(_compare_to)                            \
-    __host__ __device__ Util::Order _compare_to(                  \
+#define COMPARE_TO_HEADER(_fname)                                 \
+    __host__ __device__ Util::Order _fname(                       \
         const Symbol& other) /* NOLINT(misc-unused-parameters) */ \
         const
 
-#define SIMPLIFY_IN_PLACE_HEADER(_simplify_in_place) \
-    __host__ __device__ bool _simplify_in_place(Symbol* const help_space)
+#define SIMPLIFY_IN_PLACE_HEADER(_fname) __host__ __device__ bool _fname(Symbol* const help_space)
 
-#define IS_FUNCTION_OF_HEADER(_is_function_of)                                       \
-    __host__ __device__ bool _is_function_of(const Symbol* const* const expressions, \
-                                             const size_t expression_count) const
+#define IS_FUNCTION_OF_HEADER(_fname)                                       \
+    __host__ __device__ bool _fname(const Symbol* const* const expressions, \
+                                    const size_t expression_count) const
 
 #define PUSH_CHILDREN_ONTO_STACK_HEADER(_fname, _const) \
     __host__ __device__ void _fname(Util::StaticStack<_const Symbol*>& stack) _const
@@ -60,73 +53,76 @@ template <class T, class U> struct macro_type<T(U)> {
 #define INSERT_REVERSED_DERIVATIVE_AT_HEADER(_fname) \
     __host__ __device__ ssize_t _fname(Symbol* const destination)
 
-#define DECLARE_SYMBOL(_name, _simple)                                               \
-    struct _name {                                                                   \
-        constexpr static Sym::Type TYPE = Sym::Type::_name;                          \
-        Sym::Type type;                                                              \
-        size_t size;                                                                 \
-        bool simplified;                                                             \
-        bool to_be_copied;                                                           \
-        size_t additional_required_size;                                             \
-                                                                                     \
-        __host__ __device__ static _name builder() {                                 \
-            return {                                                                 \
-                .type = Sym::Type::_name,                                            \
-                .size = BUILDER_SIZE,                                                \
-                .simplified = _simple,                                               \
-                .to_be_copied = false,                                               \
-                .additional_required_size = 0,                                       \
-            };                                                                       \
-        }                                                                            \
-                                                                                     \
-        __host__ __device__ void seal();                                             \
-                                                                                     \
-        __host__ __device__ static _name create() {                                  \
-            return {                                                                 \
-                .type = Sym::Type::_name,                                            \
-                .size = 1,                                                           \
-                .simplified = _simple,                                               \
-                .to_be_copied = false,                                               \
-                .additional_required_size = 0,                                       \
-            };                                                                       \
-        }                                                                            \
-                                                                                     \
-        __host__ __device__ inline const Symbol* symbol() const {                    \
-            return reinterpret_cast<const Symbol*>(this);                            \
-        }                                                                            \
-                                                                                     \
-        __host__ __device__ inline Symbol* symbol() {                                \
-            return const_cast<Symbol*>(const_cast<const _name*>(this)->symbol());    \
-        }                                                                            \
-                                                                                     \
-        template <class T> __host__ __device__ inline const T* as() const {          \
-            return reinterpret_cast<const T*>(this);                                 \
-        }                                                                            \
-                                                                                     \
-        template <class T> __host__ __device__ inline T* as() {                      \
-            return const_cast<T*>(const_cast<const _name*>(this)->as<T>());          \
-        }                                                                            \
-                                                                                     \
-        ARE_EQUAL_HEADER(are_equal);                                                 \
-        COMPARE_TO_HEADER(compare_to);                                               \
-        COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                             \
-        SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                                 \
-        IS_FUNCTION_OF_HEADER(is_function_of);                                       \
-        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, );                 \
-        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, const);            \
-        PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                           \
-            put_children_on_stack_and_propagate_additional_size);                    \
-        /*                                                                           \
-         * @brief Inserts derivative of a symbol in reversed order at given place.   \
-         * Assumes that derivatives of symbol's arguments already exist              \
-         * at `destination-1` in reversed order.                                     \
-         *                                                                           \
-         * @param `destination` Destination to insert the reversed derivative at.    \
-         *                                                                           \
-         * @return Offset pointing right after created derivative (can be negative). \
-         */                                                                          \
-        INSERT_REVERSED_DERIVATIVE_AT_HEADER(insert_reversed_derivative_at);         \
-        __host__ __device__ static _name* create_reversed_at(Symbol* const destination);
+#define SEAL_WHOLE_HEADER(_fname) __host__ __device__ void _fname()
+
+#define DECLARE_SYMBOL(_name, _simple)                                                   \
+    struct _name {                                                                       \
+        constexpr static Sym::Type TYPE = Sym::Type::_name;                              \
+        Sym::Type type;                                                                  \
+        size_t size;                                                                     \
+        bool simplified;                                                                 \
+        bool to_be_copied;                                                               \
+        size_t additional_required_size;                                                 \
+                                                                                         \
+        __host__ __device__ static _name builder() {                                     \
+            return {                                                                     \
+                .type = Sym::Type::_name,                                                \
+                .size = BUILDER_SIZE,                                                    \
+                .simplified = _simple,                                                   \
+                .to_be_copied = false,                                                   \
+                .additional_required_size = 0,                                           \
+            };                                                                           \
+        }                                                                                \
+                                                                                         \
+        __host__ __device__ void seal();                                                 \
+                                                                                         \
+        __host__ __device__ static _name create() {                                      \
+            return {                                                                     \
+                .type = Sym::Type::_name,                                                \
+                .size = 1,                                                               \
+                .simplified = _simple,                                                   \
+                .to_be_copied = false,                                                   \
+                .additional_required_size = 0,                                           \
+            };                                                                           \
+        }                                                                                \
+                                                                                         \
+        __host__ __device__ inline const Symbol* symbol() const {                        \
+            return reinterpret_cast<const Symbol*>(this);                                \
+        }                                                                                \
+                                                                                         \
+        __host__ __device__ inline Symbol* symbol() {                                    \
+            return const_cast<Symbol*>(const_cast<const _name*>(this)->symbol());        \
+        }                                                                                \
+                                                                                         \
+        template <class T> __host__ __device__ inline const T* as() const {              \
+            return reinterpret_cast<const T*>(this);                                     \
+        }                                                                                \
+                                                                                         \
+        template <class T> __host__ __device__ inline T* as() {                          \
+            return const_cast<T*>(const_cast<const _name*>(this)->as<T>());              \
+        }                                                                                \
+                                                                                         \
+        ARE_EQUAL_HEADER(are_equal);                                                     \
+        COMPARE_TO_HEADER(compare_to);                                                   \
+        COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                                 \
+        SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                                     \
+        IS_FUNCTION_OF_HEADER(is_function_of);                                           \
+        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, );                     \
+        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, const);                \
+        PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                               \
+            put_children_on_stack_and_propagate_additional_size);                        \
+        /*                                                                               \
+         * @brief Inserts derivative of a symbol in reversed order at given place.       \
+         * Assumes that derivatives of symbol's arguments already exist                  \
+         * at `destination-1` in reversed order.                                         \
+         *                                                                               \
+         * @param `destination` Destination to insert the reversed derivative at.        \
+         *                                                                               \
+         * @return Offset pointing right after created derivative (can be negative).     \
+         */                                                                              \
+        INSERT_REVERSED_DERIVATIVE_AT_HEADER(insert_reversed_derivative_at);             \
+        __host__ __device__ static _name* create_reversed_at(Symbol* const destination); \
+        SEAL_WHOLE_HEADER(seal_whole);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.
 // standard-layout jest wymagany by zagwarantować, że wszystkie symbole mają pole `type` na offsecie
@@ -175,15 +171,16 @@ template <class T, class U> struct macro_type<T(U)> {
         return false; /* Just to silence warnings */                                    \
     }
 
-#define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                       \
-    DEFINE_IS_FUNCTION_OF(_name) {                                             \
-        for (size_t i = 0; i < expression_count; ++i) {                        \
-            if (expressions[i]->is<_name>() && *symbol() == *expressions[i]) { \
-                return true;                                                   \
-            }                                                                  \
-        }                                                                      \
-                                                                               \
-        return arg().is_function_of(expressions, expression_count);            \
+#define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                     \
+    DEFINE_IS_FUNCTION_OF(_name) {                                           \
+        for (size_t i = 0; i < expression_count; ++i) {                      \
+            if (expressions[i]->is<_name>() &&                               \
+                Symbol::are_expressions_equal(*symbol(), *expressions[i])) { \
+                return true;                                                 \
+            }                                                                \
+        }                                                                    \
+                                                                             \
+        return arg().is_function_of(expressions, expression_count);          \
     }
 
 #define BASE_ARE_EQUAL(_name) \
@@ -298,6 +295,16 @@ template <class T, class U> struct macro_type<T(U)> {
         return destination->as_ptr<_name>();                                          \
     }
 
+#define DEFINE_SEAL_WHOLE(_name) SEAL_WHOLE_HEADER(_name::seal_whole)
+
+#define DEFINE_SIMPLE_SEAL_WHOLE(_name) \
+    DEFINE_SEAL_WHOLE(_name) { size = 1; }
+
+#define DEFINE_INVALID_SEAL_WHOLE(_name)                                                 \
+    DEFINE_SEAL_WHOLE(_name) {                                                           \
+        Util::crash("Trying to call seal_whole on '" #_name "', which is not defined."); \
+    }
+
 #define ONE_ARGUMENT_OP_SYMBOL                     \
     __host__ __device__ const Symbol& arg() const; \
     __host__ __device__ Symbol& arg();             \
@@ -328,13 +335,15 @@ template <class T, class U> struct macro_type<T(U)> {
         _name* const symbol = destination << _name::builder();                                   \
         symbol->size = (destination - 1)->size() + 1;                                            \
         return symbol;                                                                           \
-    }
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_SEAL_WHOLE(_name) { seal(); }
 
-#define DEFINE_ONE_ARG_OP_DERIVATIVE(_name, _derivative)                                   \
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                                          \
-        if ((destination - 1)->is(0)) {                                                    \
-            return 0;                                                                      \
-        }                                                                                  \
+#define DEFINE_ONE_ARG_OP_DERIVATIVE(_name, _derivative)                                \
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                                       \
+        if ((destination - 1)->is(0)) {                                                 \
+            return 0;                                                                   \
+        }                                                                               \
         return Mul<MACRO_TYPE(_derivative), None>::init_reverse(*destination, {arg()}); \
     }
 
@@ -353,68 +362,77 @@ template <class T, class U> struct macro_type<T(U)> {
     __host__ __device__ static void create(const Symbol* const arg1, const Symbol* const arg2,   \
                                            Symbol* const destination);
 
-#define TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(_name)                                               \
-    TWO_ARGUMENT_OP_SYMBOL                                                                      \
-    /*                                                                                          \
-     * @brief Operation that is the lowest one in an operator tree                              \
-     *                                                                                          \
-     * @return Pointer to the last operator                                                     \
-     */                                                                                         \
-    __host__ __device__ const _name* last_in_tree() const;                                      \
-                                                                                                \
-    /*                                                                                          \
-     * @brief Operation that is the lowest one in an operator tree                              \
-     *                                                                                          \
-     * @return Pointer to the last operator                                                     \
-     */                                                                                         \
-    __host__ __device__ _name* last_in_tree();                                                  \
-                                                                                                \
-    /*                                                                                          \
-     * @brief Uproszczenie struktury operatora `$` do drzewa w postaci:                         \
-     *                 $                                                                        \
-     *                / \                                                                       \
-     *               $   e                                                                      \
-     *              / \                                                                         \
-     *             $   d                                                                        \
-     *            / \                                                                           \
-     *           $   c                                                                          \
-     *          / \                                                                             \
-     *         a   b                                                                            \
-     *                                                                                          \
-     * Zakładamy, że oba argumenty są w uproszczonej postaci                                 \
-     *                                                                                          \
-     * @param help_space Pamięć pomocnicza                                                    \
-     */                                                                                         \
-    __host__ __device__ void simplify_structure(Symbol* const help_space);                      \
-                                                                                                \
-    /*                                                                                          \
-     * @brief Checks if an operator tree is sorted                                              \
-     */                                                                                         \
-    __host__ __device__ bool is_tree_sorted(Symbol& help_space);                                \
-                                                                                                \
-    /*                                                                                          \
-     * @brief W drzewie o uproszczonej strukturze wyszukuje par upraszczalnych wyrażeń.       \
-     */                                                                                         \
-    __host__ __device__ void simplify_pairs();                                                  \
-                                                                                                \
-    /*                                                                                          \
-     * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi     \
-     *                                                                                          \
-     * @param expr1 Pierwszy argument operatora                                                 \
-     * @param expr2 Drugi argument operatora                                                    \
-     *                                                                                          \
-     * @return `true` jeśli wykonano uproszczenie, `false` w przeciwnym wypadku                \
-     */                                                                                         \
-    __host__ __device__ static bool try_fuse_symbols(Symbol* const expr1, Symbol* const expr2); \
-    /*                                                                                          \
-     * @brief Counts symbols in simplified tree.                                                \
-     *                                                                                          \
-     * @return Count of symbols in the tree.                                                    \
-     */                                                                                         \
+#define TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(_name)                                             \
+    TWO_ARGUMENT_OP_SYMBOL                                                                    \
+    /*                                                                                        \
+     * @brief W uproszczonym drzewie operatora zwraca operację najniżej w drzewie           \
+     *                                                                                        \
+     * @return Wskaźnik do ostatniego operator. Jeśli `arg1()` nie jest tego samego typu co \
+     * `*this`, to zwraca `this`                                                              \
+     */                                                                                       \
+    __host__ __device__ const _name* last_in_tree() const;                                    \
+                                                                                              \
+    /*                                                                                        \
+     * @brief Przeładowanie bez `const`                                                      \
+     */                                                                                       \
+    __host__ __device__ _name* last_in_tree();                                                \
+                                                                                              \
+    /*                                                                                        \
+     * @brief Uproszczenie struktury operatora `$` do drzewa w postaci:                       \
+     *                 $                                                                      \
+     *                / \                                                                     \
+     *               $   e                                                                    \
+     *              / \                                                                       \
+     *             $   d                                                                      \
+     *            / \                                                                         \
+     *           $   c                                                                        \
+     *          / \                                                                           \
+     *         a   b                                                                          \
+     *                                                                                        \
+     * Zakładamy, że oba argumenty są w uproszczonej postaci                               \
+     *                                                                                        \
+     * @param help_space Pamięć pomocnicza                                                  \
+     */                                                                                       \
+    __host__ __device__ void simplify_structure(Symbol* const help_space);                    \
+                                                                                              \
+    /*                                                                                        \
+     * @brief Checks if an operator tree is sorted                                            \
+     */                                                                                       \
+    __host__ __device__ bool is_tree_sorted(Symbol& help_space);                              \
+                                                                                              \
+    /*                                                                                        \
+     * @brief W drzewie o uproszczonej strukturze wyszukuje par upraszczalnych wyrażeń.     \
+     *                                                                                        \
+     * @param help_space The help space                                                       \
+     *                                                                                        \
+     * @return `NeedsSpace` if at least one symbol needed additional space to fuse,           \
+     * `NeedsSimplification` if whole expression needs to be simplified again,                \
+     * `Success` otherwise. Never returns `NoAction`.                                         \
+     */                                                                                       \
+    __host__ __device__ SimplificationResult simplify_pairs(Symbol* const help_space);        \
+                                                                                              \
+    /*                                                                                        \
+     * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi   \
+     *                                                                                        \
+     * @param expr1 Pierwszy argument operatora                                               \
+     * @param expr2 Drugi argument operatora                                                  \
+     * @param help_space The help space                                                       \
+     *                                                                                        \
+     * @return `Success` jeśli wykonano uproszczenie, `NoAction`, jeśli nie,                \
+     * `NeedsSpace`, jeśli potrzeba dodatkowego miejsca na uproszczenie.                     \
+     */                                                                                       \
+    __host__ __device__ static SimplificationResult try_fuse_symbols(                         \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);                  \
+    /*                                                                                        \
+     * @brief Counts symbols in simplified tree.                                              \
+     *                                                                                        \
+     * @return Count of symbols in the tree.                                                  \
+     */                                                                                       \
     __host__ __device__ size_t tree_size();
 
-#define DEFINE_TRY_FUSE_SYMBOLS(_name) \
-    __host__ __device__ bool _name::try_fuse_symbols(Symbol* const expr1, Symbol* const expr2)
+#define DEFINE_TRY_FUSE_SYMBOLS(_name)                                \
+    __host__ __device__ SimplificationResult _name::try_fuse_symbols( \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const help_space)
 
 #define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                  \
     DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                      \
@@ -465,6 +483,11 @@ template <class T, class U> struct macro_type<T(U)> {
         symbol->size =                                                                           \
             symbol->second_arg_offset + (destination - symbol->second_arg_offset)->size();       \
         return symbol;                                                                           \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_SEAL_WHOLE(_name) {                                                                   \
+        seal_arg1();                                                                             \
+        seal();                                                                                  \
     }
 
 #define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
@@ -570,8 +593,9 @@ template <class T, class U> struct macro_type<T(U)> {
         return true;                                                                                       \
     }                                                                                                      \
                                                                                                            \
-    __host__ __device__ void _name::simplify_pairs() {                                                     \
+    __host__ __device__ SimplificationResult _name::simplify_pairs(Symbol* const help_space) {             \
         bool expression_changed = true;                                                                    \
+        SimplificationResult result = SimplificationResult::Success;                                       \
         while (expression_changed) {                                                                       \
             expression_changed = false;                                                                    \
             TreeIterator<_name> first(this);                                                               \
@@ -580,12 +604,22 @@ template <class T, class U> struct macro_type<T(U)> {
                 second.advance();                                                                          \
                                                                                                            \
                 while (second.is_valid()) {                                                                \
-                    if (try_fuse_symbols(first.current(), second.current())) {                             \
+                    switch (try_fuse_symbols(first.current(), second.current(), help_space)) {             \
+                    case SimplificationResult::Success:                                                    \
                         /* Jeśli udało się coś połączyć, to upraszczanie trzeba rozpocząć od nowa \
                          * (możnaby tylko dla zmienionego elementu, jest to opytmalizacja TODO),          \
                          * bo być może tę sumę można połączyć z czymś, co było już rozważane.  \
                          */                                                                                \
                         expression_changed = true;                                                         \
+                        break;                                                                             \
+                    case SimplificationResult::NeedsSimplification:                                        \
+                        result = SimplificationResult::NeedsSimplification;                                \
+                        break;                                                                             \
+                    case SimplificationResult::NeedsSpace:                                                 \
+                        result = SimplificationResult::NeedsSpace;                                         \
+                        break;                                                                             \
+                    case SimplificationResult::NoAction:                                                   \
+                        break;                                                                             \
                     }                                                                                      \
                                                                                                            \
                     second.advance();                                                                      \
@@ -594,6 +628,7 @@ template <class T, class U> struct macro_type<T(U)> {
                 first.advance();                                                                           \
             }                                                                                              \
         }                                                                                                  \
+        return result;                                                                                     \
     }                                                                                                      \
                                                                                                            \
     /*                                                                                                     \
@@ -605,7 +640,8 @@ template <class T, class U> struct macro_type<T(U)> {
          * so it suffices to calculate address of the last operator symbol. The offset between             \
          * `this` and last plus 1 is the number of operator signs in the sum.                              \
          * Thus, the offset plus 2 is the number of terms in the sum.                                      \
-         * Conversion to `Symbol*` with `symbol()` function is necessary, because `_name`                  \
+         * Conversion to `Symbol*` with `symbol()` function is necessary, because                          \
+         * `_name`                                                                                         \
          * structure may be smaller than `Symbol` union.                                                   \
          */                                                                                                \
         return last_in_tree()->symbol() - symbol() + 2;                                                    \

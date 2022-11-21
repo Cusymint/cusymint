@@ -380,17 +380,6 @@ namespace Sym {
                                                 const size_t expression_count) const;
 
         /*
-         * @brief Replaces every occurence of `expr` (which has to contain a variable) in `this`
-         * with variable and copies the result to `destination`. If size of `expr` is larger
-         * than 1, holes are left where symbols were before.
-         *
-         * @param destination Destination of copy
-         * @param expr Expression to replace in `this`. Has to contain a variable.
-         */
-        __host__ __device__ void substitute_with_var_with_holes(Symbol& destination,
-                                                                const Symbol& expression) const;
-
-        /*
          * @brief Removes holes from symbol tree and copies it in reverse order to
          * `destination`.
          *
@@ -446,6 +435,14 @@ namespace Sym {
         __host__ __device__ bool simplify_in_place(Symbol* const help_space);
 
         /*
+         * @brief Recalculates sizes and argument offsets in the given expression. There cannot be
+         * any holes in the expression.
+         *
+         * @param expr Expression to seal
+         */
+        __host__ __device__ static void seal_whole(Symbol& expr, const size_t size);
+
+        /*
          * @brief Substitutes all occurences of variable with `symbol`
          *
          * @param symbol Symbol to substitute variables with, cannot have any children
@@ -493,7 +490,7 @@ namespace Sym {
          * @return `true` if expressions have the same structure, `false` otherwise
          */
         [[nodiscard]] __host__ __device__ static bool
-        are_expressions_equal(const Symbol* const expr1, const Symbol* const expr2);
+        are_expressions_equal(const Symbol& expr1, const Symbol& expr2);
 
         /*
          * @brief Compares two expressions. Size fields in expressions do not need to be valid,

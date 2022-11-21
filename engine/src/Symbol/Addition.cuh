@@ -28,8 +28,8 @@ namespace Sym {
      *
      * @return `true` jeśli `expr1 == -expr2`, `false` w przeciwnym wypadku
      */
-    __host__ __device__ static bool are_equal_of_opposite_sign(const Symbol* const expr1,
-                                                               const Symbol* const expr2);
+    __host__ __device__ static bool are_equal_of_opposite_sign(const Symbol& expr1,
+                                                               const Symbol& expr2);
 
     /*
      * @brief W drzewie dodawań usuwa dodawania, których jednym z argumentów jest 0.0. Dodawanie

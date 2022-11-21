@@ -96,16 +96,11 @@ namespace Sym {
         return VIRTUAL_CALL(*this, is_function_of, expressions, expression_count);
     }
 
-    __host__ __device__ void
-    Symbol::substitute_with_var_with_holes(Symbol& destination, const Symbol& expression) const {
-        ssize_t first_var_offset = expression.first_var_occurence();
-        copy_to(&destination);
+    __host__ __device__ void Symbol::seal_whole(Symbol& expr, const size_t size) {
+        expr.size() = BUILDER_SIZE;
 
-        for (size_t i = 0; i < size(); ++i) {
-            if (destination[i].is(Type::Variable)) {
-                destination[i - first_var_offset].variable = Variable::create();
-                i += expression.size() - first_var_offset - 1;
-            }
+        for (size_t i = size; i > 0; --i) {
+            VIRTUAL_CALL(expr[i - 1], seal_whole);
         }
     }
 
@@ -186,13 +181,13 @@ namespace Sym {
         substitute_variable_with(substitute);
     }
 
-    __host__ __device__ bool Symbol::are_expressions_equal(const Symbol* const expr1,
-                                                           const Symbol* const expr2) {
-        if (expr1->size() != expr2->size()) {
+    __host__ __device__ bool Symbol::are_expressions_equal(const Symbol& expr1,
+                                                           const Symbol& expr2) {
+        if (expr1.size() != expr2.size()) {
             return false;
         }
 
-        return compare_symbol_sequences(expr1, expr2, expr1->size());
+        return compare_symbol_sequences(&expr1, &expr2, expr1.size());
     }
 
     __host__ __device__ Util::Order
@@ -250,9 +245,6 @@ namespace Sym {
             case Type::NumericConstant:
                 ranks[i] = 0;
                 break;
-            // case Type::Polynomial:
-            //     ranks[i] = static_cast<ssize_t>(current->as<Polynomial>().rank);
-            //     break;
             case Type::Power: {
                 const auto& power = current->as<Power>();
                 if (power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
@@ -295,11 +287,6 @@ namespace Sym {
             case Type::NumericConstant:
                 coefficients[i] = current->as<NumericConstant>().value;
                 break;
-            // case Type::Polynomial: {
-            //     const auto& polynomial = current->as<Polynomial>();
-            //     coefficients[i] = polynomial.rank == 0 ? polynomial[0] : Util::empty_num;
-            //     break;
-            // }
             case Type::Power:
                 coefficients[i] = 1;
                 break;

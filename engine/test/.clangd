@@ -33,6 +33,7 @@ Diagnostics:
       - cppcoreguidelines-pro-type-union-access
       - cppcoreguidelines-pro-type-reinterpret-cast
       - cppcoreguidelines-pro-type-vararg
+      - google-build-using-namespace
       - google-readability-namespace-comments
       - google-readability-todo
       - hicpp-avoid-c-arrays

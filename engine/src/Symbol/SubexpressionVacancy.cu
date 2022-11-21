@@ -14,6 +14,7 @@ namespace Sym {
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(SubexpressionVacancy)
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(SubexpressionVacancy)
     DEFINE_INVALID_DERIVATIVE(SubexpressionVacancy)
+    DEFINE_SIMPLE_SEAL_WHOLE(SubexpressionVacancy);
 
     [[nodiscard]] std::string SubexpressionVacancy::to_string() const {
         std::string solved_info;

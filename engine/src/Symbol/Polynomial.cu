@@ -32,6 +32,7 @@ namespace Sym {
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Polynomial)
     DEFINE_INVALID_IS_FUNCTION_OF(Polynomial)
     DEFINE_INVALID_DERIVATIVE(Polynomial)
+    DEFINE_INVALID_SEAL_WHOLE(Polynomial)
 
     DEFINE_COMPARE_TO(Polynomial) {
         if (rank < other.as<Polynomial>().rank) {

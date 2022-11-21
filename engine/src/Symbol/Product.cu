@@ -29,7 +29,7 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
         simplify_structure(help_space);
-        simplify_pairs();
+        const auto result = simplify_pairs(help_space);
 
         if (arg1().is(0) || arg2().is(0)) {
             symbol()->init_from(NumericConstant::with_value(0));
@@ -38,15 +38,8 @@ namespace Sym {
 
         eliminate_ones();
 
-        if (type == Type::Product) {
-            if (!try_dividing_polynomials(help_space)) {
-                return false;
-            }
-        }
-
         simplify_structure(help_space);
-
-        return true;
+        return !is_another_loop_required(result);
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Product) {
@@ -71,27 +64,30 @@ namespace Sym {
         return Add<Mul<Copy, Skip>, Mul<Copy, None>>::init_reverse(*(rev_arg2 + 1), {arg2(), d_arg1_size, arg1()}) - d_arg1_size;
     }
 
-    __host__ __device__ bool Product::try_dividing_polynomials(Symbol* const help_space) {
+    __host__ __device__ SimplificationResult
+    Product::try_dividing_polynomials(Symbol* const expr1, Symbol* const expr2,
+                                      Symbol* const help_space) {
         Symbol* numerator = nullptr;
         Symbol* denominator = nullptr;
-        if (!arg1().is(Type::Reciprocal) && arg2().is(Type::Reciprocal)) {
-            numerator = &arg1();
-            denominator = &arg2().reciprocal.arg();
+        if (!expr1->is(Type::Reciprocal) && expr2->is(Type::Reciprocal)) {
+            numerator = expr1;
+            denominator = &expr2->as<Reciprocal>().arg();
         }
-        else if (!arg2().is(Type::Reciprocal) && arg1().is(Type::Reciprocal)) {
-            numerator = &arg2();
-            denominator = &arg1().reciprocal.arg();
+        else if (!expr2->is(Type::Reciprocal) && expr1->is(Type::Reciprocal)) {
+            numerator = expr2;
+            denominator = &expr1->as<Reciprocal>().arg();
         }
         if (numerator == nullptr || denominator == nullptr) {
-            return true;
+            return SimplificationResult::NoAction;
         }
+
         const auto optional_rank1 = numerator->is_polynomial(help_space);
         const auto optional_rank2 = denominator->is_polynomial(help_space);
 
         if (!optional_rank1.has_value() || optional_rank1.value() == 0 ||
             !optional_rank2.has_value() || optional_rank2.value() == 0 ||
             optional_rank1.value() <= optional_rank2.value()) {
-            return true;
+            return SimplificationResult::NoAction;
         }
 
         const auto rank1 = optional_rank1.value();
@@ -102,9 +98,12 @@ namespace Sym {
             Polynomial::expanded_size_from_rank(rank2 - 1) +
             Polynomial::expanded_size_from_rank(rank2);
 
-        if (size < size_for_simplified_expression) {
-            additional_required_size = size_for_simplified_expression - 1;
-            return false;
+        Symbol* const longer_expr = expr1->size() > expr2->size() ? expr1 : expr2;
+        Symbol* const shorter_expr = longer_expr == expr1 ? expr2 : expr1;
+
+        if (longer_expr->size() < size_for_simplified_expression) {
+            longer_expr->additional_required_size() = size_for_simplified_expression - 1;
+            return SimplificationResult::NeedsSpace;
         }
 
         // here we start dividing polynomials
@@ -117,12 +116,15 @@ namespace Sym {
         auto* const result = (poly2 + poly2->size()) << Polynomial::with_rank(rank1 - rank2);
         Polynomial::divide_polynomials(poly1->as<Polynomial>(), poly2->as<Polynomial>(), *result);
 
+        shorter_expr->init_from(NumericConstant::with_value(1.0));
+
         if (poly1->as<Polynomial>().is_zero()) {
-            result->expand_to(symbol());
-            return false; // maybe additional simplify required
+            result->expand_to(longer_expr);
+            return SimplificationResult::NeedsSimplification; // maybe additional simplify
+                                                                    // required
         }
 
-        Addition* const plus = symbol() << Addition::builder();
+        Addition* const plus = longer_expr << Addition::builder();
         result->expand_to(&plus->arg1());
         plus->seal_arg1();
 
@@ -137,7 +139,7 @@ namespace Sym {
         prod->seal();
         plus->seal();
 
-        return false; // maybe additional simplify required
+        return SimplificationResult::NeedsSimplification; // maybe additional simplify required
     }
 
     DEFINE_IS_FUNCTION_OF(Product) {
@@ -150,7 +152,8 @@ namespace Sym {
 
             // TODO: In the future, this should look for correspondences in the product tree (See
             // the comment in the same function for Power symbol).
-            if (arg1() == product_expression.arg1() && arg2() == product_expression.arg2()) {
+            if (Symbol::are_expressions_equal(arg1(), product_expression.arg1()) &&
+                Symbol::are_expressions_equal(arg2(), product_expression.arg2())) {
                 return true;
             }
         }
@@ -159,10 +162,10 @@ namespace Sym {
                arg2().is_function_of(expressions, expression_count);
     }
 
-    __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol* const expr1,
-                                                               const Symbol* const expr2) {
+    __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol& expr1,
+                                                               const Symbol& expr2) {
         using Matcher = PatternPair<Inv<Same>, Same>;
-        return Matcher::match_pair(*expr1, *expr2) || Matcher::match_pair(*expr2, *expr1);
+        return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {
@@ -173,19 +176,25 @@ namespace Sym {
             expr2->as<NumericConstant>().value != 1.0) {
             expr1->as<NumericConstant>().value *= expr2->as<NumericConstant>().value;
             expr2->as<NumericConstant>().value = 1.0;
-            return true;
+            return SimplificationResult::Success;
         }
 
-        if (are_inverse_of_eachother(expr1, expr2)) {
+        if (are_inverse_of_eachother(*expr1, *expr2)) {
             expr1->init_from(NumericConstant::with_value(1.0));
             expr2->init_from(NumericConstant::with_value(1.0));
-            return true;
+            return SimplificationResult::Success;
+        }
+
+        const SimplificationResult divide_polynomials_result =
+            try_dividing_polynomials(expr1, expr2, help_space);
+        if (divide_polynomials_result != SimplificationResult::NoAction) {
+            return divide_polynomials_result;
         }
 
         // TODO: Jakieś tożsamości trygonometryczne
         // TODO: Mnożenie potęg o tych samych podstawach
 
-        return false;
+        return SimplificationResult::NoAction;
     }
 
     std::string Product::to_string() const {

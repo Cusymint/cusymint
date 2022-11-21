@@ -23,7 +23,7 @@
 namespace {
     void test_parse(std::string input, std::vector<Sym::Symbol> expected_result) {
         auto result = Parser::parse_function(input);
-        EXPECT_TRUE(Sym::Symbol::are_expressions_equal(result.data(), expected_result.data()))
+        EXPECT_TRUE(Sym::Symbol::are_expressions_equal(*result.data(), *expected_result.data()))
             << "Invalid parse result:\n\twas: " << result.data()->to_string()
             << ", expression size = " << result.data()->size()
             << ",\n\texpected: " << expected_result.data()->to_string()

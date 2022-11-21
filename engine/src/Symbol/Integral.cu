@@ -1,16 +1,23 @@
 #include "Integral.cuh"
 
+#include <cstddef>
+
+#include <fmt/core.h>
+
+#include "Macros.cuh"
+#include "MetaOperators.cuh"
 #include "Substitution.cuh"
 #include "Symbol.cuh"
-#include "Symbol/Macros.cuh"
-#include <cstddef>
-#include <fmt/core.h>
+
+#include "Evaluation/StaticFunctions.cuh"
+#include "Utils/Pair.cuh"
 
 namespace Sym {
     DEFINE_INTO_DESTINATION_OPERATOR(Integral)
     DEFINE_IDENTICAL_COMPARE_TO(Integral)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Integral)
     DEFINE_INVALID_DERIVATIVE(Integral)
+    DEFINE_INVALID_SEAL_WHOLE(Integral)
 
     DEFINE_COMPRESS_REVERSE_TO(Integral) {
         size_t new_substitutions_size = 0;
@@ -41,7 +48,7 @@ namespace Sym {
 
     DEFINE_IS_FUNCTION_OF(Integral) {
         return integrand()->is_function_of(expressions, expression_count);
-    } // NOLINT
+    }
 
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Integral) {
         if (substitution_count > 0) {
@@ -78,16 +85,16 @@ namespace Sym {
     }
 
     __host__ __device__ void
-    Integral::copy_substitutions_with_an_additional_one(const Symbol* const substitution_expr,
-                                                        Symbol* const destination) const {
-        Symbol::copy_symbol_sequence(destination, symbol(), integrand_offset);
+    Integral::copy_substitutions_with_an_additional_one(const Symbol& substitution_expr,
+                                                        Symbol& destination) const {
+        Symbol::copy_symbol_sequence(&destination, symbol(), integrand_offset);
 
-        Symbol* const new_substitution = destination + integrand_offset;
-        Substitution::create(substitution_expr, new_substitution, substitution_count);
+        Symbol* const new_substitution = &destination + integrand_offset;
+        Substitution::create(&substitution_expr, new_substitution, substitution_count);
 
-        destination->integral.substitution_count += 1;
-        destination->integral.integrand_offset += new_substitution->size();
-        destination->integral.size += new_substitution->size();
+        destination.integral.substitution_count += 1;
+        destination.integral.integrand_offset += new_substitution->size();
+        destination.integral.size += new_substitution->size();
     }
 
     __host__ __device__ void Integral::copy_without_integrand_to(Symbol* const destination) const {
@@ -95,32 +102,60 @@ namespace Sym {
         destination->as<Integral>().size = BUILDER_SIZE;
     }
 
-    __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
-        const Symbol& substitution, const Symbol& derivative, Symbol& destination,
-        Symbol& help_space) const {
-        integrand()->substitute_with_var_with_holes(destination, substitution);
-        size_t new_incomplete_integrand_size = destination.compress_reverse_to(&help_space);
-        Symbol::reverse_symbol_sequence(&help_space, new_incomplete_integrand_size);
+    __device__ void Integral::integrate_by_substitution_with_derivative(const Symbol& substitution,
+                                                                        const Symbol& derivative,
+                                                                        Symbol& destination) const {
+        const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
+            Util::Pair(&substitution, &Static::identity())};
 
-        // Teraz w `help_space` jest docelowa funkcja podcałkowa, ale jeszcze bez mnożenia przez
-        // pochodną. W `destination` są niepotrzebne dane.
+        integrate_by_substitution_with_derivative(substitution_pairs, 1, derivative, destination);
+    }
 
-        const auto old_integrand_size = static_cast<ssize_t>(integrand()->size());
-        const auto new_integrand_size =
-            static_cast<ssize_t>(new_incomplete_integrand_size + 2 + derivative.size());
-        const ssize_t size_diff = new_integrand_size - old_integrand_size;
+    __device__ void Integral::integrate_by_substitution_with_derivative(
+        const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
+        const size_t pattern_count, const Symbol& derivative, Symbol& destination) const {
 
-        copy_substitutions_with_an_additional_one(&substitution, &destination);
+        if constexpr (Consts::DEBUG) {
+            if (!patterns[0].second->is(Type::Variable)) {
+                Util::crash("The first element of `substitutions` passed to "
+                            "`integrate_by_substitution_with_derivative` should be a pair in the "
+                            "form of (f(x), x)!");
+            }
+        }
 
-        destination.size() += size_diff;
+        copy_substitutions_with_an_additional_one(*patterns[0].first, destination);
+        Symbol& destination_integrand = *destination.as<Integral>().integrand();
+        Symbol* current_dst = &destination_integrand;
 
-        Product* const product = destination.integrand() << Product::builder();
-        Reciprocal* const reciprocal = product->arg1() << Reciprocal::builder();
-        derivative.copy_to(&reciprocal->arg());
-        reciprocal->seal();
-        product->seal_arg1();
-        help_space.copy_to(&product->arg2());
-        product->seal();
+        Mul<Inv<Copy>, Copy>::init(*current_dst, {derivative, *Unknown::create().symbol()});
+        current_dst += 2 + derivative.size();
+
+        for (size_t symbol_idx = 0; symbol_idx < integrand()->size(); ++symbol_idx) {
+            bool found_match = false;
+            for (size_t pattern_idx = 0; pattern_idx < pattern_count; ++pattern_idx) {
+                if (!Symbol::are_expressions_equal(integrand()[symbol_idx],
+                                                   *patterns[pattern_idx].first)) {
+                    continue;
+                }
+
+                patterns[pattern_idx].second->copy_to(current_dst);
+                current_dst += current_dst->size();
+                // -1 because +1 is going to be added by loop control
+                symbol_idx += integrand()[symbol_idx].size() - 1;
+                found_match = true;
+                break;
+            }
+
+            if (!found_match) {
+                integrand()[symbol_idx].copy_single_to(current_dst);
+                current_dst += 1;
+            }
+        }
+
+        // Sizes and offsets are completely messed up in help_space (but there are no holes), so
+        // this is required
+        Symbol::seal_whole(destination_integrand, current_dst - &destination_integrand);
+        destination.as<Integral>().seal();
     }
 
     __host__ __device__ const Substitution* Integral::first_substitution() const {

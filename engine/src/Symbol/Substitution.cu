@@ -53,6 +53,8 @@ namespace Sym {
         expression()->additional_required_size() += additional_required_size;
     }
 
+    DEFINE_SEAL_WHOLE(Substitution) { size = expression()->size() + 1; }
+
     const char* const Substitution::SUBSTITUTION_NAMES[] = {"u", "v", "w", "t"};
     const size_t Substitution::SUBSTITUTION_NAME_COUNT =
         sizeof(Substitution::SUBSTITUTION_NAMES) / sizeof(Substitution::SUBSTITUTION_NAMES[0]);

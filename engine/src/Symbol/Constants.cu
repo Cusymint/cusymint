@@ -16,6 +16,7 @@ namespace Sym {
     DEFINE_IS_FUNCTION_OF(NumericConstant) { return true; } // NOLINT(misc-unused-parameters)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(NumericConstant)
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(NumericConstant)
+    DEFINE_SIMPLE_SEAL_WHOLE(NumericConstant)
 
     DEFINE_ZERO_ARGUMENT_OP_FUNCTIONS(KnownConstant)
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(KnownConstant);
@@ -23,6 +24,7 @@ namespace Sym {
     DEFINE_IS_FUNCTION_OF(KnownConstant) { return true; } // NOLINT(misc-unused-parameters)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(KnownConstant)
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(KnownConstant)
+    DEFINE_SIMPLE_SEAL_WHOLE(KnownConstant)
 
     DEFINE_ZERO_ARGUMENT_OP_FUNCTIONS(UnknownConstant)
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(UnknownConstant);
@@ -30,6 +32,7 @@ namespace Sym {
     DEFINE_IS_FUNCTION_OF(UnknownConstant) { return true; } // NOLINT(misc-unused-parameters)
     DEFINE_NO_OP_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(UnknownConstant)
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(UnknownConstant)
+    DEFINE_SIMPLE_SEAL_WHOLE(UnknownConstant)
 
     DEFINE_ARE_EQUAL(NumericConstant) {
         return BASE_ARE_EQUAL(NumericConstant) && symbol->numeric_constant.value == value;
