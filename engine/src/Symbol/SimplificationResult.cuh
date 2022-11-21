@@ -1,7 +1,7 @@
 #ifndef SIMPLIFICATION_RESULT_H
 #define SIMPLIFICATION_RESULT_H
 
-namespace Util {
+namespace Sym {
     enum SimplificationResult { Success, Failure, NeedsSpace, NeedsSimplification };
 
     /*

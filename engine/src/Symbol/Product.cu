@@ -38,10 +38,10 @@ namespace Sym {
         eliminate_ones();
 
         simplify_structure(help_space);
-        return !Util::is_another_loop_required(result);
+        return !is_another_loop_required(result);
     }
 
-    __host__ __device__ Util::SimplificationResult
+    __host__ __device__ SimplificationResult
     Product::try_dividing_polynomials(Symbol* const expr1, Symbol* const expr2,
                                       Symbol* const help_space) {
         Symbol* numerator = nullptr;
@@ -55,7 +55,7 @@ namespace Sym {
             denominator = &expr1->as<Reciprocal>().arg();
         }
         if (numerator == nullptr || denominator == nullptr) {
-            return Util::SimplificationResult::Failure;
+            return SimplificationResult::Failure;
         }
 
         const auto optional_rank1 = numerator->is_polynomial(help_space);
@@ -64,7 +64,7 @@ namespace Sym {
         if (!optional_rank1.has_value() || optional_rank1.value() == 0 ||
             !optional_rank2.has_value() || optional_rank2.value() == 0 ||
             optional_rank1.value() <= optional_rank2.value()) {
-            return Util::SimplificationResult::Failure;
+            return SimplificationResult::Failure;
         }
 
         const auto rank1 = optional_rank1.value();
@@ -80,7 +80,7 @@ namespace Sym {
 
         if (longer_expr->size() < size_for_simplified_expression) {
             longer_expr->additional_required_size() = size_for_simplified_expression - 1;
-            return Util::SimplificationResult::NeedsSpace;
+            return SimplificationResult::NeedsSpace;
         }
 
         // here we start dividing polynomials
@@ -97,7 +97,7 @@ namespace Sym {
 
         if (poly1->as<Polynomial>().is_zero()) {
             result->expand_to(longer_expr);
-            return Util::SimplificationResult::NeedsSimplification; // maybe additional simplify
+            return SimplificationResult::NeedsSimplification; // maybe additional simplify
                                                                     // required
         }
 
@@ -116,7 +116,7 @@ namespace Sym {
         prod->seal();
         plus->seal();
 
-        return Util::NeedsSimplification; // maybe additional simplify required
+        return SimplificationResult::NeedsSimplification; // maybe additional simplify required
     }
 
     DEFINE_IS_FUNCTION_OF(Product) {
@@ -152,25 +152,25 @@ namespace Sym {
             expr2->as<NumericConstant>().value != 1.0) {
             expr1->as<NumericConstant>().value *= expr2->as<NumericConstant>().value;
             expr2->as<NumericConstant>().value = 1.0;
-            return Util::SimplificationResult::Success;
+            return SimplificationResult::Success;
         }
 
         if (are_inverse_of_eachother(expr1, expr2)) {
             expr1->init_from(NumericConstant::with_value(1.0));
             expr2->init_from(NumericConstant::with_value(1.0));
-            return Util::SimplificationResult::Success;
+            return SimplificationResult::Success;
         }
 
-        const Util::SimplificationResult divide_polynomials_result =
+        const SimplificationResult divide_polynomials_result =
             try_dividing_polynomials(expr1, expr2, help_space);
-        if (divide_polynomials_result != Util::SimplificationResult::Failure) {
+        if (divide_polynomials_result != SimplificationResult::Failure) {
             return divide_polynomials_result;
         }
 
         // TODO: Jakieś tożsamości trygonometryczne
         // TODO: Mnożenie potęg o tych samych podstawach
 
-        return Util::SimplificationResult::Failure;
+        return SimplificationResult::Failure;
     }
 
     std::string Product::to_string() const {

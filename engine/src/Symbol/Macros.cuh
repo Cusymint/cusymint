@@ -8,9 +8,9 @@
 #include <type_traits>
 
 #include "SymbolType.cuh"
+#include "SimplificationResult.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/Order.cuh"
-#include "Utils/SimplificationResult.cuh"
 #include "Utils/StaticStack.cuh"
 
 namespace Sym {
@@ -19,12 +19,6 @@ namespace Sym {
     static constexpr size_t BUILDER_SIZE = std::numeric_limits<size_t>::max();
 
     union Symbol;
-
-    enum class SimplifyResult {
-        Success,
-        ResizeRequest,
-
-    };
 }
 
 #define COMPRESS_REVERSE_TO_HEADER(_compress_reverse_to) \
@@ -352,7 +346,7 @@ namespace Sym {
      * `NeedsSimplification` if whole expression needs to be simplified again,                \
      * `Success` otherwise. Never returns `Failure`.                                          \
      */                                                                                       \
-    __host__ __device__ Util::SimplificationResult simplify_pairs(Symbol* const help_space);  \
+    __host__ __device__ SimplificationResult simplify_pairs(Symbol* const help_space);  \
                                                                                               \
     /*                                                                                        \
      * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi   \
@@ -364,7 +358,7 @@ namespace Sym {
      * @return `Success` jeśli wykonano uproszczenie, `Failure`, jeśli nie,                 \
      * `NeedsSpace`, jeśli potrzeba dodatkowego miejsca na uproszczenie.                     \
      */                                                                                       \
-    __host__ __device__ static Util::SimplificationResult try_fuse_symbols(                   \
+    __host__ __device__ static SimplificationResult try_fuse_symbols(                   \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);                  \
     /*                                                                                        \
      * @brief Counts symbols in simplified tree.                                              \
@@ -374,7 +368,7 @@ namespace Sym {
     __host__ __device__ size_t tree_size();
 
 #define DEFINE_TRY_FUSE_SYMBOLS(_name)                                      \
-    __host__ __device__ Util::SimplificationResult _name::try_fuse_symbols( \
+    __host__ __device__ SimplificationResult _name::try_fuse_symbols( \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space)
 
 #define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                  \
@@ -523,10 +517,10 @@ namespace Sym {
         return true;                                                                                       \
     }                                                                                                      \
                                                                                                            \
-    __host__ __device__ Util::SimplificationResult _name::simplify_pairs(                                  \
+    __host__ __device__ SimplificationResult _name::simplify_pairs(                                  \
         Symbol* const help_space) {                                                                        \
         bool expression_changed = true;                                                                    \
-        Util::SimplificationResult result = Util::SimplificationResult::Success;                           \
+        SimplificationResult result = SimplificationResult::Success;                           \
         while (expression_changed) {                                                                       \
             expression_changed = false;                                                                    \
             TreeIterator<_name> first(this);                                                               \
@@ -536,20 +530,20 @@ namespace Sym {
                                                                                                            \
                 while (second.is_valid()) {                                                                \
                     switch (try_fuse_symbols(first.current(), second.current(), help_space)) {             \
-                    case Util::SimplificationResult::Success:                                              \
+                    case SimplificationResult::Success:                                              \
                         /* Jeśli udało się coś połączyć, to upraszczanie trzeba rozpocząć od nowa \
                          * (możnaby tylko dla zmienionego elementu, jest to opytmalizacja TODO),          \
                          * bo być może tę sumę można połączyć z czymś, co było już rozważane.  \
                          */                                                                                \
                         expression_changed = true;                                                         \
                         break;                                                                             \
-                    case Util::SimplificationResult::NeedsSimplification:                                  \
-                        result = Util::SimplificationResult::NeedsSimplification;                          \
+                    case SimplificationResult::NeedsSimplification:                                  \
+                        result = SimplificationResult::NeedsSimplification;                          \
                         break;                                                                             \
-                    case Util::SimplificationResult::NeedsSpace:                                           \
-                        result = Util::SimplificationResult::NeedsSpace;                                   \
+                    case SimplificationResult::NeedsSpace:                                           \
+                        result = SimplificationResult::NeedsSpace;                                   \
                         break;                                                                             \
-                    case Util::SimplificationResult::Failure:                                              \
+                    case SimplificationResult::Failure:                                              \
                         break;                                                                             \
                     }                                                                                      \
                                                                                                            \

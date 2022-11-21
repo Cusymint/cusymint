@@ -46,7 +46,7 @@ namespace Sym {
      * @return `NeedsSimplification` if division was successful, `Failure` if didn't happen,
      * `NeedsSpace` if division requires additional space. Never returns `Success`.
      */
-    __host__ __device__ static Util::SimplificationResult
+    __host__ __device__ static SimplificationResult
     try_dividing_polynomials(Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);
 
     END_DECLARE_SYMBOL(Product)
