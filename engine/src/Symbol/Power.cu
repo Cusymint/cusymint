@@ -135,64 +135,35 @@ namespace Sym {
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Power) {
-        Symbol* const rev_arg2 = destination - 1 - (destination - 1)->size();
         const size_t d_arg1_size = (destination - 1)->size();
-        const size_t d_arg2_size = rev_arg2->size();
+        Symbol* const rev_arg2 = destination - 1 - d_arg1_size;
         if ((destination - 1)->is(0)) { // arg1() is constant: exponential function or constant
             if (rev_arg2->is(0)) {      // arg2() is constant: constant
                 return -1;
             }
             // (expr') c ln (expr) c ^ * *
-            Symbol::copy_and_reverse_symbol_sequence(destination - 1, &arg1(), arg1().size());
-            Logarithm::create_reversed_at(destination + arg1().size() - 1);
-            Symbol* const expr_dst = destination + arg1().size();
-            Symbol::copy_and_reverse_symbol_sequence(expr_dst, &arg2(), arg2().size());
-            Symbol* const c_dst = expr_dst + arg2().size();
-            Symbol::copy_and_reverse_symbol_sequence(c_dst, &arg1(), arg1().size());
-            ManySymbols<Power, Product, Product>::create_reversed_at(c_dst + arg1().size());
-            return 2 * arg1().size() + arg2().size() + 3;
+            return Prod<Pow<Copy, Copy>, Ln<Copy>, None>::init_reverse(*(destination - 1),
+                                                                       {arg1(), arg2(), arg1()}) -
+                   1;
         }
         if (rev_arg2->is(0)) { // arg2() is constant: monomial
             // (expr') -1 c + (expr) ^ c * *
 
             Symbol::move_symbol_sequence(rev_arg2, rev_arg2 + 1,
                                          d_arg1_size); // move derivative of arg1() one index back
-            (destination - 1)->init_from(NumericConstant::with_value(-1));
-            Symbol::copy_and_reverse_symbol_sequence(destination, &arg2(), arg2().size());
-            Addition::create_reversed_at(destination + arg2().size());
-            Symbol* const expr_dst = destination + arg2().size() + 1;
-            Symbol::copy_and_reverse_symbol_sequence(expr_dst, &arg1(), arg1().size());
-            Power::create_reversed_at(expr_dst + arg1().size());
-            Symbol* const c_dst = expr_dst + arg1().size() + 1;
-            Symbol::copy_and_reverse_symbol_sequence(c_dst, &arg2(), arg2().size());
-            ManySymbols<Product, Product>::create_reversed_at(c_dst + arg2().size());
-            return 2 * arg2().size() + arg1().size() + 4;
+            return Prod<Copy, Pow<Copy, Add<Copy, Integer<-1>>>, None>::init_reverse(
+                       *(destination - 1), {arg2(), arg1(), arg2()}) -
+                   1;
         }
         // General case:
         // (expr2') (expr1) ln * (expr1') (expr1) inv (expr2) * * + (expr2) (expr1) ^ *
-
-        Symbol::move_symbol_sequence(rev_arg2 + 3 + arg1().size(), rev_arg2 + 1,
+        Symbol* const new_d_arg1_dst = rev_arg2 + 3 + arg1().size();
+        Symbol::move_symbol_sequence(new_d_arg1_dst, rev_arg2 + 1,
                                      d_arg1_size); // copy (expr1')
-        Symbol::copy_and_reverse_symbol_sequence(rev_arg2 + 1, &arg1(), arg1().size());
-        ManySymbols<Logarithm, Product>::create_reversed_at(rev_arg2 + arg1().size() + 1);
-
-        Symbol* const expr1_dst_after_derivative = rev_arg2 + 3 + arg1().size() + d_arg1_size;
-        Symbol::copy_and_reverse_symbol_sequence(expr1_dst_after_derivative, &arg1(),
-                                                 arg1().size());
-        Reciprocal::create_reversed_at(expr1_dst_after_derivative + arg1().size());
-
-        Symbol* const expr2_dst_after_inv = expr1_dst_after_derivative + arg1().size() + 1;
-        Symbol::copy_and_reverse_symbol_sequence(expr2_dst_after_inv, &arg2(), arg2().size());
-        ManySymbols<Product, Product, Addition>::create_reversed_at(expr2_dst_after_inv +
-                                                                    arg2().size());
-
-        Symbol* const last_expr2_dst = expr2_dst_after_inv + arg2().size() + 3;
-        Symbol::copy_and_reverse_symbol_sequence(last_expr2_dst, &arg2(), arg2().size());
-        Symbol::copy_and_reverse_symbol_sequence(last_expr2_dst + arg2().size(), &arg1(),
-                                                 arg1().size());
-        ManySymbols<Power, Product>::create_reversed_at(last_expr2_dst + arg1().size() +
-                                                        arg2().size());
-        return 3 * arg1().size() + 2 * arg2().size() + 8;
+        return Mul<Pow<Copy, Copy>, Add<Prod<Copy, Inv<Copy>, Skip>, Mul<Ln<Copy>, None>>>::
+                   init_reverse(*(rev_arg2 + 1),
+                                {arg1(), arg2(), arg2(), arg1(), d_arg1_size, arg1()}) -
+               d_arg1_size;
     }
 
     std::string Power::to_string() const {

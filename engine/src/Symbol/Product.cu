@@ -57,28 +57,18 @@ namespace Sym {
             if (rev_arg2->is(0)) {      // arg2() is constant
                 return -1;
             }
-            Symbol::copy_and_reverse_symbol_sequence(destination - 1, &arg1(), arg1().size());
-            Product::create_reversed_at(destination + arg1().size() - 1);
-            return arg1().size();
+            return Mul<Copy, None>::init_reverse(*(destination - 1), {arg1()}) - 1;
         }
         if (rev_arg2->is(0)) { // arg2() is constant
             Symbol::move_symbol_sequence(
                 rev_arg2, rev_arg2 + 1,
                 d_arg1_size); // move derivative of arg1() one index back
-            Symbol::copy_and_reverse_symbol_sequence(destination - 1, &arg2(), arg2().size());
-            Product::create_reversed_at(destination + arg2().size() - 1);
-            return arg2().size();
+            return Mul<Copy, None>::init_reverse(*(destination - 1), {arg2()}) - 1;
         }
         // General case: (expr2') (expr1) * (expr1') (expr2) * +
-        
-        Symbol::move_symbol_sequence(rev_arg2 + 2 + arg1().size(), rev_arg2 + 1, d_arg1_size); // copy (expr1')
-        Symbol::copy_and_reverse_symbol_sequence(rev_arg2+1, &arg1(), arg1().size());
-        Product::create_reversed_at(rev_arg2 + arg1().size() + 1);
-
-        Symbol* const arg2_dst = rev_arg2 + 2 + arg1().size() + d_arg1_size;
-        Symbol::copy_and_reverse_symbol_sequence(arg2_dst, &arg2(), arg2().size());
-        ManySymbols<Product,Addition>::create_reversed_at(arg2_dst + arg2().size());
-        return size + 2;
+        Symbol* const second_term_dst = rev_arg2 + arg1().size() + 2;
+        Symbol::move_symbol_sequence(second_term_dst, rev_arg2 + 1, d_arg1_size); // copy (expr1')
+        return Add<Mul<Copy, Skip>, Mul<Copy, None>>::init_reverse(*(rev_arg2 + 1), {arg2(), d_arg1_size, arg1()}) - d_arg1_size;
     }
 
     __host__ __device__ bool Product::try_dividing_polynomials(Symbol* const help_space) {
@@ -273,12 +263,7 @@ namespace Sym {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') 2 (expr) ^ inv - *
-        destination->init_from(NumericConstant::with_value(2));
-        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
-        ManySymbols<Power, Reciprocal, Negation, Product>::create_reversed_at(destination +
-                                                                              arg().size() + 1);
-        return arg().size() + 5;
+        return Mul<Neg<Inv<Pow<Copy, Integer<2>>>>, None>::init_reverse(*destination, {arg()});
     }
 
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {

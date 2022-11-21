@@ -68,44 +68,28 @@ namespace Sym {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') (expr) cos *
-        Symbol::copy_and_reverse_symbol_sequence(destination, &arg(), arg().size());
-        ManySymbols<Cosine, Product>::create_reversed_at(destination + arg().size());
-        return arg().size() + 2;
+        return Mul<Cos<Copy>, None>::init_reverse(*destination, {arg()});
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Cosine) {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') (expr) sin - *
-        Symbol::copy_and_reverse_symbol_sequence(destination, &arg(), arg().size());
-        ManySymbols<Sine, Negation, Product>::create_reversed_at(destination + arg().size());
-        return arg().size() + 3;
+        return Mul<Neg<Sin<Copy>>, None>::init_reverse(*destination, {arg()});
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Tangent) {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') 2 (expr) cos ^ inv *
-        destination->init_from(NumericConstant::with_value(2));
-        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
-        ManySymbols<Cosine, Power, Reciprocal, Product>::create_reversed_at(destination +
-                                                                            arg().size() + 1);
-        return arg().size() + 5;
+        return Mul<Inv<Pow<Cos<Copy>, Integer<2>>>, None>::init_reverse(*destination, {arg()});
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Cotangent) {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') 2 (expr) sin ^ inv - *
-        destination->init_from(NumericConstant::with_value(2));
-        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
-        ManySymbols<Sine, Power, Reciprocal, Negation, Product>::create_reversed_at(
-            destination + arg().size() + 1);
-        return arg().size() + 6;
+        return Mul<Neg<Inv<Pow<Sin<Copy>, Integer<2>>>>, None>::init_reverse(*destination, {arg()});
     }
 
     std::string Sine::to_string() const { return fmt::format("sin({})", arg().to_string()); }

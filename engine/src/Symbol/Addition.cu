@@ -48,8 +48,7 @@ namespace Sym {
         if ((destination - 1)->is(0) && (destination - 2)->is(0)) {
             return -1;
         }
-        Addition::create_reversed_at(destination);
-        return 1;
+        return Add<None, None>::init_reverse(*destination);
     }
 
     __host__ __device__ bool Addition::is_sine_cosine_squared_sum(const Symbol* const expr1,
@@ -149,8 +148,7 @@ namespace Sym {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        Negation::create_reversed_at(destination);
-        return 1;
+        return Neg<None>::init_reverse(*destination);
     }
 
     std::string Addition::to_string() const {

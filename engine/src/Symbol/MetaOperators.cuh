@@ -3,6 +3,7 @@
 
 #include "Symbol.cuh"
 
+#include "Symbol/Polynomial.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include "Utils/Meta.cuh"
 #include <type_traits>
@@ -18,6 +19,28 @@ namespace Sym {
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             cuda::std::get<0>(args).get().copy_to(&dst);
         };
+
+        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args) {
+            const Symbol& source = cuda::std::get<0>(args).get();
+            Symbol::copy_and_reverse_symbol_sequence(&dst, &source, source.size());
+            return source.size();
+        }
+    };
+
+    struct None {
+        using AdditionalArgs = cuda::std::tuple<>;
+        static constexpr bool HAS_SAME = false;
+        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args = {}) {
+            return 0;
+        }
+    };
+
+    struct Skip {
+        using AdditionalArgs = cuda::std::tuple<size_t>;
+        static constexpr bool HAS_SAME = false;
+        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args) {
+            return cuda::std::get<0>(args);
+        }
     };
 
     template <class T, class U> struct PatternPair {
@@ -120,6 +143,12 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Op::TYPE) && Inner::match(dst.as<Op>().arg());
         }
+
+        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args = {}) {
+            const size_t inner_size = Inner::init_reverse(dst, args);
+            Op::create_reversed_at(&dst + inner_size);
+            return inner_size + 1;
+        }
     };
 
     template <class Op, class LInner, class RInner> struct TwoArgOperator {
@@ -168,6 +197,14 @@ namespace Sym {
             return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1()) &&
                    RInner::match(dst.as<Op>().arg2());
         }
+
+        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args = {}) {
+            const size_t r_inner_size = RInner::init_reverse(dst, Util::slice_tuple<L_ADDITIONAL_ARGS_SIZE, R_ADDITIONAL_ARGS_SIZE>(args));
+            Symbol* const l_dst = &dst + r_inner_size;
+            const size_t l_inner_size = LInner::init_reverse(*l_dst, Util::slice_tuple<0, L_ADDITIONAL_ARGS_SIZE>(args));
+            Op::create_reversed_at(l_dst + l_inner_size);
+            return r_inner_size + l_inner_size + 1;
+        }
     };
 
     struct Var {
@@ -183,6 +220,11 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
             return match(dst);
         }
+
+        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
+            init(dst);
+            return 1;
+        }
     };
 
     struct Num {
@@ -197,6 +239,11 @@ namespace Sym {
         }
         __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
             return match(dst);
+        }
+
+        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args) {
+            init(dst, args);
+            return 1;
         }
     };
 
@@ -224,6 +271,11 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
             return match(dst);
         }
+
+        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
+            init(dst);
+            return 1;
+        }
     };
 
     template <KnownConstantValue V> struct KnownConstantOperator {
@@ -239,6 +291,11 @@ namespace Sym {
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
             return match(dst);
+        }
+
+        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
+            init(dst);
+            return 1;
         }
     };
 
@@ -387,7 +444,7 @@ namespace Sym {
     template <class L, class R> using Mul = TwoArgOperator<Product, L, R>;
     template <class I> using Inv = OneArgOperator<Reciprocal, I>;
 
-    template <class Head, class... Tail> struct Prod : Mul<Head, Sum<Tail...>> {};
+    template <class Head, class... Tail> struct Prod : Mul<Head, Prod<Tail...>> {};
     template <class T> struct Prod<T> : T {};
 
     template <class L, class R> using Pow = TwoArgOperator<Power, L, R>;
@@ -441,14 +498,6 @@ namespace Sym {
             };
         };
     };
-
-    template <class Head, class... Tail> struct ManySymbols {
-        __host__ __device__ static void create_reversed_at(Symbol* const destination) {
-            Head::create_reversed_at(destination);
-            ManySymbols<Tail...>::create_reversed_at(destination + 1);
-        }
-    };
-    template <class T> struct ManySymbols<T> : T {};
 }
 
 #endif

@@ -4,6 +4,7 @@
 
 #include "Evaluation/Integrate.cuh"
 #include "Parser/Parser.cuh"
+#include "Symbol/Integral.cuh"
 #include "Symbol/InverseTrigonometric.cuh"
 #include "Symbol/Macros.cuh"
 #include "Symbol/Power.cuh"
@@ -28,7 +29,8 @@ namespace Test {
             derivative.resize(size);
 
             EXPECT_EQ(size, derivative.data()->size())
-                << "Calculated size does not match actual size";
+                << "Tried to calculate derivative of:\n  " << expression.data()->to_string()
+                << "\n but calculated size does not match actual size";
 
             expected_derivative.data()->simplify(help_space.data());
             derivative.data()->simplify(help_space.data());
@@ -66,6 +68,9 @@ namespace Test {
     DERIVATIVE_TEST(Cosine, "cos(x)", "-sin(x)")
     DERIVATIVE_TEST(Tangent, "tg(x)", "1/cos(x)^2")
     DERIVATIVE_TEST(Cotangent, Sym::cot(Sym::var()), -Sym::inv(Sym::sin(Sym::var()) ^ Sym::num(2)))
+
+    DERIVATIVE_TEST(Negation, "-cos(x)", "sin(x)")
+    DERIVATIVE_TEST(Reciprocal, Sym::inv(Sym::var()), -Sym::inv(Sym::var()^Sym::num(2)));
 
     DERIVATIVE_TEST(Addition, "sin(x)+ln(x)", "cos(x)+1/x")
     DERIVATIVE_TEST(ProductWithConstant, "ln(1+tg(e))*cos(x)", "ln(1+tg(e))*(-sin(x))")

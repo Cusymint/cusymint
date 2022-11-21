@@ -46,10 +46,7 @@ namespace Sym {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') (expr) inv *
-        Symbol::copy_and_reverse_symbol_sequence(destination, &arg(), arg().size());
-        ManySymbols<Reciprocal, Product>::create_reversed_at(destination + arg().size());
-        return arg().size() + 2;
+        return Mul<Inv<Copy>, None>::init_reverse(*destination, {arg()});
     }
 
     [[nodiscard]] std::string Logarithm::to_string() const {

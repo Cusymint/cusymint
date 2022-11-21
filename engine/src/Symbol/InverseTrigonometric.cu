@@ -42,56 +42,28 @@ namespace Sym {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') 0.5 2 (expr) ^ - 1 + ^ inv *
-        (destination)->init_from(NumericConstant::with_value(0.5));   // power exponent for sqrt
-        (destination + 1)->init_from(NumericConstant::with_value(2)); // power exponent for x^2
-        Symbol::copy_and_reverse_symbol_sequence(destination + 2, &arg(), arg().size());
-        ManySymbols<Power, Negation, NumericConstant, Addition, Power, Reciprocal,
-                    Product>::create_reversed_at(destination + arg().size() + 2);
-        (destination + arg().size() + 4)->as<NumericConstant>().value = 1;
-        return arg().size() + 9;
+        return Mul<Inv<Pow<Add<Integer<1>, Neg<Pow<Copy, Integer<2>>>>, Num>>, None>::init_reverse(*destination, {arg(), 0.5});
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arccosine) {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') 0.5 2 (expr) ^ - 1 + ^ inv - *
-        (destination)->init_from(NumericConstant::with_value(0.5));   // power exponent for sqrt
-        (destination + 1)->init_from(NumericConstant::with_value(2)); // power exponent for x^2
-        Symbol::copy_and_reverse_symbol_sequence(destination + 2, &arg(), arg().size());
-        ManySymbols<Power, Negation, NumericConstant, Addition, Power, Reciprocal, Negation,
-                    Product>::create_reversed_at(destination + arg().size() + 2);
-        (destination + arg().size() + 4)->as<NumericConstant>().value = 1;
-        return arg().size() + 10;
+        return Mul<Neg<Inv<Pow<Add<Integer<1>, Neg<Pow<Copy, Integer<2>>>>, Num>>>, None>::init_reverse(*destination, {arg(), 0.5});
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arctangent) {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') 2 (expr) ^ 1 + inv *
-        (destination)->init_from(NumericConstant::with_value(2)); // power exponent for x^2
-        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
-        Power::create_reversed_at(destination + arg().size() + 1);
-        (destination + arg().size() + 2)->init_from(NumericConstant::with_value(1));
-        ManySymbols<Addition, Reciprocal, Product>::create_reversed_at(destination + arg().size() +
-                                                                       3);
-        return arg().size() + 6;
+        return Mul<Inv<Add<Integer<1>, Pow<Copy, Integer<2>>>>, None>::init_reverse(*destination, {arg()});
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arccotangent) {
         if ((destination - 1)->is(0)) {
             return 0;
         }
-        // (expr') 2 (expr) ^ 1 + inv - *
-        (destination)->init_from(NumericConstant::with_value(2)); // power exponent for x^2
-        Symbol::copy_and_reverse_symbol_sequence(destination + 1, &arg(), arg().size());
-        Power::create_reversed_at(destination + arg().size() + 1);
-        (destination + arg().size() + 2)->init_from(NumericConstant::with_value(1));
-        ManySymbols<Addition, Reciprocal, Negation, Product>::create_reversed_at(destination +
-                                                                                 arg().size() + 3);
-        return arg().size() + 7;
+        return Mul<Neg<Inv<Add<Integer<1>, Pow<Copy, Integer<2>>>>>, None>::init_reverse(*destination, {arg()});
     }
 
     std::string Arcsine::to_string() const { return fmt::format("arcsin({})", arg().to_string()); }

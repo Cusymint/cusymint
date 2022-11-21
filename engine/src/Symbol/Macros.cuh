@@ -53,72 +53,72 @@ namespace Sym {
 #define INSERT_REVERSED_DERIVATIVE_AT_HEADER(_fname) \
     __host__ __device__ ssize_t _fname(Symbol* const destination)
 
-#define DECLARE_SYMBOL(_name, _simple)                                             \
-    struct _name {                                                                 \
-        constexpr static Sym::Type TYPE = Sym::Type::_name;                        \
-        Sym::Type type;                                                            \
-        size_t size;                                                               \
-        bool simplified;                                                           \
-        bool to_be_copied;                                                         \
-        size_t additional_required_size;                                           \
-                                                                                   \
-        __host__ __device__ static _name builder() {                               \
-            return {                                                               \
-                .type = Sym::Type::_name,                                          \
-                .size = BUILDER_SIZE,                                              \
-                .simplified = _simple,                                             \
-                .to_be_copied = false,                                             \
-                .additional_required_size = 0,                                     \
-            };                                                                     \
-        }                                                                          \
-                                                                                   \
-        __host__ __device__ void seal();                                           \
-                                                                                   \
-        __host__ __device__ static _name create() {                                \
-            return {                                                               \
-                .type = Sym::Type::_name,                                          \
-                .size = 1,                                                         \
-                .simplified = _simple,                                             \
-                .to_be_copied = false,                                             \
-                .additional_required_size = 0,                                     \
-            };                                                                     \
-        }                                                                          \
-                                                                                   \
-        __host__ __device__ inline const Symbol* symbol() const {                  \
-            return reinterpret_cast<const Symbol*>(this);                          \
-        }                                                                          \
-                                                                                   \
-        __host__ __device__ inline Symbol* symbol() {                              \
-            return const_cast<Symbol*>(const_cast<const _name*>(this)->symbol());  \
-        }                                                                          \
-                                                                                   \
-        template <class T> __host__ __device__ inline const T* as() const {        \
-            return reinterpret_cast<const T*>(this);                               \
-        }                                                                          \
-                                                                                   \
-        template <class T> __host__ __device__ inline T* as() {                    \
-            return const_cast<T*>(const_cast<const _name*>(this)->as<T>());        \
-        }                                                                          \
-                                                                                   \
-        ARE_EQUAL_HEADER(are_equal);                                               \
-        COMPARE_TO_HEADER(compare_to);                                             \
-        COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                           \
-        SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                               \
-        IS_FUNCTION_OF_HEADER(is_function_of);                                     \
-        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, );               \
-        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, const);          \
-        PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                         \
-            put_children_on_stack_and_propagate_additional_size);                  \
-        /*                                                                         \
-         * @brief Inserts derivative of a symbol in reversed order at given place. \
-         * Assumes that derivatives of symbol's arguments already exist            \
-         * at `destination-1` in reversed order.                                   \
-         *                                                                         \
-         * @param `destination` Destination to insert the reversed derivative at.  \
-         *                                                                         \
-         * @return Number of inserted symbols.                                     \
-         */                                                                        \
-        INSERT_REVERSED_DERIVATIVE_AT_HEADER(insert_reversed_derivative_at);       \
+#define DECLARE_SYMBOL(_name, _simple)                                               \
+    struct _name {                                                                   \
+        constexpr static Sym::Type TYPE = Sym::Type::_name;                          \
+        Sym::Type type;                                                              \
+        size_t size;                                                                 \
+        bool simplified;                                                             \
+        bool to_be_copied;                                                           \
+        size_t additional_required_size;                                             \
+                                                                                     \
+        __host__ __device__ static _name builder() {                                 \
+            return {                                                                 \
+                .type = Sym::Type::_name,                                            \
+                .size = BUILDER_SIZE,                                                \
+                .simplified = _simple,                                               \
+                .to_be_copied = false,                                               \
+                .additional_required_size = 0,                                       \
+            };                                                                       \
+        }                                                                            \
+                                                                                     \
+        __host__ __device__ void seal();                                             \
+                                                                                     \
+        __host__ __device__ static _name create() {                                  \
+            return {                                                                 \
+                .type = Sym::Type::_name,                                            \
+                .size = 1,                                                           \
+                .simplified = _simple,                                               \
+                .to_be_copied = false,                                               \
+                .additional_required_size = 0,                                       \
+            };                                                                       \
+        }                                                                            \
+                                                                                     \
+        __host__ __device__ inline const Symbol* symbol() const {                    \
+            return reinterpret_cast<const Symbol*>(this);                            \
+        }                                                                            \
+                                                                                     \
+        __host__ __device__ inline Symbol* symbol() {                                \
+            return const_cast<Symbol*>(const_cast<const _name*>(this)->symbol());    \
+        }                                                                            \
+                                                                                     \
+        template <class T> __host__ __device__ inline const T* as() const {          \
+            return reinterpret_cast<const T*>(this);                                 \
+        }                                                                            \
+                                                                                     \
+        template <class T> __host__ __device__ inline T* as() {                      \
+            return const_cast<T*>(const_cast<const _name*>(this)->as<T>());          \
+        }                                                                            \
+                                                                                     \
+        ARE_EQUAL_HEADER(are_equal);                                                 \
+        COMPARE_TO_HEADER(compare_to);                                               \
+        COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                             \
+        SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                                 \
+        IS_FUNCTION_OF_HEADER(is_function_of);                                       \
+        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, );                 \
+        PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, const);            \
+        PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE_HEADER(                           \
+            put_children_on_stack_and_propagate_additional_size);                    \
+        /*                                                                           \
+         * @brief Inserts derivative of a symbol in reversed order at given place.   \
+         * Assumes that derivatives of symbol's arguments already exist              \
+         * at `destination-1` in reversed order.                                     \
+         *                                                                           \
+         * @param `destination` Destination to insert the reversed derivative at.    \
+         *                                                                           \
+         * @return Offset pointing right after created derivative (can be negative). \
+         */                                                                          \
+        INSERT_REVERSED_DERIVATIVE_AT_HEADER(insert_reversed_derivative_at);         \
         __host__ __device__ static _name* create_reversed_at(Symbol* const destination);
 
 // Struktura jest POD w.t.w. gdy jest stanard-layout i trivial.
