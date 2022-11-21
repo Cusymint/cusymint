@@ -330,12 +330,11 @@ namespace Sym {
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
-            return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression());
+            return dst.is(Type::Solution) && Inner::match(*dst.as<Solution>().expression());
         }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
-            return dst.is(Type::Solution) &&
-                   Inner::match(dst.as<Solution>().expression(), other_same);
+            return dst.is(Type::Solution) && Inner::match(*dst.as<Solution>().expression(), other_same);
         }
     };
 
@@ -474,7 +473,7 @@ namespace Sym {
                     cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
                 static constexpr bool HAS_SAME = false;
 
-                __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}) {
+                __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
                     SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
                     size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
                     TreeIterator<SymbolTree> iterator(&tree);

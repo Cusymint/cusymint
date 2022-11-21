@@ -15,6 +15,7 @@ set(SERVER_DIR "${SRC_DIR}/Server")
 set(SOLVER_DIR "${SRC_DIR}/Solver")
 set(TEST_DIR "test")
 set(TEST_PARSER_DIR "${TEST_DIR}/Parser")
+set(TEST_SYMBOL_DIR "${TEST_DIR}/Symbol")
 
 # Define build targets
 
@@ -66,7 +67,8 @@ add_executable(
   ${TEST_DIR}/KnownIntegral.cu
   ${TEST_DIR}/Simplify.cu
   ${TEST_DIR}/Symbol.cu
-  ${TEST_DIR}/Derivatives.cu)
+  ${TEST_DIR}/Derivatives.cu
+  ${TEST_SYMBOL_DIR}/MetaOperators.cu)
 
 add_executable(
   srvcusymint
