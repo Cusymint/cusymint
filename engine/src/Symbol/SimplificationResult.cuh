@@ -2,7 +2,7 @@
 #define SIMPLIFICATION_RESULT_H
 
 namespace Sym {
-    enum SimplificationResult { Success, Failure, NeedsSpace, NeedsSimplification };
+    enum SimplificationResult { Success, NoAction, NeedsSpace, NeedsSimplification };
 
     /*
      * @brief Retrieves information if `simplify` loop has to be run once more.

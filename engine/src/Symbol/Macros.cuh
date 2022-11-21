@@ -344,7 +344,7 @@ namespace Sym {
      *                                                                                        \
      * @return `NeedsSpace` if at least one symbol needed additional space to fuse,           \
      * `NeedsSimplification` if whole expression needs to be simplified again,                \
-     * `Success` otherwise. Never returns `Failure`.                                          \
+     * `Success` otherwise. Never returns `NoAction`.                                          \
      */                                                                                       \
     __host__ __device__ SimplificationResult simplify_pairs(Symbol* const help_space);  \
                                                                                               \
@@ -355,7 +355,7 @@ namespace Sym {
      * @param expr2 Drugi argument operatora                                                  \
      * @param help_space The help space                                                       \
      *                                                                                        \
-     * @return `Success` jeśli wykonano uproszczenie, `Failure`, jeśli nie,                 \
+     * @return `Success` jeśli wykonano uproszczenie, `NoAction`, jeśli nie,                 \
      * `NeedsSpace`, jeśli potrzeba dodatkowego miejsca na uproszczenie.                     \
      */                                                                                       \
     __host__ __device__ static SimplificationResult try_fuse_symbols(                   \
@@ -543,7 +543,7 @@ namespace Sym {
                     case SimplificationResult::NeedsSpace:                                           \
                         result = SimplificationResult::NeedsSpace;                                   \
                         break;                                                                             \
-                    case SimplificationResult::Failure:                                              \
+                    case SimplificationResult::NoAction:                                              \
                         break;                                                                             \
                     }                                                                                      \
                                                                                                            \

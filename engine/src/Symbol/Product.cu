@@ -55,7 +55,7 @@ namespace Sym {
             denominator = &expr1->as<Reciprocal>().arg();
         }
         if (numerator == nullptr || denominator == nullptr) {
-            return SimplificationResult::Failure;
+            return SimplificationResult::NoAction;
         }
 
         const auto optional_rank1 = numerator->is_polynomial(help_space);
@@ -64,7 +64,7 @@ namespace Sym {
         if (!optional_rank1.has_value() || optional_rank1.value() == 0 ||
             !optional_rank2.has_value() || optional_rank2.value() == 0 ||
             optional_rank1.value() <= optional_rank2.value()) {
-            return SimplificationResult::Failure;
+            return SimplificationResult::NoAction;
         }
 
         const auto rank1 = optional_rank1.value();
@@ -163,14 +163,14 @@ namespace Sym {
 
         const SimplificationResult divide_polynomials_result =
             try_dividing_polynomials(expr1, expr2, help_space);
-        if (divide_polynomials_result != SimplificationResult::Failure) {
+        if (divide_polynomials_result != SimplificationResult::NoAction) {
             return divide_polynomials_result;
         }
 
         // TODO: Jakieś tożsamości trygonometryczne
         // TODO: Mnożenie potęg o tych samych podstawach
 
-        return SimplificationResult::Failure;
+        return SimplificationResult::NoAction;
     }
 
     std::string Product::to_string() const {

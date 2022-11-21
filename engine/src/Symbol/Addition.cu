@@ -82,7 +82,7 @@ namespace Sym {
         // TODO: Dodawanie gdy to samo jest tylko przemnożone przez stałą
         // TODO: Jedynka hiperboliczna
 
-        return SimplificationResult::Failure;
+        return SimplificationResult::NoAction;
     }
 
     __host__ __device__ void Addition::eliminate_zeros() {

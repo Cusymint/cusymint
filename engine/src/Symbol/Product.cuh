@@ -43,7 +43,7 @@ namespace Sym {
      * @param `expr2` Second expression
      * @param `help_space` a help space
      *
-     * @return `NeedsSimplification` if division was successful, `Failure` if didn't happen,
+     * @return `NeedsSimplification` if division was successful, `NoAction` if didn't happen,
      * `NeedsSpace` if division requires additional space. Never returns `Success`.
      */
     __host__ __device__ static SimplificationResult
