@@ -29,11 +29,10 @@ namespace Sym {
 #define COMPRESS_REVERSE_TO_HEADER(_fname) \
     __host__ __device__ size_t _fname(Symbol* const destination) const
 
-#define ARE_EQUAL_HEADER(_fname) \
-    __host__ __device__ bool _fname(const Symbol* const symbol) const
+#define ARE_EQUAL_HEADER(_fname) __host__ __device__ bool _fname(const Symbol* const symbol) const
 
-#define COMPARE_TO_HEADER(_fname)                            \
-    __host__ __device__ Util::Order _fname(                  \
+#define COMPARE_TO_HEADER(_fname)                                 \
+    __host__ __device__ Util::Order _fname(                       \
         const Symbol& other) /* NOLINT(misc-unused-parameters) */ \
         const
 
@@ -160,15 +159,16 @@ namespace Sym {
         return false; /* Just to silence warnings */                                    \
     }
 
-#define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                       \
-    DEFINE_IS_FUNCTION_OF(_name) {                                             \
-        for (size_t i = 0; i < expression_count; ++i) {                        \
-            if (expressions[i]->is<_name>() && *symbol() == *expressions[i]) { \
-                return true;                                                   \
-            }                                                                  \
-        }                                                                      \
-                                                                               \
-        return arg().is_function_of(expressions, expression_count);            \
+#define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                     \
+    DEFINE_IS_FUNCTION_OF(_name) {                                           \
+        for (size_t i = 0; i < expression_count; ++i) {                      \
+            if (expressions[i]->is<_name>() &&                               \
+                Symbol::are_expressions_equal(*symbol(), *expressions[i])) { \
+                return true;                                                 \
+            }                                                                \
+        }                                                                    \
+                                                                             \
+        return arg().is_function_of(expressions, expression_count);          \
     }
 
 #define BASE_ARE_EQUAL(_name) \

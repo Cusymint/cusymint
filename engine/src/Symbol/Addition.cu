@@ -34,7 +34,8 @@ namespace Sym {
             // arg1() and arg2() (See the comment in the same function for Power symbol).
             // Although in this case, this might not be important, as checking whether something is
             // a function of `f(x)+g(x)` is quite rare
-            if (arg1() == addition_expression.arg1() && arg2() == addition_expression.arg2()) {
+            if (Symbol::are_expressions_equal(arg1(), addition_expression.arg1()) &&
+                Symbol::are_expressions_equal(arg2(), addition_expression.arg2())) {
                 return true;
             }
         }

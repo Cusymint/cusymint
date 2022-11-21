@@ -127,7 +127,8 @@ namespace Sym {
 
             // TODO: In the future, this should look for correspondences in the product tree (See
             // the comment in the same function for Power symbol).
-            if (arg1() == product_expression.arg1() && arg2() == product_expression.arg2()) {
+            if (Symbol::are_expressions_equal(arg1(), product_expression.arg1()) &&
+                Symbol::are_expressions_equal(arg2(), product_expression.arg2())) {
                 return true;
             }
         }

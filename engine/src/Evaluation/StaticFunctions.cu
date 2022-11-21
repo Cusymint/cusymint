@@ -37,8 +37,9 @@ namespace Sym::Static {
         using UniversalDerivative = Frac<Add<Integer<1>, Pow<Var, Integer<2>>>, Integer<2>>;
         __device__ Symbol UNIVERSAL_DERIVATIVE[UniversalDerivative::Size::get_value()];
 
-        using TanXOver2 = Tan<Frac<Var, Integer<2>>>;
+        using TanXOver2 = Tan<Mul<Num, Var>>;
         __device__ Symbol TAN_X_OVER_2[TanXOver2::Size::get_value()];
+        __device__ void init_tan_x_over_2(Symbol& dst) { TanXOver2::init(dst, {0.5}); }
 
         using EToX = Pow<E, Var>;
         __device__ Symbol E_TO_X[EToX::Size::get_value()];
@@ -59,7 +60,7 @@ namespace Sym::Static {
             CotX::init,          UniversalSinX::init,
             UniversalCosX::init, UniversalTanX::init,
             UniversalCotX::init, UniversalDerivative::init,
-            TanXOver2::init,     EToX::init,
+            init_tan_x_over_2,   EToX::init,
         };
 
         constexpr size_t STATIC_FUNCTION_COUNT =

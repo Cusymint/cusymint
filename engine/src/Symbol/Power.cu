@@ -2,9 +2,9 @@
 
 #include "MetaOperators.cuh"
 #include "Symbol.cuh"
-#include "Symbol/SymbolType.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/ExpanderPlaceholder.cuh"
+#include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include <fmt/core.h>
 
@@ -122,7 +122,8 @@ namespace Sym {
             // TODO: In the future, this should look for correspondences in the product tree of
             // arg1(). For example, if `this` is `e^(pi*x*2*sin(x))`, then this function should
             // return true when `power_expression` is `e^(sin(x)*x)`.
-            if (arg1() == power_expression.arg1() && arg2() == power_expression.arg2()) {
+            if (Symbol::are_expressions_equal(arg1(), power_expression.arg1()) &&
+                Symbol::are_expressions_equal(arg2(), power_expression.arg2())) {
                 return true;
             }
         }
