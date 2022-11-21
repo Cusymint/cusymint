@@ -9,7 +9,7 @@
 
 #include <fmt/core.h>
 
-std::string exec(const std::string cmd) {
+std::string exec_and_read_output(const std::string cmd) {
     std::array<char, 4096> buffer{};
     std::string result;
     std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
@@ -28,7 +28,7 @@ std::string SolverProcessManager::create_command(const std::string& input) const
 
 std::string SolverProcessManager::try_solve(const std::string& input) const {
     try {
-        auto result = exec(create_command(input));
+        auto result = exec_and_read_output(create_command(input));
         if(result.back() == '\n') {
             result.pop_back();
         }
