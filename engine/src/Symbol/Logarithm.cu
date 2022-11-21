@@ -14,6 +14,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Logarithm)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Logarithm)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Logarithm)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Logarithm, Inv<Copy>)
 
     DEFINE_SIMPLIFY_IN_PLACE(Logarithm) {
         if (arg().is(Type::NumericConstant) && arg().numeric_constant.value == 1) {
@@ -40,13 +41,6 @@ namespace Sym {
             return true;
         }
         return true;
-    }
-
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Logarithm) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Inv<Copy>, None>::init_reverse(*destination, {arg()});
     }
 
     [[nodiscard]] std::string Logarithm::to_string() const {

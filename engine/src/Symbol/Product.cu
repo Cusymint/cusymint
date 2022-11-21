@@ -243,6 +243,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Reciprocal)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Reciprocal, (Neg<Inv<Pow<Copy, Integer<2>>>>))
 
     DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) {
         if (arg().is(Type::Reciprocal)) {

@@ -26,6 +26,13 @@ namespace Sym {
     };
 }
 
+// This is a workaround for use of commas in template types in macros
+template <class T> struct macro_type;
+template <class T, class U> struct macro_type<T(U)> {
+    using type = U;
+};
+#define MACRO_TYPE(_pattern) macro_type<void(_pattern)>::type
+
 #define COMPRESS_REVERSE_TO_HEADER(_compress_reverse_to) \
     __host__ __device__ size_t _compress_reverse_to(Symbol* const destination) const
 
@@ -323,12 +330,12 @@ namespace Sym {
         return symbol;                                                                           \
     }
 
-#define DEFINE_ONE_ARG_OP_DERIVATIVE(_name, _derivative)                      \
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                             \
-        if ((destination - 1)->is(0)) {                                       \
-            return 0;                                                         \
-        }                                                                     \
-        return Mul<_derivative, None>:: ::init_reverse(*destination, {arg()}); \
+#define DEFINE_ONE_ARG_OP_DERIVATIVE(_name, _derivative)                                   \
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                                          \
+        if ((destination - 1)->is(0)) {                                                    \
+            return 0;                                                                      \
+        }                                                                                  \
+        return Mul<MACRO_TYPE(_derivative), None>::init_reverse(*destination, {arg()}); \
     }
 
 #define TWO_ARGUMENT_OP_SYMBOL                                                                   \

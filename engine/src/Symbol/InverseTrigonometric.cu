@@ -16,6 +16,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arcsine)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arcsine)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arcsine)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Arcsine, (Inv<Sqrt<Add<Integer<1>, Neg<Pow<Copy, Integer<2>>>>>>))
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arccosine)
     DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Arccosine)
@@ -23,6 +24,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arccosine)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arccosine)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arccosine)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Arccosine, (Neg<Inv<Sqrt<Add<Integer<1>, Neg<Pow<Copy, Integer<2>>>>>>>))
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arctangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Arctangent)
@@ -30,6 +32,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arctangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arctangent)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arctangent)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Arctangent, (Inv<Add<Integer<1>, Pow<Copy, Integer<2>>>>))
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Arccotangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Arccotangent)
@@ -37,6 +40,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Arccotangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arccotangent)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arccotangent)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Arccotangent, (Neg<Inv<Add<Integer<1>, Pow<Copy, Integer<2>>>>>))
 
     std::string Arcsine::to_string() const { return fmt::format("arcsin({})", arg().to_string()); }
 

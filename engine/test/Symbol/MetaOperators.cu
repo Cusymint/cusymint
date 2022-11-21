@@ -14,13 +14,7 @@
 #include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Symbol/Variable.cuh"
-
-// This is a workaround for use of commas in template types in macros
-template <class T> struct macro_type;
-template <class T, class U> struct macro_type<T(U)> {
-    using type = U;
-};
-#define MACRO_TYPE(_pattern) macro_type<void(_pattern)>::type
+#include "Symbol/Macros.cuh"
 
 #define _META_TEST_MATCH(_name, _pattern, _expression, _should_match)      \
     TEST(MetaOperatorsMatchTest, _name) { test_meta_match<MACRO_TYPE(_pattern), _should_match>(_expression); } // NOLINT

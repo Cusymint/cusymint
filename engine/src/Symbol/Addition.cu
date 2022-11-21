@@ -115,6 +115,13 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Negation)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Negation)
 
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Negation) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        return Neg<None>::init_reverse(*destination);
+    }
+
     DEFINE_SIMPLIFY_IN_PLACE(Negation) {
         if (arg().is(Type::Negation)) {
             arg().as<Negation>().arg().move_to(symbol());

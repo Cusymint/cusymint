@@ -13,6 +13,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Sine)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Sine)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Sine)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Sine, Cos<Copy>)
 
     DEFINE_SIMPLIFY_IN_PLACE(Sine) {
         if (arg().is(Type::Arcsine)) {
@@ -27,6 +28,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Cosine)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Cosine)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Cosine)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Cosine, Neg<Sin<Copy>>)
 
     DEFINE_SIMPLIFY_IN_PLACE(Cosine) {
         if (arg().is(Type::Arccosine)) {
@@ -41,6 +43,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Tangent)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Tangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Tangent)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Tangent, (Inv<Pow<Cos<Copy>, Integer<2>>>))
 
     DEFINE_SIMPLIFY_IN_PLACE(Tangent) {
         if (arg().is(Type::Arctangent)) {
@@ -55,6 +58,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Cotangent)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Cotangent)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Cotangent)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Cotangent, (Neg<Inv<Pow<Sin<Copy>, Integer<2>>>>))
 
     DEFINE_SIMPLIFY_IN_PLACE(Cotangent) {
         if (arg().is(Type::Arccotangent)) {

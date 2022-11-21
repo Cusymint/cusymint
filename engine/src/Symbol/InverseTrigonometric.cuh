@@ -4,33 +4,32 @@
 #include <vector>
 
 #include "Macros.cuh"
-#include "MetaOperators.cuh"
 
 namespace Sym {
     DECLARE_SYMBOL(Arcsine, false)
     ONE_ARGUMENT_OP_SYMBOL
-    using Derivative = Inv<Sqrt<Add<Integer<1>, Neg<Pow<Copy, Integer<2>>>>>>;
+
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(Arcsine)
 
     DECLARE_SYMBOL(Arccosine, false)
     ONE_ARGUMENT_OP_SYMBOL
-    using Derivative = Neg<Inv<Sqrt<Add<Integer<1>, Neg<Pow<Copy, Integer<2>>>>>>>;
+
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(Arccosine)
 
     DECLARE_SYMBOL(Arctangent, false)
     ONE_ARGUMENT_OP_SYMBOL
-    using Derivative = Inv<Add<Integer<1>, Pow<Copy, Integer<2>>>>;
+
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(Arctangent)
 
     DECLARE_SYMBOL(Arccotangent, false)
     ONE_ARGUMENT_OP_SYMBOL
-    using Derivative = Neg<Inv<Add<Integer<1>, Pow<Copy, Integer<2>>>>>;
+
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(Arccotangent)

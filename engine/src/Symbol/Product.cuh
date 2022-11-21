@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "Macros.cuh"
-#include "MetaOperators.cuh"
 
 namespace Sym {
     DECLARE_SYMBOL(Product, false)
@@ -50,7 +49,7 @@ namespace Sym {
 
     DECLARE_SYMBOL(Reciprocal, false)
     ONE_ARGUMENT_OP_SYMBOL
-    using Derivative = Neg<Inv<Pow<Copy, Integer<2>>>>;
+
     std::string to_string() const;
     std::string to_tex() const;
 

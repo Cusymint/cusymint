@@ -4,33 +4,32 @@
 #include <vector>
 
 #include "Macros.cuh"
-#include "MetaOperators.cuh"
 
 namespace Sym {
     DECLARE_SYMBOL(Sine, false)
     ONE_ARGUMENT_OP_SYMBOL
-    using Derivative = Cos<Copy>;
+
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(Sine)
 
     DECLARE_SYMBOL(Cosine, false)
     ONE_ARGUMENT_OP_SYMBOL
-    using Derivative = Neg<Sine<Copy>>;
+
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(Cosine)
 
     DECLARE_SYMBOL(Tangent, false)
     ONE_ARGUMENT_OP_SYMBOL
-    using Derivative = Inv<Pow<Cos<Copy>, Integer<2>>>;
+
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(Tangent)
 
     DECLARE_SYMBOL(Cotangent, false)
     ONE_ARGUMENT_OP_SYMBOL
-    using Derivative = Neg<Inv<Pow<Sin<Copy>, Integer<2>>>>;
+
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(Cotangent)
