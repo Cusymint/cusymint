@@ -317,13 +317,15 @@ namespace Sym {
         return coefficients[0];
     }
 
-    __host__ __device__ size_t Symbol::derivate_reverse_to(Symbol* const destination) {
+    __host__ __device__ size_t Symbol::derivative_to(Symbol* const destination) {
         Symbol* current_dst = destination;
         for (auto i = static_cast<ssize_t>(size() - 1); i >= 0; --i) {
             const ssize_t offset = VIRTUAL_CALL(*at(i), insert_reversed_derivative_at, current_dst);
             current_dst += offset;
         }
-        return current_dst - destination;
+        const size_t symbols_inserted = current_dst - destination;
+        reverse_symbol_sequence(destination, symbols_inserted);
+        return symbols_inserted;
     }
 
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {

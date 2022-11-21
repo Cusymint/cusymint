@@ -20,12 +20,8 @@ namespace Test {
             std::vector<Sym::Symbol> help_space(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
             std::vector<Sym::Symbol> derivative(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
 
-            const auto size = expression.data()->derivate_reverse_to(help_space.data());
+            const auto size = expression.data()->derivative_to(derivative.data());
 
-            help_space.resize(size);
-
-            Sym::Symbol::copy_and_reverse_symbol_sequence(derivative.data(), help_space.data(),
-                                                          size);
             derivative.resize(size);
 
             EXPECT_EQ(size, derivative.data()->size())
@@ -53,7 +49,8 @@ namespace Test {
     DERIVATIVE_TEST(KnownConstant, "e", "0")
     DERIVATIVE_TEST(UnknownConstant, "c", "0")
 
-    DERIVATIVE_TEST(AdvancedConstant, "sin(e)^tan(w+123-9+pi*arctan(2))*e+ln(tg(e^e^2^q))/8/sin(2)", "0")
+    DERIVATIVE_TEST(AdvancedConstant, "sin(e)^tan(w+123-9+pi*arctan(2))*e+ln(tg(e^e^2^q))/8/sin(2)",
+                    "0")
 
     DERIVATIVE_TEST(Arcsine, "arcsin(x)", "1/sqrt(1-x^2)")
     DERIVATIVE_TEST(Arccosine, Sym::arccos(Sym::var()),
@@ -70,7 +67,7 @@ namespace Test {
     DERIVATIVE_TEST(Cotangent, Sym::cot(Sym::var()), -Sym::inv(Sym::sin(Sym::var()) ^ Sym::num(2)))
 
     DERIVATIVE_TEST(Negation, "-cos(x)", "sin(x)")
-    DERIVATIVE_TEST(Reciprocal, Sym::inv(Sym::var()), -Sym::inv(Sym::var()^Sym::num(2)));
+    DERIVATIVE_TEST(Reciprocal, Sym::inv(Sym::var()), -Sym::inv(Sym::var() ^ Sym::num(2)));
 
     DERIVATIVE_TEST(Addition, "sin(x)+ln(x)", "cos(x)+1/x")
     DERIVATIVE_TEST(ProductWithConstant, "ln(1+tg(e))*cos(x)", "ln(1+tg(e))*(-sin(x))")
@@ -84,10 +81,15 @@ namespace Test {
     DERIVATIVE_TEST(Exponential, "2^x", "2^x*ln(2)")
     DERIVATIVE_TEST(Logarithm, "log_3(x)", "1/x/ln(3)")
 
-    DERIVATIVE_TEST(AdvancedExpressionWithArctg, "1/sin(x)+arctg(sqrt(1+x^2))", "cos(x)*(-(1/sin(x)^2))+1/(2+x^2)*(1+x^2)^-0.5*x")
-    DERIVATIVE_TEST(AdvancedExpressionWithLogCubed, "4*ln((sin(2*x)+1/(3*x+2))^2)^3", "24*ln((sin(2*x)+1/(3*x+2))^2)^2/(sin(2*x)+1/(3*x+2))^2*(sin(2*x)+1/(3*x+2))*(2*cos(2*x)+3*(-(1/(3*x+2)^2)))")
+    DERIVATIVE_TEST(AdvancedExpressionWithArctg, "1/sin(x)+arctg(sqrt(1+x^2))",
+                    "cos(x)*(-(1/sin(x)^2))+1/(2+x^2)*(1+x^2)^-0.5*x")
+    DERIVATIVE_TEST(AdvancedExpressionWithLogCubed, "4*ln((sin(2*x)+1/(3*x+2))^2)^3",
+                    "24*ln((sin(2*x)+1/(3*x+2))^2)^2/(sin(2*x)+1/(3*x+2))^2*(sin(2*x)+1/"
+                    "(3*x+2))*(2*cos(2*x)+3*(-(1/(3*x+2)^2)))")
 
-    DERIVATIVE_TEST(Polynomial, "x^6+2*x^5+9*x^4+2*x^3+x^2+9*x+1", "6*x^5+10*x^4+36*x^3+6*x^2+2*x+9")
-    DERIVATIVE_TEST(RationalFunction, "(p*x^2+q*x+r)/(a*x+b)", "(a*(p*x^2+q*x+r))*(-(1/(a*x+b)^2))+(2*p*x+q)/(a*x+b)")
+    DERIVATIVE_TEST(Polynomial, "x^6+2*x^5+9*x^4+2*x^3+x^2+9*x+1",
+                    "6*x^5+10*x^4+36*x^3+6*x^2+2*x+9")
+    DERIVATIVE_TEST(RationalFunction, "(p*x^2+q*x+r)/(a*x+b)",
+                    "(a*(p*x^2+q*x+r))*(-(1/(a*x+b)^2))+(2*p*x+q)/(a*x+b)")
     DERIVATIVE_TEST(DividingFunctionByFunction, "sin(x)/x", "sin(x)*(-(1/x^2))+cos(x)/x")
 }
