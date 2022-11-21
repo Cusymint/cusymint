@@ -250,9 +250,6 @@ namespace Sym {
             case Type::NumericConstant:
                 ranks[i] = 0;
                 break;
-            // case Type::Polynomial:
-            //     ranks[i] = static_cast<ssize_t>(current->as<Polynomial>().rank);
-            //     break;
             case Type::Power: {
                 const auto& power = current->as<Power>();
                 if (power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
@@ -295,11 +292,6 @@ namespace Sym {
             case Type::NumericConstant:
                 coefficients[i] = current->as<NumericConstant>().value;
                 break;
-            // case Type::Polynomial: {
-            //     const auto& polynomial = current->as<Polynomial>();
-            //     coefficients[i] = polynomial.rank == 0 ? polynomial[0] : Util::empty_num;
-            //     break;
-            // }
             case Type::Power:
                 coefficients[i] = 1;
                 break;

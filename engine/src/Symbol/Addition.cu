@@ -16,10 +16,10 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
         simplify_structure(help_space);
-        simplify_pairs();
+        const auto result = simplify_pairs(help_space);
         eliminate_zeros();
         simplify_structure(help_space);
-        return true;
+        return !is_another_loop_required(result);
     }
 
     DEFINE_IS_FUNCTION_OF(Addition) {
@@ -63,26 +63,26 @@ namespace Sym {
             expr2->as<NumericConstant>().value != 0.0) {
             expr1->as<NumericConstant>().value += expr2->as<NumericConstant>().value;
             expr2->as<NumericConstant>().value = 0.0;
-            return true;
+            return SimplificationResult::Success;
         }
 
         if (are_equal_of_opposite_sign(expr1, expr2)) {
             expr1->init_from(NumericConstant::with_value(0.0));
             expr2->init_from(NumericConstant::with_value(0.0));
-            return true;
+            return SimplificationResult::Success;
         }
 
         // TODO: Jakieś inne tożsamości trygonometryczne
         if (is_sine_cosine_squared_sum(expr1, expr2)) {
             expr1->init_from(NumericConstant::with_value(1.0));
             expr2->init_from(NumericConstant::with_value(0.0));
-            return true;
+            return SimplificationResult::Success;
         }
 
         // TODO: Dodawanie gdy to samo jest tylko przemnożone przez stałą
         // TODO: Jedynka hiperboliczna
 
-        return false;
+        return SimplificationResult::NoAction;
     }
 
     __host__ __device__ void Addition::eliminate_zeros() {
