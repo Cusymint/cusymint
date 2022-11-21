@@ -2,6 +2,7 @@
 
 #include "ResponseBuilder.cuh"
 #include "SolverProcessManager.cuh"
+#include "Utils.cuh"
 #include "Parser/Parser.cuh"
 #include "Utils/CompileConstants.cuh"
 
@@ -15,11 +16,7 @@ static struct mg_rpc* s_rpc_head = NULL;
 static CachedParser* global_cached_parser = NULL;
 static Solver* global_solver = NULL;
 
-template <typename... T> static void print_debug(fmt::format_string<T...> fmt, T&&... args) {
-    if constexpr (Consts::DEBUG) {
-        fmt::print(fmt, std::forward<T>(args)...);
-    }
-}
+
 
 static void interpret(struct mg_rpc_req* r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
