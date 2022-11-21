@@ -38,34 +38,6 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Arccotangent)
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Arccotangent)
 
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arcsine) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Inv<Pow<Add<Integer<1>, Neg<Pow<Copy, Integer<2>>>>, Num>>, None>::init_reverse(*destination, {arg(), 0.5});
-    }
-
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arccosine) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Neg<Inv<Pow<Add<Integer<1>, Neg<Pow<Copy, Integer<2>>>>, Num>>>, None>::init_reverse(*destination, {arg(), 0.5});
-    }
-
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arctangent) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Inv<Add<Integer<1>, Pow<Copy, Integer<2>>>>, None>::init_reverse(*destination, {arg()});
-    }
-
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Arccotangent) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Neg<Inv<Add<Integer<1>, Pow<Copy, Integer<2>>>>>, None>::init_reverse(*destination, {arg()});
-    }
-
     std::string Arcsine::to_string() const { return fmt::format("arcsin({})", arg().to_string()); }
 
     std::string Arccosine::to_string() const {

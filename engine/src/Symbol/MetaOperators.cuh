@@ -460,6 +460,8 @@ namespace Sym {
 
     template <class I> using Ln = OneArgOperator<Logarithm, I>;
 
+    template <class I> using Sqrt = Pow<I, Inv<Integer<2>>>;
+
     /*
      * @brief Encapsulates procedure of creating `TwoArgOp` symbol tree from existing `SymbolTree`,
      * where every leaf of a tree (term of sum/factor of a product) is mapped by function of type

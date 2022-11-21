@@ -259,13 +259,6 @@ namespace Sym {
         return true;
     }
 
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Reciprocal) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Neg<Inv<Pow<Copy, Integer<2>>>>, None>::init_reverse(*destination, {arg()});
-    }
-
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);
         Product::create(lhs.data(), rhs.data(), res.data());

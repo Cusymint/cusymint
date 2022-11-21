@@ -323,6 +323,14 @@ namespace Sym {
         return symbol;                                                                           \
     }
 
+#define DEFINE_ONE_ARG_OP_DERIVATIVE(_name, _derivative)                      \
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                             \
+        if ((destination - 1)->is(0)) {                                       \
+            return 0;                                                         \
+        }                                                                     \
+        return Mul<_derivative, None>:: ::init_reverse(*destination, {arg()}); \
+    }
+
 #define TWO_ARGUMENT_OP_SYMBOL                                                                   \
     /* In most cases second_arg_offset == 1 + arg1().size(), but not always.                     \
      * For example in `compress_reverse_to` the first argument may not have a correct structure, \

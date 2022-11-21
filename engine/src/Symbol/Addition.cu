@@ -144,13 +144,6 @@ namespace Sym {
         return true;
     }
 
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Negation) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Neg<None>::init_reverse(*destination);
-    }
-
     std::string Addition::to_string() const {
         return fmt::format("({}+{})", arg1().to_string(), arg2().to_string());
     }

@@ -64,34 +64,6 @@ namespace Sym {
         return true;
     }
 
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Sine) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Cos<Copy>, None>::init_reverse(*destination, {arg()});
-    }
-
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Cosine) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Neg<Sin<Copy>>, None>::init_reverse(*destination, {arg()});
-    }
-
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Tangent) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Inv<Pow<Cos<Copy>, Integer<2>>>, None>::init_reverse(*destination, {arg()});
-    }
-
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Cotangent) {
-        if ((destination - 1)->is(0)) {
-            return 0;
-        }
-        return Mul<Neg<Inv<Pow<Sin<Copy>, Integer<2>>>>, None>::init_reverse(*destination, {arg()});
-    }
-
     std::string Sine::to_string() const { return fmt::format("sin({})", arg().to_string()); }
 
     std::string Cosine::to_string() const { return fmt::format("cos({})", arg().to_string()); }
