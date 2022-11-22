@@ -130,7 +130,7 @@ namespace Sym {
         }
 
         if (arg().is(Type::NumericConstant)) {
-            *as<NumericConstant>() = NumericConstant::with_value(-arg().numeric_constant.value);
+            symbol()->init_from(NumericConstant::with_value(-arg().numeric_constant.value));
             return true;
         }
 

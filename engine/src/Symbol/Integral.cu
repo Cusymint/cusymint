@@ -84,9 +84,14 @@ namespace Sym {
         return Symbol::from(this) + integrand_offset;
     }
 
-    __host__ __device__ void
+    [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
     Integral::copy_substitutions_with_an_additional_one(const Symbol& substitution_expr,
                                                         Symbol& destination) const {
+        const size_t used_space = integrand_offset + 1 + substitution_expr.size();
+        if (destination.capacity() <= used_space) {
+            return Util::SimpleResult<size_t>::error();
+        }
+
         Symbol::copy_symbol_sequence(&destination, symbol(), integrand_offset);
 
         Symbol* const new_substitution = &destination + integrand_offset;
@@ -95,6 +100,8 @@ namespace Sym {
         destination.integral.substitution_count += 1;
         destination.integral.integrand_offset += new_substitution->size();
         destination.integral.size += new_substitution->size();
+
+        return Util::SimpleResult<size_t>::good(used_space);
     }
 
     __host__ __device__ void Integral::copy_without_integrand_to(Symbol* const destination) const {
@@ -102,16 +109,16 @@ namespace Sym {
         destination->as<Integral>().size = BUILDER_SIZE;
     }
 
-    __device__ void Integral::integrate_by_substitution_with_derivative(const Symbol& substitution,
-                                                                        const Symbol& derivative,
-                                                                        Symbol& destination) const {
+    [[nodiscard]] __device__ Util::BinaryResult Integral::integrate_by_substitution_with_derivative(
+        const Symbol& substitution, const Symbol& derivative, Symbol& destination) const {
         const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
             Util::Pair(&substitution, &Static::identity())};
 
-        integrate_by_substitution_with_derivative(substitution_pairs, 1, derivative, destination);
+        return integrate_by_substitution_with_derivative(substitution_pairs, 1, derivative,
+                                                         destination);
     }
 
-    __device__ void Integral::integrate_by_substitution_with_derivative(
+    __device__ Util::BinaryResult Integral::integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
         const size_t pattern_count, const Symbol& derivative, Symbol& destination) const {
 
@@ -123,12 +130,21 @@ namespace Sym {
             }
         }
 
-        copy_substitutions_with_an_additional_one(*patterns[0].first, destination);
-        Symbol& destination_integrand = *destination.as<Integral>().integrand();
-        Symbol* current_dst = &destination_integrand;
+        const auto integrand_idx_result =
+            copy_substitutions_with_an_additional_one(*patterns[0].first, destination);
+        const size_t integrand_idx = TRY_PASS(Util::Empty, integrand_idx_result);
 
-        Mul<Inv<Copy>, Copy>::init(*current_dst, {derivative, *Unknown::create().symbol()});
-        current_dst += 2 + derivative.size();
+        Symbol& destination_integrand = *destination.as<Integral>().integrand();
+        Symbol::Iterator current_dst =
+            TRY_PASS(Util::Empty, Symbol::Iterator::from_at(destination, integrand_idx));
+
+        if (!current_dst.can_offset_by(2 + derivative.size())) {
+            return Util::BinaryResult::error();
+        }
+
+        Mul<Inv<Copy>, None>::init(current_dst.current(), {derivative});
+
+        TRY(current_dst += 2 + derivative.size());
 
         for (size_t symbol_idx = 0; symbol_idx < integrand()->size(); ++symbol_idx) {
             bool found_match = false;
@@ -138,8 +154,8 @@ namespace Sym {
                     continue;
                 }
 
-                patterns[pattern_idx].second->copy_to(current_dst);
-                current_dst += current_dst->size();
+                patterns[pattern_idx].second->copy_to(current_dst.current());
+                TRY(current_dst += current_dst.current().size());
                 // -1 because +1 is going to be added by loop control
                 symbol_idx += integrand()[symbol_idx].size() - 1;
                 found_match = true;
@@ -147,23 +163,23 @@ namespace Sym {
             }
 
             if (!found_match) {
-                integrand()[symbol_idx].copy_single_to(current_dst);
-                current_dst += 1;
+                integrand()[symbol_idx].copy_single_to(current_dst.current());
+                TRY(current_dst += 1);
             }
         }
 
         // Sizes and offsets are completely messed up in help_space (but there are no holes), so
         // this is required
-        Symbol::seal_whole(destination_integrand, current_dst - &destination_integrand);
+        Symbol::seal_whole(destination_integrand, current_dst.index() - integrand_idx);
         destination.as<Integral>().seal();
     }
 
     __host__ __device__ const Substitution* Integral::first_substitution() const {
-        return &Symbol::from(this)->child()->substitution;
+        return &Symbol::from(this)->child().substitution;
     }
 
     __host__ __device__ Substitution* Integral::first_substitution() {
-        return &Symbol::from(this)->child()->substitution;
+        return &Symbol::from(this)->child().substitution;
     }
 
     __host__ __device__ size_t Integral::substitutions_size() const {
@@ -172,7 +188,7 @@ namespace Sym {
 
     std::string Integral::to_string() const {
         std::vector<Symbol> integrand_copy(integrand()->size());
-        integrand()->copy_to(integrand_copy.data());
+        integrand()->copy_to(*integrand_copy.data());
 
         std::string last_substitution_name;
 
@@ -190,7 +206,7 @@ namespace Sym {
 
     std::string Integral::to_tex() const {
         std::vector<Symbol> integrand_copy(integrand()->size());
-        integrand()->copy_to(integrand_copy.data());
+        integrand()->copy_to(*integrand_copy.data());
 
         std::string last_substitution_name;
 
@@ -211,7 +227,7 @@ namespace Sym {
 
         Integral* const integral = res.data() << Integral::builder();
         integral->seal_no_substitutions();
-        arg.data()->copy_to(integral->integrand());
+        arg.data()->copy_to(*integral->integrand());
         integral->seal();
 
         return res;

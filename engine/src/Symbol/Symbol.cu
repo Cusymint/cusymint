@@ -27,11 +27,11 @@ namespace Sym {
         Util::move_mem(destination, source, symbol_count * sizeof(Symbol));
     }
 
-    __host__ __device__ void Symbol::copy_and_reverse_symbol_sequence(Symbol* const destination,
-                                                                      const Symbol* const source,
-                                                                      size_t symbol_count) {
+    __host__ __device__ void Symbol::copy_and_reverse_symbol_sequence(Symbol& destination,
+                                                                      const Symbol& source,
+                                                                      const size_t symbol_count) {
         for (size_t i = 0; i < symbol_count; ++i) {
-            source[symbol_count - i - 1].copy_single_to(destination + i);
+            source.at_unchecked(symbol_count - i - 1).copy_single_to(destination.at_unchecked(i));
         }
     }
 
@@ -59,16 +59,16 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ void Symbol::copy_single_to(Symbol* const destination) const {
-        Util::copy_mem(destination, this, sizeof(Symbol));
+    __host__ __device__ void Symbol::copy_single_to(Symbol& destination) const {
+        Util::copy_mem(&destination, this, sizeof(Symbol));
     }
 
-    __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {
-        copy_symbol_sequence(destination, this, size());
+    __host__ __device__ void Symbol::copy_to(Symbol& destination) const {
+        copy_symbol_sequence(&destination, this, size());
     }
 
-    __host__ __device__ void Symbol::move_to(Symbol* const destination) {
-        move_symbol_sequence(destination, this, size());
+    __host__ __device__ void Symbol::move_to(Symbol& destination) {
+        move_symbol_sequence(&destination, this, size());
     }
 
     __host__ __device__ bool Symbol::is_constant() const {

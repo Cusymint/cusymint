@@ -8,13 +8,9 @@
 
 #include "Heuristic/Heuristic.cuh"
 #include "KnownIntegral/KnownIntegral.cuh"
+#include "Status.cuh"
 
 namespace Sym {
-    /*
-     * @brief Maximum number of symbols in a single expression
-     */
-    static constexpr size_t EXPRESSION_MAX_SYMBOL_COUNT = 512;
-
     class Integrator {
         const size_t MAX_CHECK_COUNT;
         const size_t SCAN_ARRAY_SIZE;
@@ -25,7 +21,7 @@ namespace Sym {
         ExpressionArray<SubexpressionCandidate> integrals;
         ExpressionArray<SubexpressionCandidate> integrals_swap;
 
-        ExpressionArray<> help_spaces;
+        ExpressionArray<> help_space;
 
         Util::DeviceArray<uint32_t> scan_array_1;
         Util::DeviceArray<uint32_t> scan_array_2;

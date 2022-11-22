@@ -3,6 +3,7 @@
 
 #include "Symbol/ExpressionArray.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Evaluation/Status.cuh"
 
 namespace Sym::Heuristic {
     struct CheckResult {
@@ -16,10 +17,10 @@ namespace Sym::Heuristic {
     };
 
     using Check = CheckResult (*)(const Integral& integral);
-    using Application = void (*)(const SubexpressionCandidate& integral,
-                                 const ExpressionArray<>::Iterator& integral_dst,
-                                 const ExpressionArray<>::Iterator& expression_dst,
-                                 Symbol& help_space);
+    using Application = EvaluationStatus (*)(const SubexpressionCandidate& integral,
+                                             const ExpressionArray<>::Iterator& integral_dst,
+                                             const ExpressionArray<>::Iterator& expression_dst,
+                                             Symbol& help_space);
 
     extern __device__ const Check CHECKS[];
     extern __device__ const Application APPLICATIONS[];

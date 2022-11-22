@@ -60,14 +60,16 @@ template <class T, class U> struct MacroType<T(U)> {
         constexpr static Sym::Type TYPE = Sym::Type::_name;                              \
         Sym::Type type;                                                                  \
         size_t size;                                                                     \
+        size_t additional_required_size;                                                 \
+        size_t capacity;                                                                 \
         bool simplified;                                                                 \
         bool to_be_copied;                                                               \
-        size_t additional_required_size;                                                 \
                                                                                          \
         __host__ __device__ static _name builder() {                                     \
             return {                                                                     \
                 .type = Sym::Type::_name,                                                \
                 .size = BUILDER_SIZE,                                                    \
+                .capacity = BUILDER_SIZE,                                                \
                 .simplified = _simple,                                                   \
                 .to_be_copied = false,                                                   \
                 .additional_required_size = 0,                                           \
@@ -80,6 +82,7 @@ template <class T, class U> struct MacroType<T(U)> {
             return {                                                                     \
                 .type = Sym::Type::_name,                                                \
                 .size = 1,                                                               \
+                .capacity = 1,                                                           \
                 .simplified = _simple,                                                   \
                 .to_be_copied = false,                                                   \
                 .additional_required_size = 0,                                           \
@@ -92,14 +95,6 @@ template <class T, class U> struct MacroType<T(U)> {
                                                                                          \
         __host__ __device__ inline Symbol* symbol() {                                    \
             return const_cast<Symbol*>(const_cast<const _name*>(this)->symbol());        \
-        }                                                                                \
-                                                                                         \
-        template <class T> __host__ __device__ inline const T* as() const {              \
-            return reinterpret_cast<const T*>(this);                                     \
-        }                                                                                \
-                                                                                         \
-        template <class T> __host__ __device__ inline T* as() {                          \
-            return const_cast<T*>(const_cast<const _name*>(this)->as<T>());              \
         }                                                                                \
                                                                                          \
         ARE_EQUAL_HEADER(are_equal);                                                     \

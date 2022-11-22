@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Utils/Pair.cuh"
+#include "Utils/Result.cuh"
 
 #include "Macros.cuh"
 #include "Substitution.cuh"
@@ -28,8 +29,11 @@ namespace Sym {
      *
      * @param substitution Expression to be used as substitution (without `Substitution` symbol)
      * @param destination Destination to copy everything to
+     *
+     * @return Good with size taken by copied symbols on success, error if destination doesn't have
+     * enough capacity
      */
-    __host__ __device__ void
+    [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
     copy_substitutions_with_an_additional_one(const Symbol& substitution_expr,
                                               Symbol& destination) const;
 
@@ -50,10 +54,12 @@ namespace Sym {
      * @param derivative Derivative of `substitution` in terms of u, e.g. if u=x^2 then
      * `derivative`=2*(var^(1/2))
      * @param destination Pointer to where the result is going to be saved
+     *
+     * @return Good on success, error when `destination` doesn't have enough capacity
      */
-    __device__ void integrate_by_substitution_with_derivative(const Symbol& substitution,
-                                                              const Symbol& derivative,
-                                                              Symbol& destination) const;
+    [[nodiscard]] __device__ Util::BinaryResult
+    integrate_by_substitution_with_derivative(const Symbol& substitution, const Symbol& derivative,
+                                              Symbol& destination) const;
 
     /*
      * @brief Integrate `this` by substitution and save the result in `destination`.
@@ -64,8 +70,10 @@ namespace Sym {
      * @param derivative Derivative of `substitution` in terms of u, e.g. if u=x^2 then
      * `derivative`=2*(var^(1/2))
      * @param destination Where the result is going to be saved
+     *
+     * @return Good on success, error when `destination` doesn't have enough capacity
      */
-    __device__ void integrate_by_substitution_with_derivative(
+    [[nodiscard]] __device__ Util::BinaryResult integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
         const size_t pattern_count, const Symbol& derivative, Symbol& destination) const;
 

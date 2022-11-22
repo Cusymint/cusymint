@@ -83,13 +83,13 @@ namespace Sym {
         expressions_swap(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
         integrals(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
         integrals_swap(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
-        help_spaces(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT, integrals.size()),
+        help_space(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT, integrals.size()),
         scan_array_1(SCAN_ARRAY_SIZE, true),
         scan_array_2(SCAN_ARRAY_SIZE, true) {}
 
     void Integrator::simplify_integrals() {
         integrals_swap.resize(integrals.size());
-        Kernel::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_spaces);
+        Kernel::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_space);
         cudaDeviceSynchronize();
         std::swap(integrals, integrals_swap);
     }
@@ -105,7 +105,7 @@ namespace Sym {
 
     void Integrator::apply_known_integrals() {
         Kernel::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
-                                                                   help_spaces, scan_array_1);
+                                                                   help_space, scan_array_1);
         cudaDeviceSynchronize();
         expressions.increment_size_from_device(scan_array_1.last());
 
@@ -161,7 +161,7 @@ namespace Sym {
 
     void Integrator::apply_heuristics() {
         Kernel::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(
-            integrals, integrals_swap, expressions, help_spaces, scan_array_1, scan_array_2);
+            integrals, integrals_swap, expressions, help_space, scan_array_1, scan_array_2);
         cudaDeviceSynchronize();
 
         std::swap(integrals, integrals_swap);

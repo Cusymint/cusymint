@@ -27,6 +27,7 @@
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/OptionalNumber.cuh"
+#include "Utils/Result.cuh"
 
 // Also works when `_member_function` returns void
 #define VIRTUAL_CALL(_instance, _member_function, ...)                                     \
@@ -147,7 +148,14 @@ namespace Sym {
         }
 
         [[nodiscard]] __host__ __device__ inline size_t& size() { return unknown.size; }
+
         [[nodiscard]] __host__ __device__ inline size_t size() const { return unknown.size; }
+
+        [[nodiscard]] __host__ __device__ inline size_t& capacity() { return unknown.capacity; }
+
+        [[nodiscard]] __host__ __device__ inline size_t capacity() const {
+            return unknown.capacity;
+        }
 
         [[nodiscard]] __host__ __device__ inline size_t& additional_required_size() {
             return unknown.additional_required_size;
@@ -160,6 +168,7 @@ namespace Sym {
         [[nodiscard]] __host__ __device__ inline bool& to_be_copied() {
             return unknown.to_be_copied;
         }
+
         [[nodiscard]] __host__ __device__ inline bool to_be_copied() const {
             return unknown.to_be_copied;
         }
@@ -203,54 +212,68 @@ namespace Sym {
         }
 
         /*
-         * @brief Pointer to the `idx`th element after `this`
+         * @brief Pointer to the `idx`th element after `this`. Error if the index is out of range of
+         * the `Symbol`'s capacity.
          */
-        [[nodiscard]] __host__ __device__ const inline Symbol* at(const size_t idx) const {
+        [[nodiscard]] __host__ __device__ inline Util::SimpleResult<const Symbol*>
+        operator[](const size_t idx) const {
+            if (capacity() <= idx) {
+                return Util::SimpleResult<const Symbol*>::error();
+            }
+
+            return Util::SimpleResult<const Symbol*>::good(this + idx);
+        }
+
+        /*
+         * @brief Pointer to the `idx`th element after `this`. Error if the index is out of range of
+         * the `Symbol`'s capacity.
+         */
+        [[nodiscard]] __host__ __device__ inline Util::SimpleResult<Symbol*>
+        operator[](const size_t idx) {
+            return const_cast<const Symbol*>(this)->operator[](idx).map_good<Symbol*>(
+                [](const Symbol* const good) {
+                    return Util::SimpleResult<Symbol*>::good(const_cast<Symbol*>(good));
+                });
+        }
+
+        /*
+         * @brief Reference to the `idx`th element after `this`
+         */
+        [[nodiscard]] __host__ __device__ inline const Symbol&
+        at_unchecked(const size_t idx) const {
             if constexpr (Consts::DEBUG) {
                 // If `this` is under construction, we allow access to symbols after it without
                 // checks
-                if (size() != BUILDER_SIZE && size() <= idx) {
-                    Util::crash(
-                        "Trying to access element at index %lu after a symbol, but the symbol's "
-                        "size is %lu and it is not under construction",
-                        idx, size());
+                if (capacity() != BUILDER_SIZE && capacity() <= idx) {
+                    Util::crash("Trying to access element after a Symbol at index %lu without "
+                                "checking bounds, but the symbol's "
+                                "capacity is %lu and it is not under construction",
+                                idx, capacity());
                 }
             }
 
-            return this + idx;
-        }
-
-        /*
-         * @brief Pointer to the `idx`th element after `this`
-         */
-        [[nodiscard]] __host__ __device__ inline Symbol* at(const size_t idx) {
-            return const_cast<Symbol*>(const_cast<const Symbol*>(this)->at(idx));
+            return *(this + idx);
         }
 
         /*
          * @brief Reference to the `idx`th element after `this`
          */
-        [[nodiscard]] __host__ __device__ inline const Symbol& operator[](const size_t idx) const {
-            return *at(idx);
-        }
-
-        /*
-         * @brief Reference to the `idx`th element after `this`
-         */
-        [[nodiscard]] __host__ __device__ inline Symbol& operator[](const size_t idx) {
-            return *const_cast<Symbol*>(&(*const_cast<const Symbol*>(this))[idx]);
+        [[nodiscard]] __host__ __device__ inline Symbol& at_unchecked(const size_t idx) {
+            return const_cast<Symbol&>(const_cast<Symbol* const>(this)->at_unchecked(idx));
         }
 
         /*
          * @brief Pointer to the symbol right after `this`
          */
-        [[nodiscard]] __host__ __device__ inline const Symbol* child() const { return at(1); }
+        [[nodiscard]] __host__ __device__ inline const Symbol& child() const {
+            return at_unchecked(1);
+        }
 
         /*
          * @brief Pointer to the symbol right after `this`
          */
-        [[nodiscard]] __host__ __device__ inline Symbol* child() {
-            return const_cast<Symbol*>(const_cast<const Symbol*>(this)->child());
+        [[nodiscard]] __host__ __device__ inline Symbol& child() {
+            return const_cast<Symbol&>(const_cast<const Symbol*>(this)->child());
         }
 
         /*
@@ -279,9 +302,8 @@ namespace Sym {
          * @param seq Symbol sequence to copy. Doesn't need to be semantically correct.
          * @param n number of symbols to copy
          */
-        __host__ __device__ static void copy_and_reverse_symbol_sequence(Symbol* const destination,
-                                                                         const Symbol* const source,
-                                                                         size_t n);
+        __host__ __device__ static void
+        copy_and_reverse_symbol_sequence(Symbol& destination, const Symbol& source, const size_t n);
 
         /*
          * @brief Checks if first n symbols of `seq1` and `seq2` are identical.
@@ -318,21 +340,21 @@ namespace Sym {
          *
          * @param destination Copy destination
          */
-        __host__ __device__ void copy_single_to(Symbol* const destination) const;
+        __host__ __device__ void copy_single_to(Symbol& destination) const;
 
         /*
          * @brief Copies `this` into `destination`. Copies the whole tree.
          *
          * @param destination Copy destination. Cannot alias with `this`.
          */
-        __host__ __device__ void copy_to(Symbol* const destination) const;
+        __host__ __device__ void copy_to(Symbol& destination) const;
 
         /*
          * @brief Copies `this` into `destination`. Copies the whole tree.
          *
          * @param destination Copy destination. Can alias with `this`.
          */
-        __host__ __device__ void move_to(Symbol* const destination);
+        __host__ __device__ void move_to(Symbol& destination);
 
         /*
          * @brief Checks if `this` is an expression composed only of constants
@@ -416,18 +438,16 @@ namespace Sym {
         mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space);
 
         /*
-         * @brief Wykonuje uproszcznie wyrażenia
-         * Wykorzystuje założenie, że wyrażenie uproszczone jest krótsze od pierwotnego.
+         * @brief Simplifies an expression
          *
-         * @param help_space Pamięć pomocnicza
+         * @param help_space Help space
          */
         __host__ __device__ void simplify(Symbol* const help_space);
 
         /*
-         * @brief Wykonuje uproszcznie wyrażenia, potencjalnie zostawiając dziury w wyrażeniu
-         * Wykorzystuje założenie, że wyrażenie uproszczone jest krótsze od pierwotnego.
+         * @brief Simplified an expression. Can leave the expression with holes.
          *
-         * @param help_space Pamięć pomocnicza
+         * @param help_space Help space.
          *
          * @return `true` if expression was simplified, `false` if simplified result
          * would take more space than `size()` or expression needs to be simplified again.
@@ -450,10 +470,10 @@ namespace Sym {
         void substitute_variable_with(const Symbol symbol);
 
         /*
-         * @brief Wrapper do `substitute_variable_with` ułatwiający tworzenie stringów z
-         * podstawieniami
+         * @brief A wrapper for `substitute_variable_with` faciliating creation of strings with
+         * substitutions.
          *
-         * @param n Numer podstawienia z którego wziąta będzie nazwa
+         * @param n Number of substitution to take the name from.
          */
         void substitute_variable_with_nth_substitution_name(const size_t n);
 
@@ -489,8 +509,8 @@ namespace Sym {
          *
          * @return `true` if expressions have the same structure, `false` otherwise
          */
-        [[nodiscard]] __host__ __device__ static bool
-        are_expressions_equal(const Symbol& expr1, const Symbol& expr2);
+        [[nodiscard]] __host__ __device__ static bool are_expressions_equal(const Symbol& expr1,
+                                                                            const Symbol& expr2);
 
         /*
          * @brief Compares two expressions. Size fields in expressions do not need to be valid,
@@ -539,25 +559,127 @@ namespace Sym {
          * @return Number of symbols inserted.
          */
         __host__ __device__ size_t derivative_to(Symbol* const destination);
+
+        template <class S> class GenericIterator {
+            S* parent = nullptr;
+            size_t index_ = 0;
+
+            GenericIterator() = default;
+
+          public:
+            /*
+             * @brief Creates an iterator to a symbol sequence
+             *
+             * @return Good with the iterator on success, error when the given index is past the
+             * allocated space of the parent
+             */
+            __host__ __device__ static Util::SimpleResult<GenericIterator>
+            from_at(S& parent, const size_t index) {
+                GenericIterator iterator;
+                iterator.parent = parent;
+                iterator.index_ = index;
+
+                if (index >= parent.capacity()) {
+                    return Util::SimpleResult<GenericIterator>::error();
+                }
+
+                return Util::SimpleResult<GenericIterator>::good(iterator);
+            }
+
+            /*
+             * @brief Index of the expression the iterator is pointing at
+             */
+            [[nodiscard]] __host__ __device__ size_t index() const { return index_; }
+
+            /*
+             * @brief Const symbol pointed to by the iterator
+             */
+            [[nodiscard]] __host__ __device__ const Symbol* const_current() const {
+                return parent->at_unchecked(index_);
+            };
+
+            /*
+             * @brief Symbol pointed to by the iterator
+             */
+            [[nodiscard]] __host__ __device__ Symbol& current() {
+                return const_cast<Symbol&>(this->const_current());
+            };
+
+            /*
+             * @brief `true` when the iterator can be offset by `offset` without going into
+             * unallocated memory
+             */
+            template <class O>
+            [[nodiscard]] __host__ __device__ bool can_offset_by(const O offset) const {
+                return index_ + offset < parent->capacity();
+            }
+
+            /*
+             * @brief Creates a new iterator offset by `offset` expressions
+             *
+             * @return Good with the iterator on success, error when the given index is past the
+             * allocated space of the parent
+             */
+            template <class O>
+            [[nodiscard]] __host__ __device__ Util::SimpleResult<GenericIterator>
+            operator+(const O offset) const {
+                return from_at(parent, index_ + offset);
+            }
+
+            /*
+             * @brief Creates a new iterator offset by `-offset` expressions
+             */
+            template <class O>
+            [[nodiscard]] __host__ __device__ Util::SimpleResult<GenericIterator>
+            operator-(const O offset) const {
+                return *this + (-offset);
+            }
+
+            /*
+             * @brief Offsets the iterator by `offset`. Returns error when the resulting iterator
+             * would point a location past the allocated space.
+             */
+            template <class O>
+            [[nodiscard]] __host__ __device__ Util::BinaryResult operator+=(const O offset) {
+                if (!can_offset_by(offset)) {
+                    return Util::BinaryResult::error();
+                }
+
+                index_ += offset;
+                return Util::BinaryResult::good();
+            }
+
+            /*
+             * @brief Offsets the iterator by `-offset. Returns error when the resulting iterator
+             * would point a location past the allocated space.
+             */
+            template <class O>
+            [[nodiscard]] __host__ __device__ Util::BinaryResult operator-=(const O offset) {
+                return *this += -offset;
+            }
+        };
+
+        using Iterator = GenericIterator<Symbol>;
+        using ConstIterator = GenericIterator<const Symbol>;
     };
 
     /*
-     * @brief porównanie pojedynczego symbolu (bez porównywania drzew)
+     * @brief Compares two symbols (does not compare expressions!)
      *
-     * @param sym1 pierwszy symbol
-     * @param sym2 drugi symbol
+     * @param sym1 First symbol
+     * @param sym2 Second symbol
      *
-     * @return `true` jeśli symbole są równe, `false` jeśli nie
+     * @return `true` if symbols are equal, `false` otherwise
      */
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2);
 
     /*
-     * @brief porównanie pojedynczych symbolu (bez porównywania drzew)
+     * @brief Compares two symbols (does not compare expressions!)
      *
-     * @param sym1 pierwszy symbol
-     * @param sym2 drugi symbol
+     * @param sym1 First symbol
+     * @param sym2 Second symbol
      *
-     * @return `true` jeśli symbole nie są równe, `false` jeśli są
+     * @return `false` if symbols are equal, `true` otherwise
      */
     __host__ __device__ bool operator!=(const Symbol& sym1, const Symbol& sym2);
 }

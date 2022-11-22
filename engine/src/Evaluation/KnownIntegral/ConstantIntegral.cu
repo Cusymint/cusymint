@@ -8,8 +8,12 @@ namespace Sym::KnownIntegral {
         return integrand->is_constant() ? 1 : 0;
     }
 
-    __device__ void integrate_constant_integral(const Integral& integral, Symbol& destination,
-                                                Symbol& /*help_space*/) {
+    __device__ EvaluationStatus integrate_constant_integral(const Integral& integral,
+                                                            Symbol& destination,
+                                                            Symbol& /*help_space*/) {
+        // TODO: ehhhh znowu trzeba to policzyć lub napisać itd ENSURE_ENOUGH_SPACE(3 +
+        // integral.integrand()->size(), destination);
         SolutionOfIntegral<Mul<Var, Copy>>::init(destination, {integral, *integral.integrand()});
+        /* return EvaluationStatus::Done; */
     }
 }

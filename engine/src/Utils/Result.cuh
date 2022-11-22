@@ -5,14 +5,24 @@
 #include "Cuda.cuh"
 #include "Meta.cuh"
 
-#define TRY(_result)              \
-    ({                            \
-        auto result = (_result);  \
-        if (result.is_error()) {  \
-            return result.pass(); \
-        }                         \
-                                  \
-        result;                   \
+#define TRY(_result)             \
+    ({                           \
+        auto result = (_result); \
+        if (result.is_error()) { \
+            return result;       \
+        }                        \
+                                 \
+        result.good();           \
+    })
+
+#define TRY_PASS(_T, _result)           \
+    ({                                  \
+        auto result = (_result);        \
+        if (result.is_error()) {        \
+            return result.pass<_T>(); \
+        }                               \
+                                        \
+        result.good();                  \
     })
 
 namespace Util {
@@ -135,6 +145,7 @@ namespace Util {
     };
 
     template <class T> using SimpleResult = Result<T, Empty>;
+    using BinaryResult = Result<Empty, Empty>;
 }
 
 #endif

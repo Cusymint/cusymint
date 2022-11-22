@@ -26,12 +26,12 @@ namespace Sym {
         static constexpr bool HAS_SAME = false;
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
-            cuda::std::get<0>(args).get().copy_to(&dst);
+            cuda::std::get<0>(args).get().copy_to(dst);
         };
 
         __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args) {
             const Symbol& source = cuda::std::get<0>(args).get();
-            Symbol::copy_and_reverse_symbol_sequence(&dst, &source, source.size());
+            Symbol::copy_and_reverse_symbol_sequence(dst, source, source.size());
             return source.size();
         }
     };
@@ -40,7 +40,8 @@ namespace Sym {
         using AdditionalArgs = cuda::std::tuple<>;
         using Size = Unsized;
         static constexpr bool HAS_SAME = false;
-        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args = {}) {
+        __host__ __device__ static size_t init_reverse(Symbol& /*dst*/,
+                                                       const AdditionalArgs& /*args*/ = {}) {
             return 0;
         }
     };
@@ -48,8 +49,11 @@ namespace Sym {
     struct Skip {
         using AdditionalArgs = cuda::std::tuple<size_t>;
         using Size = Unsized;
+
         static constexpr bool HAS_SAME = false;
-        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args) {
+
+        __host__ __device__ static size_t init_reverse(Symbol& /*dst*/,
+                                                       const AdditionalArgs& args) {
             return cuda::std::get<0>(args);
         }
     };
@@ -174,7 +178,8 @@ namespace Sym {
             return dst.is(Op::TYPE) && Inner::match(dst.as<Op>().arg());
         }
 
-        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args = {}) {
+        __host__ __device__ static size_t init_reverse(Symbol& dst,
+                                                       const AdditionalArgs& args = {}) {
             const size_t inner_size = Inner::init_reverse(dst, args);
             Op::create_reversed_at(&dst + inner_size);
             return inner_size + 1;
@@ -238,10 +243,13 @@ namespace Sym {
                    RInner::match(dst.as<Op>().arg2());
         }
 
-        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args = {}) {
-            const size_t r_inner_size = RInner::init_reverse(dst, Util::slice_tuple<L_ADDITIONAL_ARGS_SIZE, R_ADDITIONAL_ARGS_SIZE>(args));
+        __host__ __device__ static size_t init_reverse(Symbol& dst,
+                                                       const AdditionalArgs& args = {}) {
+            const size_t r_inner_size = RInner::init_reverse(
+                dst, Util::slice_tuple<L_ADDITIONAL_ARGS_SIZE, R_ADDITIONAL_ARGS_SIZE>(args));
             Symbol* const l_dst = &dst + r_inner_size;
-            const size_t l_inner_size = LInner::init_reverse(*l_dst, Util::slice_tuple<0, L_ADDITIONAL_ARGS_SIZE>(args));
+            const size_t l_inner_size =
+                LInner::init_reverse(*l_dst, Util::slice_tuple<0, L_ADDITIONAL_ARGS_SIZE>(args));
             Op::create_reversed_at(l_dst + l_inner_size);
             return r_inner_size + l_inner_size + 1;
         }
@@ -265,7 +273,8 @@ namespace Sym {
             return match(dst);
         }
 
-        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
+        __host__ __device__ static size_t init_reverse(Symbol& dst,
+                                                       const AdditionalArgs& /*args*/ = {}) {
             init(dst);
             return 1;
         }
@@ -329,7 +338,8 @@ namespace Sym {
             return match(dst);
         }
 
-        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
+        __host__ __device__ static size_t init_reverse(Symbol& dst,
+                                                       const AdditionalArgs& /*args*/ = {}) {
             init(dst);
             return 1;
         }
@@ -357,7 +367,8 @@ namespace Sym {
             return match(dst);
         }
 
-        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& /*args*/ = {}) {
+        __host__ __device__ static size_t init_reverse(Symbol& dst,
+                                                       const AdditionalArgs& /*args*/ = {}) {
             init(dst);
             return 1;
         }
