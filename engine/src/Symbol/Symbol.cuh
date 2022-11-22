@@ -520,16 +520,25 @@ namespace Sym {
 
         /*
          * @brief Checks if `this` is a polynomial. Returns its rank if yes. Otherwise, returns
-         * `-1`.
+         * `empty_num`.
          */
         __host__ __device__ Util::OptionalNumber<ssize_t>
         is_polynomial(Symbol* const help_space) const;
 
         /*
-         * @brief If `this` is a monomial, returns its coefficient. Otherwise, returns `NaN`.
+         * @brief If `this` is a monomial, returns its coefficient. Otherwise, returns `empty_num`.
          */
         __host__ __device__ Util::OptionalNumber<double>
         get_monomial_coefficient(Symbol* const help_space) const;
+
+        /*
+         * @brief Calculates derivative of `this` and places it at `destination`.
+         *
+         * @param `destination` This is what it is.
+         *
+         * @return Number of symbols inserted.
+         */
+        __host__ __device__ size_t derivative_to(Symbol* const destination);
     };
 
     /*

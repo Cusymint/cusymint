@@ -10,6 +10,7 @@
 #include "Utils/Cuda.cuh"
 
 namespace Sym {
+    DEFINE_ZERO_ARGUMENT_OP_FUNCTIONS(NumericConstant)
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(NumericConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(NumericConstant);
     DEFINE_IS_FUNCTION_OF(NumericConstant) { return true; } // NOLINT(misc-unused-parameters)
@@ -17,6 +18,7 @@ namespace Sym {
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(NumericConstant)
     DEFINE_SIMPLE_SEAL_WHOLE(NumericConstant)
 
+    DEFINE_ZERO_ARGUMENT_OP_FUNCTIONS(KnownConstant)
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(KnownConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(KnownConstant);
     DEFINE_IS_FUNCTION_OF(KnownConstant) { return true; } // NOLINT(misc-unused-parameters)
@@ -24,6 +26,7 @@ namespace Sym {
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(KnownConstant)
     DEFINE_SIMPLE_SEAL_WHOLE(KnownConstant)
 
+    DEFINE_ZERO_ARGUMENT_OP_FUNCTIONS(UnknownConstant)
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(UnknownConstant);
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(UnknownConstant);
     DEFINE_IS_FUNCTION_OF(UnknownConstant) { return true; } // NOLINT(misc-unused-parameters)
@@ -76,6 +79,21 @@ namespace Sym {
             static_cast<std::underlying_type_t<decltype(value)>>(other.as<KnownConstant>().value));
     }
 
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(NumericConstant) {
+        destination->init_from(NumericConstant::with_value(0));
+        return 1;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(KnownConstant) {
+        destination->init_from(NumericConstant::with_value(0));
+        return 1;
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(UnknownConstant) {
+        destination->init_from(NumericConstant::with_value(0));
+        return 1;
+    }
+
     __host__ __device__ NumericConstant NumericConstant::with_value(double value) {
         NumericConstant constant = NumericConstant::create();
         constant.value = value;
@@ -112,11 +130,15 @@ namespace Sym {
         }
     }
 
+    std::string NumericConstant::to_string() const {
+        return fmt::format("{:g}", value);
+    }
+
     std::string NumericConstant::to_tex() const {
         if (value < 0) {
-            return fmt::format("\\left( {} \\right)", value);
+            return fmt::format("\\left( {:g} \\right)", value);
         }
-        return std::to_string(value);
+        return fmt::format("{:g}", value);
     }
 
     UnknownConstant UnknownConstant::create(const char* const name) {

@@ -70,13 +70,16 @@ add_executable(
   ${TEST_DIR}/Simplify.cu
   ${TEST_DIR}/Symbol.cu
   ${TEST_SYMBOL_DIR}/MetaOperators.cu
-  ${TEST_DIR}/Kernels.cu)
+  ${TEST_DIR}/Kernels.cu
+  ${TEST_DIR}/Derivatives.cu)
 
 add_executable(
   srvcusymint
-  ${SRC_DIR}/main_server.cu ${SERVER_DIR}/JsonFormatter.cu
+  ${SRC_DIR}/main_server.cu ${SERVER_DIR}/ResponseBuilder.cu
   ${SERVER_DIR}/Server.cu ${SOLVER_DIR}/CachedParser.cu
-  ${SOLVER_DIR}/Expression.cu ${SOLVER_DIR}/Solver.cu)
+  ${SOLVER_DIR}/Expression.cu ${SOLVER_DIR}/Solver.cu
+  ${SERVER_DIR}/SolverProcessManager.cu ${SERVER_DIR}/JsonSolver.cu
+  ${SERVER_DIR}/Logger.cu)
 
 # Debug build related things
 

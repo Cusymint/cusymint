@@ -1,7 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cusymint_app/features/client/client_factory.dart';
 import 'package:cusymint_app/features/home/blocs/client_cubit.dart';
-import 'package:cusymint_client_mock/cusymint_client_mock.dart';
+import 'package:cusymint_client/cusymint_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 

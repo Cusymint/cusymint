@@ -1,12 +1,14 @@
 #include "SubexpressionCandidate.cuh"
 
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(SubexpressionCandidate)
     DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(SubexpressionCandidate)
     DEFINE_INVALID_COMPARE_TO(SubexpressionCandidate)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(SubexpressionCandidate)
+    DEFINE_INVALID_DERIVATIVE(SubexpressionCandidate)
 
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(SubexpressionCandidate)
 

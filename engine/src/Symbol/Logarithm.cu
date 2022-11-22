@@ -1,8 +1,12 @@
 #include "InverseTrigonometric.cuh"
 
+#include <fmt/core.h>
+
 #include "Symbol.cuh"
 #include "Symbol/Constants.cuh"
-#include <fmt/core.h>
+#include "Symbol/Macros.cuh"
+#include "Symbol/MetaOperators.cuh"
+#include "Symbol/Product.cuh"
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Logarithm)
@@ -10,6 +14,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Logarithm)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Logarithm)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Logarithm)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Logarithm, Inv<Copy>)
 
     DEFINE_SIMPLIFY_IN_PLACE(Logarithm) {
         if (arg().is(Type::NumericConstant) && arg().numeric_constant.value == 1) {

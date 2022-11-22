@@ -2,6 +2,7 @@
 
 #include "MetaOperators.cuh"
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
 #include "TreeIterator.cuh"
 #include "Utils/Cuda.cuh"
@@ -42,6 +43,13 @@ namespace Sym {
 
         return arg1().is_function_of(expressions, expression_count) &&
                arg2().is_function_of(expressions, expression_count);
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Addition) {
+        if ((destination - 1)->is(0) && (destination - 2)->is(0)) {
+            return -1;
+        }
+        return Add<None, None>::init_reverse(*destination);
     }
 
     __host__ __device__ bool Addition::is_sine_cosine_squared_sum(const Symbol* const expr1,
@@ -107,6 +115,13 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Negation)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Negation)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Negation)
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Negation) {
+        if ((destination - 1)->is(0)) {
+            return 0;
+        }
+        return Neg<None>::init_reverse(*destination);
+    }
 
     DEFINE_SIMPLIFY_IN_PLACE(Negation) {
         if (arg().is(Type::Negation)) {
