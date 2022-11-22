@@ -2,6 +2,7 @@
 
 #include "Evaluation/StaticFunctions.cuh"
 #include "Server/Server.cuh"
+#include "Server/Logger.cuh"
 #include "Server/JsonSolver.cuh"
 #include "Solver/CachedParser.cuh"
 #include "Solver/Solver.cuh"
@@ -28,6 +29,7 @@ int main(int argc, char** argv) {
 
     const char* uri = argc > 1 ? argv[1] : default_uri;
 
+    Logger::isEnabled = true;
     Server server = Server(uri, parser, solver);
 
     server.run();

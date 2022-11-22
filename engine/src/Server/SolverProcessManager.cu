@@ -1,5 +1,5 @@
 #include "SolverProcessManager.cuh"
-#include "Utils.cuh"
+#include "Logger.cuh"
 
 #include <cstdio>
 #include <iostream>
@@ -30,18 +30,18 @@ std::string SolverProcessManager::create_command(const std::string& input) const
 std::string SolverProcessManager::try_solve(const std::string& input) const {
     try {
         auto command = create_command(input);
-        print_debug("[SolverProcessManager] Trying to solve with command: {}\n", create_command(input));
+        Logger::print("[SolverProcessManager] Trying to solve with command: {}\n", create_command(input));
         auto result = exec_and_read_output(command);
         if(result.back() == '\n') {
             result.pop_back();
         }
-        print_debug("[SolverProcessManager] Solver returned: {}\n", result);
+        Logger::print("[SolverProcessManager] Solver returned: {}\n", result);
         if(result[0] != '{' || result.back() != '}') {
             throw std::runtime_error("Solver returned invalid JSON");
         }
         return result;
     } catch (const std::exception& e) {
-        print_debug("[SolverProcessManager] Solver failed: {}\n", e.what());
+        Logger::print("[SolverProcessManager] Solver failed: {}\n", e.what());
         return R"({"errors": ["Internal runtime error."]})";
     }
 }

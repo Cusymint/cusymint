@@ -2,7 +2,7 @@
 
 #include "ResponseBuilder.cuh"
 #include "SolverProcessManager.cuh"
-#include "Utils.cuh"
+#include "Logger.cuh"
 #include "Parser/Parser.cuh"
 #include "Utils/CompileConstants.cuh"
 
@@ -22,28 +22,28 @@ static void interpret(struct mg_rpc_req* r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
 
     if (input == NULL) {
-        print_debug("[Server] Interpret couldn't find input\n");
+        Logger::print("[Server] Interpret couldn't find input\n");
         mg_rpc_err(r, 400, "Missing input");
         return;
     }
 
-    print_debug("[Server] Interpret input {}\n", input);
+    Logger::print("[Server] Interpret input {}\n", input);
     auto response_builder = ResponseBuilder(); 
 
     try {
         auto parser_result = global_cached_parser->parse(input);
         response_builder.set_input(parser_result);
     } catch (const std::invalid_argument& e) {
-        print_debug("[Server] Interpret invalid argument {}, couldn't parse input: {}\n", e.what(), input);
+        Logger::print("[Server] Interpret invalid argument {}, couldn't parse input: {}\n", e.what(), input);
         response_builder.add_error(e.what());
     } catch (const std::exception& e) {
-        print_debug("[Server] Interpret internal error, couldn't parse input {}\n", input);
+        Logger::print("[Server] Interpret internal error, couldn't parse input {}\n", input);
         response_builder.add_error("Internal error");
     }
 
     auto response = response_builder.get_json_response();
 
-    print_debug("[Server] Interpret result {}\n", response);
+    Logger::print("[Server] Interpret result {}\n", response);
 
     mg_rpc_ok(r, "%s", response.c_str());
     free(input);
@@ -53,17 +53,17 @@ static void solve(struct mg_rpc_req* r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
 
     if (input == NULL) {
-        print_debug("[Server] Solve couldn't find input\n", input);
+        Logger::print("[Server] Solve couldn't find input\n", input);
         mg_rpc_err(r, 400, "Missing input");
         return;
     }
 
-    print_debug("[Server] Solve input {}\n", input);
+    Logger::print("[Server] Solve input {}\n", input);
 
     auto solver_process_manager = SolverProcessManager();
     auto result = solver_process_manager.try_solve(input);
 
-    print_debug("[Server] Solve result {}\n", result);
+    Logger::print("[Server] Solve result {}\n", result);
 
     mg_rpc_ok(r, "%s", result.c_str());
 
@@ -120,7 +120,7 @@ Server::Server(std::string listen_on, CachedParser cached_parser, Solver solver)
 }
 
 void Server::run() {
-    fmt::print("[Server] Starting on {}\n", _listen_on);
+    Logger::print("[Server] Starting on {}\n", _listen_on);
 
     mg_http_listen(&_mgr, _listen_on.c_str(), handler, NULL);
     for (;;) {
