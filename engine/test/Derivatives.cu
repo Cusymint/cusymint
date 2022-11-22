@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-#include "Evaluation/Integrate.cuh"
+#include "Evaluation/Integrator.cuh"
 #include "Parser/Parser.cuh"
 #include "Symbol/Integral.cuh"
 #include "Symbol/InverseTrigonometric.cuh"
