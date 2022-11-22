@@ -69,7 +69,8 @@ add_executable(
   ${TEST_DIR}/KnownIntegral.cu
   ${TEST_DIR}/Simplify.cu
   ${TEST_DIR}/Symbol.cu
-  ${TEST_SYMBOL_DIR}/MetaOperators.cu)
+  ${TEST_SYMBOL_DIR}/MetaOperators.cu
+  ${TEST_DIR}/Kernels.cu)
 
 add_executable(
   srvcusymint

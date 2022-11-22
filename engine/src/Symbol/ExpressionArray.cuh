@@ -64,7 +64,9 @@ namespace Sym {
 
         ExpressionArray(const std::vector<std::vector<Symbol>>& expressions,
                         const size_t expression_size, const size_t expression_capacity) :
-            expression_size(expression_size), expression_capacity(expression_capacity) {
+            expression_size(expression_size),
+            expression_capacity(expression_capacity),
+            data(expression_size * expression_capacity, true) {
             load_from_vector(expressions);
         }
 
