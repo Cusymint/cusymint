@@ -99,8 +99,9 @@ namespace Test {
                 vector, Sym::MAX_EXPRESSION_COUNT, Sym::EXPRESSION_MAX_SYMBOL_COUNT);
         }
 
-        Sym::ExpressionArray<> from_vector(ExprVector vector) {
-            return Sym::ExpressionArray<>(vector, Sym::MAX_EXPRESSION_COUNT,
+        template <typename T = Sym::Symbol>
+        Sym::ExpressionArray<T> from_vector(ExprVector vector) {
+            return Sym::ExpressionArray<T>(vector, Sym::MAX_EXPRESSION_COUNT,
                                           Sym::EXPRESSION_MAX_SYMBOL_COUNT);
         }
 
@@ -389,8 +390,6 @@ namespace Test {
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
-        // EXPECT_EQ(result.to_vector(), expected_result);
-
         EXPECT_TRUE(are_expr_vectors_equal(result.to_vector(), expected_result));
     }
 
@@ -406,8 +405,28 @@ namespace Test {
             Sym::single_integral_vacancy(),
             nth_expression_candidate(5, Sym::solution(Sym::var()), 1),
             nth_expression_candidate(6, Sym::solution(Sym::var()), 1)};
-        
-        // TODO
+
+        ExprVector integral_vector = {nth_expression_candidate(2, Sym::integral(Sym::var()), 2),
+                                      nth_expression_candidate(7, Sym::integral(Sym::e())),
+                                      nth_expression_candidate(4, Sym::integral(Sym::pi()), 2)};
+
+        ExprVector expected_result = {nth_expression_candidate(7, Sym::integral(Sym::e())), {}, {}};
+
+        std::vector<uint32_t> expressions_removability_scan_vector = {1, 2, 2, 2, 2, 3, 4, 5, 6, 7};
+        std::vector<uint32_t> integral_removability_scan_vector = {0, 1, 1};
+
+        Util::DeviceArray<uint32_t> expressions_removability_scan(
+            expressions_removability_scan_vector);
+        Util::DeviceArray<uint32_t> integral_removability_scan(integral_removability_scan_vector);
+
+        auto result = with_count(integral_vector.size());
+
+        Sym::Kernel::
+            remove_integrals<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
+                from_vector<Sym::SubexpressionCandidate>(integral_vector), integral_removability_scan,
+                expressions_removability_scan, result);
+
+        EXPECT_TRUE(are_expr_vectors_equal(result.to_vector(), expected_result));
     }
 
     // KERNEL_TEST(PropagateFailuresUpwards) {
