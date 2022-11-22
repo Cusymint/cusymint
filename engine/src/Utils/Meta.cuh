@@ -4,6 +4,11 @@
 #include <cuda/std/tuple>
 
 namespace Util {
+    /*
+     * @brief An empty structure
+     */
+    struct Empty {};
+
     template <class... Optionals> struct MetaOptionalsSum;
 
     /*
