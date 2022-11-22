@@ -69,6 +69,7 @@ add_executable(
   ${TEST_DIR}/KnownIntegral.cu
   ${TEST_DIR}/Simplify.cu
   ${TEST_DIR}/Symbol.cu
+  ${TEST_DIR}/Derivatives.cu
   ${TEST_SYMBOL_DIR}/MetaOperators.cu)
 
 add_executable(

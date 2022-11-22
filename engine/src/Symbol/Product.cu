@@ -1,5 +1,6 @@
 #include "Symbol/Addition.cuh"
 #include "Symbol/Constants.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
 
 #include <fmt/core.h>
@@ -39,6 +40,28 @@ namespace Sym {
 
         simplify_structure(help_space);
         return !is_another_loop_required(result);
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Product) {
+        // Multiplication by constant
+        const size_t d_arg1_size = (destination - 1)->size();
+        Symbol* const rev_arg2 = destination - 1 - d_arg1_size;
+        if ((destination - 1)->is(0)) { // arg1() is constant
+            if (rev_arg2->is(0)) {      // arg2() is constant
+                return -1;
+            }
+            return Mul<Copy, None>::init_reverse(*(destination - 1), {arg1()}) - 1;
+        }
+        if (rev_arg2->is(0)) { // arg2() is constant
+            Symbol::move_symbol_sequence(
+                rev_arg2, rev_arg2 + 1,
+                d_arg1_size); // move derivative of arg1() one index back
+            return Mul<Copy, None>::init_reverse(*(destination - 1), {arg2()}) - 1;
+        }
+        // General case: (expr2') (expr1) * (expr1') (expr2) * +
+        Symbol* const second_term_dst = rev_arg2 + arg1().size() + 2;
+        Symbol::move_symbol_sequence(second_term_dst, rev_arg2 + 1, d_arg1_size); // copy (expr1')
+        return Add<Mul<Copy, Skip>, Mul<Copy, None>>::init_reverse(*(rev_arg2 + 1), {arg2(), d_arg1_size, arg1()}) - d_arg1_size;
     }
 
     __host__ __device__ SimplificationResult
@@ -229,6 +252,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Reciprocal)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
+    DEFINE_ONE_ARG_OP_DERIVATIVE(Reciprocal, (Neg<Inv<Pow<Copy, Integer<2>>>>))
 
     DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) {
         if (arg().is(Type::Reciprocal)) {

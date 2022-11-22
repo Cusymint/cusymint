@@ -58,7 +58,7 @@ namespace Sym {
 
             seal();
 
-            return true;
+            return false; // b and c may be simplified
         }
 
         // a^(1/ln(a))=e
@@ -130,6 +130,38 @@ namespace Sym {
 
         return arg1().is_function_of(expressions, expression_count) &&
                arg2().is_function_of(expressions, expression_count);
+    }
+
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Power) {
+        const size_t d_arg1_size = (destination - 1)->size();
+        Symbol* const rev_arg2 = destination - 1 - d_arg1_size;
+        if ((destination - 1)->is(0)) { // arg1() is constant: exponential function or constant
+            if (rev_arg2->is(0)) {      // arg2() is constant: constant
+                return -1;
+            }
+            // (expr') c ln (expr) c ^ * *
+            return Prod<Pow<Copy, Copy>, Ln<Copy>, None>::init_reverse(*(destination - 1),
+                                                                       {arg1(), arg2(), arg1()}) -
+                   1;
+        }
+        if (rev_arg2->is(0)) { // arg2() is constant: monomial
+            // (expr') -1 c + (expr) ^ c * *
+
+            Symbol::move_symbol_sequence(rev_arg2, rev_arg2 + 1,
+                                         d_arg1_size); // move derivative of arg1() one index back
+            return Prod<Copy, Pow<Copy, Add<Copy, Integer<-1>>>, None>::init_reverse(
+                       *(destination - 1), {arg2(), arg1(), arg2()}) -
+                   1;
+        }
+        // General case:
+        // (expr2') (expr1) ln * (expr1') (expr1) inv (expr2) * * + (expr2) (expr1) ^ *
+        Symbol* const new_d_arg1_dst = rev_arg2 + 3 + arg1().size();
+        Symbol::move_symbol_sequence(new_d_arg1_dst, rev_arg2 + 1,
+                                     d_arg1_size); // copy (expr1')
+        return Mul<Pow<Copy, Copy>, Add<Prod<Copy, Inv<Copy>, Skip>, Mul<Ln<Copy>, None>>>::
+                   init_reverse(*(rev_arg2 + 1),
+                                {arg1(), arg2(), arg2(), arg1(), d_arg1_size, arg1()}) -
+               d_arg1_size;
     }
 
     std::string Power::to_string() const {
