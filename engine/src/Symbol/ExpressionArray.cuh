@@ -64,10 +64,18 @@ namespace Sym {
 
         ExpressionArray(const std::vector<std::vector<Symbol>>& expressions,
                         const size_t expression_size, const size_t expression_capacity) :
-            expression_size(expression_size),
-            expression_capacity(expression_capacity),
-            expression_count(expressions.size()),
-            data(expression_size * expression_capacity) {
+            expression_size(expression_size), expression_capacity(expression_capacity) {
+            load_from_vector(expressions);
+        }
+
+        /*
+         * @brief Reads all expressions from `expressions`, allocates memory for them and copies
+         * them to this array
+         */
+        void load_from_vector(const std::vector<std::vector<Symbol>>& expressions) {
+            expression_count = expressions.size();
+            data.resize(expression_size * expression_capacity);
+
             for (size_t expr_idx = 0; expr_idx < expressions.size(); ++expr_idx) {
                 cudaMemcpy(data.at(expression_size * expr_idx), expressions[expr_idx].data(),
                            expressions[expr_idx].size() * sizeof(Sym::Symbol),

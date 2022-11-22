@@ -1,6 +1,6 @@
 #include "IntegralCommons.cuh"
 
-#include "Evaluation/Integrate.cuh"
+#include "Evaluation/Integrator.cuh"
 #include "Parser/Parser.cuh"
 
 namespace Test {
@@ -8,7 +8,9 @@ namespace Test {
         testing::AssertionResult is_integral_solution(const std::string integral_str,
                                                       const std::string expected_result_str) {
             const auto integral = Sym::integral(Parser::parse_function(integral_str));
-            const auto result = Sym::solve_integral(integral);
+
+            Sym::Integrator integrator;
+            const auto result = integrator.solve_integral(integral);
 
             auto expected_result = Parser::parse_function(expected_result_str);
             std::vector<Sym::Symbol> simplification_memory(Sym::EXPRESSION_MAX_SYMBOL_COUNT);

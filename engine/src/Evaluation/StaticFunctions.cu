@@ -95,6 +95,11 @@ namespace Sym::Static {
     void init_functions() {
         static constexpr size_t BLOCK_SIZE = 1024;
         static constexpr size_t BLOCK_COUNT = 1;
-        init_static_functions_kernel<<<BLOCK_COUNT, BLOCK_SIZE>>>();
+        static bool are_initialized = false;
+
+        if (!are_initialized) {
+            init_static_functions_kernel<<<BLOCK_COUNT, BLOCK_SIZE>>>();
+            are_initialized = true;
+        }
     }
 }
