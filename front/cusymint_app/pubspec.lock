@@ -218,24 +218,10 @@ packages:
       relative: true
     source: path
     version: "0.0.0"
-  cusymint_client_interface:
-    dependency: "direct overridden"
-    description:
-      path: "../cusymint_client/cusymint_client_interface"
-      relative: true
-    source: path
-    version: "0.0.0"
-  cusymint_client_json_rpc:
+  cusymint_client:
     dependency: "direct main"
     description:
-      path: "../cusymint_client/cusymint_client_json_rpc"
-      relative: true
-    source: path
-    version: "0.0.0"
-  cusymint_client_mock:
-    dependency: "direct main"
-    description:
-      path: "../cusymint_client/cusymint_client_mock"
+      path: "../cusymint_client"
       relative: true
     source: path
     version: "0.0.0"

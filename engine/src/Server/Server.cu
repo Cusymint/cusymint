@@ -1,6 +1,9 @@
-#include "JsonFormatter.cuh"
-#include "Parser/Parser.cuh"
 #include "Server.cuh"
+
+#include "ResponseBuilder.cuh"
+#include "SolverProcessManager.cuh"
+#include "Logger.cuh"
+#include "Parser/Parser.cuh"
 #include "Utils/CompileConstants.cuh"
 
 #include <fmt/core.h>
@@ -11,32 +14,35 @@
 
 static struct mg_rpc* s_rpc_head = NULL;
 static CachedParser* global_cached_parser = NULL;
-static Solver* global_solver = NULL;
-
-template <typename... T> static void print_debug(fmt::format_string<T...> fmt, T&&... args) {
-    if constexpr (Consts::DEBUG) {
-        fmt::print(fmt, std::forward<T>(args)...);
-    }
-}
 
 static void interpret(struct mg_rpc_req* r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
 
     if (input == NULL) {
-        print_debug("[Server] Interpret couldn't find input\n");
+        Logger::print("[Server] Interpret couldn't find input\n");
         mg_rpc_err(r, 400, "Missing input");
         return;
     }
 
-    print_debug("[Server] Interpret input {}\n", input);
+    Logger::print("[Server] Interpret input {}\n", input);
+    auto response_builder = ResponseBuilder(); 
 
-    auto parser_result = global_cached_parser->parse(input);
-    auto formatter = JsonFormatter();
-    auto json = formatter.format(&parser_result, nullptr);
+    try {
+        auto parser_result = global_cached_parser->parse(input);
+        response_builder.set_input(parser_result);
+    } catch (const std::invalid_argument& e) {
+        Logger::print("[Server] Interpret invalid argument {}, couldn't parse input: {}\n", e.what(), input);
+        response_builder.add_error(e.what());
+    } catch (const std::exception& e) {
+        Logger::print("[Server] Interpret internal error, couldn't parse input {}\n", input);
+        response_builder.add_error("Internal error");
+    }
 
-    print_debug("[Server] Interpret result {}\n", json);
+    auto response = response_builder.get_json_response();
 
-    mg_rpc_ok(r, "%s", json.c_str());
+    Logger::print("[Server] Interpret result {}\n", response);
+
+    mg_rpc_ok(r, "%s", response.c_str());
     free(input);
 }
 
@@ -44,31 +50,20 @@ static void solve(struct mg_rpc_req* r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
 
     if (input == NULL) {
-        print_debug("[Server] Solve couldn't find input\n", input);
+        Logger::print("[Server] Solve couldn't find input\n", input);
         mg_rpc_err(r, 400, "Missing input");
         return;
     }
 
-    print_debug("[Server] Solve input {}\n", input);
+    Logger::print("[Server] Solve input {}\n", input);
 
-    auto parser_result = global_cached_parser->parse(input);
+    auto solver_process_manager = SolverProcessManager();
+    auto result = solver_process_manager.try_solve(input);
 
-    print_debug("[Server] Parser result {}\n", parser_result.to_string());
+    Logger::print("[Server] Solve result {}\n", result);
 
-    auto solver_result = global_solver->solve(parser_result);
+    mg_rpc_ok(r, "%s", result.c_str());
 
-    auto formatter = JsonFormatter();
-
-    if (solver_result.has_value()) {
-        auto json = formatter.format(&parser_result, &solver_result.value());
-        print_debug("[Server] Solver found solution, returning response {}\n", json);
-        mg_rpc_ok(r, "%s", json.c_str());
-    }
-    else {
-        auto json = formatter.format(&parser_result, nullptr);
-        print_debug("[Server] Solver failed to find solution, returning response {}\n", json);
-        mg_rpc_ok(r, "%s", json.c_str());
-    }
     free(input);
 }
 
@@ -105,8 +100,8 @@ void handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
     (void)fn_data;
 }
 
-Server::Server(std::string listen_on, CachedParser cached_parser, Solver solver) :
-    _listen_on(listen_on), _cached_parser(cached_parser), _solver() {
+Server::Server(std::string listen_on, CachedParser cached_parser) :
+    _listen_on(listen_on), _cached_parser(cached_parser) {
     mg_mgr_init(&_mgr);
 
     if constexpr (Consts::DEBUG) {
@@ -118,11 +113,10 @@ Server::Server(std::string listen_on, CachedParser cached_parser, Solver solver)
     mg_rpc_add(&s_rpc_head, mg_str("rpc.list"), mg_rpc_list, &s_rpc_head);
 
     global_cached_parser = &cached_parser;
-    global_solver = &solver;
 }
 
 void Server::run() {
-    fmt::print("Starting server on {}\n", _listen_on);
+    Logger::print("[Server] Starting on {}\n", _listen_on);
 
     mg_http_listen(&_mgr, _listen_on.c_str(), handler, NULL);
     for (;;) {

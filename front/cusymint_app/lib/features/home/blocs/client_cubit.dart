@@ -1,5 +1,5 @@
 import 'package:cusymint_app/features/client/client_factory.dart';
-import 'package:cusymint_client_mock/cusymint_client_mock.dart';
+import 'package:cusymint_client/cusymint_client.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ClientCubit extends Cubit<ClientState> {
