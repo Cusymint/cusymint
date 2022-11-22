@@ -14,9 +14,6 @@
 
 static struct mg_rpc* s_rpc_head = NULL;
 static CachedParser* global_cached_parser = NULL;
-static Solver* global_solver = NULL;
-
-
 
 static void interpret(struct mg_rpc_req* r) {
     auto input = mg_json_get_str(r->frame, "$.params.input");
@@ -103,8 +100,8 @@ void handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
     (void)fn_data;
 }
 
-Server::Server(std::string listen_on, CachedParser cached_parser, Solver solver) :
-    _listen_on(listen_on), _cached_parser(cached_parser), _solver() {
+Server::Server(std::string listen_on, CachedParser cached_parser) :
+    _listen_on(listen_on), _cached_parser(cached_parser) {
     mg_mgr_init(&_mgr);
 
     if constexpr (Consts::DEBUG) {
@@ -116,7 +113,6 @@ Server::Server(std::string listen_on, CachedParser cached_parser, Solver solver)
     mg_rpc_add(&s_rpc_head, mg_str("rpc.list"), mg_rpc_list, &s_rpc_head);
 
     global_cached_parser = &cached_parser;
-    global_solver = &solver;
 }
 
 void Server::run() {
