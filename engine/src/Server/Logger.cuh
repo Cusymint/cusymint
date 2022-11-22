@@ -5,10 +5,10 @@
 
 class Logger {
 public:
-    static bool isEnabled;
+    static bool is_enabled;
 
     template <typename... T> static void print(fmt::format_string<T...> fmt, T&&... args) {
-        if (isEnabled) {
+        if (is_enabled) {
             fmt::print(fmt, std::forward<T>(args)...);
         }
     }

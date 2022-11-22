@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 
     const char* uri = argc > 1 ? argv[1] : default_uri;
 
-    Logger::isEnabled = true;
+    Logger::is_enabled = true;
     Server server = Server(uri, parser, solver);
 
     server.run();

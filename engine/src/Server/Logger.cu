@@ -1,3 +1,3 @@
 #include "Logger.cuh"
 
-bool Logger::isEnabled = false;
+bool Logger::is_enabled = false;
