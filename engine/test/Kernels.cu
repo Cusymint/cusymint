@@ -538,11 +538,29 @@ namespace Test {
             Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
             Sym::single_integral_vacancy(), Sym::single_integral_vacancy()};
 
-        SymVector int_with_subs = Sym::integral(Sym::inv(Sym::var()) * Sym::var() * Sym::e() ^ Sym::var());
-        // make substitution!
+        SymVector e_tower_integral = Sym::integral((Sym::e()^Sym::var())*(Sym::e()^(Sym::e()^Sym::var())));
+        SymVector int_with_subs(e_tower_integral.size() * 2);
+        e_tower_integral.as<Sym::Integral>().integrate_by_substitution_with_derivative(*(Sym::e()^Sym::var()).data(),
+                                                                        *(Sym::e()^Sym::var()).data(),
+                                                                        *int_with_subs.data());
 
         ExprVector expected_expression_vector = {
-            nth_expression_candidate(1, /*substitution*/),//...
+           // nth_expression_candidate(1, int_with_subs), // na pewno? chyba nie!
+            nth_expression_candidate(0, Sym::single_integral_vacancy() + Sym::single_integral_vacancy()),
+            nth_expression_candidate(3, Sym::single_integral_vacancy() + Sym::single_integral_vacancy()),
+            nth_expression_candidate(2, Sym::num(23)*Sym::cnst("c")*Sym::single_integral_vacancy()),
+            nth_expression_candidate(4, Sym::num(22)*Sym::single_integral_vacancy()),
+        };
+        
+        ExprVector expected_integral_vector = {
+            nth_expression_candidate(1, int_with_subs),
+            nth_expression_candidate(6, Sym::integral(Sym::sin(Sym::var())), 2),
+            nth_expression_candidate(6, Sym::integral(Sym::cos(Sym::var())), 3),
+            nth_expression_candidate(7, Sym::integral(Sym::var()), 2),
+            nth_expression_candidate(7, Sym::integral(Sym::num(2)), 3),
+            // podstawienie uniwersalne!
+            nth_expression_candidate(8, Sym::integral(Sym::var()), 5),
+            nth_expression_candidate(9, Sym::integral(Sym::tan(Sym::num(0.5)*Sym::var())), 3),
         };
 
         // std::vector<HeuristicPairVector> expected_heuristics = {{{1, {2, 1}}, {2, {1, 0}}},
