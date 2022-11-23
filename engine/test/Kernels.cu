@@ -8,6 +8,7 @@
 #include <fmt/core.h>
 #include <thrust/scan.h>
 
+#include "Evaluation/Heuristic/Heuristic.cuh"
 #include "Evaluation/Integrator.cuh"
 #include "Evaluation/IntegratorKernels.cuh"
 #include "Evaluation/KnownIntegral/KnownIntegral.cuh"
@@ -22,6 +23,7 @@
 #include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Utils/DeviceArray.cuh"
+#include "Utils/Pair.cuh"
 
 #define KERNEL_TEST(_name) TEST(Kernels, _name)
 
@@ -30,9 +32,24 @@ using ExprVector = std::vector<SymVector>;
 using StringVector = std::vector<std::string>;
 using CheckVector = std::vector<Sym::KnownIntegral::Check>;
 using IndexVector = std::vector<int>;
+using HeuristicPairVector = std::vector<Util::Pair<uint32_t, Sym::Heuristic::CheckResult>>;
 
 namespace Test {
     namespace {
+
+        std::string get_different_fields(std::vector<uint32_t> vec1, std::vector<uint32_t> vec2) {
+            if (vec1.size() != vec2.size()) {
+                return fmt::format("Vector sizes do not match: {} vs {}", vec1.size(), vec2.size());
+            }
+
+            std::string message = "Differences between vectors:\n";
+            for (int i = 0; i < vec1.size(); ++i) {
+                if (vec1[i] != vec2[i]) {
+                    message += fmt::format("\tat {}: {} vs {}", i, vec1[i], vec2[i]);
+                }
+            }
+            return message;
+        }
 
         void test_correctly_checked(Util::DeviceArray<uint32_t> result,
                                     std::vector<IndexVector> index_vectors) {
@@ -47,7 +64,34 @@ namespace Test {
                     }
                 }
             }
-            EXPECT_EQ(result_vector, expected_result);
+            EXPECT_EQ(result_vector, expected_result)
+                << get_different_fields(result_vector, expected_result);
+        }
+
+        void test_correctly_checked(Util::DeviceArray<uint32_t> integral_result,
+                                    Util::DeviceArray<uint32_t> expression_result,
+                                    std::vector<HeuristicPairVector> heuristics) {
+            ASSERT_EQ(integral_result.size(), expression_result.size());
+            auto integral_result_vector = integral_result.to_vector();
+            auto expression_result_vector = expression_result.to_vector();
+            std::vector<uint32_t> expected_integral_result(integral_result.size());
+            std::vector<uint32_t> expected_expression_result(expression_result.size());
+            for (int i = 0; i < Sym::Heuristic::COUNT; ++i) {
+                for (int j = 0; j < heuristics.size(); ++j) {
+                    for (auto heuristic : heuristics[j]) {
+                        if (i == heuristic.first) {
+                            expected_integral_result[i * Sym::MAX_EXPRESSION_COUNT + j] +=
+                                heuristic.second.new_integrals;
+                            expected_expression_result[i * Sym::MAX_EXPRESSION_COUNT + j] +=
+                                heuristic.second.new_expressions;
+                        }
+                    }
+                }
+            }
+            EXPECT_EQ(integral_result_vector, expected_integral_result)
+                << get_different_fields(integral_result_vector, expected_integral_result);
+            EXPECT_EQ(expression_result_vector, expected_expression_result)
+                << get_different_fields(expression_result_vector, expected_expression_result);
         }
 
         ExprVector parse_strings_with_map(StringVector& strings,
@@ -99,10 +143,9 @@ namespace Test {
                 vector, Sym::MAX_EXPRESSION_COUNT, Sym::EXPRESSION_MAX_SYMBOL_COUNT);
         }
 
-        template <typename T = Sym::Symbol>
-        Sym::ExpressionArray<T> from_vector(ExprVector vector) {
+        template <typename T = Sym::Symbol> Sym::ExpressionArray<T> from_vector(ExprVector vector) {
             return Sym::ExpressionArray<T>(vector, Sym::MAX_EXPRESSION_COUNT,
-                                          Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+                                           Sym::EXPRESSION_MAX_SYMBOL_COUNT);
         }
 
         Sym::ExpressionArray<Sym::SubexpressionCandidate>
@@ -142,6 +185,21 @@ namespace Test {
             candidate[0].as<Sym::SubexpressionCandidate>().vacancy_expression_idx = n;
             candidate[0].as<Sym::SubexpressionCandidate>().vacancy_idx = vacancy_idx;
             return candidate;
+        }
+
+        ExprVector
+        get_expected_expression_vector(std::vector<HeuristicPairVector> heuristics_vector) {
+            ExprVector result;
+            for (auto heuristics : heuristics_vector) {
+                size_t expression_count = 0;
+                size_t integral_count = 0;
+                for (auto heuristic : heuristics) {
+                    expression_count += heuristic.second.new_expressions;
+                    integral_count += heuristic.second.new_integrals;
+                }
+                result.push_back(vacancy(integral_count, expression_count));
+            }
+            return result;
         }
     }
 
@@ -423,10 +481,47 @@ namespace Test {
 
         Sym::Kernel::
             remove_integrals<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
-                from_vector<Sym::SubexpressionCandidate>(integral_vector), integral_removability_scan,
-                expressions_removability_scan, result);
+                from_vector<Sym::SubexpressionCandidate>(integral_vector),
+                integral_removability_scan, expressions_removability_scan, result);
+
+        ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
         EXPECT_TRUE(are_expr_vectors_equal(result.to_vector(), expected_result));
+    }
+
+    KERNEL_TEST(CheckHeuristicsApplicability) {
+        using namespace Sym::Heuristic;
+
+        StringVector integrals_vector = {"int sin(x)+cos(x) dx", "int e^x*e^e^x dx",
+                                         "int 23*c*x dx", "int x+2 dx", "int 2*tan(0.5*x) dx"};
+
+        ExprVector expressions_vector = {
+            Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
+            Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
+            Sym::single_integral_vacancy()};
+
+        std::vector<HeuristicPairVector> expected_heuristics = {{{1, {2, 1}}, {2, {1, 0}}},
+                                                                {{0, {1, 0}}},
+                                                                {{3, {1, 1}}},
+                                                                {{1, {2, 1}}},
+                                                                {{2, {1, 0}}, {3, {1, 1}}}};
+
+        ExprVector expected_expressions_vector =
+            get_expected_expression_vector(expected_heuristics);
+
+        auto expressions = from_vector(expressions_vector);
+        Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
+        Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
+
+        Sym::Kernel::check_heuristics_applicability<<<Sym::Integrator::BLOCK_COUNT,
+                                                      Sym::Integrator::BLOCK_SIZE>>>(
+            from_string_vector_with_candidate(integrals_vector), expressions, new_integrals_flags,
+            new_expressions_flags);
+
+        ASSERT_EQ(cudaGetLastError(), cudaSuccess);
+
+        EXPECT_TRUE(are_expr_vectors_equal(expressions.to_vector(), expected_expressions_vector));
+        test_correctly_checked(new_integrals_flags, new_expressions_flags, expected_heuristics);
     }
 
     // KERNEL_TEST(PropagateFailuresUpwards) {
