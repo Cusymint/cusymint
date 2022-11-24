@@ -22,6 +22,8 @@
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Symbol/SymbolType.cuh"
+#include "Symbol/Variable.cuh"
 #include "Utils/DeviceArray.cuh"
 #include "Utils/Pair.cuh"
 
@@ -184,6 +186,15 @@ namespace Test {
             SymVector candidate = Sym::first_expression_candidate(child);
             candidate[0].as<Sym::SubexpressionCandidate>().vacancy_expression_idx = n;
             candidate[0].as<Sym::SubexpressionCandidate>().vacancy_idx = vacancy_idx;
+            size_t subexpressions_left = 0;
+            for (auto symbol : child) {
+                if (symbol.is(Sym::Type::SubexpressionVacancy) &&
+                    symbol.as<Sym::SubexpressionVacancy>().is_solved == 0) {
+                    ++subexpressions_left;
+                }
+            }
+            candidate[0].as<Sym::SubexpressionCandidate>().subexpressions_left =
+                subexpressions_left;
             return candidate;
         }
 
@@ -335,6 +346,8 @@ namespace Test {
 
         auto expressions = from_vector(vacancy_tree);
 
+        printf("%s\n",to_string_with_tab(vacancy_tree).c_str());
+
         Sym::Kernel::propagate_solved_subexpressions<<<Sym::Integrator::BLOCK_COUNT,
                                                        Sym::Integrator::BLOCK_SIZE>>>(expressions);
 
@@ -422,10 +435,7 @@ namespace Test {
             nth_expression_candidate(1, vacancy_solved_by(6), 3),
             Sym::single_integral_vacancy(),
             nth_expression_candidate(2, Sym::solution(Sym::var()), 1),
-            nth_expression_candidate(3, Sym::solution(Sym::var()), 1),
-            {},
-            {},
-            {}};
+            nth_expression_candidate(3, Sym::solution(Sym::var()), 1)};
 
         Util::DeviceArray<uint32_t> removability(vacancy_tree.size(), true);
         auto expressions = from_vector(vacancy_tree);
@@ -448,6 +458,8 @@ namespace Test {
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
+        result.resize(removability.to_cpu(removability.size() - 1));
+
         EXPECT_TRUE(are_expr_vectors_equal(result.to_vector(), expected_result));
     }
 
@@ -468,10 +480,11 @@ namespace Test {
                                       nth_expression_candidate(7, Sym::integral(Sym::e())),
                                       nth_expression_candidate(4, Sym::integral(Sym::pi()), 2)};
 
-        ExprVector expected_result = {nth_expression_candidate(7, Sym::integral(Sym::e())), {}, {}};
-
         std::vector<uint32_t> expressions_removability_scan_vector = {1, 2, 2, 2, 2, 3, 4, 5, 6, 7};
         std::vector<uint32_t> integral_removability_scan_vector = {0, 1, 1};
+
+        ExprVector expected_result = {nth_expression_candidate(
+            expressions_removability_scan_vector[7] - 1, Sym::integral(Sym::e()))};
 
         Util::DeviceArray<uint32_t> expressions_removability_scan(
             expressions_removability_scan_vector);
@@ -486,6 +499,9 @@ namespace Test {
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
+        result.resize(
+            integral_removability_scan_vector[integral_removability_scan_vector.size() - 1]);
+
         EXPECT_TRUE(are_expr_vectors_equal(result.to_vector(), expected_result));
     }
 
@@ -494,7 +510,7 @@ namespace Test {
 
         StringVector integrals_vector = {"int sin(x)+cos(x) dx", "int e^x*e^e^x dx",
                                          "int 23*c*x dx",        "int x+2 dx",
-                                         "int 2*tan(0.5*x) dx",  "int e^e^x dx"};
+                                         "int 2*tan(0.5*x) dx",  "int e^x^2 dx"};
 
         ExprVector expressions_vector = {
             Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
@@ -531,36 +547,80 @@ namespace Test {
 
         StringVector integrals_vector = {"int sin(x)+cos(x) dx", "int e^x*e^e^x dx",
                                          "int 23*c*x dx",        "int x+2 dx",
-                                         "int 2*tan(0.5*x) dx",  "int e^e^x dx"};
+                                         "int 2*tan(0.5*x) dx",  "int e^x^2 dx"};
 
         ExprVector expressions_vector = {
             Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
             Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
             Sym::single_integral_vacancy(), Sym::single_integral_vacancy()};
 
-        SymVector e_tower_integral = Sym::integral((Sym::e()^Sym::var())*(Sym::e()^(Sym::e()^Sym::var())));
+        auto h_integrals =
+            parse_strings_with_map(integrals_vector, Sym::first_expression_candidate);
+        for (int i = 0; i < h_integrals.size(); ++i) {
+            h_integrals[i].data()->as<Sym::SubexpressionCandidate>().vacancy_expression_idx = i;
+        }
+
+        // e tower with substitution
+        SymVector e_tower_integral =
+            Sym::integral((Sym::e() ^ Sym::var()) * (Sym::e() ^ (Sym::e() ^ Sym::var())));
         SymVector int_with_subs(e_tower_integral.size() * 2);
-        e_tower_integral.as<Sym::Integral>().integrate_by_substitution_with_derivative(*(Sym::e()^Sym::var()).data(),
-                                                                        *(Sym::e()^Sym::var()).data(),
-                                                                        *int_with_subs.data());
+        SymVector e_to_x = Sym::e() ^ Sym::var();
+        SymVector var = Sym::var();
+        Util::Pair<const Sym::Symbol*, const Sym::Symbol*> pairs[] = {{e_to_x.data(), var.data()}};
+        e_tower_integral.data()->as<Sym::Integral>().integrate_by_substitution_with_derivative(
+            pairs, 1, *Sym::var().data(), *int_with_subs.data());
+        int_with_subs.resize(int_with_subs.data()->size());
+
+        // trigs with substitution
+        StringVector trig_substitutions_strings = {
+            "tan(0.5*x)", "x",           "sin(x)", "2*x/(1+x^2)", "cos(x)",   "(1-x^2)/(1+x^2)",
+            "tan(x)",     "2*x/(1-x^2)", "cot(x)", "(1-x^2)/2*x", "(1+x^2)/2"};
+        auto trig_substitutions =
+            parse_strings_with_map(trig_substitutions_strings, [](auto& map) { return map; });
+        Util::Pair<const Sym::Symbol*, const Sym::Symbol*> trig_pairs[] = {
+            {trig_substitutions[0].data(), trig_substitutions[1].data()},
+            {trig_substitutions[2].data(), trig_substitutions[3].data()},
+            {trig_substitutions[4].data(), trig_substitutions[5].data()},
+            {trig_substitutions[6].data(), trig_substitutions[7].data()},
+            {trig_substitutions[8].data(), trig_substitutions[9].data()}};
+        SymVector trig1_with_subs(integrals_vector[0].size() * 6);
+        SymVector trig2_with_subs(integrals_vector[4].size() * 6);
+        h_integrals[0]
+            .data()
+            ->child()
+            ->as<Sym::Integral>()
+            .integrate_by_substitution_with_derivative(
+                trig_pairs, 5, *trig_substitutions[10].data(), *trig1_with_subs.data());
+        h_integrals[4]
+            .data()
+            ->child()
+            ->as<Sym::Integral>()
+            .integrate_by_substitution_with_derivative(
+                trig_pairs, 5, *trig_substitutions[10].data(), *trig2_with_subs.data());
+        trig1_with_subs.resize(trig1_with_subs.data()->size());
+        trig2_with_subs.resize(trig2_with_subs.data()->size());
 
         ExprVector expected_expression_vector = {
-           // nth_expression_candidate(1, int_with_subs), // na pewno? chyba nie!
-            nth_expression_candidate(0, Sym::single_integral_vacancy() + Sym::single_integral_vacancy()),
-            nth_expression_candidate(3, Sym::single_integral_vacancy() + Sym::single_integral_vacancy()),
-            nth_expression_candidate(2, Sym::num(23)*Sym::cnst("c")*Sym::single_integral_vacancy()),
-            nth_expression_candidate(4, Sym::num(22)*Sym::single_integral_vacancy()),
+            // nth_expression_candidate(1, int_with_subs), // na pewno? chyba nie!
+            nth_expression_candidate(0, Sym::single_integral_vacancy() +
+                                            Sym::single_integral_vacancy()),
+            nth_expression_candidate(3, Sym::single_integral_vacancy() +
+                                            Sym::single_integral_vacancy()),
+            nth_expression_candidate(2, Sym::single_integral_vacancy() * Sym::num(23) *
+                                            Sym::cnst("c")),
+            nth_expression_candidate(4, Sym::single_integral_vacancy() * Sym::num(2)),
         };
-        
+
         ExprVector expected_integral_vector = {
             nth_expression_candidate(1, int_with_subs),
             nth_expression_candidate(6, Sym::integral(Sym::sin(Sym::var())), 2),
             nth_expression_candidate(6, Sym::integral(Sym::cos(Sym::var())), 3),
             nth_expression_candidate(7, Sym::integral(Sym::var()), 2),
             nth_expression_candidate(7, Sym::integral(Sym::num(2)), 3),
-            // podstawienie uniwersalne!
+            nth_expression_candidate(0, trig1_with_subs),
+            nth_expression_candidate(4, trig2_with_subs),
             nth_expression_candidate(8, Sym::integral(Sym::var()), 5),
-            nth_expression_candidate(9, Sym::integral(Sym::tan(Sym::num(0.5)*Sym::var())), 3),
+            nth_expression_candidate(9, Sym::integral(Sym::tan(Sym::num(0.5) * Sym::var())), 3),
         };
 
         // std::vector<HeuristicPairVector> expected_heuristics = {{{1, {2, 1}}, {2, {1, 0}}},
@@ -573,11 +633,6 @@ namespace Test {
         // ExprVector expected_expressions_vector =
         //     get_expected_expression_vector(expected_heuristics);
 
-        auto h_integrals =
-            parse_strings_with_map(integrals_vector, Sym::first_expression_candidate);
-        for (int i = 0; i < h_integrals.size(); ++i) {
-            h_integrals[i].data()->as<Sym::SubexpressionCandidate>().vacancy_expression_idx = i;
-        }
         auto integrals = from_vector<Sym::SubexpressionCandidate>(h_integrals);
         auto expressions = from_vector(expressions_vector);
 
@@ -597,16 +652,27 @@ namespace Test {
         cudaDeviceSynchronize();
 
         auto integrals_destinations = with_count(2 * integrals_vector.size());
-        auto expressions_destinations = with_count(2 * expressions_vector.size());
+        auto expressions_destinations = with_count(0);
         auto help_spaces = with_count(2 * integrals_vector.size());
 
         Sym::Kernel::
             apply_heuristics<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
                 integrals, integrals_destinations, expressions_destinations, help_spaces,
                 new_integrals_flags, new_expressions_flags);
+
+        // integrals_destinations.resize(new_integrals_flags.to_cpu(new_integrals_flags.size() -
+        // 1));
+        expressions_destinations.resize(
+            new_expressions_flags.to_cpu(new_expressions_flags.size() - 1));
+
+        ASSERT_EQ(cudaGetLastError(), cudaSuccess);
         // EXPECT_TRUE(are_expr_vectors_equal(expressions.to_vector(),
         // expected_expressions_vector)); test_correctly_checked(new_integrals_flags,
         // new_expressions_flags, expected_heuristics);
+        EXPECT_TRUE(
+            are_expr_vectors_equal(integrals_destinations.to_vector(), expected_integral_vector));
+        EXPECT_TRUE(are_expr_vectors_equal(expressions_destinations.to_vector(),
+                                           expected_expression_vector));
     }
 
     // KERNEL_TEST(PropagateFailuresUpwards) {
