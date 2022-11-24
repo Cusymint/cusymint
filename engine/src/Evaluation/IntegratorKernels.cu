@@ -53,8 +53,10 @@ namespace Sym::Kernel {
             return true;
         }
 
-        unsigned int subexpressions_left = atomicSub(
-            &expressions[vacancy_expr_idx].subexpression_candidate.subexpressions_left, 1) - 1;
+        unsigned int subexpressions_left =
+            atomicSub(&expressions[vacancy_expr_idx].subexpression_candidate.subexpressions_left,
+                      1) -
+            1;
 
         return subexpressions_left == 0;
     }
@@ -341,7 +343,8 @@ namespace Sym::Kernel {
 
         for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
              expr_idx += thread_count) {
-            SubexpressionCandidate& self_candidate = expressions[expr_idx].subexpression_candidate;
+            // SubexpressionCandidate& self_candidate =
+            // expressions[expr_idx].subexpression_candidate;
 
             // Some other thread was here already, as `failures` starts with 1 everywhere
             if (failures[expr_idx] == 0) {
@@ -380,7 +383,7 @@ namespace Sym::Kernel {
                 SubexpressionVacancy& parent_vacancy =
                     expressions[parent_idx][vacancy_idx].subexpression_vacancy;
 
-                if (parent_vacancy.candidate_integral_count != 0 || parent_vacancy.is_solved == 1) {
+                if (parent_vacancy.is_solved == 1) {
                     break;
                 }
 
@@ -388,7 +391,8 @@ namespace Sym::Kernel {
                     atomicSub(&parent_vacancy.candidate_expression_count, 1) - 1;
 
                 // Go upwards if parent is failed
-                if (parent_vacancy_candidates_left != 0 || !try_set(failures[parent_idx], 0U)) {
+                if (parent_vacancy.candidate_integral_count != 0 ||
+                    parent_vacancy_candidates_left != 0 || !try_set(failures[parent_idx], 0U)) {
                     break;
                 }
 
