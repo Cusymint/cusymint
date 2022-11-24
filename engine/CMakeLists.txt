@@ -40,6 +40,7 @@ add_library(
   ${SYMBOL_DIR}/Logarithm.cu
   ${SYMBOL_DIR}/SubexpressionCandidate.cu
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
+  ${EVALUATION_DIR}/Collapser.cu
   ${EVALUATION_DIR}/Integrator.cu
   ${EVALUATION_DIR}/IntegratorKernels.cu
   ${EVALUATION_DIR}/StaticFunctions.cu
@@ -71,6 +72,7 @@ add_executable(
   ${TEST_DIR}/Symbol.cu
   ${TEST_SYMBOL_DIR}/MetaOperators.cu
   ${TEST_DIR}/Kernels.cu
+  ${TEST_DIR}/Collapser.cu
   ${TEST_DIR}/Derivatives.cu)
 
 add_executable(

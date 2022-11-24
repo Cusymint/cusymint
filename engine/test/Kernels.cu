@@ -28,7 +28,6 @@
 #include "Utils/Pair.cuh"
 
 #define KERNEL_TEST(_name) TEST(Kernels, _name)
-#define COLLAPSE_TEST(_name) TEST(CollapseExpressionTree, _name)
 
 using SymVector = std::vector<Sym::Symbol>;
 using ExprVector = std::vector<SymVector>;
@@ -763,7 +762,4 @@ namespace Test {
         EXPECT_EQ(failures.to_vector(), expected_failures_vector);
         EXPECT_TRUE(are_expr_vectors_equal(expressions.to_vector(), expected_vacancy_tree));
     }
-
-    // TODO collapse tests, refactor
-
 }
