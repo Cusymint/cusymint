@@ -165,7 +165,6 @@ namespace Sym::Kernel {
              expr_idx += thread_count) {
             size_t current_expr_idx = expr_idx;
             while (current_expr_idx != 0) {
-                printf("%lu\n",current_expr_idx);
                 if (expressions[current_expr_idx].subexpression_candidate.subexpressions_left !=
                     0) {
                     break;

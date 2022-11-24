@@ -30,7 +30,7 @@ namespace Sym {
         std::string solved_info;
 
         if (is_solved == 1) {
-            solved_info = fmt::format("solved by {}({},{})", solver_idx, candidate_expression_count,
+            solved_info = fmt::format("solved by {}", solver_idx, candidate_expression_count,
                                       candidate_integral_count);
         }
         else {
