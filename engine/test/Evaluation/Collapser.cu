@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <string>
 #include <vector>
 
 #include "Evaluation/Collapser.cuh"
@@ -19,7 +20,7 @@
     COLLAPSER_TEST(_name) { test_collapse_nth(_expr_vector, _n, _expected_expression); }
 
 #define COLLAPSE_TEST(_name, _expr_vector, _expected_expression) \
-    COLLAPSER_TEST(_name) { test_collapse(_expr_vector, _n, _expected_expression); }
+    COLLAPSER_TEST(_name) { test_collapse(_expr_vector, _expected_expression); }
 
 namespace Test {
     namespace {
@@ -69,6 +70,10 @@ namespace Test {
                 << expected_expression.data()->to_string() << " <- expected";
         }
 
+        void test_collapse(const ExprVector& tree, const std::string& expected_expression) {
+            test_collapse(tree, Parser::parse_function(expected_expression));
+        }
+
         static ExprVector tree_to_collapse = {
             vacancy_solved_by(3),
             vacancy_solved_by(2),
@@ -79,7 +84,7 @@ namespace Test {
             Sym::single_integral_vacancy(),
             nth_expression_candidate(4, vacancy_solved_by(8) * (vacancy_solved_by(9) ^ Sym::pi())),
             nth_expression_candidate(7, "2*(e+ln(x))", 2),
-            nth_expression_candidate(7, "arctan(x^(1/x))", 4),
+            nth_expression_candidate(7, "arctan(x*(1/x))", 4),
         };
     }
 
@@ -103,7 +108,9 @@ namespace Test {
     COLLAPSE_NTH_TEST(CollapseSmallTree, tree_to_collapse, 1, "e^x+1")
     COLLAPSE_NTH_TEST(CollapseChild, tree_to_collapse, 4,
                       nth_expression_candidate(
-                          3, Parser::parse_function("sin((2*(e+ln(x)))*arctan(x^(1/x))^pi)"), 2))
+                          3, Parser::parse_function("sin((2*(e+ln(x)))*arctan(x*(1/x))^pi)"), 2))
     COLLAPSE_NTH_TEST(CollapseWholeTree, tree_to_collapse, 0,
-                      "sin((2*(e+ln(x)))*arctan(x^(1/x))^pi)+x^2")
+                      "sin((2*(e+ln(x)))*arctan(x*(1/x))^pi)+x^2")
+
+    COLLAPSE_TEST(CollapseAndSimplifyTree, tree_to_collapse, "x^2+sin((2*(e+ln(x)))*arctan(1)^pi)")
 }
