@@ -98,7 +98,7 @@ namespace Sym::Kernel {
      * Updates `solver_idx` and `vacancy_expression_idx`. Zeroes `candidate_integral_count`.
      *
      * @tparam ZERO_CANDIDATE_INTEGRAL_COUNT Whether to zero `candidate_integral_count` of
-     * candidates that are moved to `destinations`
+     * vacancies in candidates that are moved to `destinations`
      * @param expressions Expressions to be moved
      * @param removability New locations indices of `expressions`. If `removability[i] ==
      * removability[i - 1]` or `i == 0 && removability[i] != 0` then expression is moved to

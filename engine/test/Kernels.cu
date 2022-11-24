@@ -418,22 +418,29 @@ namespace Test {
             nth_expression_candidate(1, Sym::single_integral_vacancy() + vacancy_solved_by(12), 3),
             nth_expression_candidate(1, vacancy_solved_by(8), 2),
             nth_expression_candidate(1, vacancy_solved_by(9), 3),
-            Sym::single_integral_vacancy(),
+            vacancy(3, 1),
             nth_expression_candidate(5, Sym::solution(Sym::var()), 1),
-            nth_expression_candidate(6, Sym::solution(Sym::var()), 1)};
+            nth_expression_candidate(6, Sym::solution(Sym::var()), 1),
+            nth_expression_candidate(7, Sym::single_integral_vacancy())};
 
         ExprVector expected_result = {
             vacancy_solved_by(1),
             nth_expression_candidate(0, vacancy_solved_by(2) + vacancy_solved_by(3)),
             nth_expression_candidate(1, vacancy_solved_by(5), 2),
             nth_expression_candidate(1, vacancy_solved_by(6), 3),
-            Sym::single_integral_vacancy(),
+            vacancy(3, 1),
             nth_expression_candidate(2, Sym::solution(Sym::var()), 1),
-            nth_expression_candidate(3, Sym::solution(Sym::var()), 1)};
+            nth_expression_candidate(3, Sym::solution(Sym::var()), 1),
+            nth_expression_candidate(4, Sym::single_integral_vacancy())};
+
+        ExprVector expected_result_zeroed(expected_result);
+        expected_result_zeroed[4].data()->as<Sym::SubexpressionVacancy>().candidate_integral_count = 0;
+        expected_result_zeroed[7].data()->as<Sym::SubexpressionCandidate>().arg().as<Sym::SubexpressionVacancy>().candidate_integral_count = 0;
 
         Util::DeviceArray<uint32_t> removability(vacancy_tree.size(), true);
         auto expressions = from_vector(vacancy_tree);
         auto result = with_count(expressions.size());
+        auto result_zeroed = with_count(expressions.size());
 
         Sym::Kernel::find_redundand_expressions<<<Sym::Integrator::BLOCK_COUNT,
                                                   Sym::Integrator::BLOCK_SIZE>>>(expressions,
@@ -450,11 +457,17 @@ namespace Test {
             remove_expressions<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
                 expressions, removability, result);
 
+        Sym::Kernel::
+            remove_expressions<true><<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
+                expressions, removability, result_zeroed);
+
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
         result.resize(removability.to_cpu(removability.size() - 1));
+        result_zeroed.resize(removability.to_cpu(removability.size() - 1));
 
         EXPECT_TRUE(are_expr_vectors_equal(result.to_vector(), expected_result));
+        EXPECT_TRUE(are_expr_vectors_equal(result_zeroed.to_vector(), expected_result_zeroed));
     }
 
     KERNEL_TEST(RemoveIntegrals) {
@@ -660,44 +673,37 @@ namespace Test {
         EXPECT_TRUE(are_expr_vectors_equal(expressions.to_vector(), expected_expression_vector));
     }
 
-    // KERNEL_TEST(PropagateFailuresUpwards) {
-    //     ExprVector vacancy_tree = {
-    //         vacancy(9, 6),
-    //         nth_expression_candidate(0, vacancy(5, 3) + vacancy(4, 2)),
-    //         nth_expression_candidate(1, Sym::sin(vacancy(2, 1)) * vacancy(3, 1), 2),
-    //         nth_expression_candidate(
-    //             2, Sym::single_integral_vacancy() + Sym::single_integral_vacancy(), 3),
-    //         nth_expression_candidate(
-    //             2,
-    //             Sym::single_integral_vacancy() +
-    //                 (Sym::single_integral_vacancy() ^ Sym::single_integral_vacancy()),
-    //             4),
-    //         nth_expression_candidate(1, -vacancy(3, 2), 3),
-    //         nth_expression_candidate(5, Sym::single_integral_vacancy() + vacancy(2, 1), 2),
-    //         nth_expression_candidate(6, vacancy(0, 0) /*failed*/ *
-    //         Sym::single_integral_vacancy(), 3)};
+    KERNEL_TEST(PropagateFailuresUpwards) {
+        ExprVector vacancy_tree = {
+            vacancy(0, 2) /*child failed but another subexpression remains*/,
+            nth_expression_candidate(0, vacancy(0, 1) + vacancy(0, 1)),
+            nth_expression_candidate(1, Sym::sin(vacancy(0, 1)) * vacancy(0, 1), 2),
+            nth_expression_candidate(
+                2, Sym::single_integral_vacancy() + Sym::single_integral_vacancy(), 3),
+            nth_expression_candidate(
+                2,
+                Sym::single_integral_vacancy() +
+                    (Sym::single_integral_vacancy() ^ Sym::single_integral_vacancy()),
+                4),
+            nth_expression_candidate(1, -vacancy(0, 1), 3),
+            nth_expression_candidate(5, Sym::single_integral_vacancy() + vacancy(0, 1), 2),
+            nth_expression_candidate(6, vacancy(0, 0) /*failed*/ *
+            Sym::single_integral_vacancy(), 3),
+            nth_expression_candidate(0, vacancy(1, 1)) /*child failed but one integral remains*/,
+            nth_expression_candidate(8, vacancy(0,0) /*failed*/, 1)};
 
-    //     ExprVector expected_vacancy_tree = {
-    //         vacancy(9, 6),
-    //         nth_expression_candidate(0, vacancy(5, 3) + vacancy(4, 2)),
-    //         nth_expression_candidate(1, Sym::sin(vacancy(2, 1)) * vacancy(3, 1), 2),
-    //         nth_expression_candidate(
-    //             2, Sym::single_integral_vacancy() + Sym::single_integral_vacancy(), 3),
-    //         nth_expression_candidate(
-    //             2,
-    //             Sym::single_integral_vacancy() +
-    //                 (Sym::single_integral_vacancy() ^ Sym::single_integral_vacancy()),
-    //             4),
-    //         nth_expression_candidate(1, -vacancy(3, 2), 3),
-    //         nth_expression_candidate(5, Sym::single_integral_vacancy() + vacancy(0, 1), 2),
-    //         nth_expression_candidate(6, vacancy(0, 0) * Sym::single_integral_vacancy(), 3)};
+        std::vector<uint32_t> expected_failures_vector = {1,0,1,1,1,0,0,0, 1, 0};
 
-    //     auto expressions = from_vector(vacancy_tree);
-    //     Util::DeviceArray<uint32_t> failures(vacancy_tree.size());
-    //     failures.set_mem(1);
+        auto expressions = from_vector(vacancy_tree);
+        Util::DeviceArray<uint32_t> failures(vacancy_tree.size());
+        failures.set_mem(1);
 
-    //     Sym::Kernel::propagate_failures_upwards<<<Sym::Integrator::BLOCK_COUNT,
-    //                                                  Sym::Integrator::BLOCK_SIZE>>>(expressions,
-    //                                                  failures);
-    // }
+        Sym::Kernel::propagate_failures_upwards<<<Sym::Integrator::BLOCK_COUNT,
+                                                     Sym::Integrator::BLOCK_SIZE>>>(expressions,
+                                                     failures);
+                                            
+        ASSERT_EQ(cudaGetLastError(), cudaSuccess);
+
+        EXPECT_EQ(failures.to_vector(), expected_failures_vector);
+    }
 }

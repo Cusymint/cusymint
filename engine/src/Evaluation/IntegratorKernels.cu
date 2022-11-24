@@ -2,6 +2,7 @@
 
 #include "Heuristic/Heuristic.cuh"
 #include "KnownIntegral/KnownIntegral.cuh"
+#include "Symbol/SymbolType.cuh"
 
 namespace Sym {
     __device__ bool is_nonzero(const size_t index,
@@ -197,7 +198,7 @@ namespace Sym::Kernel {
             removability[expr_idx] = 1;
             size_t current_expr_idx = expr_idx;
 
-            while (current_expr_idx != 0) {
+            while (expressions[current_expr_idx].is(Sym::Type::SubexpressionCandidate)) {
                 const size_t& parent_idx =
                     expressions[current_expr_idx].subexpression_candidate.vacancy_expression_idx;
                 const size_t& parent_vacancy_idx =
