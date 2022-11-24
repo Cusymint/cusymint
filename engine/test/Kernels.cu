@@ -36,11 +36,12 @@ using StringVector = std::vector<std::string>;
 using CheckVector = std::vector<Sym::KnownIntegral::Check>;
 using IndexVector = std::vector<int>;
 using HeuristicPairVector = std::vector<Util::Pair<uint32_t, Sym::Heuristic::CheckResult>>;
+using ScanVector = std::vector<uint32_t>;
 
 namespace Test {
     namespace {
 
-        std::string get_different_fields(std::vector<uint32_t> vec1, std::vector<uint32_t> vec2) {
+        std::string get_different_fields(ScanVector vec1, ScanVector vec2) {
             if (vec1.size() != vec2.size()) {
                 return fmt::format("Vector sizes do not match: {} vs {}", vec1.size(), vec2.size());
             }
@@ -57,7 +58,7 @@ namespace Test {
         void test_correctly_checked(Util::DeviceArray<uint32_t> result,
                                     std::vector<IndexVector> index_vectors) {
             auto result_vector = result.to_vector();
-            std::vector<uint32_t> expected_result(result.size());
+            ScanVector expected_result(result.size());
             for (int i = 0; i < Sym::KnownIntegral::COUNT; ++i) {
                 for (int j = 0; j < index_vectors.size(); ++j) {
                     for (auto index : index_vectors[j]) {
@@ -77,8 +78,8 @@ namespace Test {
             ASSERT_EQ(integral_result.size(), expression_result.size());
             auto integral_result_vector = integral_result.to_vector();
             auto expression_result_vector = expression_result.to_vector();
-            std::vector<uint32_t> expected_integral_result(integral_result.size());
-            std::vector<uint32_t> expected_expression_result(expression_result.size());
+            ScanVector expected_integral_result(integral_result.size());
+            ScanVector expected_expression_result(expression_result.size());
             for (int i = 0; i < Sym::Heuristic::COUNT; ++i) {
                 for (int j = 0; j < heuristics.size(); ++j) {
                     for (auto heuristic : heuristics[j]) {
@@ -364,7 +365,7 @@ namespace Test {
             nth_expression_candidate(1, vacancy_solved_by(300), 3),
             Sym::single_integral_vacancy()};
 
-        std::vector<uint32_t> expected_result = {1, 1, 0, 0, 0, 1, 1, 1};
+        ScanVector expected_result = {1, 1, 0, 0, 0, 1, 1, 1};
         Util::DeviceArray<uint32_t> removability(vacancy_tree.size(), true);
 
         Sym::Kernel::find_redundand_expressions<<<Sym::Integrator::BLOCK_COUNT,
@@ -391,7 +392,7 @@ namespace Test {
             nth_expression_candidate(1, vacancy_solved_by(300), 3),
             Sym::single_integral_vacancy()};
 
-        std::vector<uint32_t> expected_result = {0, 1, 0};
+        ScanVector expected_result = {0, 1, 0};
 
         Util::DeviceArray<uint32_t> removability(vacancy_tree.size(), true);
         Util::DeviceArray<uint32_t> integral_removability(integrals_tree.size(), true);
@@ -496,8 +497,8 @@ namespace Test {
                                       nth_expression_candidate(7, Sym::integral(Sym::e())),
                                       nth_expression_candidate(4, Sym::integral(Sym::pi()), 2)};
 
-        std::vector<uint32_t> expressions_removability_scan_vector = {1, 2, 2, 2, 2, 3, 4, 5, 6, 7};
-        std::vector<uint32_t> integral_removability_scan_vector = {0, 1, 1};
+        ScanVector expressions_removability_scan_vector = {1, 2, 2, 2, 2, 3, 4, 5, 6, 7};
+        ScanVector integral_removability_scan_vector = {0, 1, 1};
 
         ExprVector expected_result = {nth_expression_candidate(
             expressions_removability_scan_vector[7] - 1, Sym::integral(Sym::e()))};
@@ -717,7 +718,7 @@ namespace Test {
             nth_expression_candidate(0, vacancy(1, 0)) /*child failed but one integral remains*/,
             nth_expression_candidate(8, failed_vacancy(), 1)};
 
-        std::vector<uint32_t> expected_failures_vector = {1, 0, 1, 1, 1, 0, 0, 0, 1, 0};
+        ScanVector expected_failures_vector = {1, 0, 1, 1, 1, 0, 0, 0, 1, 0};
 
         auto expressions = from_vector(vacancy_tree);
         Util::DeviceArray<uint32_t> failures(vacancy_tree.size());
@@ -747,15 +748,15 @@ namespace Test {
 
         ExprVector expected_vacancy_tree(vacancy_tree);
 
-        std::vector<uint32_t> failures_vector = {1, 0, 1, 1, 1, 1, 1, 1};
-        std::vector<uint32_t> expected_failures_vector = {1, 0, 0, 0, 0, 0, 1, 1};
+        ScanVector failures_vector = {1, 0, 1, 1, 1, 1, 1, 1};
+        ScanVector expected_failures_vector = {1, 0, 0, 0, 0, 0, 1, 1};
 
         Util::DeviceArray<uint32_t> failures(failures_vector);
         auto expressions = from_vector(vacancy_tree);
 
         Sym::Kernel::propagate_failures_downwards<<<Sym::Integrator::BLOCK_COUNT,
-                                                  Sym::Integrator::BLOCK_SIZE>>>(expressions,
-                                                                                 failures);
+                                                    Sym::Integrator::BLOCK_SIZE>>>(expressions,
+                                                                                   failures);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
