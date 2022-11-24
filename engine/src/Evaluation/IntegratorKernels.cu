@@ -343,8 +343,6 @@ namespace Sym::Kernel {
 
         for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
              expr_idx += thread_count) {
-            // SubexpressionCandidate& self_candidate =
-            // expressions[expr_idx].subexpression_candidate;
 
             // Some other thread was here already, as `failures` starts with 1 everywhere
             if (failures[expr_idx] == 0) {
