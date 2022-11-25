@@ -185,4 +185,11 @@ namespace Test {
                       (Sym::num(2) + Sym::num(-6) * Sym::var()) /
                           (Sym::num(1) + Sym::var() + (Sym::var() ^ Sym::num(2))) +
                       Sym::num(-1) * (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(3)))
+
+    SIMPLIFY_TEST(SameExpressionsAddition, "x+x", "2*x")
+    SIMPLIFY_TEST(SameExpressionsAdditionBeingSorted, "sin(x)+ln(x)+sin(x)", "2*sin(x)+ln(x)")
+    SIMPLIFY_TEST(SameExpressionsAdditionBeingSorted2, "ln(x)+sin(x)+ln(x)", "2*ln(x)+sin(x)")
+    SIMPLIFY_TEST(SameExpressionsAdditionLeftMultiplied, "3*c+c", "4*c")
+    SIMPLIFY_TEST(SameExpressionsAdditionRightMultiplied, "e^x+8*e^x", "9*e^x")
+    SIMPLIFY_TEST(SameExpressionsMultipliedByConstantAddition, "5*cos(x)+10*cos(x)", "15*cos(x)")
 }

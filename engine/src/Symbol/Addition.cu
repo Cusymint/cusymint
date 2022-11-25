@@ -2,12 +2,24 @@
 
 #include "MetaOperators.cuh"
 #include "Symbol.cuh"
+#include "Symbol/Constants.cuh"
 #include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
+#include "Symbol/SimplificationResult.cuh"
 #include "TreeIterator.cuh"
 #include "Utils/Cuda.cuh"
 
 #include <fmt/core.h>
+
+namespace {
+    __host__ __device__ void change_expression_coefficient_by(double value,
+                                                              Sym::Product& expression) {
+        double& coefficient = expression.arg1().as<Sym::NumericConstant>().value;
+        if ((coefficient += value) == 0) {
+            expression.symbol()->init_from(Sym::NumericConstant::with_value(0));
+        }
+    }
+}
 
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Addition)
@@ -18,6 +30,9 @@ namespace Sym {
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
         simplify_structure(help_space);
         const auto result = simplify_pairs(help_space);
+        if (try_fuse_same_neighbouring_expressions()) {
+            return false; // changing structure may require additional simplifications
+        }
         eliminate_zeros();
         simplify_structure(help_space);
         return !is_another_loop_required(result);
@@ -88,10 +103,64 @@ namespace Sym {
             return SimplificationResult::Success;
         }
 
-        // TODO: Dodawanie gdy to samo jest tylko przemnożone przez stałą
+        // Dodawanie gdy to samo jest tylko przemnożone przez stałą
+        if (PatternPair<Mul<Num, Same>, Mul<Num, Same>>::match_pair(*expr1, *expr2)) {
+            change_expression_coefficient_by(
+                expr2->as<Product>().arg1().as<NumericConstant>().value, expr1->as<Product>());
+            expr2->init_from(NumericConstant::with_value(0));
+            return SimplificationResult::Success;
+        }
+        if (PatternPair<Same, Mul<Num, Same>>::match_pair(*expr1, *expr2)) {
+            change_expression_coefficient_by(1, expr2->as<Product>());
+            expr1->init_from(NumericConstant::with_value(0));
+            return SimplificationResult::Success;
+        }
+        if (PatternPair<Mul<Num, Same>, Same>::match_pair(*expr1, *expr2)) {
+            change_expression_coefficient_by(1, expr1->as<Product>());
+            expr2->init_from(NumericConstant::with_value(0));
+            return SimplificationResult::Success;
+        }
+        if (PatternPair<AllOf<Same, Not<Num>>, AllOf<Same, Not<Num>>>::match_pair(*expr1, *expr2)) {
+            return SimplificationResult::NeedsSimplification;
+        }
         // TODO: Jedynka hiperboliczna
 
         return SimplificationResult::NoAction;
+    }
+
+    __host__ __device__ bool Addition::try_fuse_same_neighbouring_expressions() {
+        /* Every simplification in `Addition` results in creating `NumericConstants`,
+         * so, after sorting, equal expressions which are not numbers will be neighbours.
+         * Possible situations are:
+         *  - `+ f f` -> `* 2 f`
+         *  - `+ + (other_expr) f f` -> `+ (other_expr) * 2 f`
+         * None of these transformations need more space than occupied.
+         * This trick is necessary because of difficult equality checking after increasing
+         * one of symbols' spaces in `try_fuse_symbols` function.
+         */
+        if (PatternPair<AllOf<Same, Not<Num>>, AllOf<Same, Not<Num>>>::match_pair(arg1(), arg2())) {
+            Symbol& old_arg2 = arg2();
+            arg1().init_from(NumericConstant::with_value(2));
+            Product* const this_product = symbol() << Product::builder();
+            this_product->seal_arg1();
+            old_arg2.move_to(&this_product->arg2());
+            this_product->seal();
+            return true;
+        }
+        if (arg1().is(Type::Addition) &&
+            PatternPair<AllOf<Same, Not<Num>>, AllOf<Same, Not<Num>>>::match_pair(
+                arg2(), arg1().as<Addition>().arg2())) {
+            Symbol& old_arg2 = arg2();
+            arg1().as<Addition>().arg1().move_to(&arg1());
+            seal_arg1();
+            Product* const product = &arg2() << Product::builder();
+            product->arg1().init_from(NumericConstant::with_value(2));
+            product->seal_arg1();
+            old_arg2.move_to(&product->arg2());
+            product->seal();
+            return true;
+        }
+        return false;
     }
 
     __host__ __device__ void Addition::eliminate_zeros() {
