@@ -86,6 +86,10 @@ namespace Util {
         return _slice_tuple<S>(tuple, std::make_index_sequence<N>{});
     }
 
+    template <size_t S, size_t N, class Tuple>
+    using SliceTuple =
+        typename std::invoke_result_t<decltype(slice_tuple<S, N, Tuple>), Tuple>;
+
     template <class... Tuples>
     using TupleCat =
         typename std::invoke_result_t<decltype(cuda::std::tuple_cat<Tuples...>), Tuples...>;

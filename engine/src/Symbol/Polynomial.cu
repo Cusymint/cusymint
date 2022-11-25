@@ -5,6 +5,7 @@
 #include "Addition.cuh"
 #include "Macros.cuh"
 #include "MetaOperators.cuh"
+#include "TreeIterator.cuh"
 #include "Symbol.cuh"
 #include "SymbolType.cuh"
 
