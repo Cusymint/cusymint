@@ -9,6 +9,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  shimmer: ^2.0.0
+
   cusymint_assets:
     path: "../cusymint_assets"
   
