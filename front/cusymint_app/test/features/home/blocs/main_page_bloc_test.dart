@@ -147,6 +147,16 @@ void main() {
           ),
     ],
   );
+
+  test('ClientFactoryMock returns specified client', () {
+    const client1 = clientFailuresMock;
+    final factory1 = ClientFactoryMock(client1);
+    expect(factory1.client, equals(client1));
+
+    const client2 = clientMock;
+    final factory2 = ClientFactoryMock(client2);
+    expect(factory2.client, equals(client2));
+  });
 }
 
 MainPageBloc _createBloc(CusymintClient client) {
