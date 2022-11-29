@@ -12,6 +12,15 @@ class HomeOrganismsStories extends StorybookPart {
           builder: (context) => const CuInterpretLoadingCard(),
         ),
         Story(
+          name: 'Organisms/Home/InterpretResultCard',
+          builder: (context) => const CuInterpretResultCard(
+            child: Placeholder(
+              fallbackHeight: 50,
+              fallbackWidth: 400,
+            ),
+          ),
+        ),
+        Story(
           name: 'Organisms/Home/SolveResultCard',
           builder: (context) => CuSolveResultCard(
             solvingDuration: const Duration(milliseconds: 328),
