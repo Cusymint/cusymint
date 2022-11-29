@@ -1,5 +1,6 @@
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
+import 'package:cusymint_ui/src/organisms/home/base_card.dart';
 
 class CuSolveResultCard extends StatelessWidget {
   const CuSolveResultCard({
@@ -21,29 +22,21 @@ class CuSolveResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return BaseCard(
+      title: CuText.med14(
+        Strings.foundResult.tr(namedArgs: {
+          'timeInMs': solvingDuration.inMilliseconds.toString(),
+        }),
+      ),
       children: [
-        CuText.med14(
-          Strings.foundResult.tr(namedArgs: {
-            'timeInMs': solvingDuration.inMilliseconds.toString(),
-          }),
+        CuScrollableHorizontalWrapper(
+          child: child,
         ),
-        Center(
-          child: CuCard(
-            child: Column(
-              children: [
-                CuScrollableHorizontalWrapper(
-                  child: child,
-                ),
-                _ResultButtons(
-                  copyTex: copyTex,
-                  copyUtf: copyUtf,
-                  shareUtf: shareUtf,
-                ),
-              ],
-            ),
-          ),
-        )
+        _ResultButtons(
+          copyTex: copyTex,
+          copyUtf: copyUtf,
+          shareUtf: shareUtf,
+        ),
       ],
     );
   }
