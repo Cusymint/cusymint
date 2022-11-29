@@ -192,4 +192,11 @@ namespace Test {
     SIMPLIFY_TEST(SameExpressionsAdditionLeftMultiplied, "3*c+c", "4*c")
     SIMPLIFY_TEST(SameExpressionsAdditionRightMultiplied, "e^x+8*e^x", "9*e^x")
     SIMPLIFY_TEST(SameExpressionsMultipliedByConstantAddition, "5*cos(x)+10*cos(x)", "15*cos(x)")
+
+    SIMPLIFY_TEST(SameExpressionsMultiplication, "x*x", "x^2")
+    SIMPLIFY_TEST(SameExpressionsMultiplicationBeingSorted, "sin(x)*ln(x)*sin(x)", "sin(x)^2*ln(x)")
+    SIMPLIFY_TEST(SameExpressionsMultiplicationBeingSorted2, "ln(x)*sin(x)*ln(x)", "ln(x)^2*sin(x)")
+    SIMPLIFY_TEST(SameExpressionsMultiplicationLeftMultiplied, "c^3*c", "c^4")
+    SIMPLIFY_TEST(SameExpressionsMultiplicationRightMultiplied, "e^x*(e^x)^8", "e^(9*x)")
+    SIMPLIFY_TEST(SameExpressionsPoweredToConstantMultiplication, "cos(x)^5+cos(x)^10", "cos(x)^15")
 }

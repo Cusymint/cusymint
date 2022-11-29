@@ -424,6 +424,9 @@ template <class T, class U> struct MacroType<T(U)> {
      */                                                                                       \
     __host__ __device__ static SimplificationResult try_fuse_symbols(                         \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);                  \
+                                                                                              \
+    __host__ __device__ static Util::Order compare_and_try_fuse_symbols(                      \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const destination);                 \
     /*                                                                                        \
      * @brief Counts symbols in simplified tree.                                              \
      *                                                                                        \
@@ -434,6 +437,10 @@ template <class T, class U> struct MacroType<T(U)> {
 #define DEFINE_TRY_FUSE_SYMBOLS(_name)                                \
     __host__ __device__ SimplificationResult _name::try_fuse_symbols( \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space)
+
+#define DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(_name)                       \
+    __host__ __device__ Util::Order _name::compare_and_try_fuse_symbols( \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const destination)
 
 #define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                  \
     DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                      \
@@ -520,7 +527,7 @@ template <class T, class U> struct MacroType<T(U)> {
             arg1().is(_name::TYPE) ? arg1().as<_name>().tree_size() - 1 : 0;                               \
         const size_t arg2_height =                                                                         \
             arg2().is(_name::TYPE) ? arg2().as<_name>().tree_size() - 1 : 0;                               \
-        const size_t new_tree_size = 1 + arg1_height + arg2_height;                                        \
+        size_t new_tree_size = 1 + arg1_height + arg2_height;                                              \
                                                                                                            \
         /* Initialize a sufficient number of tree iterators */                                             \
         for (size_t i = 0; i < new_tree_size; ++i) {                                                       \
@@ -535,17 +542,25 @@ template <class T, class U> struct MacroType<T(U)> {
         Symbol* const help_space_back = help_space + size;                                                 \
         Symbol* current_dst_back = help_space_back;                                                        \
         while (left_tree_iter.is_valid() && right_tree_iter.is_valid()) {                                  \
-            const auto ordering = Symbol::compare_expressions(                                             \
-                *left_tree_iter.current(), *right_tree_iter.current(), *help_space_back);                  \
+            const auto ordering = _name::compare_and_try_fuse_symbols(                                     \
+                left_tree_iter.current(), right_tree_iter.current(), help_space_back);                     \
+            /*Symbol::compare_expressions(                                                                 \
+             *left_tree_iter.current(), *right_tree_iter.current(), *help_space_back); */                  \
             Symbol* current;                                                                               \
             if (ordering == Util::Order::Greater) {                                                        \
                                                                                                            \
                 current = left_tree_iter.current();                                                        \
                 left_tree_iter.advance();                                                                  \
             }                                                                                              \
-            else {                                                                                         \
+            else if (ordering == Util::Order::Less) {                                                      \
                 current = right_tree_iter.current();                                                       \
                 right_tree_iter.advance();                                                                 \
+            }                                                                                              \
+            else {                                                                                         \
+                current = help_space_back;                                                                 \
+                left_tree_iter.advance();                                                                  \
+                right_tree_iter.advance();                                                                 \
+                --new_tree_size;                                                                           \
             }                                                                                              \
                                                                                                            \
             Symbol* const current_dst = current_dst_back - current->size();                                \

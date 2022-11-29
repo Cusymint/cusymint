@@ -6,6 +6,7 @@
 #include <fmt/core.h>
 
 #include "Symbol/MetaOperators.cuh"
+#include "Symbol/SimplificationResult.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
@@ -18,6 +19,15 @@ namespace {
                                numerator.logarithm.arg().to_tex());
         }
         return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(), denominator.to_tex());
+    }
+
+    __host__ __device__ void change_expression_coefficient_by(double value,
+                                                              Sym::Power& expression) {
+        double& coefficient =
+            expression.arg2().as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
+        if ((coefficient += value) == 0) {
+            expression.symbol()->init_from(Sym::NumericConstant::with_value(1));
+        }
     }
 }
 
@@ -53,20 +63,20 @@ namespace Sym {
             return Mul<Copy, None>::init_reverse(*(destination - 1), {arg1()}) - 1;
         }
         if (rev_arg2->is(0)) { // arg2() is constant
-            Symbol::move_symbol_sequence(
-                rev_arg2, rev_arg2 + 1,
-                d_arg1_size); // move derivative of arg1() one index back
+            Symbol::move_symbol_sequence(rev_arg2, rev_arg2 + 1,
+                                         d_arg1_size); // move derivative of arg1() one index back
             return Mul<Copy, None>::init_reverse(*(destination - 1), {arg2()}) - 1;
         }
         // General case: (expr2') (expr1) * (expr1') (expr2) * +
         Symbol* const second_term_dst = rev_arg2 + arg1().size() + 2;
         Symbol::move_symbol_sequence(second_term_dst, rev_arg2 + 1, d_arg1_size); // copy (expr1')
-        return Add<Mul<Copy, Skip>, Mul<Copy, None>>::init_reverse(*(rev_arg2 + 1), {arg2(), d_arg1_size, arg1()}) - d_arg1_size;
+        return Add<Mul<Copy, Skip>, Mul<Copy, None>>::init_reverse(*(rev_arg2 + 1),
+                                                                   {arg2(), d_arg1_size, arg1()}) -
+               d_arg1_size;
     }
 
-    __host__ __device__ SimplificationResult
-    Product::try_dividing_polynomials(Symbol* const expr1, Symbol* const expr2,
-                                      Symbol* const help_space) {
+    __host__ __device__ SimplificationResult Product::try_dividing_polynomials(
+        Symbol* const expr1, Symbol* const expr2, Symbol* const help_space) {
         Symbol* numerator = nullptr;
         Symbol* denominator = nullptr;
         if (!expr1->is(Type::Reciprocal) && expr2->is(Type::Reciprocal)) {
@@ -121,7 +131,7 @@ namespace Sym {
         if (poly1->as<Polynomial>().is_zero()) {
             result->expand_to(longer_expr);
             return SimplificationResult::NeedsSimplification; // maybe additional simplify
-                                                                    // required
+                                                              // required
         }
 
         Addition* const plus = longer_expr << Addition::builder();
@@ -192,9 +202,12 @@ namespace Sym {
         }
 
         // TODO: Jakieś tożsamości trygonometryczne
-        // TODO: Mnożenie potęg o tych samych podstawach
 
         return SimplificationResult::NoAction;
+    }
+
+    DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Product) {
+        return Symbol::compare_expressions(*expr1, *expr2, *destination);
     }
 
     std::string Product::to_string() const {

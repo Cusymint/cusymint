@@ -8,16 +8,33 @@
 #include "Symbol/SimplificationResult.cuh"
 #include "TreeIterator.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/Order.cuh"
 
 #include <fmt/core.h>
 
 namespace {
-    __host__ __device__ void change_expression_coefficient_by(double value,
-                                                              Sym::Product& expression) {
-        double& coefficient = expression.arg1().as<Sym::NumericConstant>().value;
-        if ((coefficient += value) == 0) {
-            expression.symbol()->init_from(Sym::NumericConstant::with_value(0));
+    __host__ __device__ const Sym::Symbol& extract_base_and_coefficient(const Sym::Symbol& symbol,
+                                                                        double& coefficient) {
+        if (symbol.is(Sym::Type::Negation)) {
+            const Sym::Symbol& base = symbol.as<Sym::Negation>().arg();
+            if (Sym::Mul<Sym::Num, Sym::Any>::match(base)) {
+                coefficient = -base.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
+                return base.as<Sym::Product>().arg2();
+            }
+            coefficient = -1;
+            return base;
         }
+        if (Sym::Mul<Sym::Num, Sym::Any>::match(symbol)) {
+            coefficient = symbol.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
+            const Sym::Symbol& base = symbol.as<Sym::Product>().arg2();
+            if (base.is(Sym::Type::Negation)) {
+                coefficient = -coefficient;
+                return base.as<Sym::Negation>().arg();
+            }
+            return base;
+        }
+        coefficient = 1;
+        return symbol;
     }
 }
 
@@ -30,9 +47,9 @@ namespace Sym {
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
         simplify_structure(help_space);
         const auto result = simplify_pairs(help_space);
-        if (try_fuse_same_neighbouring_expressions()) {
-            return false; // changing structure may require additional simplifications
-        }
+        // if (try_fuse_same_neighbouring_expressions()) {
+        //     return false; // changing structure may require additional simplifications
+        // }
         eliminate_zeros();
         simplify_structure(help_space);
         return !is_another_loop_required(result);
@@ -103,29 +120,39 @@ namespace Sym {
             return SimplificationResult::Success;
         }
 
-        // Dodawanie gdy to samo jest tylko przemnożone przez stałą
-        if (PatternPair<Mul<Num, Same>, Mul<Num, Same>>::match_pair(*expr1, *expr2)) {
-            change_expression_coefficient_by(
-                expr2->as<Product>().arg1().as<NumericConstant>().value, expr1->as<Product>());
-            expr2->init_from(NumericConstant::with_value(0));
-            return SimplificationResult::Success;
-        }
-        if (PatternPair<Same, Mul<Num, Same>>::match_pair(*expr1, *expr2)) {
-            change_expression_coefficient_by(1, expr2->as<Product>());
-            expr1->init_from(NumericConstant::with_value(0));
-            return SimplificationResult::Success;
-        }
-        if (PatternPair<Mul<Num, Same>, Same>::match_pair(*expr1, *expr2)) {
-            change_expression_coefficient_by(1, expr1->as<Product>());
-            expr2->init_from(NumericConstant::with_value(0));
-            return SimplificationResult::Success;
-        }
-        if (PatternPair<AllOf<Same, Not<Num>>, AllOf<Same, Not<Num>>>::match_pair(*expr1, *expr2)) {
-            return SimplificationResult::NeedsSimplification;
-        }
         // TODO: Jedynka hiperboliczna
 
         return SimplificationResult::NoAction;
+    }
+
+    DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Addition) {
+        double coef1;
+        double coef2;
+        const Symbol& base1 = extract_base_and_coefficient(*expr1, coef1);
+        const Symbol& base2 = extract_base_and_coefficient(*expr2, coef2);
+
+        const auto order = Symbol::compare_expressions(base1, base2, *destination);
+
+        printf("%s %s\n", type_name(base1.type()), type_name(base2.type()));
+
+        if (order != Util::Order::Equal) {
+            return order;
+        }
+        printf("XXXXXX\n");
+        const double sum = coef1 + coef2;
+        if (sum == 0) {
+            destination->init_from(NumericConstant::with_value(0));
+        }
+        else if (sum == 1) {
+            base1.copy_to(destination);
+        }
+        else if (sum == -1) {
+            Neg<Copy>::init(*destination, {base1});
+        }
+        else {
+            Mul<Num, Copy>::init(*destination, {coef1 + coef2, base1});
+        }
+        return Util::Order::Equal;
     }
 
     __host__ __device__ bool Addition::try_fuse_same_neighbouring_expressions() {
