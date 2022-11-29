@@ -22,28 +22,35 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
 
   FutureOr<void> _solveIntegral(
       SolveRequested event, Emitter<MainPageState> emit) async {
+    emit(SolvingState(userInput: event.input));
+
     final watch = Stopwatch()..start();
 
     final request = Request(event.input);
-    final response = await _client.solveIntegral(request);
 
-    watch.stop();
-    if (response.hasErrors) {
-      // TODO: nice error handling
+    try {
+      final response = await _client.solveIntegral(request);
+
+      watch.stop();
+      if (response.hasErrors) {
+        // TODO: nice error handling
+        emit(SolveErrorState(userInput: event.input, errors: []));
+        return;
+      }
+
+      final duration = watch.elapsed;
+
+      emit(SolvedState(
+        userInput: state.userInput,
+        inputInTex: response.inputInTex!,
+        inputInUtf: response.inputInUtf!,
+        outputInTex: response.outputInTex!,
+        outputInUtf: response.outputInUtf!,
+        duration: duration,
+      ));
+    } catch (e) {
       emit(SolveErrorState(userInput: event.input, errors: []));
-      return;
     }
-
-    final duration = watch.elapsed;
-
-    emit(SolvedState(
-      userInput: state.userInput,
-      inputInTex: response.inputInTex!,
-      inputInUtf: response.inputInUtf!,
-      outputInTex: response.outputInTex!,
-      outputInUtf: response.outputInUtf!,
-      duration: duration,
-    ));
   }
 
   FutureOr<void> _onInputChanged(
@@ -51,19 +58,25 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
     emit(InterpretingState(userInput: event.input));
 
     final request = Request(event.input);
-    final response = await _client.interpretIntegral(request);
 
-    if (response.hasErrors) {
+    try {
+      final response = await _client.interpretIntegral(request);
+
+      if (response.hasErrors) {
+        // TODO: nice error handling
+        emit(InterpretErrorState(userInput: event.input, errors: []));
+        return;
+      }
+
+      emit(InterpretedState(
+        userInput: event.input,
+        inputInTex: response.inputInTex!,
+        inputInUtf: response.inputInUtf!,
+      ));
+    } catch (e) {
       // TODO: nice error handling
       emit(InterpretErrorState(userInput: event.input, errors: []));
-      return;
     }
-
-    emit(InterpretedState(
-      userInput: event.input,
-      inputInTex: response.inputInTex!,
-      inputInUtf: response.inputInUtf!,
-    ));
   }
 }
 
