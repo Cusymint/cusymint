@@ -9,7 +9,7 @@ class TexView extends StatelessWidget {
   const TexView(
     this.data, {
     super.key,
-    this.fontScale,
+    this.fontScale = 2,
   });
 
   final String data;

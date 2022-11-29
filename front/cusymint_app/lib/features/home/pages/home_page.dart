@@ -1,5 +1,6 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:cusymint_app/features/client/client_factory.dart';
-import 'package:cusymint_app/features/home/blocs/client_cubit.dart';
+import 'package:cusymint_app/features/home/blocs/main_page_bloc.dart';
 import 'package:cusymint_app/features/navigation/navigation.dart';
 import 'package:cusymint_app/features/tex_rendering/widgets/tex_view.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
@@ -19,10 +20,10 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clientCubit = ClientCubit(clientFactory: ClientFactory.of(context));
+    final mainPageBloc = MainPageBloc(clientFactory: ClientFactory.of(context));
 
     return HomeBody(
-      clientCubit: clientCubit,
+      mainPageBloc: mainPageBloc,
       isTextSelected: isTextSelected,
     );
   }
@@ -31,12 +32,12 @@ class HomePage extends StatelessWidget {
 class HomeBody extends StatefulWidget {
   const HomeBody({
     super.key,
-    required this.clientCubit,
+    required this.mainPageBloc,
     required this.isTextSelected,
   });
 
   final bool isTextSelected;
-  final ClientCubit clientCubit;
+  final MainPageBloc mainPageBloc;
 
   @override
   State<HomeBody> createState() => _HomeBodyState();
@@ -47,78 +48,107 @@ class _HomeBodyState extends State<HomeBody> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ClientCubit, ClientState>(
-      bloc: widget.clientCubit,
-      builder: (context, state) {
-        return CuScaffold(
-          drawer: WiredDrawer(context: context),
-          appBar: CuAppBar(),
-          body: Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SizedBox(
-                    width: 400,
-                    child: Hero(
-                      tag: 'input',
-                      child: Column(
-                        children: [
-                          CuText.med14(Strings.enterIntegral.tr()),
-                          CuTextField(
-                            autofocus: widget.isTextSelected,
-                            onSubmitted: (submittedText) {
-                              widget.clientCubit.solveIntegral(submittedText);
-                            },
-                            prefixIcon: IconButton(
-                              onPressed: () {
-                                _controller.clear();
-                                widget.clientCubit.reset();
-                              },
-                              icon: Icon(
-                                Icons.clear,
-                                color: CuColors.of(context).mintDark,
-                              ),
-                            ),
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                if (_controller.text.isNotEmpty) {
-                                  widget.clientCubit
-                                      .solveIntegral(_controller.text);
-                                }
-                              },
-                              icon: Icon(
-                                Icons.send,
-                                color: CuColors.of(context).mintDark,
-                              ),
-                            ),
-                            controller: _controller,
+    return CuScaffold(
+      drawer: WiredDrawer(context: context),
+      appBar: CuAppBar(),
+      body: Center(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: 400,
+                child: Hero(
+                  tag: 'input',
+                  child: Column(
+                    children: [
+                      CuText.med14(Strings.enterIntegral.tr()),
+                      CuTextField(
+                        autofocus: widget.isTextSelected,
+                        onSubmitted: (submittedText) {
+                          if (submittedText.isNotEmpty) {
+                            widget.mainPageBloc.add(
+                              SolveRequested(submittedText),
+                            );
+                          }
+                        },
+                        onChanged: (newText) {
+                          widget.mainPageBloc.add(
+                            InputChanged(newText),
+                          );
+                        },
+                        prefixIcon: IconButton(
+                          onPressed: () {
+                            if (_controller.text.isNotEmpty) {
+                              _controller.clear();
+                              return;
+                            }
+
+                            context.router.popUntilRoot();
+                          },
+                          icon: Icon(
+                            Icons.clear,
+                            color: CuColors.of(context).mintDark,
                           ),
-                        ],
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            if (_controller.text.isNotEmpty) {
+                              widget.mainPageBloc.add(
+                                SolveRequested(_controller.text),
+                              );
+                            }
+                          },
+                          icon: Icon(
+                            Icons.send,
+                            color: CuColors.of(context).mintDark,
+                          ),
+                        ),
+                        controller: _controller,
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                if (state is ClientLoading) const CuInterpretingView(),
-                if (state is ClientSuccess)
-                  _SuccessBody(
-                    inputInTex: state.inputInTex,
-                    inputInUtf: state.inputInUtf,
-                    outputInTex: state.outputInTex,
-                    outputInUtf: state.outputInUtf,
-                    duration: state.duration,
-                  ),
-                if (state is ClientFailure)
-                  _FailureBody(
-                    errors: state.errors,
-                  ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+            BlocBuilder<MainPageBloc, MainPageState>(
+              bloc: widget.mainPageBloc,
+              builder: (context, state) {
+                if (state is InterpretingState) {
+                  return const CuInterpretLoadingCard();
+                }
+
+                if (state is InterpretedState) {
+                  return CuInterpretResultCard(
+                    child: TexView(state.inputInTex),
+                  );
+                }
+
+                if (state is SolvingState) {
+                  // TODO: implement
+                  return const CuInterpretLoadingCard();
+                }
+
+                if (state is SolvedState) {
+                  return CuSolveResultCard(
+                    copyTex: () {},
+                    copyUtf: () {},
+                    shareUtf: () {},
+                    solvingDuration: state.duration,
+                    child: TexView(
+                      '${state.inputInTex} = ${state.outputInTex}',
+                    ),
+                  );
+                }
+
+                return Container();
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -242,23 +272,6 @@ class _SuccessBodyState extends State<_SuccessBody> {
       child: CuToast.success(message: Strings.copiedToClipboard.tr()),
       gravity: ToastGravity.BOTTOM,
       toastDuration: const Duration(seconds: 2),
-    );
-  }
-}
-
-class _FailureBody extends StatelessWidget {
-  const _FailureBody({
-    required this.errors,
-  });
-
-  final List<String> errors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (final error in errors) CuText.med14(error),
-      ],
     );
   }
 }

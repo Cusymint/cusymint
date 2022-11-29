@@ -19,6 +19,7 @@ dependencies:
   share_plus: ^6.0.0
   shared_preferences: ^2.0.15
   url_launcher: ^6.1.6
+  rxdart: ^0.27.7
 
   cusymint_l10n:
     path: ../cusymint_l10n
