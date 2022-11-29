@@ -37,6 +37,25 @@ class CommonMolecules extends StorybookPart {
           ),
         ),
         Story(
+          name: 'Molecules/ScrollableHorizontalWrapper',
+          builder: (context) => CuScrollableHorizontalWrapper(
+            child: Placeholder(
+              fallbackHeight: context.knobs.slider(
+                label: 'Height',
+                initial: 10,
+                max: 100,
+                min: 0,
+              ),
+              fallbackWidth: context.knobs.slider(
+                label: 'Width',
+                initial: 100,
+                max: 1000,
+                min: 10,
+              ),
+            ),
+          ),
+        ),
+        Story(
           name: 'Molecules/Scaffold',
           builder: (context) {
             final displayAppBar = context.knobs.boolean(
