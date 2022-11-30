@@ -1,4 +1,0 @@
-# melos_managed_dependency_overrides: cusymint_client_interface
-dependency_overrides:
-  cusymint_client_interface:
-    path: ../cusymint_client_interface

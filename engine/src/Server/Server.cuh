@@ -15,10 +15,9 @@ class Server {
     /// @example "ws://localhost:8000"
     std::string _listen_on;
     CachedParser _cached_parser;
-    Solver _solver;
 
   public:
-    Server(std::string listen_on, CachedParser cached_parser, Solver solver);
+    Server(std::string listen_on, CachedParser cached_parser);
     ~Server();
     void run();
 };

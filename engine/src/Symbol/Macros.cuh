@@ -282,6 +282,7 @@ template <class T, class U> struct MacroType<T(U)> {
 #define DEFINE_INVALID_DERIVATIVE(_name)                               \
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                      \
         Util::crash("Trying to calculate a derivative of %s", #_name); \
+        return 0; /* Just to silence warnings */                       \
     }
 
 #define DEFINE_ZERO_ARGUMENT_OP_FUNCTIONS(_name)                                      \
