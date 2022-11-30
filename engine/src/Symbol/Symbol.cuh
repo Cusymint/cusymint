@@ -151,12 +151,6 @@ namespace Sym {
 
         [[nodiscard]] __host__ __device__ inline size_t size() const { return unknown.size; }
 
-        [[nodiscard]] __host__ __device__ inline size_t& capacity() { return unknown.capacity; }
-
-        [[nodiscard]] __host__ __device__ inline size_t capacity() const {
-            return unknown.capacity;
-        }
-
         [[nodiscard]] __host__ __device__ inline size_t& additional_required_size() {
             return unknown.additional_required_size;
         }
@@ -212,61 +206,49 @@ namespace Sym {
         }
 
         /*
-         * @brief Pointer to the `idx`th element after `this`. Error if the index is out of range of
-         * the `Symbol`'s capacity.
+         * @brief Pointer to the `idx`th element after `this`.
          */
-        [[nodiscard]] __host__ __device__ inline Util::SimpleResult<const Symbol*>
-        operator[](const size_t idx) const {
-            if (capacity() <= idx) {
-                return Util::SimpleResult<const Symbol*>::error();
-            }
-
-            return Util::SimpleResult<const Symbol*>::good(this + idx);
-        }
-
-        /*
-         * @brief Pointer to the `idx`th element after `this`. Error if the index is out of range of
-         * the `Symbol`'s capacity.
-         */
-        [[nodiscard]] __host__ __device__ inline Util::SimpleResult<Symbol*>
-        operator[](const size_t idx) {
-            return const_cast<const Symbol*>(this)->operator[](idx).map_good<Symbol*>(
-                [](const Symbol* const good) {
-                    return Util::SimpleResult<Symbol*>::good(const_cast<Symbol*>(good));
-                });
-        }
-
-        /*
-         * @brief Reference to the `idx`th element after `this`
-         */
-        [[nodiscard]] __host__ __device__ inline const Symbol&
-        at_unchecked(const size_t idx) const {
+        [[nodiscard]] __host__ __device__ inline const Symbol* at(const size_t idx) const {
             if constexpr (Consts::DEBUG) {
                 // If `this` is under construction, we allow access to symbols after it without
                 // checks
-                if (capacity() != BUILDER_SIZE && capacity() <= idx) {
-                    Util::crash("Trying to access element after a Symbol at index %lu without "
-                                "checking bounds, but the symbol's "
-                                "capacity is %lu and it is not under construction",
-                                idx, capacity());
+                if (size() != BUILDER_SIZE && size() <= idx) {
+                    Util::crash(
+                        "Trying to access element at index %lu after a symbol, but the symbol's "
+                        "size is %lu and it is not under construction",
+                        idx, size());
                 }
             }
 
-            return *(this + idx);
+            return this + idx;
+        }
+
+        /*
+         * @brief Pointer to the `idx`th element after `this`.
+         */
+        [[nodiscard]] __host__ __device__ inline Symbol* at(const size_t idx) {
+            return const_cast<Symbol*>(const_cast<const Symbol*>(this)->at(idx));
         }
 
         /*
          * @brief Reference to the `idx`th element after `this`
          */
-        [[nodiscard]] __host__ __device__ inline Symbol& at_unchecked(const size_t idx) {
-            return const_cast<Symbol&>(const_cast<Symbol* const>(this)->at_unchecked(idx));
+        [[nodiscard]] __host__ __device__ inline const Symbol& operator[](const size_t idx) const {
+            return *at(idx);
+        }
+
+        /*
+         * @brief Reference to the `idx`th element after `this`
+         */
+        [[nodiscard]] __host__ __device__ inline Symbol& operator[](const size_t idx) {
+            return const_cast<Symbol&>(const_cast<Symbol* const>(this)->operator[](idx));
         }
 
         /*
          * @brief Pointer to the symbol right after `this`
          */
         [[nodiscard]] __host__ __device__ inline const Symbol& child() const {
-            return at_unchecked(1);
+            return this->operator[](1);
         }
 
         /*
@@ -421,19 +403,6 @@ namespace Sym {
          */
         __host__ __device__ size_t compress_to(Symbol& destination);
 
-        /*
-         * @brief Zwraca funkcję podcałkową jeśli `this` jest całką. Undefined behavior w
-         * przeciwnym wypadku.
-         *
-         * @return Wskaźnik do funkcji podcałkowej
-         */
-        [[nodiscard]] __host__ __device__ inline Symbol* integrand() {
-            return integral.integrand();
-        }
-        [[nodiscard]] __host__ __device__ inline const Symbol* integrand() const {
-            return integral.integrand();
-        }
-
         __host__ __device__ void
         mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space);
 
@@ -559,108 +528,6 @@ namespace Sym {
          * @return Number of symbols inserted.
          */
         __host__ __device__ size_t derivative_to(Symbol* const destination);
-
-        template <class S> class GenericIterator {
-            S* parent = nullptr;
-            size_t index_ = 0;
-
-            GenericIterator() = default;
-
-          public:
-            /*
-             * @brief Creates an iterator to a symbol sequence
-             *
-             * @return Good with the iterator on success, error when the given index is past the
-             * allocated space of the parent
-             */
-            __host__ __device__ static Util::SimpleResult<GenericIterator>
-            from_at(S& parent, const size_t index) {
-                GenericIterator iterator;
-                iterator.parent = parent;
-                iterator.index_ = index;
-
-                if (index >= parent.capacity()) {
-                    return Util::SimpleResult<GenericIterator>::error();
-                }
-
-                return Util::SimpleResult<GenericIterator>::good(iterator);
-            }
-
-            /*
-             * @brief Index of the expression the iterator is pointing at
-             */
-            [[nodiscard]] __host__ __device__ size_t index() const { return index_; }
-
-            /*
-             * @brief Const symbol pointed to by the iterator
-             */
-            [[nodiscard]] __host__ __device__ const Symbol* const_current() const {
-                return parent->at_unchecked(index_);
-            };
-
-            /*
-             * @brief Symbol pointed to by the iterator
-             */
-            [[nodiscard]] __host__ __device__ Symbol& current() {
-                return const_cast<Symbol&>(this->const_current());
-            };
-
-            /*
-             * @brief `true` when the iterator can be offset by `offset` without going into
-             * unallocated memory
-             */
-            template <class O>
-            [[nodiscard]] __host__ __device__ bool can_offset_by(const O offset) const {
-                return index_ + offset < parent->capacity();
-            }
-
-            /*
-             * @brief Creates a new iterator offset by `offset` expressions
-             *
-             * @return Good with the iterator on success, error when the given index is past the
-             * allocated space of the parent
-             */
-            template <class O>
-            [[nodiscard]] __host__ __device__ Util::SimpleResult<GenericIterator>
-            operator+(const O offset) const {
-                return from_at(parent, index_ + offset);
-            }
-
-            /*
-             * @brief Creates a new iterator offset by `-offset` expressions
-             */
-            template <class O>
-            [[nodiscard]] __host__ __device__ Util::SimpleResult<GenericIterator>
-            operator-(const O offset) const {
-                return *this + (-offset);
-            }
-
-            /*
-             * @brief Offsets the iterator by `offset`. Returns error when the resulting iterator
-             * would point a location past the allocated space.
-             */
-            template <class O>
-            [[nodiscard]] __host__ __device__ Util::BinaryResult operator+=(const O offset) {
-                if (!can_offset_by(offset)) {
-                    return Util::BinaryResult::error();
-                }
-
-                index_ += offset;
-                return Util::BinaryResult::good();
-            }
-
-            /*
-             * @brief Offsets the iterator by `-offset. Returns error when the resulting iterator
-             * would point a location past the allocated space.
-             */
-            template <class O>
-            [[nodiscard]] __host__ __device__ Util::BinaryResult operator-=(const O offset) {
-                return *this += -offset;
-            }
-        };
-
-        using Iterator = GenericIterator<Symbol>;
-        using ConstIterator = GenericIterator<const Symbol>;
     };
 
     /*
@@ -682,6 +549,139 @@ namespace Sym {
      * @return `false` if symbols are equal, `true` otherwise
      */
     __host__ __device__ bool operator!=(const Symbol& sym1, const Symbol& sym2);
+
+    /*
+     * @brief Iterator of an array of `Symbol`s with capacity bounds checking.
+     * This should be defined inside of `Symbol`, but forward declarations of nested classes are
+     * impossible (and we need a forward declaration in Macros.cuh).
+     */
+    template <class S> class GenericSymbolIterator {
+        S* parent = nullptr;
+        size_t index_ = 0;
+        size_t capacity_ = 0;
+
+        GenericSymbolIterator() = default;
+
+      public:
+        /*
+         * @brief Creates an iterator to a symbol sequence
+         *
+         * @return Good with the iterator on success, error when the given index is past the
+         * allocated space of the parent
+         */
+        __host__ __device__ static Util::SimpleResult<GenericSymbolIterator>
+        from_at(S& parent, const size_t index, const size_t capacity) {
+            GenericSymbolIterator iterator;
+            iterator.parent = parent;
+            iterator.index_ = index;
+            iterator.capacity_ = capacity;
+
+            if (index >= capacity) {
+                return Util::SimpleResult<GenericSymbolIterator>::error();
+            }
+
+            return Util::SimpleResult<GenericSymbolIterator>::good(iterator);
+        }
+
+        /*
+         * @brief Index of the expression the iterator is pointing at
+         */
+        [[nodiscard]] __host__ __device__ size_t index() const { return index_; }
+
+        /*
+         * @brief Capacity of the iterated array
+         */
+        [[nodiscard]] __host__ __device__ size_t capacity() const { return capacity_; }
+
+        /*
+         * @brief How many `Symbol`s are within bounds starting from the current symbol (e.g. if the
+         * current symbol is the last one, returns 1).
+         *
+         */
+        [[nodiscard]] __host__ __device__ size_t left() const { return capacity_ - index_; }
+
+        /*
+         * @brief Const symbol pointed to by the iterator
+         */
+        [[nodiscard]] __host__ __device__ const Symbol* const_current() const {
+            return (*parent)[index_];
+        };
+
+        /*
+         * @brief Symbol pointed to by the iterator
+         */
+        [[nodiscard]] __host__ __device__ Symbol& current() {
+            return const_cast<Symbol&>(this->const_current());
+        };
+
+        [[nodiscard]] __host__ __device__ const Symbol& operator*() const {
+            return parent->operator[](index_);
+        };
+
+        [[nodiscard]] __host__ __device__ Symbol& operator*() {
+            return const_cast<Symbol&>(*const_cast<const GenericSymbolIterator<S>&>(*this));
+        };
+
+        [[nodiscard]] __host__ __device__ const Symbol* operator->() const { return &**this; };
+
+        [[nodiscard]] __host__ __device__ Symbol* operator->() { return &**this; };
+
+        /*
+         * @brief `true` when the iterator can be offset by `offset` without going into
+         * unallocated memory
+         */
+        template <class O>
+        [[nodiscard]] __host__ __device__ bool can_offset_by(const O offset) const {
+            return index_ + offset < parent->capacity();
+        }
+
+        /*
+         * @brief Creates a new iterator offset by `offset` expressions
+         *
+         * @return Good with the iterator on success, error when the given index is past the
+         * allocated space of the parent
+         */
+        template <class O>
+        [[nodiscard]] __host__ __device__ Util::SimpleResult<GenericSymbolIterator>
+        operator+(const O offset) const {
+            return from_at(parent, index_ + offset);
+        }
+
+        /*
+         * @brief Creates a new iterator offset by `-offset` expressions
+         */
+        template <class O>
+        [[nodiscard]] __host__ __device__ Util::SimpleResult<GenericSymbolIterator>
+        operator-(const O offset) const {
+            return *this + (-offset);
+        }
+
+        /*
+         * @brief Offsets the iterator by `offset`. Returns error when the resulting iterator
+         * would point a location past the allocated space.
+         */
+        template <class O>
+        [[nodiscard]] __host__ __device__ Util::BinaryResult operator+=(const O offset) {
+            if (!can_offset_by(offset)) {
+                return Util::BinaryResult::error();
+            }
+
+            index_ += offset;
+            return Util::BinaryResult::good();
+        }
+
+        /*
+         * @brief Offsets the iterator by `-offset. Returns error when the resulting iterator
+         * would point a location past the allocated space.
+         */
+        template <class O>
+        [[nodiscard]] __host__ __device__ Util::BinaryResult operator-=(const O offset) {
+            return *this += -offset;
+        }
+    };
+
+    using SymbolIterator = GenericSymbolIterator<Symbol>;
+    using SymbolConstIterator = GenericSymbolIterator<const Symbol>;
 }
 
 #endif

@@ -31,7 +31,7 @@ namespace Sym {
                                                                       const Symbol& source,
                                                                       const size_t symbol_count) {
         for (size_t i = 0; i < symbol_count; ++i) {
-            source.at_unchecked(symbol_count - i - 1).copy_single_to(destination.at_unchecked(i));
+            source[symbol_count - i - 1].copy_single_to(destination[i]);
         }
     }
 

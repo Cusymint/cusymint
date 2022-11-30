@@ -18,8 +18,8 @@ namespace Sym {
     __host__ __device__ void seal_single_substitution();
     __host__ __device__ void seal_substitutions(const size_t count, const size_t size);
 
-    [[nodiscard]] __host__ __device__ Symbol* integrand();
-    [[nodiscard]] __host__ __device__ const Symbol* integrand() const;
+    [[nodiscard]] __host__ __device__ Symbol& integrand();
+    [[nodiscard]] __host__ __device__ const Symbol& integrand() const;
 
     /*
      * @brief Copies `*this`, and all its substitutions into dst, and adds expression from
@@ -35,7 +35,7 @@ namespace Sym {
      */
     [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
     copy_substitutions_with_an_additional_one(const Symbol& substitution_expr,
-                                              Symbol& destination) const;
+                                              SymbolIterator& destination) const;
 
     /*
      * @brief Copies the integral symbol and its substitutions to `destination`. Sets size of

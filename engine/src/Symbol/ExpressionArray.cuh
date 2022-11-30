@@ -145,7 +145,9 @@ namespace Sym {
             /*
              * @brief Accesses the element pointed to by the iterator
              */
-            [[nodiscard]] __host__ __device__ Symbol* operator->() const { return array->at(index_); }
+            [[nodiscard]] __host__ __device__ Symbol* operator->() const {
+                return array->at(index_);
+            }
 
             /*
              * @brief Pointer to the expression pointed to by the iterator

@@ -1,10 +1,9 @@
 #ifndef META_OPERATORS_CUH
 #define META_OPERATORS_CUH
 
-#include "Symbol.cuh"
-
 #include <type_traits>
 
+#include "Symbol.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include "Utils/Meta.cuh"
 

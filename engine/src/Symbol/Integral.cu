@@ -47,7 +47,7 @@ namespace Sym {
     }
 
     DEFINE_IS_FUNCTION_OF(Integral) {
-        return integrand()->is_function_of(expressions, expression_count);
+        return integrand().is_function_of(expressions, expression_count);
     }
 
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Integral) {
@@ -55,12 +55,12 @@ namespace Sym {
             stack.push(first_substitution()->symbol());
         }
 
-        stack.push(integrand());
+        stack.push(&integrand());
     }
 
     DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(Integral) {
         push_children_onto_stack(stack);
-        integrand()->additional_required_size() += additional_required_size;
+        integrand().additional_required_size() += additional_required_size;
     }
 
     __host__ __device__ void Integral::seal_no_substitutions() { seal_substitutions(0, 0); }
@@ -74,34 +74,32 @@ namespace Sym {
         substitution_count = count;
     }
 
-    __host__ __device__ void Integral::seal() { size = integrand_offset + integrand()->size(); }
+    __host__ __device__ void Integral::seal() { size = integrand_offset + integrand().size(); }
 
-    __host__ __device__ Symbol* Integral::integrand() {
-        return Symbol::from(this) + integrand_offset;
-    }
+    __host__ __device__ Symbol& Integral::integrand() { return (*symbol())[integrand_offset]; }
 
-    __host__ __device__ const Symbol* Integral::integrand() const {
-        return Symbol::from(this) + integrand_offset;
+    __host__ __device__ const Symbol& Integral::integrand() const {
+        return const_cast<Symbol&>(const_cast<Integral* const>(this)->integrand());
     }
 
     [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
     Integral::copy_substitutions_with_an_additional_one(const Symbol& substitution_expr,
-                                                        Symbol& destination) const {
-        const size_t used_space = integrand_offset + 1 + substitution_expr.size();
-        if (destination.capacity() <= used_space) {
+                                                        SymbolIterator& destination) const {
+        const size_t required_space = integrand_offset + 1 + substitution_expr.size();
+        if (destination.left() < required_space) {
             return Util::SimpleResult<size_t>::error();
         }
 
-        Symbol::copy_symbol_sequence(&destination, symbol(), integrand_offset);
+        Symbol::copy_symbol_sequence(&destination.current(), symbol(), integrand_offset);
 
-        Symbol* const new_substitution = &destination + integrand_offset;
+        Symbol* const new_substitution = &destination.current() + integrand_offset;
         Substitution::create(&substitution_expr, new_substitution, substitution_count);
 
-        destination.integral.substitution_count += 1;
-        destination.integral.integrand_offset += new_substitution->size();
-        destination.integral.size += new_substitution->size();
+        destination->as<Integral>().substitution_count += 1;
+        destination->as<Integral>().integrand_offset += new_substitution->size();
+        destination->as<Integral>().size += new_substitution->size();
 
-        return Util::SimpleResult<size_t>::good(used_space);
+        return Util::SimpleResult<size_t>::good(required_space);
     }
 
     __host__ __device__ void Integral::copy_without_integrand_to(Symbol* const destination) const {

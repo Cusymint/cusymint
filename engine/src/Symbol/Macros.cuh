@@ -19,6 +19,9 @@ namespace Sym {
     static constexpr size_t BUILDER_SIZE = std::numeric_limits<size_t>::max();
 
     union Symbol;
+    template <class S> class GenericSymbolIterator;
+    using SymbolIterator = GenericSymbolIterator<Symbol>;
+    using SymbolConstIterator = GenericSymbolIterator<const Symbol>;
 }
 
 // This is a workaround for use of commas in template types in macros
@@ -61,7 +64,6 @@ template <class T, class U> struct MacroType<T(U)> {
         Sym::Type type;                                                                  \
         size_t size;                                                                     \
         size_t additional_required_size;                                                 \
-        size_t capacity;                                                                 \
         bool simplified;                                                                 \
         bool to_be_copied;                                                               \
                                                                                          \
@@ -69,7 +71,6 @@ template <class T, class U> struct MacroType<T(U)> {
             return {                                                                     \
                 .type = Sym::Type::_name,                                                \
                 .size = BUILDER_SIZE,                                                    \
-                .capacity = BUILDER_SIZE,                                                \
                 .simplified = _simple,                                                   \
                 .to_be_copied = false,                                                   \
                 .additional_required_size = 0,                                           \
@@ -82,7 +83,6 @@ template <class T, class U> struct MacroType<T(U)> {
             return {                                                                     \
                 .type = Sym::Type::_name,                                                \
                 .size = 1,                                                               \
-                .capacity = 1,                                                           \
                 .simplified = _simple,                                                   \
                 .to_be_copied = false,                                                   \
                 .additional_required_size = 0,                                           \
