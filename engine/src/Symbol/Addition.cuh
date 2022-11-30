@@ -11,6 +11,12 @@ namespace Sym {
     std::string to_string() const;
     std::string to_tex() const;
 
+    /*
+     * @brief ...
+     */
+    __host__ __device__ static const Sym::Symbol& extract_base_and_coefficient(const Sym::Symbol& symbol,
+                                                                        double& coefficient);
+
   private:
     /*
      * @brief Sprawdza, czy `expr1 == sin^2(x)` i `expr2 == cos^2(x)`

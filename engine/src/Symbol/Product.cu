@@ -10,6 +10,7 @@
 #include "Symbol/Symbol.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
+#include "Utils/Order.cuh"
 
 namespace {
     std::string fraction_to_tex(const Sym::Symbol& numerator, const Sym::Symbol& denominator) {
@@ -21,12 +22,39 @@ namespace {
         return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(), denominator.to_tex());
     }
 
-    __host__ __device__ void change_expression_coefficient_by(double value,
-                                                              Sym::Power& expression) {
-        double& coefficient =
-            expression.arg2().as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
-        if ((coefficient += value) == 0) {
-            expression.symbol()->init_from(Sym::NumericConstant::with_value(1));
+    // __host__ __device__ void change_expression_coefficient_by(double value,
+    //                                                           Sym::Power& expression) {
+    //     double& coefficient =
+    //         expression.arg2().as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
+    //     if ((coefficient += value) == 0) {
+    //         expression.symbol()->init_from(Sym::NumericConstant::with_value(1));
+    //     }
+    // }
+
+    __host__ __device__ void extract_base_exponent_and_coefficient(const Sym::Symbol& symbol,
+                                                                   const Sym::Symbol*& base,
+                                                                   const Sym::Symbol*& exponent,
+                                                                   double& coefficient) {
+        const Sym::Symbol* inner = &symbol;
+        if (inner->is(Sym::Type::Negation)) {
+            inner = &inner->as<Sym::Negation>().arg();
+        }
+
+        if (!inner->is(Sym::Type::Power)) {
+            base = inner;
+            // we do not assign to exponent as it has default value
+            coefficient = 1;
+            return;
+        }
+
+        base = &inner->as<Sym::Power>().arg1();
+
+        exponent = &Sym::Addition::extract_base_and_coefficient(inner->as<Sym::Power>().arg2(),
+                                                                coefficient);
+
+        if (base->is(Sym::Type::Reciprocal)) {
+            base = &base->as<Sym::Reciprocal>().arg();
+            coefficient = -coefficient;
         }
     }
 }
@@ -39,6 +67,11 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
         simplify_structure(help_space);
+
+        if (!symbol()->is(Type::Product)) {
+            return true;
+        }
+
         const auto result = simplify_pairs(help_space);
 
         if (arg1().is(0) || arg2().is(0)) {
@@ -207,7 +240,63 @@ namespace Sym {
     }
 
     DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Product) {
-        return Symbol::compare_expressions(*expr1, *expr2, *destination);
+        NumericConstant one = NumericConstant::with_value(1);
+
+        const Symbol* base1;
+        const Symbol* base2;
+        const Symbol* exponent1 = one.symbol();
+        const Symbol* exponent2 = one.symbol();
+        double coef1;
+        double coef2;
+
+        extract_base_exponent_and_coefficient(*expr1, base1, exponent1, coef1);
+        extract_base_exponent_and_coefficient(*expr2, base2, exponent2, coef2);
+
+        const auto base_order = Symbol::compare_expressions(*base1, *base2, *destination);
+        
+        if (base_order != Util::Order::Equal) {
+            return base_order;
+        }
+
+        if (exponent1->is(Type::NumericConstant) && exponent2->is(Type::NumericConstant)) {
+            const double exp_sum = coef1 * exponent1->as<NumericConstant>().value +
+                                   coef2 * exponent2->as<NumericConstant>().value;
+            if (exp_sum == 0) {
+                destination->init_from(NumericConstant::with_value(1));
+                return Util::Order::Equal;
+            }
+            if (base1->is(Type::NumericConstant)) {
+                destination->init_from(NumericConstant::with_value(pow(base1->as<NumericConstant>().value, exp_sum)));
+                return Util::Order::Equal;
+            }
+            Pow<Copy, Num>::init(*destination, {*base1, exp_sum});
+            return Util::Order::Equal;
+        }
+
+        const auto order = Symbol::compare_expressions(*exponent1, *exponent2, *destination);
+
+        if constexpr (COMPARE_ONLY) {
+            return order;
+        }
+
+        if (order != Util::Order::Equal) {
+            return order;
+        }
+
+        const double sum = coef1 + coef2;
+        if (sum == 0) {
+            destination->init_from(one);
+        }
+        else if (sum == 1) {
+            Pow<Copy, Copy>::init(*destination, {*base1, *exponent1});
+        }
+        else if (sum == -1) {
+            Pow<Inv<Copy>, Copy>::init(*destination, {*base1, *exponent1});
+        }
+        else {
+            Pow<Copy, Mul<Num, Copy>>::init(*destination, {*base1, sum, *exponent1});
+        }
+        return Util::Order::Equal;
     }
 
     std::string Product::to_string() const {

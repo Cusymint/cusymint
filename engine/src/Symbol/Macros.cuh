@@ -425,6 +425,7 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ static SimplificationResult try_fuse_symbols(                         \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);                  \
                                                                                               \
+    template <bool COMPARE_ONLY = false>                                                      \
     __host__ __device__ static Util::Order compare_and_try_fuse_symbols(                      \
         Symbol* const expr1, Symbol* const expr2, Symbol* const destination);                 \
     /*                                                                                        \
@@ -439,6 +440,7 @@ template <class T, class U> struct MacroType<T(U)> {
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space)
 
 #define DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(_name)                       \
+    template <bool COMPARE_ONLY>                                         \
     __host__ __device__ Util::Order _name::compare_and_try_fuse_symbols( \
         Symbol* const expr1, Symbol* const expr2, Symbol* const destination)
 
@@ -597,8 +599,8 @@ template <class T, class U> struct MacroType<T(U)> {
         iterator.advance();                                                                                \
                                                                                                            \
         while (iterator.is_valid()) {                                                                      \
-            if (Symbol::compare_expressions(*last, *iterator.current(), help_space) ==                     \
-                Util::Order::Less) {                                                                       \
+            if (_name::compare_and_try_fuse_symbols<true>(last, iterator.current(),                        \
+                                                          &help_space) != Util::Order::Greater) {          \
                 return false;                                                                              \
             }                                                                                              \
                                                                                                            \

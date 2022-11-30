@@ -12,32 +12,6 @@
 
 #include <fmt/core.h>
 
-namespace {
-    __host__ __device__ const Sym::Symbol& extract_base_and_coefficient(const Sym::Symbol& symbol,
-                                                                        double& coefficient) {
-        if (symbol.is(Sym::Type::Negation)) {
-            const Sym::Symbol& base = symbol.as<Sym::Negation>().arg();
-            if (Sym::Mul<Sym::Num, Sym::Any>::match(base)) {
-                coefficient = -base.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
-                return base.as<Sym::Product>().arg2();
-            }
-            coefficient = -1;
-            return base;
-        }
-        if (Sym::Mul<Sym::Num, Sym::Any>::match(symbol)) {
-            coefficient = symbol.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
-            const Sym::Symbol& base = symbol.as<Sym::Product>().arg2();
-            if (base.is(Sym::Type::Negation)) {
-                coefficient = -coefficient;
-                return base.as<Sym::Negation>().arg();
-            }
-            return base;
-        }
-        coefficient = 1;
-        return symbol;
-    }
-}
-
 namespace Sym {
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Addition)
     DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Addition)
@@ -46,10 +20,13 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
         simplify_structure(help_space);
+
+        if (!symbol()->is(Type::Addition))
+        {
+            return true;
+        }
+
         const auto result = simplify_pairs(help_space);
-        // if (try_fuse_same_neighbouring_expressions()) {
-        //     return false; // changing structure may require additional simplifications
-        // }
         eliminate_zeros();
         simplify_structure(help_space);
         return !is_another_loop_required(result);
@@ -133,12 +110,29 @@ namespace Sym {
 
         const auto order = Symbol::compare_expressions(base1, base2, *destination);
 
-        printf("%s %s\n", type_name(base1.type()), type_name(base2.type()));
+        if (base1.is(Type::NumericConstant) && base2.is(Type::NumericConstant)) {
+            destination->init_from(
+                NumericConstant::with_value(coef1 * base1.as<NumericConstant>().value +
+                                            coef2 * base2.as<NumericConstant>().value));
+            return Util::Order::Equal;
+        }
+
+        if constexpr (COMPARE_ONLY) {
+            return order;
+        }
+
+        // if (base1.is(Type::NumericConstant) && base2.is(Type::NumericConstant))
+        //     printf("%f %f\n", base1.as<NumericConstant>().value,
+        //     base2.as<NumericConstant>().value);
+
+        // printf("%s %s\n", type_name(base1.type()), type_name(base2.type()));
 
         if (order != Util::Order::Equal) {
             return order;
         }
-        printf("XXXXXX\n");
+
+        // printf("Equal\n");
+
         const double sum = coef1 + coef2;
         if (sum == 0) {
             destination->init_from(NumericConstant::with_value(0));
@@ -150,9 +144,34 @@ namespace Sym {
             Neg<Copy>::init(*destination, {base1});
         }
         else {
+            // printf("init %f*symbol\n", sum);
             Mul<Num, Copy>::init(*destination, {coef1 + coef2, base1});
         }
         return Util::Order::Equal;
+    }
+
+    __host__ __device__ const Sym::Symbol&
+    Addition::extract_base_and_coefficient(const Sym::Symbol& symbol, double& coefficient) {
+        if (symbol.is(Sym::Type::Negation)) {
+            const Sym::Symbol& base = symbol.as<Sym::Negation>().arg();
+            if (Sym::Mul<Sym::Num, Sym::Any>::match(base)) {
+                coefficient = -base.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
+                return base.as<Sym::Product>().arg2();
+            }
+            coefficient = -1;
+            return base;
+        }
+        if (Sym::Mul<Sym::Num, Sym::Any>::match(symbol)) {
+            coefficient = symbol.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
+            const Sym::Symbol& base = symbol.as<Sym::Product>().arg2();
+            if (base.is(Sym::Type::Negation)) {
+                coefficient = -coefficient;
+                return base.as<Sym::Negation>().arg();
+            }
+            return base;
+        }
+        coefficient = 1;
+        return symbol;
     }
 
     __host__ __device__ bool Addition::try_fuse_same_neighbouring_expressions() {

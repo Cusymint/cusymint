@@ -6,6 +6,7 @@
 #include "IntegratorKernels.cuh"
 #include "StaticFunctions.cuh"
 
+#include "Symbol/SymbolType.cuh"
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Meta.cuh"
 
