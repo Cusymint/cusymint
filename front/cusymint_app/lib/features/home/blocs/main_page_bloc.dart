@@ -15,6 +15,10 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
       _onInputChanged,
       transformer: debounceRestartable(const Duration(milliseconds: 200)),
     );
+    on<ClearRequested>(
+      _onClearRequested,
+      transformer: restartable(),
+    );
   }
 
   final ClientFactory clientFactory;
@@ -84,6 +88,13 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
     } catch (e) {
       // TODO: nice error handling
     }
+  }
+
+  FutureOr<void> _onClearRequested(
+    ClearRequested event,
+    Emitter<MainPageState> emit,
+  ) {
+    emit(const MainPageState());
   }
 }
 

@@ -187,6 +187,9 @@ class _MainPageInputState extends State<_MainPageInput> {
                   onPressed: () {
                     if (_controller.text.isNotEmpty) {
                       _controller.clear();
+                      widget.mainPageBloc.add(
+                        const ClearRequested(),
+                      );
                       return;
                     }
 
