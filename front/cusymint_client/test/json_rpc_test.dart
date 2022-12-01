@@ -156,6 +156,12 @@ void main() {
         });
       });
 
+      final endOfLineErrorMessage = 'Unexpected token: <end>';
+      test('UnexpectedEndOfInput', () {
+        final error = CusymintClientJsonRpc.parseError(endOfLineErrorMessage);
+        expect(error, isA<UnexpectedEndOfInputError>());
+      });
+
       final incorrectErrorMessages = [
         'SZSZ: xdx',
         'Unexpected Token: \\',

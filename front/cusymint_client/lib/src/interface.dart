@@ -65,6 +65,12 @@ class UnexpectedTokenError extends ResponseError {
   final String token;
 }
 
+class UnexpectedEndOfInputError extends ResponseError {
+  const UnexpectedEndOfInputError({
+    String errorMessage = "Unexpected end of input",
+  }) : super(errorMessage);
+}
+
 abstract class CusymintClient {
   Future<Response> solveIntegral(Request request);
   Future<Response> interpretIntegral(Request request);

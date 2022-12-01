@@ -65,6 +65,11 @@ class CusymintClientJsonRpc implements CusymintClient {
 
     if (errorMessage.startsWith(unexpectedTokenPrefix)) {
       final token = errorMessage.substring(unexpectedTokenPrefix.length);
+
+      if (token.contains("<end>")) {
+        return UnexpectedEndOfInputError();
+      }
+
       return UnexpectedTokenError(token: token);
     }
 
