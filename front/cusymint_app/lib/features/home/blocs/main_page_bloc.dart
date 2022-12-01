@@ -55,7 +55,19 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
 
   FutureOr<void> _onInputChanged(
       InputChanged event, Emitter<MainPageState> emit) async {
-    emit(InterpretingState(userInput: event.input));
+    String? previousInputInTex;
+    String? previousInputInUtf;
+
+    if (state is InterpretedState) {
+      previousInputInTex = (state as InterpretedState).inputInTex;
+      previousInputInUtf = (state as InterpretedState).inputInUtf;
+    }
+
+    emit(InterpretingState(
+      userInput: event.input,
+      previousInputInTex: previousInputInTex,
+      previousInputInUtf: previousInputInUtf,
+    ));
 
     final request = Request(event.input);
 
@@ -109,7 +121,17 @@ class InitialState extends MainPageState {
 }
 
 class InterpretingState extends MainPageState {
-  const InterpretingState({required super.userInput});
+  const InterpretingState({
+    required super.userInput,
+    this.previousInputInTex,
+    this.previousInputInUtf,
+  });
+
+  bool get hasPreviousInput =>
+      previousInputInTex != null && previousInputInUtf != null;
+
+  final String? previousInputInTex;
+  final String? previousInputInUtf;
 }
 
 class InterpretedState extends MainPageState {
