@@ -33,6 +33,7 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
 
       watch.stop();
 
+      // TODO: do something with duration
       final duration = watch.elapsed;
 
       emit(state.copyWith(
