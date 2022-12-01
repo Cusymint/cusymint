@@ -36,10 +36,10 @@ namespace Test {
 
     std::string get_different_fields(ScanVector vec1, ScanVector vec2); 
 
-    void test_correctly_checked(Util::DeviceArray<uint32_t> result,
+    void test_known_integrals_correctly_checked(Util::DeviceArray<uint32_t> result,
                                 std::vector<IndexVector> index_vectors); 
 
-    void test_correctly_checked(Util::DeviceArray<uint32_t> integral_result,
+    void test_heuristics_correctly_checked(Util::DeviceArray<uint32_t> integral_result,
                                 Util::DeviceArray<uint32_t> expression_result,
                                 std::vector<HeuristicPairVector> heuristics); 
 

@@ -15,7 +15,7 @@ namespace Test {
         return message;
     }
 
-    void test_correctly_checked(Util::DeviceArray<uint32_t> result,
+    void test_known_integrals_correctly_checked(Util::DeviceArray<uint32_t> result,
                                 std::vector<IndexVector> index_vectors) {
         auto result_vector = result.to_vector();
         ScanVector expected_result(result.size());
@@ -32,7 +32,7 @@ namespace Test {
             << get_different_fields(result_vector, expected_result);
     }
 
-    void test_correctly_checked(Util::DeviceArray<uint32_t> integral_result,
+    void test_heuristics_correctly_checked(Util::DeviceArray<uint32_t> integral_result,
                                 Util::DeviceArray<uint32_t> expression_result,
                                 std::vector<HeuristicPairVector> heuristics) {
         ASSERT_EQ(integral_result.size(), expression_result.size());

@@ -52,7 +52,7 @@ namespace Test {
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
-        test_correctly_checked(applicability, check_vectors);
+        test_known_integrals_correctly_checked(applicability, check_vectors);
     }
 
     KERNEL_TEST(ApplyKnownIntegrals) {
@@ -341,7 +341,7 @@ namespace Test {
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
         EXPECT_TRUE(are_expr_vectors_equal(expressions.to_vector(), expected_expressions_vector));
-        test_correctly_checked(new_integrals_flags, new_expressions_flags, expected_heuristics);
+        test_heuristics_correctly_checked(new_integrals_flags, new_expressions_flags, expected_heuristics);
     }
 
     KERNEL_TEST(ApplyHeuristics) {
