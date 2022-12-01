@@ -1,5 +1,17 @@
 import 'package:cusymint_ui/cusymint_ui.dart';
 
+class CuButtonRowCallbacks {
+  const CuButtonRowCallbacks({
+    required this.onCopyTex,
+    required this.onCopyUtf,
+    required this.onShareUtf,
+  });
+
+  final VoidCallback onCopyTex;
+  final VoidCallback onCopyUtf;
+  final VoidCallback onShareUtf;
+}
+
 class CuAnimatedHomeCard extends StatefulWidget {
   const CuAnimatedHomeCard({
     super.key,
@@ -9,9 +21,7 @@ class CuAnimatedHomeCard extends StatefulWidget {
     this.inputInTex,
     this.outputInTex,
     this.isLoading = false,
-    this.onCopyUtf,
-    this.onCopyTex,
-    this.onShareUtf,
+    this.buttonRowCallbacks,
   });
 
   final String? title;
@@ -23,14 +33,9 @@ class CuAnimatedHomeCard extends StatefulWidget {
   final String? outputInTex;
   final bool isLoading;
 
-  final VoidCallback? onCopyUtf;
-  final VoidCallback? onCopyTex;
-  final VoidCallback? onShareUtf;
+  final CuButtonRowCallbacks? buttonRowCallbacks;
 
   final Duration duration = const Duration(milliseconds: 200);
-
-  bool get hasAllCallbacks =>
-      onCopyUtf != null && onCopyTex != null && onShareUtf != null;
 
   @override
   State<CuAnimatedHomeCard> createState() => _CuAnimatedHomeCardState();
@@ -77,6 +82,12 @@ class _CuAnimatedHomeCardState extends State<CuAnimatedHomeCard> {
                   inputInTex: widget.inputInTex,
                   outputInTex: widget.outputInTex,
                   isLoading: widget.isLoading,
+                ),
+              ),
+              AnimatedSize(
+                duration: widget.duration,
+                child: _HomeButtonRow(
+                  callbacks: widget.buttonRowCallbacks,
                 ),
               ),
             ],
@@ -152,5 +163,37 @@ class _HomeTexView extends StatelessWidget {
     }
 
     return '';
+  }
+}
+
+class _HomeButtonRow extends StatelessWidget {
+  const _HomeButtonRow({required this.callbacks});
+
+  final CuButtonRowCallbacks? callbacks;
+
+  @override
+  Widget build(BuildContext context) {
+    if (callbacks == null) {
+      return const SizedBox.shrink();
+    }
+
+    return ButtonBar(
+      alignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          onPressed: callbacks!.onShareUtf,
+          icon: const Icon(Icons.share),
+        ),
+        IconButton(
+          onPressed: callbacks!.onCopyTex,
+          icon: const Icon(Icons.copy),
+        ),
+        IconButton(
+          onPressed: callbacks!.onCopyUtf,
+          icon: const Icon(Icons.copy_sharp),
+        ),
+      ],
+    );
   }
 }

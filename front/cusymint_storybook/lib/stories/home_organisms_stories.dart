@@ -73,11 +73,15 @@ class HomeOrganismsStories extends StorybookPart {
               ),
               outputInTex: context.knobs.nullable.text(
                 label: 'Output in TeX',
-                initial: '\\int 7.5x\\text{d}x',
+                initial: '7.5x^2 + C',
               ),
-              onCopyUtf: hasAllCallbacks ? () {} : null,
-              onCopyTex: hasAllCallbacks ? () {} : null,
-              onShareUtf: hasAllCallbacks ? () {} : null,
+              buttonRowCallbacks: hasAllCallbacks
+                  ? CuButtonRowCallbacks(
+                      onCopyTex: () {},
+                      onCopyUtf: () {},
+                      onShareUtf: () {},
+                    )
+                  : null,
             );
           },
         ),
