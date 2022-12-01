@@ -12,7 +12,13 @@ namespace Sym {
     std::string to_tex() const;
 
     /*
-     * @brief ...
+     * @brief Extracts expression `f(x)` from `symbol`, where `symbol` is like `-f(x)` or `a*f(x)`.
+     * Sets a `coefficient` such that `coefficient*f(x) = symbol`.
+     *
+     * @param `symbol` given expression
+     * @param `coefficient` coefficient to be set
+     *
+     * @return extracted expression from `symbol`
      */
     __host__ __device__ static const Sym::Symbol& extract_base_and_coefficient(const Sym::Symbol& symbol,
                                                                         double& coefficient);

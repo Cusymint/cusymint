@@ -22,15 +22,6 @@ namespace {
         return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(), denominator.to_tex());
     }
 
-    // __host__ __device__ void change_expression_coefficient_by(double value,
-    //                                                           Sym::Power& expression) {
-    //     double& coefficient =
-    //         expression.arg2().as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
-    //     if ((coefficient += value) == 0) {
-    //         expression.symbol()->init_from(Sym::NumericConstant::with_value(1));
-    //     }
-    // }
-
     __host__ __device__ void extract_base_exponent_and_coefficient(const Sym::Symbol& symbol,
                                                                    const Sym::Symbol*& base,
                                                                    const Sym::Symbol*& exponent,

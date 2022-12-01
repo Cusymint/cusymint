@@ -121,17 +121,9 @@ namespace Sym {
             return order;
         }
 
-        // if (base1.is(Type::NumericConstant) && base2.is(Type::NumericConstant))
-        //     printf("%f %f\n", base1.as<NumericConstant>().value,
-        //     base2.as<NumericConstant>().value);
-
-        // printf("%s %s\n", type_name(base1.type()), type_name(base2.type()));
-
         if (order != Util::Order::Equal) {
             return order;
         }
-
-        // printf("Equal\n");
 
         const double sum = coef1 + coef2;
         if (sum == 0) {
@@ -144,7 +136,6 @@ namespace Sym {
             Neg<Copy>::init(*destination, {base1});
         }
         else {
-            // printf("init %f*symbol\n", sum);
             Mul<Num, Copy>::init(*destination, {coef1 + coef2, base1});
         }
         return Util::Order::Equal;
