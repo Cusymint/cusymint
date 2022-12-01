@@ -34,7 +34,7 @@ class CuColors {
       white: CuColor(0xFFFFFFFF),
       black: CuColor(0xFF000000),
       gray: CuColor(0xFFE5E5E5),
-      grayDark: CuColor(0xFFBFBFBF),
+      grayDark: CuColor(0xFFBCBCBC),
       materialMint: MaterialColor(
         0xFF002F20,
         <int, Color>{

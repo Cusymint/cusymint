@@ -2,7 +2,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cusymint_app/features/client/client_factory.dart';
 import 'package:cusymint_app/features/home/blocs/main_page_bloc.dart';
 import 'package:cusymint_app/features/navigation/navigation.dart';
-import 'package:cusymint_app/features/tex_rendering/widgets/tex_view.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/services.dart';

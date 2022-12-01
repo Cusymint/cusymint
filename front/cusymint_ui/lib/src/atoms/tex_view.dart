@@ -15,7 +15,7 @@ class TexView extends StatelessWidget {
 
   final String data;
   final double? fontScale;
-  final CuColor? color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {

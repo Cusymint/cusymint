@@ -146,7 +146,7 @@ class _HomeTexView extends StatelessWidget {
       final colors = CuColors.of(context);
 
       return CuScrollableHorizontalWrapper(
-        child: TexView(tex),
+        child: AnimatedTexView(tex, colors: colors, isLoading: isLoading),
       );
     }
 
@@ -163,6 +163,70 @@ class _HomeTexView extends StatelessWidget {
     }
 
     return '';
+  }
+}
+
+class AnimatedTexView extends StatefulWidget {
+  const AnimatedTexView(
+    this.data, {
+    super.key,
+    this.duration = const Duration(milliseconds: 700),
+    this.isLoading = false,
+    required this.colors,
+  });
+
+  final Duration duration;
+  final String data;
+  final bool isLoading;
+
+  final CuColors colors;
+
+  @override
+  State<AnimatedTexView> createState() => _AnimatedTexViewState();
+}
+
+class _AnimatedTexViewState extends State<AnimatedTexView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Color?> _colorAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    )..repeat(
+        reverse: true,
+      );
+
+    _colorAnimation = ColorTween(
+      begin: widget.colors.black,
+      end: widget.colors.grayDark,
+    ).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final animated = AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => TexView(
+        widget.data,
+        color: _colorAnimation.value,
+      ),
+    );
+
+    final stale = TexView(widget.data);
+
+    final child = widget.isLoading ? animated : stale;
+
+    return AnimatedSwitcher(duration: widget.duration, child: child);
   }
 }
 
