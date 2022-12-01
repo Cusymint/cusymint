@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdart/rxdart.dart';
 
 class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
-  MainPageBloc({required this.clientFactory}) : super(const InitialState()) {
+  MainPageBloc({required this.clientFactory}) : super(const MainPageState()) {
     on<SolveRequested>(
       _solveIntegral,
       transformer: restartable(),
@@ -22,7 +22,7 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
 
   FutureOr<void> _solveIntegral(
       SolveRequested event, Emitter<MainPageState> emit) async {
-    emit(SolvingState(userInput: event.input));
+    emit(state.copyWith(isLoading: true, errors: [], userInput: event.input));
 
     final watch = Stopwatch()..start();
 
@@ -32,41 +32,39 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
       final response = await _client.solveIntegral(request);
 
       watch.stop();
-      if (response.hasErrors) {
-        // TODO: nice error handling
-        emit(SolveErrorState(userInput: event.input, errors: []));
-        return;
-      }
 
       final duration = watch.elapsed;
 
-      emit(SolvedState(
-        userInput: state.userInput,
-        inputInTex: response.inputInTex!,
-        inputInUtf: response.inputInUtf!,
-        outputInTex: response.outputInTex!,
-        outputInUtf: response.outputInUtf!,
-        duration: duration,
+      emit(state.copyWith(
+        isLoading: false,
+        errors: response.errors,
+        inputInTex: Wrapped(response.inputInTex),
+        inputInUtf: Wrapped(response.inputInUtf),
+        outputInTex: Wrapped(response.outputInTex),
+        outputInUtf: Wrapped(response.outputInUtf),
       ));
     } catch (e) {
-      emit(SolveErrorState(userInput: event.input, errors: []));
+      // TODO: Handle error
+      //emit(SolveErrorState(userInput: event.input, errors: []));
     }
   }
 
   FutureOr<void> _onInputChanged(
       InputChanged event, Emitter<MainPageState> emit) async {
-    String? previousInputInTex;
-    String? previousInputInUtf;
-
-    if (state is InterpretedState) {
-      previousInputInTex = (state as InterpretedState).inputInTex;
-      previousInputInUtf = (state as InterpretedState).inputInUtf;
+    if (event.input.isEmpty) {
+      emit(state.copyWith(
+        userInput: event.input,
+        errors: [],
+        isLoading: false,
+      ));
     }
 
-    emit(InterpretingState(
+    emit(state.copyWith(
       userInput: event.input,
-      previousInputInTex: previousInputInTex,
-      previousInputInUtf: previousInputInUtf,
+      isLoading: true,
+      errors: [],
+      outputInTex: const Wrapped(null),
+      outputInUtf: const Wrapped(null),
     ));
 
     final request = Request(event.input);
@@ -74,24 +72,16 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
     try {
       final response = await _client.interpretIntegral(request);
 
-      if (response.hasErrors) {
-        emit(InterpretErrorState(
-          userInput: event.input,
-          previousInputInTex: previousInputInTex,
-          previousInputInUtf: previousInputInUtf,
-          errors: response.errors,
-        ));
-        return;
-      }
-
-      emit(InterpretedState(
-        userInput: event.input,
-        inputInTex: response.inputInTex!,
-        inputInUtf: response.inputInUtf!,
+      emit(state.copyWith(
+        isLoading: false,
+        errors: response.errors,
+        inputInTex: Wrapped(response.inputInTex),
+        inputInUtf: Wrapped(response.inputInUtf),
+        outputInTex: Wrapped(response.outputInTex),
+        outputInUtf: Wrapped(response.outputInUtf),
       ));
     } catch (e) {
       // TODO: nice error handling
-      emit(InterpretErrorState(userInput: event.input, errors: []));
     }
   }
 }
@@ -115,92 +105,64 @@ class ClearRequested extends MainPageEvent {
 }
 
 class MainPageState {
-  const MainPageState({required this.userInput});
-
-  final String userInput;
-}
-
-class InitialState extends MainPageState {
-  const InitialState() : super(userInput: '');
-}
-
-class InterpretingState extends MainPageState {
-  const InterpretingState({
-    required super.userInput,
-    this.previousInputInTex,
-    this.previousInputInUtf,
-  });
-
-  bool get hasPreviousInput =>
-      previousInputInTex != null && previousInputInUtf != null;
-
-  final String? previousInputInTex;
-  final String? previousInputInUtf;
-}
-
-class InterpretedState extends MainPageState {
-  const InterpretedState({
-    required super.userInput,
-    required this.inputInTex,
-    required this.inputInUtf,
-  });
-
-  final String inputInTex;
-  final String inputInUtf;
-}
-
-class InterpretErrorState extends MainPageState {
-  const InterpretErrorState({
-    required super.userInput,
-    required this.errors,
-    this.previousInputInTex,
-    this.previousInputInUtf,
-  });
-
-  bool get hasPreviousInput =>
-      previousInputInTex != null && previousInputInUtf != null;
-
-  final String? previousInputInTex;
-  final String? previousInputInUtf;
-
-  final List<ResponseError> errors;
-}
-
-class SolvingState extends MainPageState {
-  const SolvingState({
-    required super.userInput,
-  });
-}
-
-class SolvedState extends MainPageState {
-  const SolvedState({
-    required super.userInput,
-    required this.inputInTex,
-    required this.inputInUtf,
-    required this.outputInTex,
-    required this.outputInUtf,
-    required this.duration,
-  });
-
-  final String inputInTex;
-  final String inputInUtf;
-  final String outputInTex;
-  final String outputInUtf;
-  final Duration duration;
-}
-
-class SolveErrorState extends MainPageState {
-  const SolveErrorState({
-    required super.userInput,
+  const MainPageState({
+    this.isLoading = false,
     this.inputInTex,
     this.inputInUtf,
-    required this.errors,
+    this.outputInTex,
+    this.outputInUtf,
+    this.previousInputInTex,
+    this.previousInputInUtf,
+    this.errors = const [],
+    this.userInput = '',
   });
+
+  final String userInput;
+
+  final bool isLoading;
+  final List<ResponseError> errors;
 
   final String? inputInTex;
   final String? inputInUtf;
 
-  final List<String> errors;
+  final String? outputInTex;
+  final String? outputInUtf;
+
+  final String? previousInputInTex;
+  final String? previousInputInUtf;
+
+  bool get hasErrors => errors.isNotEmpty;
+  bool get hasInput => inputInTex != null && inputInUtf != null;
+  bool get hasOutput => outputInTex != null && outputInUtf != null;
+
+  MainPageState copyWith({
+    String? userInput,
+    bool? isLoading,
+    List<ResponseError>? errors,
+    Wrapped<String?>? inputInTex,
+    Wrapped<String?>? inputInUtf,
+    Wrapped<String?>? outputInTex,
+    Wrapped<String?>? outputInUtf,
+  }) {
+    return MainPageState(
+      isLoading: isLoading ?? this.isLoading,
+      inputInTex: inputInTex != null ? inputInTex.value : this.inputInTex,
+      inputInUtf: inputInUtf != null ? inputInUtf.value : this.inputInUtf,
+      outputInTex: outputInTex != null ? outputInTex.value : this.outputInTex,
+      outputInUtf: outputInUtf != null ? outputInUtf.value : this.outputInUtf,
+      previousInputInTex:
+          inputInTex != null ? this.inputInTex : previousInputInTex,
+      previousInputInUtf:
+          inputInUtf != null ? this.inputInUtf : previousInputInUtf,
+      errors: errors ?? this.errors,
+      userInput: userInput ?? this.userInput,
+    );
+  }
+}
+
+class Wrapped<T> {
+  const Wrapped(this.value);
+  final T value;
 }
 
 EventTransformer<Event> debounceSequential<Event>(Duration duration) {

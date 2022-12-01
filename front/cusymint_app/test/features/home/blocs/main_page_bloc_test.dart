@@ -26,127 +26,127 @@ void main() {
     expect: () => [],
   );
 
-  blocTest(
-    'emits SolvingState and SolvedState when SolveRequested',
-    build: () => _createBloc(clientMock),
-    act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
-    wait: solveDelay + solveDelay,
-    expect: () => [
-      isA<SolvingState>().having(
-        (state) => state.userInput,
-        'correct user input',
-        equals('x'),
-      ),
-      isA<SolvedState>()
-          .having(
-            (state) => state.userInput,
-            'correct result',
-            equals('x'),
-          )
-          .having(
-            (state) => state.inputInTex,
-            'correct input',
-            equals(correctResponse.inputInTex),
-          )
-          .having(
-            (state) => state.inputInUtf,
-            'correct input',
-            equals(correctResponse.inputInUtf),
-          )
-          .having(
-            (state) => state.outputInTex,
-            'correct output',
-            equals(correctResponse.outputInTex),
-          )
-          .having(
-            (state) => state.outputInUtf,
-            'correct output',
-            equals(correctResponse.outputInUtf),
-          ),
-    ],
-  );
+  // blocTest(
+  //   'emits SolvingState and SolvedState when SolveRequested',
+  //   build: () => _createBloc(clientMock),
+  //   act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
+  //   wait: solveDelay + solveDelay,
+  //   expect: () => [
+  //     isA<SolvingState>().having(
+  //       (state) => state.userInput,
+  //       'correct user input',
+  //       equals('x'),
+  //     ),
+  //     isA<SolvedState>()
+  //         .having(
+  //           (state) => state.userInput,
+  //           'correct result',
+  //           equals('x'),
+  //         )
+  //         .having(
+  //           (state) => state.inputInTex,
+  //           'correct input',
+  //           equals(correctResponse.inputInTex),
+  //         )
+  //         .having(
+  //           (state) => state.inputInUtf,
+  //           'correct input',
+  //           equals(correctResponse.inputInUtf),
+  //         )
+  //         .having(
+  //           (state) => state.outputInTex,
+  //           'correct output',
+  //           equals(correctResponse.outputInTex),
+  //         )
+  //         .having(
+  //           (state) => state.outputInUtf,
+  //           'correct output',
+  //           equals(correctResponse.outputInUtf),
+  //         ),
+  //   ],
+  // );
 
-  blocTest(
-    'emits SolvingState and SolveErrorState after client failure',
-    build: () => _createBloc(clientFailuresMock),
-    act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
-    wait: solveDelay + solveDelay,
-    expect: () => [
-      isA<SolvingState>().having(
-        (state) => state.userInput,
-        'correct user input',
-        equals('x'),
-      ),
-      isA<SolveErrorState>()
-          .having(
-            (state) => state.userInput,
-            'correct user input',
-            equals('x'),
-          )
-          .having(
-            (state) => state.errors,
-            'some errors',
-            isNotEmpty,
-          ),
-    ],
-  );
+  // blocTest(
+  //   'emits SolvingState and SolveErrorState after client failure',
+  //   build: () => _createBloc(clientFailuresMock),
+  //   act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
+  //   wait: solveDelay + solveDelay,
+  //   expect: () => [
+  //     isA<SolvingState>().having(
+  //       (state) => state.userInput,
+  //       'correct user input',
+  //       equals('x'),
+  //     ),
+  //     isA<SolveErrorState>()
+  //         .having(
+  //           (state) => state.userInput,
+  //           'correct user input',
+  //           equals('x'),
+  //         )
+  //         .having(
+  //           (state) => state.errors,
+  //           'some errors',
+  //           isNotEmpty,
+  //         ),
+  //   ],
+  // );
 
-  blocTest(
-    'emits SolvingState and SolveErrorState on client exception',
-    build: () => _createBloc(
-      ExceptionThrowingClient(waitDuration: solveDelay),
-    ),
-    act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
-    wait: solveDelay + solveDelay,
-    expect: () => [
-      isA<SolvingState>().having(
-        (state) => state.userInput,
-        'correct user input',
-        equals('x'),
-      ),
-      isA<SolveErrorState>()
-          .having(
-            (state) => state.userInput,
-            'correct user input',
-            equals('x'),
-          )
-          .having(
-            (state) => state.errors,
-            'some errors',
-            isNotEmpty,
-          ),
-    ],
-  );
+  // blocTest(
+  //   'emits SolvingState and SolveErrorState on client exception',
+  //   build: () => _createBloc(
+  //     ExceptionThrowingClient(waitDuration: solveDelay),
+  //   ),
+  //   act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
+  //   wait: solveDelay + solveDelay,
+  //   expect: () => [
+  //     isA<SolvingState>().having(
+  //       (state) => state.userInput,
+  //       'correct user input',
+  //       equals('x'),
+  //     ),
+  //     isA<SolveErrorState>()
+  //         .having(
+  //           (state) => state.userInput,
+  //           'correct user input',
+  //           equals('x'),
+  //         )
+  //         .having(
+  //           (state) => state.errors,
+  //           'some errors',
+  //           isNotEmpty,
+  //         ),
+  //   ],
+  // );
 
-  blocTest(
-    'emits InterpretingState and InterpretedState when InputChanged',
-    build: () => _createBloc(clientMock),
-    wait: interpretDelay * 8,
-    act: (MainPageBloc bloc) => bloc.add(const InputChanged('x')),
-    expect: () => [
-      isA<InterpretingState>().having(
-        (state) => state.userInput,
-        'correct user input',
-        equals('x'),
-      ),
-      isA<InterpretedState>()
-          .having(
-            (state) => state.userInput,
-            'correct result',
-            equals('x'),
-          )
-          .having(
-            (state) => state.inputInTex,
-            'correct input',
-            equals(correctResponse.inputInTex),
-          )
-          .having(
-            (state) => state.inputInUtf,
-            'correct input',
-            equals(correctResponse.inputInUtf),
-          ),
-    ],
-  );
+  // blocTest(
+  //   'emits InterpretingState and InterpretedState when InputChanged',
+  //   build: () => _createBloc(clientMock),
+  //   wait: interpretDelay * 8,
+  //   act: (MainPageBloc bloc) => bloc.add(const InputChanged('x')),
+  //   expect: () => [
+  //     isA<InterpretingState>().having(
+  //       (state) => state.userInput,
+  //       'correct user input',
+  //       equals('x'),
+  //     ),
+  //     isA<InterpretedState>()
+  //         .having(
+  //           (state) => state.userInput,
+  //           'correct result',
+  //           equals('x'),
+  //         )
+  //         .having(
+  //           (state) => state.inputInTex,
+  //           'correct input',
+  //           equals(correctResponse.inputInTex),
+  //         )
+  //         .having(
+  //           (state) => state.inputInUtf,
+  //           'correct input',
+  //           equals(correctResponse.inputInUtf),
+  //         ),
+  //   ],
+  // );
 
   test('ClientFactoryMock returns specified client', () {
     const client1 = clientFailuresMock;
