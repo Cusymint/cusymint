@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
 /// Wrapper for a third party Tex rendering widget.
@@ -10,15 +10,20 @@ class TexView extends StatelessWidget {
     this.data, {
     super.key,
     this.fontScale = 2,
+    this.color,
   });
 
   final String data;
   final double? fontScale;
+  final CuColor? color;
 
   @override
   Widget build(BuildContext context) {
     return Math.tex(
       data,
+      textStyle: TextStyle(
+        color: color,
+      ),
       textScaleFactor: fontScale,
     );
   }

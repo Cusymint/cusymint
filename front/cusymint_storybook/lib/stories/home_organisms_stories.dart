@@ -51,6 +51,11 @@ class HomeOrganismsStories extends StorybookPart {
               initial: false,
             );
 
+            final isLoading = context.knobs.boolean(
+              label: 'Is loading',
+              initial: false,
+            );
+
             return CuAnimatedHomeCard(
               title: context.knobs.nullable.text(
                 label: 'Leading',
@@ -61,11 +66,12 @@ class HomeOrganismsStories extends StorybookPart {
                 label: 'Has critical errors',
                 initial: false,
               ),
-              inputInTex: context.knobs.text(
+              isLoading: isLoading,
+              inputInTex: context.knobs.nullable.text(
                 label: 'Input in TeX',
                 initial: '\\int 15\\text{d}x',
               ),
-              outputInTex: context.knobs.text(
+              outputInTex: context.knobs.nullable.text(
                 label: 'Output in TeX',
                 initial: '\\int 7.5x\\text{d}x',
               ),

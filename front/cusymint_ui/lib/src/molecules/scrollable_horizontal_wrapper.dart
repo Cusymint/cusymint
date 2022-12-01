@@ -7,10 +7,10 @@ class CuScrollableHorizontalWrapper extends StatefulWidget {
 
   @override
   State<CuScrollableHorizontalWrapper> createState() =>
-      CuScrollableHorizontalWrapperState();
+      _CuScrollableHorizontalWrapperState();
 }
 
-class CuScrollableHorizontalWrapperState
+class _CuScrollableHorizontalWrapperState
     extends State<CuScrollableHorizontalWrapper> {
   final _scrollController = ScrollController();
 
