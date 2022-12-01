@@ -75,8 +75,12 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
       final response = await _client.interpretIntegral(request);
 
       if (response.hasErrors) {
-        // TODO: nice error handling
-        emit(InterpretErrorState(userInput: event.input, errors: []));
+        emit(InterpretErrorState(
+          userInput: event.input,
+          previousInputInTex: previousInputInTex,
+          previousInputInUtf: previousInputInUtf,
+          errors: response.errors,
+        ));
         return;
       }
 
@@ -149,9 +153,17 @@ class InterpretErrorState extends MainPageState {
   const InterpretErrorState({
     required super.userInput,
     required this.errors,
+    this.previousInputInTex,
+    this.previousInputInUtf,
   });
 
-  final List<String> errors;
+  bool get hasPreviousInput =>
+      previousInputInTex != null && previousInputInUtf != null;
+
+  final String? previousInputInTex;
+  final String? previousInputInUtf;
+
+  final List<ResponseError> errors;
 }
 
 class SolvingState extends MainPageState {

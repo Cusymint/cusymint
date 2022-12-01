@@ -1,3 +1,4 @@
+export 'animated_home_card.dart';
 export 'interpret_error_card.dart';
 export 'interpret_loading_card.dart';
 export 'interpret_result_card.dart';

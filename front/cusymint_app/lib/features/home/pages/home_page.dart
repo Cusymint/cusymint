@@ -69,14 +69,20 @@ class _HomeBodyState extends State<HomeBody> {
             BlocBuilder<MainPageBloc, MainPageState>(
               bloc: widget.mainPageBloc,
               builder: (context, state) {
-                if (state is InterpretingState) {
-                  return const CuInterpretLoadingCard();
-                }
-
                 if (state is InterpretedState) {
                   return CuInterpretResultCard(
                     child: TexView(state.inputInTex),
                   );
+                }
+
+                if (state is InterpretingState) {
+                  if (state.hasPreviousInput) {
+                    return CuInterpretResultCard(
+                      child: TexView(state.previousInputInTex!),
+                    );
+                  }
+
+                  return const CuInterpretLoadingCard();
                 }
 
                 if (state is SolvingState) {
