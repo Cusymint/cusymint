@@ -42,7 +42,6 @@ class CusymintStorybook extends StatelessWidget {
         ...const CommonOrganisms().stories,
         ...const MainFlowStories().stories,
         ...const TemplatesStories().stories,
-        ...const HomeOrganismsStories().stories,
       ],
     );
   }
