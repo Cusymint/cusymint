@@ -45,6 +45,19 @@ class HomeBody extends StatefulWidget {
 
 class _HomeBodyState extends State<HomeBody> {
   final _controller = TextEditingController();
+  final _fToast = FToast();
+
+  @override
+  void initState() {
+    super.initState();
+    _fToast.init(context);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,9 +146,9 @@ class _HomeBodyState extends State<HomeBody> {
 
                 if (state is SolvedState) {
                   return CuSolveResultCard(
-                    copyTex: () {},
-                    copyUtf: () {},
-                    shareUtf: () {},
+                    copyTex: () async => _copyTexToClipboard(state),
+                    copyUtf: () async => _copyUtfToClipboard(state),
+                    shareUtf: () async => _shareUtf(state),
                     solvingDuration: state.duration,
                     child: TexView(
                       '${state.inputInTex} = ${state.outputInTex}',
@@ -149,6 +162,32 @@ class _HomeBodyState extends State<HomeBody> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _copyUtfToClipboard(SolvedState state) async {
+    _showCopyToClipboardToast();
+    await Clipboard.setData(
+      ClipboardData(text: '${state.inputInUtf} = ${state.outputInUtf}'),
+    );
+  }
+
+  Future<void> _copyTexToClipboard(SolvedState state) async {
+    _showCopyToClipboardToast();
+    await Clipboard.setData(
+      ClipboardData(text: '${state.inputInTex} = ${state.outputInTex}'),
+    );
+  }
+
+  Future<void> _shareUtf(SolvedState state) async {
+    await Share.share('${state.inputInUtf} = ${state.outputInUtf}');
+  }
+
+  void _showCopyToClipboardToast() {
+    _fToast.showToast(
+      child: CuToast.success(message: Strings.copiedToClipboard.tr()),
+      gravity: ToastGravity.BOTTOM,
+      toastDuration: const Duration(seconds: 2),
     );
   }
 }
