@@ -224,7 +224,7 @@ namespace Sym {
         return Util::Order::Equal;
     }
 
-    std::string Symbol::to_string() const { if (type()==Type::Symbol || type_ordinal() > 26) return "###";return VIRTUAL_CALL(*this, to_string); }
+    std::string Symbol::to_string() const { return VIRTUAL_CALL(*this, to_string); }
 
     std::string Symbol::to_tex() const { return VIRTUAL_CALL(*this, to_tex); }
 

@@ -3,6 +3,7 @@
 #include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
 
+#include <cassert>
 #include <fmt/core.h>
 
 #include "Symbol/MetaOperators.cuh"
@@ -190,33 +191,34 @@ namespace Sym {
 
     template <typename T> using LeftMul = Mul<T, Copy>;
     template <typename T> using RightMul = Mul<Copy, T>;
-    __host__ __device__ SimplificationResult Product::try_split_into_sum(Symbol* const help_space) {
-        const Addition* sum;
-        const Symbol* second_arg;
+     __host__ __device__ SimplificationResult Product::try_split_into_sum(Symbol* const expr1, Symbol* const expr2, Symbol* const help_space) {
+        Addition* sum;
+        Symbol* second_arg;
 
-        if (type != Type::Product || (!arg1().is(Type::Addition) && !arg2().is(Type::Addition))) {
+         if (!expr1->is(Type::Addition) && !expr2->is(Type::Addition)) {
             return SimplificationResult::NoAction;
         }
 
-        if (arg1().is(Type::Addition)) {
-            sum = arg1().as_ptr<Addition>();
-            second_arg = &arg2();
+        if (expr1->is(Type::Addition)) {
+            sum = expr1->as_ptr<Addition>();
+            second_arg = expr2;
         }
         else {
-            sum = arg2().as_ptr<Addition>();
-            second_arg = &arg1();
+            sum = expr2->as_ptr<Addition>();
+            second_arg = expr1;
         }
 
         const auto count = sum->tree_size();
-        if (size < (count + 1) * second_arg->size() + sum->size) {
-            additional_required_size = count * second_arg->size() - 1;
+        const auto actual_size = sum->arg1().size() + sum->arg2().size() + 1;
+        if (sum->size < count * (second_arg->size() + 1) + actual_size) {
+            sum->additional_required_size = count * (second_arg->size() + 1);
             return SimplificationResult::NeedsSpace;
         }
-        using MyStruct = From<Addition>::Create<Addition>::WithMap<LeftMul>;
 
         From<Addition>::Create<Addition>::WithMap<LeftMul>::init(*help_space, {{*sum, count}, *second_arg});
+        second_arg->init_from(NumericConstant::with_value(1));
 
-        help_space->copy_to(symbol());
+        help_space->copy_to(sum->symbol());
         return SimplificationResult::NeedsSimplification;
     }
 
@@ -269,6 +271,11 @@ namespace Sym {
             return divide_polynomials_result;
         }
 
+        const auto split_result = try_split_into_sum(expr1, expr2, help_space);
+        if (split_result != SimplificationResult::NoAction) {
+            return split_result;
+        }
+
         // TODO: Jakieś tożsamości trygonometryczne
 
         return SimplificationResult::NoAction;
@@ -300,11 +307,20 @@ namespace Sym {
                 destination->init_from(NumericConstant::with_value(1));
                 return Util::Order::Equal;
             }
+            if (exp_sum == 1) {
+                base1->copy_to(destination);
+                return Util::Order::Equal;
+            }
             if (base1->is(Type::NumericConstant)) {
                 destination->init_from(
                     NumericConstant::with_value(pow(base1->as<NumericConstant>().value, exp_sum)));
                 return Util::Order::Equal;
             }
+            if (exp_sum == -1) {
+                Inv<Copy>::init(*destination, {*base1});
+                return Util::Order::Equal;
+            }
+            
             Pow<Copy, Num>::init(*destination, {*base1, exp_sum});
             return Util::Order::Equal;
         }
