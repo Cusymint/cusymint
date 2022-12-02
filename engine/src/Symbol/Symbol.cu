@@ -1,6 +1,5 @@
 #include "Symbol.cuh"
 
-#include "Symbol/Constants.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/StaticStack.cuh"
@@ -157,7 +156,6 @@ namespace Sym {
 
             for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
                 success = at(i)->simplify_in_place(help_space) && success;
-                // if (!success) break;
             }
 
             const size_t new_size = compress_reverse_to(help_space);

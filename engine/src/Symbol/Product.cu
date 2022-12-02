@@ -3,7 +3,6 @@
 #include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
 
-#include <cassert>
 #include <fmt/core.h>
 
 #include "Symbol/MetaOperators.cuh"
@@ -29,9 +28,6 @@ namespace {
                                                                    double& coefficient) {
         const Sym::Symbol* inner = &symbol;
         double reciprocal_coefficient = 1;
-        // if (inner->is(Sym::Type::Negation)) {
-        //     inner = &inner->as<Sym::Negation>().arg();
-        // }
 
         if (inner->is(Sym::Type::Reciprocal)) {
             inner = &inner->as<Sym::Reciprocal>().arg();
@@ -79,11 +75,6 @@ namespace Sym {
         }
 
         eliminate_ones();
-
-        // const auto split_result = try_split_into_sum(help_space);
-        // if (split_result != SimplificationResult::NoAction) {
-        //     result = split_result;
-        // }
 
         simplify_structure(help_space);
         return !is_another_loop_required(result);

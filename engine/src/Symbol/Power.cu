@@ -10,7 +10,6 @@
 #include "Symbol/Product.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
-#include "Utils/Cuda.cuh"
 #include "Utils/PascalTriangle.cuh"
 
 namespace {

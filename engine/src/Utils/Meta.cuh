@@ -2,8 +2,6 @@
 #define META_CUH
 
 #include <cuda/std/tuple>
-#include <tuple>
-#include <utility>
 
 namespace Util {
     template <class... Optionals> struct MetaOptionalsSum;

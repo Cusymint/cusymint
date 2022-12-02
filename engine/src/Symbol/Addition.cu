@@ -2,7 +2,6 @@
 
 #include "MetaOperators.cuh"
 #include "Symbol.cuh"
-#include "Symbol/Constants.cuh"
 #include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
 #include "Symbol/SimplificationResult.cuh"
@@ -21,8 +20,7 @@ namespace Sym {
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
         simplify_structure(help_space);
 
-        if (!symbol()->is(Type::Addition))
-        {
+        if (!symbol()->is(Type::Addition)) {
             return true;
         }
 
@@ -163,41 +161,6 @@ namespace Sym {
         }
         coefficient = 1;
         return symbol;
-    }
-
-    __host__ __device__ bool Addition::try_fuse_same_neighbouring_expressions() {
-        /* Every simplification in `Addition` results in creating `NumericConstants`,
-         * so, after sorting, equal expressions which are not numbers will be neighbours.
-         * Possible situations are:
-         *  - `+ f f` -> `* 2 f`
-         *  - `+ + (other_expr) f f` -> `+ (other_expr) * 2 f`
-         * None of these transformations need more space than occupied.
-         * This trick is necessary because of difficult equality checking after increasing
-         * one of symbols' spaces in `try_fuse_symbols` function.
-         */
-        if (PatternPair<AllOf<Same, Not<Num>>, AllOf<Same, Not<Num>>>::match_pair(arg1(), arg2())) {
-            Symbol& old_arg2 = arg2();
-            arg1().init_from(NumericConstant::with_value(2));
-            Product* const this_product = symbol() << Product::builder();
-            this_product->seal_arg1();
-            old_arg2.move_to(&this_product->arg2());
-            this_product->seal();
-            return true;
-        }
-        if (arg1().is(Type::Addition) &&
-            PatternPair<AllOf<Same, Not<Num>>, AllOf<Same, Not<Num>>>::match_pair(
-                arg2(), arg1().as<Addition>().arg2())) {
-            Symbol& old_arg2 = arg2();
-            arg1().as<Addition>().arg1().move_to(&arg1());
-            seal_arg1();
-            Product* const product = &arg2() << Product::builder();
-            product->arg1().init_from(NumericConstant::with_value(2));
-            product->seal_arg1();
-            old_arg2.move_to(&product->arg2());
-            product->seal();
-            return true;
-        }
-        return false;
     }
 
     __host__ __device__ void Addition::eliminate_zeros() {

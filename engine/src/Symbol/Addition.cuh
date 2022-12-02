@@ -53,13 +53,6 @@ namespace Sym {
      */
     __host__ __device__ void eliminate_zeros();
 
-    /*
-     * @brief Tries to fuse two equal expressions in the symbol tree.
-     *
-     * @return `true` if simplification was successful, `false` otherwise.
-     */
-    __host__ __device__ bool try_fuse_same_neighbouring_expressions();
-
     END_DECLARE_SYMBOL(Addition)
 
     DECLARE_SYMBOL(Negation, false)

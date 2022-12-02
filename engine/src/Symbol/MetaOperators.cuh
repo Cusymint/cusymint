@@ -6,7 +6,6 @@
 #include <type_traits>
 
 #include "Symbol/ReverseTreeIterator.cuh"
-#include "Utils/Cuda.cuh"
 #include "Utils/Meta.cuh"
 
 #define DEFINE_GET_SAME                                                    \
@@ -621,11 +620,6 @@ namespace Sym {
                             Util::skip_n_and_insert_in_tuple_at<TREE_ARGS_SIZE,
                                                                 I_L_ADDITIONAL_ARGS_SIZE>(
                                 args, *iterator.current()));
-                        // cuda::std::tuple_cat(
-                        //     Util::slice_tuple<TREE_ARGS_SIZE, I_L_ADDITIONAL_ARGS_SIZE>(args),
-                        //     cuda::std::tie(*iterator.current()),
-                        //     Util::slice_tuple<TREE_ARGS_SIZE + I_L_ADDITIONAL_ARGS_SIZE,
-                        //                       I_R_ADDITIONAL_ARGS_SIZE>(args)));
                         destination += destination->size();
                         iterator.advance();
                     }

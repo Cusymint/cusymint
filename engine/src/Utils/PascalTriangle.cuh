@@ -1,3 +1,6 @@
+#ifndef PASCAL_TRIANGLE_CUH
+#define PASCAL_TRIANGLE_CUH
+
 #include "CompileConstants.cuh"
 #include "Symbol/Macros.cuh"
 #include "Utils/Cuda.cuh"
@@ -37,3 +40,5 @@ namespace Util {
         __host__ __device__ size_t occupied_size() const { return (size + 1) * (size + 2) / 2; }
     };
 }
+
+#endif
