@@ -184,7 +184,8 @@ namespace Test {
                   Sym::num(-1) + Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2))) +
                       (Sym::var() ^ Sym::num(2)))
     SIMPLIFY_TEST(LongPolynomialsDivisibleWithRemainder, "(x^5+6*x^2+x+9)/(x^2+x+1)",
-                  Sym::num(7) + (Sym::num(-6) * Sym::var()) / Parser::parse_function("1+x+x^2") + Parser::parse_function("2/(1+x+x^2)") +
+                  Sym::num(7) + (Sym::num(-6) * Sym::var()) / Parser::parse_function("1+x+x^2") +
+                      Parser::parse_function("2/(1+x+x^2)") +
                       (Sym::num(-1) * (Sym::var() ^ Sym::num(2))) + (Sym::var() ^ Sym::num(3)))
 
     SIMPLIFY_TEST(SameExpressionsAddition, "x+x", "2*x")
@@ -211,4 +212,17 @@ namespace Test {
 
     SIMPLIFY_TEST(LogarithmOfProduct, "ln(x*ln(x))", "ln(x)+ln(ln(x))")
     SIMPLIFY_TEST(SplitProductIntoSum, "(x+1)*(y+c)", "c+y+c*x+y*x")
+
+    SIMPLIFY_TEST(ExpandBinomial, "(x+1)^3", "1+3*x+3*x^2+x^3")
+    SIMPLIFY_TEST(
+        ExpandAdvancedExpression, "(tg(x)+x*y+cos(x)+3)^4",
+        "((((((((((((((((((((((((((((((((((81+((108*y)*x))+((54*y^2)*x^2))+(((36*y)*x)*cos(x)^2))+("
+        "((6*y^2)*x^2)*cos(x)^2))+(((36*y)*x)*tan(x)^2))+(((6*y^2)*x^2)*tan(x)^2))+((6*cos(x)^2)*"
+        "tan(x)^2))+((36*cos(x))*tan(x)^2))+((((12*y)*x)*cos(x))*tan(x)^2))+((12*y^3)*x^3))+(((4*y)"
+        "*x)*cos(x)^3))+(((4*y)*x)*tan(x)^3))+((4*cos(x))*tan(x)^3))+(y^4*x^4))+(((108*y)*x)*cos(x)"
+        "))+(((36*y^2)*x^2)*cos(x)))+(((4*y^3)*x^3)*cos(x)))+(((108*y)*x)*tan(x)))+(((36*y^2)*x^2)*"
+        "tan(x)))+((36*cos(x)^2)*tan(x)))+((((12*y)*x)*cos(x)^2)*tan(x)))+(((4*y^3)*x^3)*tan(x)))+("
+        "(4*cos(x)^3)*tan(x)))+((108*cos(x))*tan(x)))+((((72*y)*x)*cos(x))*tan(x)))+((((12*y^2)*x^"
+        "2)*cos(x))*tan(x)))+(54*cos(x)^2))+(54*tan(x)^2))+(12*cos(x)^3))+(12*tan(x)^3))+cos(x)^4)+"
+        "tan(x)^4)+(108*cos(x)))+(108*tan(x)))")
 }
