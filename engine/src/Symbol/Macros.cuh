@@ -413,18 +413,31 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ SimplificationResult simplify_pairs(Symbol* const help_space);        \
                                                                                               \
     /*                                                                                        \
-     * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi   \
+     * @brief Checks if two expressions can be simplified with operator. Does so if yes.      \
      *                                                                                        \
-     * @param expr1 Pierwszy argument operatora                                               \
-     * @param expr2 Drugi argument operatora                                                  \
+     * @param expr1 First operator argument                                                   \
+     * @param expr2 Second operator argument                                                  \
      * @param help_space The help space                                                       \
      *                                                                                        \
-     * @return `Success` jeśli wykonano uproszczenie, `NoAction`, jeśli nie,                \
-     * `NeedsSpace`, jeśli potrzeba dodatkowego miejsca na uproszczenie.                     \
+     * @return `Success` if simplification happened, `NoAction`, if not,                      \
+     * `NeedsSpace`, if it is needed more space to perform a simplification.                  \
      */                                                                                       \
     __host__ __device__ static SimplificationResult try_fuse_symbols(                         \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);                  \
                                                                                               \
+    /*                                                                                        \
+     * @brief Compares `expr1` and `expr2` accurate to within their coefficients              \
+     * and checks if symbols can be merged by adding these coefficients. If yes, inserts      \
+     * fused symbol into `destination`.                                                       \
+     *                                                                                        \
+     * @param expr1 First operator argument                                                   \
+     * @param expr2 Second operator argument                                                  \
+     * @param help_space The help space                                                       \
+     *                                                                                        \
+     * @return `Util::Order::Less` if `expr1` comes before `expr2` in the expression          \
+     * order, `Util::Order::Greater` if `expr2` comes before `expr1`, and                     \
+     * `Util::Order::Equal`, if expressions are equal accurate to within their coefficients   \
+     */                                                                                       \
     template <bool COMPARE_ONLY = false>                                                      \
     __host__ __device__ static Util::Order compare_and_try_fuse_symbols(                      \
         Symbol* const expr1, Symbol* const expr2, Symbol* const destination);                 \
