@@ -22,8 +22,6 @@ namespace Test {
 
             const auto size = expression.data()->derivative_to(derivative.data());
 
-            derivative.resize(size);
-
             EXPECT_EQ(size, derivative.data()->size())
                 << "Tried to calculate derivative of:\n  " << expression.data()->to_string()
                 << "\n but calculated size does not match actual size";
@@ -31,11 +29,13 @@ namespace Test {
             expected_derivative.data()->simplify(help_space.data());
             derivative.data()->simplify(help_space.data());
 
+            derivative.resize(size);
+
             EXPECT_TRUE(
                 Sym::Symbol::are_expressions_equal(*derivative.data(), *expected_derivative.data()))
                 << "Tried to calculate derivative of:\n  " << expression.data()->to_string()
-                << "\n  but got an unexpected result:\n  " << derivative.data()->to_string()
-                << " <- got\n  " << expected_derivative.data()->to_string() << " <- expected\n";
+                << "\n  but got an unexpected result:\n  " << derivative.data()->to_tex()
+                << " <- got\n  " << expected_derivative.data()->to_tex() << " <- expected\n";
         }
 
         void test_derivative(std::string expression, std::string expected_derivative) {

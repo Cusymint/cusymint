@@ -162,12 +162,14 @@ namespace Test {
     SIMPLIFY_TEST(LogarithmOfE, "ln(e)", "1")
     SIMPLIFY_TEST(LogarithmOfOne, "ln(1)", "0")
     SIMPLIFY_TEST(EToLogarithm, "e^ln(x)", "x")
-    SIMPLIFY_TEST(PowerInLogarithm, "ln(10^x)", "ln(10)*x")
+    SIMPLIFY_TEST(PowerInLogarithm, "ln(10^x)", "x*ln(10)")
     SIMPLIFY_TEST(PowerOfLogarithmReciprocal, "10^(1/ln(10))", "e")
     EQUALITY_TEST(PowerWithLogarithm, "e^(sin(x)*x*ln(10)*pi)", "10^(sin(x)*x*pi)")
     EQUALITY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
 
-    SIMPLIFY_TEST_NO_ACTION(NoActionPolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)")
+    SIMPLIFY_TEST(NoActionPolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)",
+                  Sym::inv(Parser::parse_function("3+x+5*x^2+10*x^3")) *
+                      (Parser::parse_function("9+2*x^2+x^3")));
     SIMPLIFY_TEST_NO_ACTION(NoActionNumeratorRankLessThanDenominator,
                             "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)")
     SIMPLIFY_TEST(DivisiblePolynomials, "(x^4-1)/(x^2+1)",
@@ -192,6 +194,7 @@ namespace Test {
     SIMPLIFY_TEST(SameExpressionsAdditionLeftMultiplied, "3*c+c", "4*c")
     SIMPLIFY_TEST(SameExpressionsAdditionRightMultiplied, "e^x+8*e^x", "9*e^x")
     SIMPLIFY_TEST(SameExpressionsMultipliedByConstantAddition, "5*cos(x)+10*cos(x)", "15*cos(x)")
+    SIMPLIFY_TEST(ReducingSameExpressionsAddition, "x*y-x*y", "0")
 
     SIMPLIFY_TEST(SameExpressionsMultiplication, "x*x", "x^2")
     SIMPLIFY_TEST(SameExpressionsMultiplicationBeingSorted, "sin(x)*ln(x)*sin(x)", "sin(x)^2*ln(x)")
@@ -199,4 +202,14 @@ namespace Test {
     SIMPLIFY_TEST(SameExpressionsMultiplicationLeftPowered, "c^3*c", "c^4")
     SIMPLIFY_TEST(SameExpressionsMultiplicationRightPowered, "e^x*(e^x)^8", "e^(9*x)")
     SIMPLIFY_TEST(SameExpressionsPoweredToConstantMultiplication, "cos(x)^5*cos(x)^10", "cos(x)^15")
+    SIMPLIFY_TEST(ReducingSameExpressionsMultiplication, "((x*v)^sin(x))/((x*v)^sin(x))", "1")
+
+    SIMPLIFY_TEST(PoweredProduct, "(sin(x+2)*ln(cos(x)))^(e^x)", "sin(2+x)^e^x*ln(cos(x))^e^x")
+    SIMPLIFY_TEST(PoweredToSum, "(x+1)^(x+c)", "(1+x)^c * (1+x)^x")
+    SIMPLIFY_TEST(PoweredLongProduct, "(x*cos(x)*sin(x)*ln(x)*d)^2",
+                  "d^2*x^2*(sin(x))^2*(cos(x))^2*ln(x)^2")
+    SIMPLIFY_TEST(PoweredToLongSum, "e^(1+c+x+cos(x))", "e^x*e^(1+c)*e^cos(x)")
+
+    SIMPLIFY_TEST(LogarithmOfProduct, "ln(x*ln(x))", "ln(x)+ln(ln(x))")
+    SIMPLIFY_TEST(SplitProductIntoSum, "(x+1)*(y+c)", "x*y+x*c+y+c")
 }

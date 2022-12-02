@@ -4,6 +4,7 @@
 #include "Symbol.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/ExpanderPlaceholder.cuh"
+#include "Symbol/Product.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include <fmt/core.h>
@@ -107,6 +108,33 @@ namespace Sym {
                 arg2().as<Product>().eliminate_ones();
             }
             return true;
+        }
+
+        // (a*b)^c = a^c*b^c
+        if (arg1().is(Type::Product) && !arg1().is_constant()) {
+            
+            if (size < arg1().size() + 2 * arg2().size() + 2) {
+                additional_required_size = arg2().size() + 1;
+                return false;
+            }
+            const Product& product = arg1().as<Product>();
+            Mul<Pow<Copy, Copy>, Pow<Copy, Copy>>::init(
+                *help_space, {product.arg1(), arg2(), product.arg2(), arg2()});
+            help_space->copy_to(symbol());
+            return false; // maybe additional simplify required
+        }
+
+        // a^(b+c) = a^b*a^c
+        if (arg2().is(Type::Addition) && !arg2().is_constant()) {
+            if (size < 2 * arg1().size() + arg2().size() + 2) {
+                additional_required_size = arg1().size() + 1;
+                return false;
+            }
+            const Addition& addition = arg2().as<Addition>();
+            Mul<Pow<Copy, Copy>, Pow<Copy, Copy>>::init(
+                *help_space, {arg1(), addition.arg1(), arg1(), addition.arg2()});
+            help_space->copy_to(symbol());
+            return false; // maybe additional simplify required
         }
         return true;
     }

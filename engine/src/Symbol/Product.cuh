@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Macros.cuh"
+#include "Symbol/SimplificationResult.cuh"
 
 namespace Sym {
     DECLARE_SYMBOL(Product, false)
@@ -48,6 +49,17 @@ namespace Sym {
      */
     __host__ __device__ static SimplificationResult
     try_dividing_polynomials(Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);
+
+    /*
+     * @brief Checks if one of the factors is `Addition` and splits `this` using the rule
+     * `a(b+c) -> ab+ac`.
+     *
+     * @param `help_space` a help space
+     *
+     * @return `NeedsSimplification` if transformation was successful, `NoAction` if didn't happen,
+     * `NeedsSpace` if transformation requires additional space. Never returns `Success`.
+     */
+    __host__ __device__ SimplificationResult try_split_into_sum(Symbol* const help_space);
 
     END_DECLARE_SYMBOL(Product)
 

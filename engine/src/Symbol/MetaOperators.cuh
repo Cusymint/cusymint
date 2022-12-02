@@ -549,7 +549,7 @@ namespace Sym {
 
     /*
      * @brief Helper structure used to split `AdditionalArgs` from operator `T` to arguments
-     * needed by symbols on the left and right of template argument. Useful for complex `T` 
+     * needed by symbols on the left and right of template argument. Useful for complex `T`
      * constructions.
      * Template argument `Arg` may happen only once in the definition of `T` (improvement possible).
      */
@@ -578,7 +578,8 @@ namespace Sym {
 
       public:
         using Left = Util::SliceTuple<0, SLICE_INDEX, MarkedArgs>;
-        using Right = Util::SliceTuple<SLICE_INDEX + 1, MARKED_ARGS_SIZE - SLICE_INDEX - 1, MarkedArgs>;
+        using Right =
+            Util::SliceTuple<SLICE_INDEX + 1, MARKED_ARGS_SIZE - SLICE_INDEX - 1, MarkedArgs>;
     };
 
     /*
@@ -598,7 +599,7 @@ namespace Sym {
                     cuda::std::tuple_size_v<IRAdditionalArgs>;
 
                 using TreeArgs = cuda::std::tuple<
-                    cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
+                    cuda::std::tuple<cuda::std::reference_wrapper<const SymbolTree>, const size_t>>;
                 static constexpr size_t TREE_ARGS_SIZE = cuda::std::tuple_size_v<TreeArgs>;
 
                 using AdditionalArgs = Util::TupleCat<TreeArgs, ILAdditionalArgs, IRAdditionalArgs>;
@@ -607,8 +608,8 @@ namespace Sym {
                 using Size = Unsized;
 
                 __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
-                    SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
-                    size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
+                    const SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
+                    const size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
 
                     ConstReverseTreeIterator<SymbolTree> iterator(&tree);
 
@@ -617,11 +618,14 @@ namespace Sym {
                     while (iterator.is_valid()) {
                         OneArgOp<Copy>::init(
                             *destination,
-                            cuda::std::tuple_cat(
-                                Util::slice_tuple<TREE_ARGS_SIZE, I_L_ADDITIONAL_ARGS_SIZE>(args),
-                                cuda::std::make_tuple(cuda::std::ref(*iterator.current())),
-                                Util::slice_tuple<TREE_ARGS_SIZE + I_L_ADDITIONAL_ARGS_SIZE,
-                                                  I_R_ADDITIONAL_ARGS_SIZE>(args)));
+                            Util::skip_n_and_insert_in_tuple_at<TREE_ARGS_SIZE,
+                                                                I_L_ADDITIONAL_ARGS_SIZE>(
+                                args, *iterator.current()));
+                        // cuda::std::tuple_cat(
+                        //     Util::slice_tuple<TREE_ARGS_SIZE, I_L_ADDITIONAL_ARGS_SIZE>(args),
+                        //     cuda::std::tie(*iterator.current()),
+                        //     Util::slice_tuple<TREE_ARGS_SIZE + I_L_ADDITIONAL_ARGS_SIZE,
+                        //                       I_R_ADDITIONAL_ARGS_SIZE>(args)));
                         destination += destination->size();
                         iterator.advance();
                     }

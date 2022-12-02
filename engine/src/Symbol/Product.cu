@@ -27,14 +27,20 @@ namespace {
                                                                    const Sym::Symbol*& exponent,
                                                                    double& coefficient) {
         const Sym::Symbol* inner = &symbol;
-        if (inner->is(Sym::Type::Negation)) {
-            inner = &inner->as<Sym::Negation>().arg();
+        double reciprocal_coefficient = 1;
+        // if (inner->is(Sym::Type::Negation)) {
+        //     inner = &inner->as<Sym::Negation>().arg();
+        // }
+
+        if (inner->is(Sym::Type::Reciprocal)) {
+            inner = &inner->as<Sym::Reciprocal>().arg();
+            reciprocal_coefficient = -1;
         }
 
         if (!inner->is(Sym::Type::Power)) {
             base = inner;
             // we do not assign to exponent as it has default value
-            coefficient = 1;
+            coefficient = reciprocal_coefficient;
             return;
         }
 
@@ -47,6 +53,7 @@ namespace {
             base = &base->as<Sym::Reciprocal>().arg();
             coefficient = -coefficient;
         }
+        coefficient *= reciprocal_coefficient;
     }
 }
 
@@ -63,7 +70,7 @@ namespace Sym {
             return true;
         }
 
-        const auto result = simplify_pairs(help_space);
+        auto result = simplify_pairs(help_space);
 
         if (arg1().is(0) || arg2().is(0)) {
             symbol()->init_from(NumericConstant::with_value(0));
@@ -71,6 +78,11 @@ namespace Sym {
         }
 
         eliminate_ones();
+
+        // const auto split_result = try_split_into_sum(help_space);
+        // if (split_result != SimplificationResult::NoAction) {
+        //     result = split_result;
+        // }
 
         simplify_structure(help_space);
         return !is_another_loop_required(result);
@@ -176,6 +188,38 @@ namespace Sym {
         return SimplificationResult::NeedsSimplification; // maybe additional simplify required
     }
 
+    template <typename T> using LeftMul = Mul<T, Copy>;
+    template <typename T> using RightMul = Mul<Copy, T>;
+    __host__ __device__ SimplificationResult Product::try_split_into_sum(Symbol* const help_space) {
+        const Addition* sum;
+        const Symbol* second_arg;
+
+        if (type != Type::Product || (!arg1().is(Type::Addition) && !arg2().is(Type::Addition))) {
+            return SimplificationResult::NoAction;
+        }
+
+        if (arg1().is(Type::Addition)) {
+            sum = arg1().as_ptr<Addition>();
+            second_arg = &arg2();
+        }
+        else {
+            sum = arg2().as_ptr<Addition>();
+            second_arg = &arg1();
+        }
+
+        const auto count = sum->tree_size();
+        if (size < (count + 1) * second_arg->size() + sum->size) {
+            additional_required_size = count * second_arg->size() - 1;
+            return SimplificationResult::NeedsSpace;
+        }
+        using MyStruct = From<Addition>::Create<Addition>::WithMap<LeftMul>;
+
+        From<Addition>::Create<Addition>::WithMap<LeftMul>::init(*help_space, {{*sum, count}, *second_arg});
+
+        help_space->copy_to(symbol());
+        return SimplificationResult::NeedsSimplification;
+    }
+
     DEFINE_IS_FUNCTION_OF(Product) {
         for (size_t i = 0; i < expression_count; ++i) {
             if (!expressions[i]->is(Type::Product)) {
@@ -244,7 +288,7 @@ namespace Sym {
         extract_base_exponent_and_coefficient(*expr2, base2, exponent2, coef2);
 
         const auto base_order = Symbol::compare_expressions(*base1, *base2, *destination);
-        
+
         if (base_order != Util::Order::Equal) {
             return base_order;
         }
@@ -257,7 +301,8 @@ namespace Sym {
                 return Util::Order::Equal;
             }
             if (base1->is(Type::NumericConstant)) {
-                destination->init_from(NumericConstant::with_value(pow(base1->as<NumericConstant>().value, exp_sum)));
+                destination->init_from(
+                    NumericConstant::with_value(pow(base1->as<NumericConstant>().value, exp_sum)));
                 return Util::Order::Equal;
             }
             Pow<Copy, Num>::init(*destination, {*base1, exp_sum});
@@ -337,7 +382,7 @@ namespace Sym {
     std::string Reciprocal::to_string() const { return fmt::format("(1/{})", arg().to_string()); }
 
     std::string Reciprocal::to_tex() const {
-        return fmt::format(R"(\frac{{1}}{{ {} }})", arg().to_string());
+        return fmt::format(R"(\frac{{1}}{{ {} }})", arg().to_tex());
     }
 
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)

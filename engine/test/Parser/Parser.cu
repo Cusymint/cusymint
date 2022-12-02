@@ -99,13 +99,13 @@ namespace Test {
                 Sym::log(Sym::var() + Sym::num(1), Sym::e()))
 
     PARSER_TEST(LeftAssociativityOfAddition, "x+1+e+pi",
-                Sym::var() + Sym::num(1) + Sym::e() + Sym::pi())
+                ((Sym::var() + Sym::num(1)) + Sym::e()) + Sym::pi())
     PARSER_TEST(LeftAssociativityOfMultiplication, "x*1*e*pi",
-                Sym::var() * Sym::num(1) * Sym::e() * Sym::pi())
+                ((Sym::var() * Sym::num(1)) * Sym::e()) * Sym::pi())
     PARSER_TEST(LeftAssociativityOfSutraction, "x-1-e-pi",
-                Sym::var() - Sym::num(1) - Sym::e() - Sym::pi())
+                ((Sym::var() - Sym::num(1)) - Sym::e()) - Sym::pi())
     PARSER_TEST(LeftAssociativityOfDivision, "x/1/e/pi",
-                Sym::var() / Sym::num(1) / Sym::e() / Sym::pi())
+                ((Sym::var() / Sym::num(1)) / Sym::e()) / Sym::pi())
 
     PARSER_TEST(RightAssociativityOfPower, "e^2^pi^x",
                 Sym::e() ^ (Sym::num(2) ^ (Sym::pi() ^ Sym::var())))

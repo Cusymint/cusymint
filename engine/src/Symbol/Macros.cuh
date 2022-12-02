@@ -433,7 +433,7 @@ template <class T, class U> struct MacroType<T(U)> {
      *                                                                                        \
      * @return Count of symbols in the tree.                                                  \
      */                                                                                       \
-    __host__ __device__ size_t tree_size();
+    __host__ __device__ size_t tree_size() const;
 
 #define DEFINE_TRY_FUSE_SYMBOLS(_name)                                \
     __host__ __device__ SimplificationResult _name::try_fuse_symbols( \
@@ -652,7 +652,7 @@ template <class T, class U> struct MacroType<T(U)> {
     /*                                                                                                     \
      * @brief Number of leaves in a two argument operator tree                                             \
      */                                                                                                    \
-    __host__ __device__ size_t _name::tree_size() {                                                        \
+    __host__ __device__ size_t _name::tree_size() const {                                                  \
         /* In every sum, number of terms is equal to number of operator signs plus 1.                      \
          * When an addition tree is simplified, all operator symbols are placed in a row,                  \
          * so it suffices to calculate address of the last operator symbol. The offset between             \
