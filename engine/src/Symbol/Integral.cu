@@ -111,7 +111,7 @@ namespace Sym {
         integrate_by_substitution_with_derivative(substitution_pairs, 1, derivative, destination);
     }
 
-    __device__ void Integral::integrate_by_substitution_with_derivative(
+    __host__ __device__ void Integral::integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
         const size_t pattern_count, const Symbol& derivative, Symbol& destination) const {
 

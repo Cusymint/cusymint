@@ -137,7 +137,7 @@ namespace Test {
     META_TEST_INIT(Solution, SolutionOfIntegral<Neg<Cos<Var>>>, solution(-cos(var())),
                    integral(var()).data()->as<Integral>())
     META_TEST_INIT(SubexpressionCandidate, Candidate<Neg<Cos<Var>>>,
-                   first_expression_candidate(-cos(var())), (cuda::std::make_tuple(0UL, 0UL, 1)))
+                   first_expression_candidate(-cos(var())), (cuda::std::make_tuple(0UL, 0UL, 0UL)))
     META_TEST_INIT(Integral, Int<Neg<Cos<Var>>>, integral(-cos(var())),
                    integral(var()).data()->as<Integral>())
     META_TEST_INIT(SubexpressionVacancy, Vacancy, single_integral_vacancy(), 0, 1, 0)
