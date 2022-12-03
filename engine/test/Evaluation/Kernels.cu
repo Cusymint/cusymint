@@ -15,10 +15,10 @@ namespace Test {
             "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)",
             "1/(1/(1/(1/(x))))",
             "2*5*7*x^5/(--(14*x^2))",
-        }; //"3*(2*x+4*(10*x+2)+5)+1"};
+        }; // TODO: add "3*(2*x+4*(10*x+2)+5)+1" when feature/expression-splitting merged
         StringVector solutions_vector = {
             "1", "e^(pi*x*sin(x))", "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)", "x", "5*x^3",
-        }; // "40+126*x"};
+        }; // TODO: add "40+126*x" when feature/expression-splitting merged
         Sym::ExpressionArray<Sym::SubexpressionCandidate> expressions =
             from_string_vector_with_candidate(expressions_vector);
         Sym::ExpressionArray<Sym::SubexpressionCandidate> destination =
