@@ -108,7 +108,7 @@ namespace Sym {
         mark_to_be_copied_and_propagate_additional_size(destination);
 
         Symbol* compressed_reversed_destination = destination;
-        for (ssize_t i = size() - 1; i >= 0; --i) {
+        for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
             if (at(i)->to_be_copied()) {
                 at(i)->to_be_copied() = false;
 
@@ -146,7 +146,7 @@ namespace Sym {
         return new_size;
     }
 
-    __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
+    __host__ __device__ void Symbol::simplify(Symbol& help_space) {
         bool success = false;
 
         while (!success) {
@@ -156,13 +156,13 @@ namespace Sym {
                 success = at(i)->simplify_in_place(help_space) && success;
             }
 
-            const size_t new_size = compress_reverse_to(help_space);
-            copy_and_reverse_symbol_sequence(this, help_space, new_size);
+            const size_t new_size = compress_reverse_to(&help_space);
+            copy_and_reverse_symbol_sequence(*this, help_space, new_size);
         }
     }
 
-    __host__ __device__ bool Symbol::simplify_in_place(Symbol* const help_space) {
-        return VIRTUAL_CALL(*this, simplify_in_place, help_space);
+    __host__ __device__ bool Symbol::simplify_in_place(Symbol& help_space) {
+        return VIRTUAL_CALL(*this, simplify_in_place, &help_space);
     }
 
     void Symbol::substitute_variable_with(const Symbol symbol) {
@@ -177,7 +177,7 @@ namespace Sym {
         std::string substitution_name = Substitution::nth_substitution_name(n);
 
         Symbol substitute{};
-        substitute.unknown_constant = UnknownConstant::create(substitution_name.c_str());
+        substitute.init_from(UnknownConstant::create(substitution_name.c_str()));
         substitute_variable_with(substitute);
     }
 

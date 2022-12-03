@@ -33,17 +33,17 @@ namespace Sym {
 
         const size_t new_integrand_size = substitution->size();
 
-        symbol()->copy_single_to(destination);
-        destination->integral.size = new_integrand_size + new_substitutions_size + 1;
-        destination->integral.integrand_offset = new_substitutions_size + 1;
+        symbol().copy_single_to(*destination);
+        destination->as<Integral>().size = new_integrand_size + new_substitutions_size + 1;
+        destination->as<Integral>().integrand_offset = new_substitutions_size + 1;
 
         return 1;
     }
 
     DEFINE_ARE_EQUAL(Integral) {
         return BASE_ARE_EQUAL(Integral) &&
-               symbol->integral.substitution_count == substitution_count &&
-               symbol->integral.integrand_offset == integrand_offset;
+               symbol->as<Integral>().substitution_count == substitution_count &&
+               symbol->as<Integral>().integrand_offset == integrand_offset;
     }
 
     DEFINE_IS_FUNCTION_OF(Integral) {
@@ -52,7 +52,7 @@ namespace Sym {
 
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Integral) {
         if (substitution_count > 0) {
-            stack.push(first_substitution()->symbol());
+            stack.push(first_substitution().symbol_ptr());
         }
 
         stack.push(&integrand());
@@ -66,7 +66,7 @@ namespace Sym {
     __host__ __device__ void Integral::seal_no_substitutions() { seal_substitutions(0, 0); }
 
     __host__ __device__ void Integral::seal_single_substitution() {
-        seal_substitutions(1, (symbol() + integrand_offset)->size());
+        seal_substitutions(1, (symbol_ptr() + integrand_offset)->size());
     }
 
     __host__ __device__ void Integral::seal_substitutions(const size_t count, const size_t size) {
@@ -76,7 +76,7 @@ namespace Sym {
 
     __host__ __device__ void Integral::seal() { size = integrand_offset + integrand().size(); }
 
-    __host__ __device__ Symbol& Integral::integrand() { return (*symbol())[integrand_offset]; }
+    __host__ __device__ Symbol& Integral::integrand() { return symbol()[integrand_offset]; }
 
     __host__ __device__ const Symbol& Integral::integrand() const {
         return const_cast<Symbol&>(const_cast<Integral* const>(this)->integrand());
@@ -171,12 +171,12 @@ namespace Sym {
         destination_integral.seal();
     }
 
-    __host__ __device__ const Substitution* Integral::first_substitution() const {
-        return &Symbol::from(this)->child().substitution;
+    __host__ __device__ const Substitution& Integral::first_substitution() const {
+        return symbol().child().as<Substitution>();
     }
 
-    __host__ __device__ Substitution* Integral::first_substitution() {
-        return &Symbol::from(this)->child().substitution;
+    __host__ __device__ Substitution& Integral::first_substitution() {
+        return symbol().child().as<Substitution>();
     }
 
     __host__ __device__ size_t Integral::substitutions_size() const {

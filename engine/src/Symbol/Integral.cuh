@@ -77,8 +77,8 @@ namespace Sym {
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
         const size_t pattern_count, const Symbol& derivative, SymbolIterator& destination) const;
 
-    [[nodiscard]] __host__ __device__ const Substitution* first_substitution() const;
-    [[nodiscard]] __host__ __device__ Substitution* first_substitution();
+    [[nodiscard]] __host__ __device__ const Substitution& first_substitution() const;
+    [[nodiscard]] __host__ __device__ Substitution& first_substitution();
 
     /*
      * @brief Number of symbols between the integral symbol and the integrand (not counting either

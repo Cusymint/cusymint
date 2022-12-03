@@ -29,72 +29,50 @@
 #include "Utils/OptionalNumber.cuh"
 #include "Utils/Result.cuh"
 
+#define VC_CASE(_type, _instance, _member_function, ...)              \
+    case Type::_type: {                                               \
+        return (_instance).as<_type>()._member_function(__VA_ARGS__); \
+    }
+
 // Also works when `_member_function` returns void
-#define VIRTUAL_CALL(_instance, _member_function, ...)                                     \
-    (([&]() {                                                                              \
-        switch ((_instance).unknown.type) {                                                \
-        case Type::Symbol:                                                                 \
-            Util::crash("Trying to access a virtual function (%s) on a pure Symbol",       \
-                        #_member_function);                                                \
-            break;                                                                         \
-        case Type::NumericConstant:                                                        \
-            return (_instance).numeric_constant._member_function(__VA_ARGS__);             \
-        case Type::KnownConstant:                                                          \
-            return (_instance).known_constant._member_function(__VA_ARGS__);               \
-        case Type::UnknownConstant:                                                        \
-            return (_instance).unknown_constant._member_function(__VA_ARGS__);             \
-        case Type::Variable:                                                               \
-            return (_instance).variable._member_function(__VA_ARGS__);                     \
-        case Type::ExpanderPlaceholder:                                                    \
-            return (_instance).expander_placeholder._member_function(__VA_ARGS__);         \
-        case Type::SubexpressionCandidate:                                                 \
-            return (_instance).subexpression_candidate._member_function(__VA_ARGS__);      \
-        case Type::SubexpressionVacancy:                                                   \
-            return (_instance).subexpression_vacancy._member_function(__VA_ARGS__);        \
-        case Type::Integral:                                                               \
-            return (_instance).integral._member_function(__VA_ARGS__);                     \
-        case Type::Solution:                                                               \
-            return (_instance).solution._member_function(__VA_ARGS__);                     \
-        case Type::Substitution:                                                           \
-            return (_instance).substitution._member_function(__VA_ARGS__);                 \
-        case Type::Addition:                                                               \
-            return (_instance).addition._member_function(__VA_ARGS__);                     \
-        case Type::Negation:                                                               \
-            return (_instance).negation._member_function(__VA_ARGS__);                     \
-        case Type::Product:                                                                \
-            return (_instance).product._member_function(__VA_ARGS__);                      \
-        case Type::Reciprocal:                                                             \
-            return (_instance).reciprocal._member_function(__VA_ARGS__);                   \
-        case Type::Power:                                                                  \
-            return (_instance).power._member_function(__VA_ARGS__);                        \
-        case Type::Sine:                                                                   \
-            return (_instance).sine._member_function(__VA_ARGS__);                         \
-        case Type::Cosine:                                                                 \
-            return (_instance).cosine._member_function(__VA_ARGS__);                       \
-        case Type::Tangent:                                                                \
-            return (_instance).tangent._member_function(__VA_ARGS__);                      \
-        case Type::Cotangent:                                                              \
-            return (_instance).cotangent._member_function(__VA_ARGS__);                    \
-        case Type::Arcsine:                                                                \
-            return (_instance).arcsine._member_function(__VA_ARGS__);                      \
-        case Type::Arccosine:                                                              \
-            return (_instance).arccosine._member_function(__VA_ARGS__);                    \
-        case Type::Arctangent:                                                             \
-            return (_instance).arctangent._member_function(__VA_ARGS__);                   \
-        case Type::Arccotangent:                                                           \
-            return (_instance).arccotangent._member_function(__VA_ARGS__);                 \
-        case Type::Logarithm:                                                              \
-            return (_instance).logarithm._member_function(__VA_ARGS__);                    \
-        case Type::Polynomial:                                                             \
-            return (_instance).polynomial._member_function(__VA_ARGS__);                   \
-        case Type::Unknown:                                                                \
-            return (_instance).unknown._member_function(__VA_ARGS__);                      \
-        }                                                                                  \
-                                                                                           \
-        Util::crash("Trying to access a virtual function (%s) on an invalid type",         \
-                    #_member_function);                                                    \
-        /* To avoid warnings about missing return, it is not going to be called anyways */ \
-        return (_instance).unknown._member_function(__VA_ARGS__);                          \
+#define VIRTUAL_CALL(_instance, _member_function, ...)                                \
+    (([&]() {                                                                         \
+        switch ((_instance).type()) {                                                 \
+        case Type::Symbol: {                                                          \
+            Util::crash("Trying to access a virtual function (%s) on a pure Symbol",  \
+                        #_member_function);                                           \
+            break;                                                                    \
+        }                                                                             \
+            VC_CASE(NumericConstant, _instance, _member_function, __VA_ARGS__)        \
+            VC_CASE(KnownConstant, _instance, _member_function, __VA_ARGS__)          \
+            VC_CASE(UnknownConstant, _instance, _member_function, __VA_ARGS__)        \
+            VC_CASE(Variable, _instance, _member_function, __VA_ARGS__)               \
+            VC_CASE(ExpanderPlaceholder, _instance, _member_function, __VA_ARGS__)    \
+            VC_CASE(SubexpressionCandidate, _instance, _member_function, __VA_ARGS__) \
+            VC_CASE(SubexpressionVacancy, _instance, _member_function, __VA_ARGS__)   \
+            VC_CASE(Integral, _instance, _member_function, __VA_ARGS__)               \
+            VC_CASE(Solution, _instance, _member_function, __VA_ARGS__)               \
+            VC_CASE(Substitution, _instance, _member_function, __VA_ARGS__)           \
+            VC_CASE(Addition, _instance, _member_function, __VA_ARGS__)               \
+            VC_CASE(Negation, _instance, _member_function, __VA_ARGS__)               \
+            VC_CASE(Product, _instance, _member_function, __VA_ARGS__)                \
+            VC_CASE(Reciprocal, _instance, _member_function, __VA_ARGS__)             \
+            VC_CASE(Power, _instance, _member_function, __VA_ARGS__)                  \
+            VC_CASE(Sine, _instance, _member_function, __VA_ARGS__)                   \
+            VC_CASE(Cosine, _instance, _member_function, __VA_ARGS__)                 \
+            VC_CASE(Tangent, _instance, _member_function, __VA_ARGS__)                \
+            VC_CASE(Cotangent, _instance, _member_function, __VA_ARGS__)              \
+            VC_CASE(Arcsine, _instance, _member_function, __VA_ARGS__)                \
+            VC_CASE(Arccosine, _instance, _member_function, __VA_ARGS__)              \
+            VC_CASE(Arctangent, _instance, _member_function, __VA_ARGS__)             \
+            VC_CASE(Arccotangent, _instance, _member_function, __VA_ARGS__)           \
+            VC_CASE(Logarithm, _instance, _member_function, __VA_ARGS__)              \
+            VC_CASE(Polynomial, _instance, _member_function, __VA_ARGS__)             \
+            VC_CASE(Unknown, _instance, _member_function, __VA_ARGS__)                \
+        }                                                                             \
+                                                                                      \
+        Util::crash("Trying to access a virtual function (%s) on an invalid type",    \
+                    #_member_function);                                               \
     })())
 
 namespace Sym {
@@ -411,7 +389,7 @@ namespace Sym {
          *
          * @param help_space Help space
          */
-        __host__ __device__ void simplify(Symbol* const help_space);
+        __host__ __device__ void simplify(Symbol& help_space);
 
         /*
          * @brief Simplified an expression. Can leave the expression with holes.
@@ -421,7 +399,7 @@ namespace Sym {
          * @return `true` if expression was simplified, `false` if simplified result
          * would take more space than `size()` or expression needs to be simplified again.
          */
-        __host__ __device__ bool simplify_in_place(Symbol* const help_space);
+        __host__ __device__ bool simplify_in_place(Symbol& help_space);
 
         /*
          * @brief Recalculates sizes and argument offsets in the given expression. There cannot be

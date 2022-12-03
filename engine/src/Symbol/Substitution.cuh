@@ -23,12 +23,12 @@ namespace Sym {
     __host__ __device__ static void create(const Symbol* const expression,
                                            Symbol* const destination,
                                            const size_t substitution_idx);
-    static std::string nth_substitution_name(const size_t n);
+    [[nodiscard]] static std::string nth_substitution_name(const size_t n);
 
-    __host__ __device__ Symbol* expression();
-    [[nodiscard]] __host__ __device__ const Symbol* expression() const;
-    [[nodiscard]] __host__ __device__ Substitution* next_substitution();
-    [[nodiscard]] __host__ __device__ const Substitution* next_substitution() const;
+    [[nodiscard]] __host__ __device__ const Symbol& expression() const;
+    [[nodiscard]] __host__ __device__ Symbol& expression();
+    [[nodiscard]] __host__ __device__ const Substitution& next_substitution() const;
+    [[nodiscard]] __host__ __device__ Substitution& next_substitution();
     [[nodiscard]] __host__ __device__ bool is_last_substitution() const;
 
     /*

@@ -71,9 +71,9 @@ template <class T, class U> struct MacroType<T(U)> {
             return {                                                                     \
                 .type = Sym::Type::_name,                                                \
                 .size = BUILDER_SIZE,                                                    \
+                .additional_required_size = 0,                                           \
                 .simplified = _simple,                                                   \
                 .to_be_copied = false,                                                   \
-                .additional_required_size = 0,                                           \
             };                                                                           \
         }                                                                                \
                                                                                          \
@@ -83,18 +83,18 @@ template <class T, class U> struct MacroType<T(U)> {
             return {                                                                     \
                 .type = Sym::Type::_name,                                                \
                 .size = 1,                                                               \
+                .additional_required_size = 0,                                           \
                 .simplified = _simple,                                                   \
                 .to_be_copied = false,                                                   \
-                .additional_required_size = 0,                                           \
             };                                                                           \
         }                                                                                \
                                                                                          \
-        __host__ __device__ inline const Symbol* symbol() const {                        \
-            return reinterpret_cast<const Symbol*>(this);                                \
+        __host__ __device__ inline const Symbol& symbol() const {                        \
+            return reinterpret_cast<const Symbol&>(this);                                \
         }                                                                                \
                                                                                          \
-        __host__ __device__ inline Symbol* symbol() {                                    \
-            return const_cast<Symbol*>(const_cast<const _name*>(this)->symbol());        \
+        __host__ __device__ inline Symbol& symbol() {                                    \
+            return const_cast<Symbol&>(const_cast<const _name*>(this)->symbol());        \
         }                                                                                \
                                                                                          \
         ARE_EQUAL_HEADER(are_equal);                                                     \
@@ -166,16 +166,16 @@ template <class T, class U> struct MacroType<T(U)> {
         return false; /* Just to silence warnings */                                    \
     }
 
-#define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                     \
-    DEFINE_IS_FUNCTION_OF(_name) {                                           \
-        for (size_t i = 0; i < expression_count; ++i) {                      \
-            if (expressions[i]->is<_name>() &&                               \
-                Symbol::are_expressions_equal(*symbol(), *expressions[i])) { \
-                return true;                                                 \
-            }                                                                \
-        }                                                                    \
-                                                                             \
-        return arg().is_function_of(expressions, expression_count);          \
+#define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                    \
+    DEFINE_IS_FUNCTION_OF(_name) {                                          \
+        for (size_t i = 0; i < expression_count; ++i) {                     \
+            if (expressions[i]->is<_name>() &&                              \
+                Symbol::are_expressions_equal(symbol(), *expressions[i])) { \
+                return true;                                                \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        return arg().is_function_of(expressions, expression_count);         \
     }
 
 #define BASE_ARE_EQUAL(_name) \
@@ -219,7 +219,7 @@ template <class T, class U> struct MacroType<T(U)> {
             (destination + i)->init_from(Unknown::create());                    \
         }                                                                       \
         Symbol* const new_destination = destination + additional_required_size; \
-        symbol()->copy_single_to(new_destination);                              \
+        symbol().copy_single_to(new_destination);                               \
         return size + additional_required_size;                                 \
     }
 
@@ -232,7 +232,7 @@ template <class T, class U> struct MacroType<T(U)> {
         child_additional_size = 0;                                                         \
                                                                                            \
         const size_t new_arg_size = (destination - 1)->size();                             \
-        symbol()->copy_single_to(destination);                                             \
+        symbol().copy_single_to(*destination);                                             \
         destination->size() = new_arg_size + 1;                                            \
         return 1;                                                                          \
     }
@@ -253,7 +253,7 @@ template <class T, class U> struct MacroType<T(U)> {
                                                                                     \
         const size_t new_arg2_size = (destination - new_arg1_size - 1)->size();     \
                                                                                     \
-        symbol()->copy_single_to(destination);                                      \
+        symbol().copy_single_to(*destination);                                       \
         destination->size() = new_arg1_size + new_arg2_size + 1;                    \
         destination->as<_name>().second_arg_offset = new_arg1_size + 1;             \
         return 1;                                                                   \
@@ -308,15 +308,17 @@ template <class T, class U> struct MacroType<T(U)> {
 
 #define DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(_name)                                                  \
     DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                      \
-    __host__ __device__ const Symbol& _name::arg() const { return Symbol::from(this)[1]; }       \
+    __host__ __device__ const Symbol& _name::arg() const { return symbol().child(); }            \
                                                                                                  \
-    __host__ __device__ Symbol& _name::arg() { return Symbol::from(this)[1]; }                   \
+    __host__ __device__ Symbol& _name::arg() {                                                   \
+        return const_cast<Symbol&>(const_cast<_name*>(this)->arg());                             \
+    }                                                                                            \
                                                                                                  \
     __host__ __device__ void _name::seal() { size = 1 + arg().size(); }                          \
                                                                                                  \
     __host__ __device__ void _name::create(const Symbol* const arg, Symbol* const destination) { \
         _name* const one_arg_op = destination << _name::builder();                               \
-        arg->copy_to(&one_arg_op->arg());                                                        \
+        arg->copy_to(one_arg_op->arg());                                                         \
         one_arg_op->seal();                                                                      \
     }                                                                                            \
                                                                                                  \
@@ -430,60 +432,62 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ SimplificationResult _name::try_fuse_symbols( \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space)
 
-#define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                  \
-    DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                      \
-                                                                                                 \
-    __host__ __device__ const Symbol& _name::arg1() const { return Symbol::from(this)[1]; }      \
-                                                                                                 \
-    __host__ __device__ Symbol& _name::arg1() { return Symbol::from(this)[1]; }                  \
-                                                                                                 \
-    __host__ __device__ const Symbol& _name::arg2() const {                                      \
-        return Symbol::from(this)[second_arg_offset];                                            \
-    };                                                                                           \
-                                                                                                 \
-    __host__ __device__ Symbol& _name::arg2() { return Symbol::from(this)[second_arg_offset]; }; \
-                                                                                                 \
-    __host__ __device__ void _name::seal_arg1() { second_arg_offset = 1 + arg1().size(); }       \
-                                                                                                 \
-    __host__ __device__ void _name::seal() { size = 1 + arg1().size() + arg2().size(); }         \
-                                                                                                 \
-    __host__ __device__ void _name::swap_args(Symbol* const help_space) {                        \
-        arg1().copy_to(help_space);                                                              \
-        arg2().copy_to(&arg1());                                                                 \
-        seal_arg1();                                                                             \
-        help_space->copy_to(&arg2());                                                            \
-        seal();                                                                                  \
-    }                                                                                            \
-                                                                                                 \
-    __host__ __device__ void _name::create(const Symbol* const arg1, const Symbol* const arg2,   \
-                                           Symbol* const destination) {                          \
-        _name* const two_arg_op = destination << _name::builder();                               \
-        arg1->copy_to(&two_arg_op->arg1());                                                      \
-        two_arg_op->seal_arg1();                                                                 \
-        arg2->copy_to(&two_arg_op->arg2());                                                      \
-        two_arg_op->seal();                                                                      \
-    }                                                                                            \
-    DEFINE_PUSH_CHILDREN_ONTO_STACK(_name) {                                                     \
-        stack.push(&arg1());                                                                     \
-        stack.push(&arg2());                                                                     \
-    }                                                                                            \
-                                                                                                 \
-    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
-        push_children_onto_stack(stack);                                                         \
-        arg2().additional_required_size() += additional_required_size;                           \
-    }                                                                                            \
-                                                                                                 \
-    __host__ __device__ _name* _name::create_reversed_at(Symbol* const destination) {            \
-        _name* const symbol = destination << _name::builder();                                   \
-        symbol->second_arg_offset = (destination - 1)->size() + 1;                               \
-        symbol->size =                                                                           \
-            symbol->second_arg_offset + (destination - symbol->second_arg_offset)->size();       \
-        return symbol;                                                                           \
-    }                                                                                            \
-                                                                                                 \
-    DEFINE_SEAL_WHOLE(_name) {                                                                   \
-        seal_arg1();                                                                             \
-        seal();                                                                                  \
+#define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                    \
+    DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                        \
+                                                                                                   \
+    __host__ __device__ const Symbol& _name::arg1() const { return symbol().child(); }             \
+                                                                                                   \
+    __host__ __device__ Symbol& _name::arg1() {                                                    \
+        return const_cast<Symbol&>(const_cast<_name*>(this)->arg1());                              \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ const Symbol& _name::arg2() const { return symbol()[second_arg_offset]; }; \
+                                                                                                   \
+    __host__ __device__ Symbol& _name::arg2() {                                                    \
+        return const_cast<Symbol&>(const_cast<_name*>(this)->arg2());                              \
+    };                                                                                             \
+                                                                                                   \
+    __host__ __device__ void _name::seal_arg1() { second_arg_offset = 1 + arg1().size(); }         \
+                                                                                                   \
+    __host__ __device__ void _name::seal() { size = 1 + arg1().size() + arg2().size(); }           \
+                                                                                                   \
+    __host__ __device__ void _name::swap_args(Symbol* const help_space) {                          \
+        arg1().copy_to(*help_space);                                                                \
+        arg2().copy_to(arg1());                                                                    \
+        seal_arg1();                                                                               \
+        help_space->copy_to(arg2());                                                               \
+        seal();                                                                                    \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ void _name::create(const Symbol* const arg1, const Symbol* const arg2,     \
+                                           Symbol* const destination) {                            \
+        _name* const two_arg_op = destination << _name::builder();                                 \
+        arg1->copy_to(two_arg_op->arg1());                                                         \
+        two_arg_op->seal_arg1();                                                                   \
+        arg2->copy_to(two_arg_op->arg2());                                                         \
+        two_arg_op->seal();                                                                        \
+    }                                                                                              \
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(_name) {                                                       \
+        stack.push(&arg1());                                                                       \
+        stack.push(&arg2());                                                                       \
+    }                                                                                              \
+                                                                                                   \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                     \
+        push_children_onto_stack(stack);                                                           \
+        arg2().additional_required_size() += additional_required_size;                             \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ _name* _name::create_reversed_at(Symbol* const destination) {              \
+        _name* const symbol = destination << _name::builder();                                     \
+        symbol->second_arg_offset = (destination - 1)->size() + 1;                                 \
+        symbol->size =                                                                             \
+            symbol->second_arg_offset + (destination - symbol->second_arg_offset)->size();         \
+        return symbol;                                                                             \
+    }                                                                                              \
+                                                                                                   \
+    DEFINE_SEAL_WHOLE(_name) {                                                                     \
+        seal_arg1();                                                                               \
+        seal();                                                                                    \
     }
 
 #define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
@@ -502,8 +506,7 @@ template <class T, class U> struct MacroType<T(U)> {
     }                                                                                                      \
                                                                                                            \
     __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                         \
-        if (!symbol()->is(_name::TYPE) ||                                                                  \
-            !arg2().is(Type::_name) && is_tree_sorted(*help_space)) {                                      \
+        if (!symbol().is(_name::TYPE) || !arg2().is(Type::_name) && is_tree_sorted(*help_space)) {         \
             return;                                                                                        \
         }                                                                                                  \
                                                                                                            \

@@ -96,7 +96,7 @@ namespace Sym {
 
     __host__ __device__ void Addition::eliminate_zeros() {
         for (auto* last = last_in_tree(); last >= this;
-             last = (last->symbol() - 1)->as_ptr<Addition>()) {
+             last = (last->symbol_ptr() - 1)->as_ptr<Addition>()) {
             if (last->arg2().is(Type::NumericConstant) &&
                 last->arg2().as<NumericConstant>().value == 0.0) {
                 last->arg1().move_to(last->symbol());
@@ -130,7 +130,7 @@ namespace Sym {
         }
 
         if (arg().is(Type::NumericConstant)) {
-            symbol()->init_from(NumericConstant::with_value(-arg().numeric_constant.value));
+            symbol().init_from(NumericConstant::with_value(-arg().as<NumericConstant>().value));
             return true;
         }
 
@@ -158,11 +158,11 @@ namespace Sym {
 
     std::string Addition::to_tex() const {
         if (arg2().is(Type::Negation)) {
-            return fmt::format("{}{}", arg1().to_tex(), arg2().negation.to_tex());
+            return fmt::format("{}{}", arg1().to_tex(), arg2().as<Negation>().to_tex());
         }
 
-        if (arg2().is(Type::NumericConstant) && arg2().numeric_constant.value < 0.0) {
-            return fmt::format("{}-{}", arg1().to_tex(), -arg2().numeric_constant.value);
+        if (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value < 0.0) {
+            return fmt::format("{}-{}", arg1().to_tex(), -arg2().as<NumericConstant>().value);
         }
 
         return fmt::format("{}+{}", arg1().to_tex(), arg2().to_tex());
@@ -192,5 +192,4 @@ namespace Sym {
     std::vector<Symbol> operator-(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         return lhs + (-rhs);
     }
-
 }

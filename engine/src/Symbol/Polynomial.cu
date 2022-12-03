@@ -66,8 +66,8 @@ namespace Sym {
     }
 
     DEFINE_ARE_EQUAL(Polynomial) {
-        return BASE_ARE_EQUAL(Polynomial) && symbol->polynomial.rank == rank &&
-               are_coefficients_equal(*this, symbol->polynomial);
+        return BASE_ARE_EQUAL(Polynomial) && symbol->as<Polynomial>().rank == rank &&
+               are_coefficients_equal(*this, symbol->as<Polynomial>());
     }
 
     __host__ __device__ void Polynomial::make_polynomial_at(const Symbol* const symbol,
