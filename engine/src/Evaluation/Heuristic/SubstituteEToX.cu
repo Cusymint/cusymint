@@ -9,7 +9,8 @@ namespace Sym::Heuristic {
 
     __device__ EvaluationStatus transform_function_of_ex(
         const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
-        const ExpressionArray<>::Iterator& /*expression_dst*/, Symbol& /*help_space*/) {
+        const ExpressionArray<>::Iterator& /*expression_dst*/,
+        const ExpressionArray<>::Iterator& /*help_space*/) {
         SymbolIterator iterator =
             TRY_EVALUATE_RESULT(SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
 

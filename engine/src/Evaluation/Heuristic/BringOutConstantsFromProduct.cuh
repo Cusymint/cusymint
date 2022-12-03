@@ -7,7 +7,8 @@ namespace Sym::Heuristic {
     __device__ CheckResult contains_constants_product(const Integral& integral);
     __device__ EvaluationStatus bring_out_constants_from_product(
         const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
-        const ExpressionArray<>::Iterator& expression_dst, Symbol& /*help_space*/);
+        const ExpressionArray<>::Iterator& expression_dst,
+        const ExpressionArray<>::Iterator& /*help_space*/);
 }
 
 #endif

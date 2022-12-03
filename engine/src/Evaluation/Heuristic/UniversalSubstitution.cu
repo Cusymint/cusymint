@@ -13,7 +13,8 @@ namespace Sym::Heuristic {
 
     __device__ EvaluationStatus do_universal_substitution(
         const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
-        const ExpressionArray<>::Iterator& /*expression_dst*/, Symbol& /*help_space*/) {
+        const ExpressionArray<>::Iterator& /*expression_dst*/,
+        const ExpressionArray<>::Iterator& /*help_space*/) {
         const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
             Util::Pair<const Symbol*, const Symbol*>(&Static::tan_x_over_2(), &Static::identity()),
             Util::Pair<const Symbol*, const Symbol*>(&Static::sin_x(), &Static::universal_sin_x()),

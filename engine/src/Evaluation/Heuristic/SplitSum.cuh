@@ -6,9 +6,9 @@
 namespace Sym::Heuristic {
     __device__ CheckResult is_sum(const Integral& integral);
     __device__ EvaluationStatus split_sum(const SubexpressionCandidate& integral,
-                              const ExpressionArray<>::Iterator& integral_dst,
-                              const ExpressionArray<>::Iterator& expression_dst,
-                              Symbol& /*help_space*/);
+                                          const ExpressionArray<>::Iterator& integral_dst,
+                                          const ExpressionArray<>::Iterator& expression_dst,
+                                          const ExpressionArray<>::Iterator& /*help_space*/);
 }
 
 #endif

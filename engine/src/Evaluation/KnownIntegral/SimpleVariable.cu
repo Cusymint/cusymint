@@ -4,15 +4,12 @@
 
 namespace Sym::KnownIntegral {
     __device__ size_t is_simple_variable(const Integral& integral) {
-        return integral.integrand()->is(Type::Variable) ? 1 : 0;
+        return integral.integrand().is(Type::Variable) ? 1 : 0;
     }
 
-    __device__ EvaluationStatus integrate_simple_variable(const Integral& integral,
-                                                          Symbol& destination,
-                                                          Symbol& /*help_space*/) {
-        // TODO: ehhhh trzeba to policzyć lub napisać coś co to policzy ENSURE_ENOUGH_SPACE(/**/,
-        // destination);
-        SolutionOfIntegral<Prod<Num, Pow<Var, Integer<2>>>>::init(destination, {integral, 0.5});
-        /* return EvaluationStatus::Done; */
+    __device__ EvaluationStatus integrate_simple_variable(
+        const Integral& integral, const ExpressionArray<>::Iterator& destination,
+        const ExpressionArray<>::Iterator& /*help_space*/) {
+        return simple_solution<Prod<Num, Pow<Var, Integer<2>>>>(destination, {integral, 0.5});
     }
 }
