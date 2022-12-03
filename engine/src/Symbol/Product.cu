@@ -16,7 +16,7 @@ namespace Sym {
             if (numerator.is(Type::Logarithm) && denominator.is(Type::Logarithm)) {
                 return fmt::format(R"(\log_{{ {} }}\left({}\right))",
                                    denominator.as<Logarithm>().arg().to_tex(),
-                                   numerator.logarithm.arg().to_tex());
+                                   numerator.as<Logarithm>().arg().to_tex());
             }
             return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(),
                                denominator.to_tex());
@@ -228,7 +228,7 @@ namespace Sym {
 
     __host__ __device__ void Product::eliminate_ones() {
         for (auto* last = last_in_tree(); last >= this;
-             last = (last->symbol_ptr() - 1)->as_ptr<Product>()) {
+             last = (&last->symbol() - 1)->as_ptr<Product>()) {
             if (last->arg2().is(Type::NumericConstant) &&
                 last->arg2().as<NumericConstant>().value == 1.0) {
                 last->arg1().move_to(last->symbol());

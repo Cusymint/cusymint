@@ -139,9 +139,12 @@ namespace Sym::Kernel {
                 auto* const subexpr_candidate = expressions.at(dest_idx)
                                                 << SubexpressionCandidate::builder();
                 subexpr_candidate->copy_metadata_from(integrals[int_idx]);
+                SymbolIterator dst_iterator = SymbolIterator::from_at(
+                    subexpr_candidate->arg(), 0, expressions.expression_capacity(dest_idx));
+
                 KnownIntegral::APPLICATIONS[trans_idx](integrals[int_idx].arg().as<Integral>(),
-                                                       subexpr_candidate->arg(),
-                                                       help_spaces[dest_idx]);
+                                                       dst_iterator,
+                                                       help_spaces.iterator(dest_idx));
                 subexpr_candidate->seal();
 
                 try_set_solver_idx(expressions, dest_idx);
@@ -326,12 +329,13 @@ namespace Sym::Kernel {
                                                 index_from_scan(new_expressions_indices, appl_idx);
                     Heuristic::APPLICATIONS[trans_idx](
                         integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
-                        expressions_destinations.iterator(expr_dst_idx), help_spaces[int_dst_idx]);
+                        expressions_destinations.iterator(expr_dst_idx),
+                        help_spaces.iterator(int_dst_idx));
                 }
                 else {
                     Heuristic::APPLICATIONS[trans_idx](
                         integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
-                        ExpressionArray<>::Iterator::null(), help_spaces[int_dst_idx]);
+                        ExpressionArray<>::Iterator::null(), help_spaces.iterator(int_dst_idx));
                 }
             }
         }

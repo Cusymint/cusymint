@@ -213,14 +213,15 @@ template <class T, class U> struct MacroType<T(U)> {
 
 #define DEFINE_COMPRESS_REVERSE_TO(_name) COMPRESS_REVERSE_TO_HEADER(_name::compress_reverse_to)
 
-#define DEFINE_SIMPLE_COMPRESS_REVERSE_TO(_name)                                \
-    DEFINE_COMPRESS_REVERSE_TO(_name) {                                         \
-        for (size_t i = 0; i < additional_required_size; ++i) {                 \
-            (destination + i)->init_from(Unknown::create());                    \
-        }                                                                       \
-        Symbol* const new_destination = destination + additional_required_size; \
-        symbol().copy_single_to(new_destination);                               \
-        return size + additional_required_size;                                 \
+#define DEFINE_SIMPLE_COMPRESS_REVERSE_TO(_name)                             \
+    DEFINE_COMPRESS_REVERSE_TO(_name) {                                      \
+        for (size_t i = 0; i < additional_required_size; ++i) {              \
+            (destination + i)->init_from(Unknown::create());                 \
+        }                                                                    \
+                                                                             \
+        Symbol& new_destination = *(destination + additional_required_size); \
+        symbol().copy_single_to(new_destination);                            \
+        return size + additional_required_size;                              \
     }
 
 #define DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                  \
@@ -253,7 +254,7 @@ template <class T, class U> struct MacroType<T(U)> {
                                                                                     \
         const size_t new_arg2_size = (destination - new_arg1_size - 1)->size();     \
                                                                                     \
-        symbol().copy_single_to(*destination);                                       \
+        symbol().copy_single_to(*destination);                                      \
         destination->size() = new_arg1_size + new_arg2_size + 1;                    \
         destination->as<_name>().second_arg_offset = new_arg1_size + 1;             \
         return 1;                                                                   \
@@ -452,7 +453,7 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ void _name::seal() { size = 1 + arg1().size() + arg2().size(); }           \
                                                                                                    \
     __host__ __device__ void _name::swap_args(Symbol* const help_space) {                          \
-        arg1().copy_to(*help_space);                                                                \
+        arg1().copy_to(*help_space);                                                               \
         arg2().copy_to(arg1());                                                                    \
         seal_arg1();                                                                               \
         help_space->copy_to(arg2());                                                               \
@@ -547,7 +548,7 @@ template <class T, class U> struct MacroType<T(U)> {
             }                                                                                              \
                                                                                                            \
             Symbol* const current_dst = current_dst_back - current->size();                                \
-            current->copy_to(current_dst);                                                                 \
+            current->copy_to(*current_dst);                                                                \
             current_dst_back = current_dst;                                                                \
         }                                                                                                  \
                                                                                                            \
@@ -555,7 +556,7 @@ template <class T, class U> struct MacroType<T(U)> {
                                                                                                            \
         while (remaining_tree_iter.is_valid()) {                                                           \
             Symbol* const current_dst = current_dst_back - remaining_tree_iter.current()->size();          \
-            remaining_tree_iter.current()->copy_to(current_dst);                                           \
+            remaining_tree_iter.current()->copy_to(*current_dst);                                          \
             remaining_tree_iter.advance();                                                                 \
             current_dst_back = current_dst;                                                                \
         }                                                                                                  \
@@ -643,7 +644,7 @@ template <class T, class U> struct MacroType<T(U)> {
          * `_name`                                                                                         \
          * structure may be smaller than `Symbol` union.                                                   \
          */                                                                                                \
-        return last_in_tree()->symbol() - symbol() + 2;                                                    \
+        return &last_in_tree()->symbol() - &symbol() + 2;                                                  \
     }
 
 #endif

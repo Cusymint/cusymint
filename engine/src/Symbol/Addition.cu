@@ -64,7 +64,7 @@ namespace Sym {
                PatternPair<Same, Neg<Same>>::match_pair(expr1, expr2);
     }
 
-    DEFINE_TRY_FUSE_SYMBOLS(Addition) {
+    DEFINE_TRY_FUSE_SYMBOLS(Addition) { // NOLINT(misc-unused-parameters)
         // Sprawdzenie, czy jeden z argumentów nie jest rónwy zero jest wymagane by nie wpaść w
         // nieskończoną pętlę, zera i tak są potem usuwane w `eliminate_zeros`.
         if (expr1->is(Type::NumericConstant) && expr2->is(Type::NumericConstant) &&
@@ -96,7 +96,7 @@ namespace Sym {
 
     __host__ __device__ void Addition::eliminate_zeros() {
         for (auto* last = last_in_tree(); last >= this;
-             last = (last->symbol_ptr() - 1)->as_ptr<Addition>()) {
+             last = (&last->symbol() - 1)->as_ptr<Addition>()) {
             if (last->arg2().is(Type::NumericConstant) &&
                 last->arg2().as<NumericConstant>().value == 0.0) {
                 last->arg1().move_to(last->symbol());

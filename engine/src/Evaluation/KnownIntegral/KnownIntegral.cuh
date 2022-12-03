@@ -10,7 +10,7 @@
 namespace Sym::KnownIntegral {
     using Check = size_t (*)(const Integral& integral);
     using Application = EvaluationStatus (*)(const Integral& integral,
-                                             const ExpressionArray<>::Iterator& destination,
+                                             const SymbolIterator& destination,
                                              const ExpressionArray<>::Iterator& help_space);
 
     extern __device__ const Check CHECKS[];

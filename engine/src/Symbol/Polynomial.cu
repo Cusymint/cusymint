@@ -21,7 +21,7 @@ namespace Sym {
         for (size_t i = 0; i < additional_required_size; ++i) {
             (destination + i)->init_from(Unknown::create());
         }
-        Symbol* const new_destination = destination + additional_required_size;
+        Symbol& new_destination = *(destination + additional_required_size);
         Symbol::copy_and_reverse_symbol_sequence(new_destination, symbol(), size);
         return size + additional_required_size;
     }

@@ -52,7 +52,7 @@ namespace Sym {
 
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Integral) {
         if (substitution_count > 0) {
-            stack.push(first_substitution().symbol_ptr());
+            stack.push(&first_substitution().symbol());
         }
 
         stack.push(&integrand());
@@ -66,7 +66,7 @@ namespace Sym {
     __host__ __device__ void Integral::seal_no_substitutions() { seal_substitutions(0, 0); }
 
     __host__ __device__ void Integral::seal_single_substitution() {
-        seal_substitutions(1, (symbol_ptr() + integrand_offset)->size());
+        seal_substitutions(1, (&symbol() + integrand_offset)->size());
     }
 
     __host__ __device__ void Integral::seal_substitutions(const size_t count, const size_t size) {
@@ -90,7 +90,7 @@ namespace Sym {
             return Util::SimpleResult<size_t>::error();
         }
 
-        Symbol::copy_symbol_sequence(&destination.current(), symbol(), integrand_offset);
+        Symbol::copy_symbol_sequence(&destination.current(), &symbol(), integrand_offset);
 
         Symbol* const new_substitution = &destination.current() + integrand_offset;
         Substitution::create(&substitution_expr, new_substitution, substitution_count);
@@ -103,7 +103,7 @@ namespace Sym {
     }
 
     __host__ __device__ void Integral::copy_without_integrand_to(Symbol* const destination) const {
-        Symbol::copy_symbol_sequence(destination, symbol(), 1 + substitutions_size());
+        Symbol::copy_symbol_sequence(destination, &symbol(), 1 + substitutions_size());
         destination->as<Integral>().size = BUILDER_SIZE;
     }
 
@@ -198,7 +198,7 @@ namespace Sym {
                                                                               1);
 
         return fmt::format("∫{}d{}, {}", integrand_copy.data()->to_string(), last_substitution_name,
-                           first_substitution()->to_string());
+                           first_substitution().to_string());
     }
 
     std::string Integral::to_tex() const {
@@ -216,7 +216,7 @@ namespace Sym {
                                                                               1);
 
         return fmt::format(R"(\int {}\text{{d}}{},\quad {})", integrand_copy.data()->to_tex(),
-                           last_substitution_name, first_substitution()->to_tex());
+                           last_substitution_name, first_substitution().to_tex());
     }
 
     std::vector<Symbol> integral(const std::vector<Symbol>& arg) {
@@ -224,7 +224,7 @@ namespace Sym {
 
         Integral* const integral = res.data() << Integral::builder();
         integral->seal_no_substitutions();
-        arg.data()->copy_to(*integral->integrand());
+        arg.data()->copy_to(integral->integrand());
         integral->seal();
 
         return res;
