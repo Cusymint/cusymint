@@ -28,7 +28,7 @@ namespace Sym {
      * Assigns correct substitution_idx in the last substitution.
      *
      * @param substitution Expression to be used as substitution (without `Substitution` symbol)
-     * @param destination Destination to copy everything to
+     * @param destination Destination to copy everything to.
      *
      * @return Good with size taken by copied symbols on success, error if destination doesn't have
      * enough capacity

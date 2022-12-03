@@ -428,6 +428,7 @@ namespace Sym {
          * any holes in the expression.
          *
          * @param expr Expression to seal
+         * @param size Total size of the expression
          */
         __host__ __device__ static void seal_whole(Symbol& expr, const size_t size);
 
@@ -565,6 +566,10 @@ namespace Sym {
       public:
         /*
          * @brief Creates an iterator to a symbol sequence
+         *
+         * @param parent Parent expression of the expression
+         * @param index Initial index of the iterator
+         * @param capacity Capacity of the parent expression
          *
          * @return Good with the iterator on success, error when the given index is past the
          * allocated space of the parent

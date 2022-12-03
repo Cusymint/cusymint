@@ -20,12 +20,28 @@
  * nothing. If not, returns the result from the current function.
  */
 #define TRY_EVALUATE(_call)                      \
-    {                                            \
+    ({                                           \
         const EvaluationStatus result = (_call); \
         if (result != EvaluationStatus::Done) {  \
             return result;                       \
         }                                        \
-    }
+                                                 \
+        _call;                                   \
+    })
+
+/*
+ * @brief Checks if the result of `_call` is a good result. If yes, does
+ * nothing. If not, returns `EvaluationStatus::ReallocationRequest`.
+ */
+#define TRY_EVALUATE_RESULT(_call)                                          \
+    ({                                                                      \
+        const EvaluationStatus result = result_to_evaluation_status(_call); \
+        if (result != EvaluationStatus::Done) {                             \
+            return result;                                                  \
+        }                                                                   \
+                                                                            \
+        (_call).good();                                                     \
+    })
 
 namespace Sym {
     enum class EvaluationStatus {

@@ -86,7 +86,7 @@ namespace Sym {
     Integral::copy_substitutions_with_an_additional_one(const Symbol& substitution_expr,
                                                         SymbolIterator& destination) const {
         const size_t required_space = integrand_offset + 1 + substitution_expr.size();
-        if (destination.left() < required_space) {
+        if (destination.capacity() < required_space) {
             return Util::SimpleResult<size_t>::error();
         }
 
@@ -108,7 +108,7 @@ namespace Sym {
     }
 
     [[nodiscard]] __device__ Util::BinaryResult Integral::integrate_by_substitution_with_derivative(
-        const Symbol& substitution, const Symbol& derivative, Symbol& destination) const {
+        const Symbol& substitution, const Symbol& derivative, SymbolIterator& destination) const {
         const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
             Util::Pair(&substitution, &Static::identity())};
 
@@ -119,7 +119,6 @@ namespace Sym {
     __device__ Util::BinaryResult Integral::integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
         const size_t pattern_count, const Symbol& derivative, SymbolIterator& destination) const {
-
         if constexpr (Consts::DEBUG) {
             if (!patterns[0].second->is(Type::Variable)) {
                 Util::crash("The first element of `substitutions` passed to "
@@ -130,21 +129,21 @@ namespace Sym {
 
         const auto integrand_idx_result =
             copy_substitutions_with_an_additional_one(*patterns[0].first, destination);
-        const size_t integrand_idx = TRY_PASS(Util::Empty, integrand_idx_result);
+        const size_t int_and_substitutions_size = TRY_PASS(Util::Empty, integrand_idx_result);
 
-        Symbol& destination_integrand = *destination.as<Integral>().integrand();
-        Symbol::Iterator current_dst =
-            TRY_PASS(Util::Empty, Symbol::Iterator::from_at(destination, integrand_idx));
+        auto& destination_integral = destination->as<Integral>();
 
-        if (!current_dst.can_offset_by(2 + derivative.size())) {
+        TRY(destination += int_and_substitutions_size);
+
+        if (!destination.can_offset_by(2 + derivative.size())) {
             return Util::BinaryResult::error();
         }
 
-        Mul<Inv<Copy>, None>::init(current_dst.current(), {derivative});
+        Mul<Inv<Copy>, None>::init(destination.current(), {derivative});
+        const size_t integrand_idx = destination.index();
+        TRY(destination += 2 + derivative.size());
 
-        TRY(current_dst += 2 + derivative.size());
-
-        for (size_t symbol_idx = 0; symbol_idx < integrand()->size(); ++symbol_idx) {
+        for (size_t symbol_idx = 0; symbol_idx < integrand().size(); ++symbol_idx) {
             bool found_match = false;
             for (size_t pattern_idx = 0; pattern_idx < pattern_count; ++pattern_idx) {
                 if (!Symbol::are_expressions_equal(integrand()[symbol_idx],
@@ -152,8 +151,8 @@ namespace Sym {
                     continue;
                 }
 
-                patterns[pattern_idx].second->copy_to(current_dst.current());
-                TRY(current_dst += current_dst.current().size());
+                patterns[pattern_idx].second->copy_to(destination.current());
+                TRY(destination += destination.current().size());
                 // -1 because +1 is going to be added by loop control
                 symbol_idx += integrand()[symbol_idx].size() - 1;
                 found_match = true;
@@ -161,15 +160,15 @@ namespace Sym {
             }
 
             if (!found_match) {
-                integrand()[symbol_idx].copy_single_to(current_dst.current());
-                TRY(current_dst += 1);
+                integrand()[symbol_idx].copy_single_to(destination.current());
+                TRY(destination += 1);
             }
         }
 
-        // Sizes and offsets are completely messed up in help_space (but there are no holes), so
+        // Sizes and offsets are completely messed up in the integrand (but there are no holes), so
         // this is required
-        Symbol::seal_whole(destination_integrand, current_dst.index() - integrand_idx);
-        destination.as<Integral>().seal();
+        Symbol::seal_whole(destination_integral.integrand(), destination.index() - integrand_idx);
+        destination_integral.seal();
     }
 
     __host__ __device__ const Substitution* Integral::first_substitution() const {
@@ -181,12 +180,12 @@ namespace Sym {
     }
 
     __host__ __device__ size_t Integral::substitutions_size() const {
-        return size - 1 - integrand()->size();
+        return size - 1 - integrand().size();
     };
 
     std::string Integral::to_string() const {
-        std::vector<Symbol> integrand_copy(integrand()->size());
-        integrand()->copy_to(*integrand_copy.data());
+        std::vector<Symbol> integrand_copy(integrand().size());
+        integrand().copy_to(*integrand_copy.data());
 
         std::string last_substitution_name;
 
@@ -203,8 +202,8 @@ namespace Sym {
     }
 
     std::string Integral::to_tex() const {
-        std::vector<Symbol> integrand_copy(integrand()->size());
-        integrand()->copy_to(*integrand_copy.data());
+        std::vector<Symbol> integrand_copy(integrand().size());
+        integrand().copy_to(*integrand_copy.data());
 
         std::string last_substitution_name;
 

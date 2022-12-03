@@ -22,16 +22,18 @@ namespace Sym::Heuristic {
             Util::Pair<const Symbol*, const Symbol*>(&Static::cot_x(), &Static::universal_cot_x()),
         };
 
-        ENSURE_ENOUGH_SPACE(1, integral_dst)
-        SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
+        SymbolIterator iterator =
+            TRY_EVALUATE_RESULT(SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
+
+        SubexpressionCandidate* new_candidate = *iterator << SubexpressionCandidate::builder();
         new_candidate->copy_metadata_from(integral);
 
-        SymbolIterator iterator = SymbolIterator::from_at(new_candidate->arg(), )
+        TRY_EVALUATE_RESULT(iterator += 1);
 
         const auto substitution_result =
             integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
                 substitution_pairs, Util::array_len(substitution_pairs),
-                Static::universal_derivative(), new_candidate->arg());
+                Static::universal_derivative(), iterator);
         TRY_EVALUATE(result_to_evaluation_status(substitution_result));
 
         new_candidate->seal();
