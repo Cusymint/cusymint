@@ -6,8 +6,8 @@
 namespace Sym::Heuristic {
     __device__ CheckResult is_function_of_trigs(const Integral& integral) {
         const bool is_function_of_trigs =
-            integral.integrand()->is_function_of(Static::tan_x_over_2(), Static::sin_x(),
-                                                 Static::cos_x(), Static::tan_x(), Static::cot_x());
+            integral.integrand().is_function_of(Static::tan_x_over_2(), Static::sin_x(),
+                                                Static::cos_x(), Static::tan_x(), Static::cot_x());
         return {is_function_of_trigs ? 1UL : 0UL, 0UL};
     }
 
@@ -22,8 +22,11 @@ namespace Sym::Heuristic {
             Util::Pair<const Symbol*, const Symbol*>(&Static::cot_x(), &Static::universal_cot_x()),
         };
 
+        ENSURE_ENOUGH_SPACE(1, integral_dst)
         SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
         new_candidate->copy_metadata_from(integral);
+
+        SymbolIterator iterator = SymbolIterator::from_at(new_candidate->arg(), )
 
         const auto substitution_result =
             integral.arg().as<Integral>().integrate_by_substitution_with_derivative(

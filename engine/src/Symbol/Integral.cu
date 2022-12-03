@@ -118,7 +118,7 @@ namespace Sym {
 
     __device__ Util::BinaryResult Integral::integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
-        const size_t pattern_count, const Symbol& derivative, Symbol& destination) const {
+        const size_t pattern_count, const Symbol& derivative, SymbolIterator& destination) const {
 
         if constexpr (Consts::DEBUG) {
             if (!patterns[0].second->is(Type::Variable)) {

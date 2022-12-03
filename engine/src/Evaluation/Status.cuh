@@ -6,9 +6,12 @@
 /*
  * @brief Checks if enough memory is available for an operation. If yes, does nothing. If not,
  * returns `EvaluationStatus::ReallocationRequest` from the current function.
+ *
+ * @param _required Required amount of memory
+ * @param _destination SymbolIterator or ExpressionIterator in which the memory has to be available
  */
 #define ENSURE_ENOUGH_SPACE(_required, _destination)  \
-    if (_required > _destination.capacity()) {        \
+    if ((_required) > (_destination).capacity()) {    \
         return EvaluationStatus::ReallocationRequest; \
     }
 

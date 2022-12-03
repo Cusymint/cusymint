@@ -59,7 +59,7 @@ namespace Sym {
      */
     [[nodiscard]] __device__ Util::BinaryResult
     integrate_by_substitution_with_derivative(const Symbol& substitution, const Symbol& derivative,
-                                              Symbol& destination) const;
+                                              SymbolIterator& destination) const;
 
     /*
      * @brief Integrate `this` by substitution and save the result in `destination`.
@@ -75,7 +75,7 @@ namespace Sym {
      */
     [[nodiscard]] __device__ Util::BinaryResult integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
-        const size_t pattern_count, const Symbol& derivative, Symbol& destination) const;
+        const size_t pattern_count, const Symbol& derivative, SymbolIterator& destination) const;
 
     [[nodiscard]] __host__ __device__ const Substitution* first_substitution() const;
     [[nodiscard]] __host__ __device__ Substitution* first_substitution();

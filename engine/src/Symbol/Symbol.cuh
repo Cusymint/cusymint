@@ -591,14 +591,14 @@ namespace Sym {
         /*
          * @brief Capacity of the iterated array
          */
-        [[nodiscard]] __host__ __device__ size_t capacity() const { return capacity_; }
+        [[nodiscard]] __host__ __device__ size_t total_capacity() const { return capacity_; }
 
         /*
          * @brief How many `Symbol`s are within bounds starting from the current symbol (e.g. if the
          * current symbol is the last one, returns 1).
          *
          */
-        [[nodiscard]] __host__ __device__ size_t left() const { return capacity_ - index_; }
+        [[nodiscard]] __host__ __device__ size_t capacity() const { return capacity_ - index_; }
 
         /*
          * @brief Const symbol pointed to by the iterator
