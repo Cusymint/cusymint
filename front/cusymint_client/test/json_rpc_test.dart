@@ -44,8 +44,7 @@ void main() {
         allOf(
           isNotEmpty,
           contains(
-            isA<UnexpectedTokenError>()
-                .having((err) => err.token, 'End token', '<end>'),
+            isA<UnexpectedEndOfInputError>(),
           ),
         ),
       );
@@ -70,8 +69,7 @@ void main() {
         allOf(
           isNotEmpty,
           contains(
-            isA<UnexpectedTokenError>()
-                .having((err) => err.token, 'End token', '<end>'),
+            isA<UnexpectedEndOfInputError>(),
           ),
         ),
       );
