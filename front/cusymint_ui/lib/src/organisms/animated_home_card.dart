@@ -226,7 +226,7 @@ class _AnimatedTexViewState extends State<AnimatedTexView>
 
     final child = widget.isLoading ? animated : stale;
 
-    return AnimatedSwitcher(duration: widget.duration, child: child);
+    return child;
   }
 }
 
