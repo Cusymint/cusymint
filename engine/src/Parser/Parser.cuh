@@ -20,9 +20,11 @@ namespace Parser {
     // expr -> term { addop term }					                      left-associative
     // term -> factor { mulop factor }            	              left-associative; mulop can be empty
     // factor -> '-' factor | power_arg | power_arg ^ factor		  right-associative
-    // power_arg -> num | const | var | ( expr ) | log '_' power_arg ( expr ) | function ( expr )
-    // function -> arcsin | arccos | arctg | arctan | arcctg | arccot | cos | ctg | cot | cosh |
-    //             ctgh | coth | sin | sinh | sqrt | tg | tan | tgh | tanh | ln
+    // power_arg -> num | const | var | ( expr ) | function_power ( expr )
+    // function_power -> function | function ^ factor
+    // function -> log '_' power_arg | arcsin | arccos | arctg | arctan | arcctg |
+    //             arccot | cos | ctg | cot | cosh | ctgh | coth | sin | sinh | 
+    //             sqrt | tg | tan | tgh | tanh | ln
     //
     class Parser {
       private:

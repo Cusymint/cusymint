@@ -1,8 +1,10 @@
 #include "Parser.cuh"
 #include "Parser/Scanner.cuh"
 #include "Symbol/Integral.cuh"
+#include "Symbol/Logarithm.cuh"
 #include "Symbol/Symbol.cuh"
 #include <stdexcept>
+#include <vector>
 
 namespace Parser {
     Parser::Parser(Scanner* scanner) : scanner(scanner) {}
@@ -73,6 +75,8 @@ namespace Parser {
     std::vector<Sym::Symbol> Parser::power_arg() {
         std::vector<Sym::Symbol> internal_expression;
         std::vector<Sym::Symbol> base_expression;
+        std::vector<Sym::Symbol> power_expression;
+        bool has_power = false;
         std::string prev_text;
         switch (tok) {
         case Token::Integer:
@@ -102,17 +106,29 @@ namespace Parser {
             next_token();                                // log
             match_and_get_next_token(Token::Underscore); // _
             base_expression = power_arg();
+            if (tok == Token::Caret) {
+                next_token();
+                power_expression = factor();
+                has_power = true;
+            }
             match_and_get_next_token(Token::OpenBrace); // (
             internal_expression = expr();
             match_and_get_next_token(Token::CloseBrace); // )
-            return Sym::log(base_expression, internal_expression);
+            return has_power ? (Sym::log(base_expression, internal_expression) ^ power_expression)
+                             : Sym::log(base_expression, internal_expression);
         default:
             if (isFunction(tok)) {
                 SymbolicFunction func = function();
+                if (tok == Token::Caret) {
+                    next_token();
+                    power_expression = factor();
+                    has_power = true;
+                }
                 match_and_get_next_token(Token::OpenBrace); // (
                 internal_expression = expr();
                 match_and_get_next_token(Token::CloseBrace); // )
-                return func(internal_expression);
+                return has_power ? (func(internal_expression) ^ power_expression)
+                                 : func(internal_expression);
             }
             else {
                 throw_error();
@@ -123,7 +139,7 @@ namespace Parser {
     }
 
     SymbolicFunction Parser::function() {
-        const SymbolicFunction functions[] = {
+        static constexpr SymbolicFunction functions[] = {
             Sym::arcsin, Sym::arccos, Sym::arctan, Sym::arccot, Sym::cos, Sym::cot,  Sym::cosh,
             Sym::coth,   Sym::sin,    Sym::sinh,   Sym::sqrt,   Sym::tan, Sym::tanh, Sym::ln};
         const Token prev = tok;

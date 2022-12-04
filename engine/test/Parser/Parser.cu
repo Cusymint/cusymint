@@ -147,4 +147,14 @@ namespace Test {
     PARSER_TEST(MultiplicationWithNegation, "x*-x", Sym::var() * (-Sym::var()))
     PARSER_TEST(AdditionWithNegation, "x+--x", Sym::var() + (-(-Sym::var())))
     PARSER_TEST(NegationInSubtraction, "-x--x", (-Sym::var()) - (-Sym::var()))
+
+    PARSER_TEST(FunctionSquared, "sin^2(x)", Sym::sin(Sym::var()) ^ Sym::num(2))
+    PARSER_TEST(FunctionToAdvancedPower, "arcsin^(1+cos(x))^e^x((x+1)^2)^3",
+                (Sym::arcsin((Sym::var() + Sym::num(1)) ^ Sym::num(2)) ^
+                   ((Sym::num(1) + Sym::cos(Sym::var())) ^
+                  (Sym::e() ^
+                 Sym::var()))) ^
+                    Sym::num(3))
+    PARSER_TEST(LogarithmBase2Squared, "log_2^2(x)", Sym::log(Sym::num(2), Sym::var()) ^ Sym::num(2))
+    PARSER_TEST(LogarithmBase4, "log_(2^2)(x)", Sym::log(Sym::num(2) ^ Sym::num(2), Sym::var()))
 }
