@@ -12,8 +12,17 @@
 
 namespace Sym {
     class Integrator {
+        // How many symbols can an expression hold initially
+        static constexpr size_t INITIAL_EXPRESSIONS_CAPACITY = 128;
+        // How many expressions of size `INITIAL_EXPRESSION_CAPACITIES` can an array hold initially
+        static constexpr size_t INITIAL_ARRAYS_EXPRESSIONS_CAPACITY = 64;
+        static constexpr size_t INITIAL_ARRAYS_SYMBOLS_CAPACITY =
+            INITIAL_ARRAYS_EXPRESSIONS_CAPACITY * INITIAL_EXPRESSIONS_CAPACITY;
+
+        static constexpr size_t REALLOC_MULTIPLIER = 2;
+        static constexpr size_t HELP_SPACE_MULTIPLIER = 2;
+
         const size_t MAX_CHECK_COUNT;
-        const size_t SCAN_ARRAY_SIZE;
 
         ExpressionArray<> expressions;
         ExpressionArray<> expressions_swap;
@@ -25,6 +34,8 @@ namespace Sym {
 
         Util::DeviceArray<uint32_t> scan_array_1;
         Util::DeviceArray<uint32_t> scan_array_2;
+
+        Util::DeviceArray<EvaluationStatus> evaluation_statuses;
 
         /*
          * @brief Replaces nth symbol in `expression` with `tree`, skipping the first element of
@@ -64,6 +75,28 @@ namespace Sym {
          * @return Collapsed tree
          */
         std::vector<Sym::Symbol> collapse(const std::vector<std::vector<Sym::Symbol>>& tree);
+
+        /*
+         * @brief Sets all evaluation statuses to `EvaluationStatus::Incomplete`
+         */
+        void reset_evaluation_statuses();
+
+        /*
+         * @brief Resizes `evaluation_statuses` to at least `size` if its size is smaller than
+         * `size`, does nothing if its size is already at least `size`
+         */
+        void resize_evaluation_statuses(const size_t size);
+
+        /*
+         * @brief Checks if all first `count` statuses are equal to `EvaluationStatus::Done`
+         */
+        bool are_evaluation_statuses_done(const size_t count);
+
+        /*
+         * @brief Resizes `scan_array_1` and `scan_array_2` to at least `size` if their size is
+         * smaller than `size`, does nothing if their size is already at least `size`
+         */
+        void resize_scan_arrays(const size_t size);
 
         /*
          * @brief Simplifies integrals `integrals`

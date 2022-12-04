@@ -1,6 +1,8 @@
 #ifndef INTEGRATE_KERNELS_CUH
 #define INTEGRATE_KERNELS_CUH
 
+#include "Evaluation/Status.cuh"
+
 #include "Symbol/ExpressionArray.cuh"
 
 namespace Sym {
@@ -43,21 +45,24 @@ namespace Sym::Kernel {
                               Util::DeviceArray<uint32_t> applicability);
 
     /*
-     * @brief Solves integrals in place using the `applicability` information from
-     * `check_for_known_integrals`
+     * @brief Solves integrals using the `applicability` information from
+     * `check_for_known_integrals` and sets `SubexpressionCandidates` in `expressions` as solved by
+     * a corresponding `SubexpressionVacancy`
      *
      * @param integrals Integrals with potentially known solutions
      * @param expressions Expressions containing SubexpressionVacancies.
-     * Solutions are written after the last expression in `expressions`.
-     *
+     * @param expressions_dsts Iterator to the first expression where the results will be saved. It
+     * should be possible to advance it as far as there will be solved integrals.
      * @param help_spaces Help space used in applying known integrals
      * @param applicability Result of `inclusive_scan` on `check_for_known_integrals()`
      * applicability array
      */
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
-                                          ExpressionArray<> expressions,
+                                          const ExpressionArray<>::Iterator expressions,
+                                          const ExpressionArray<>::Iterator expressions_dsts,
                                           ExpressionArray<> help_spaces,
-                                          const Util::DeviceArray<uint32_t> applicability);
+                                          const Util::DeviceArray<uint32_t> applicability,
+                                          Util::DeviceArray<EvaluationStatus> statuses);
 
     /*
      * @brief Marks SubexpressionsVacancies as solved (sets `is_solved` and `solver_id`)
@@ -176,10 +181,11 @@ namespace Sym::Kernel {
     /*
      * @brief Applies heuristics to integrals
      *
-     * @param integrals Integrals on which heuristics will be applied
-     * @param integrals_destinations Solutions destination
-     * @param expressions_destinations Destination for new expressions.
-     * New expressions will be appended to already existing ones.
+     * @param integrals Integrals to which heuristics will be applied
+     * @param integrals_destinations Destinations of transformed integrals. Has to contain enough
+     * expressions to contain all results.
+     * @param expressions_destinations Destination for new expressions. Has to contain enough
+     * expressions to contain all results.
      * @param help_spaces Help space for transformations
      * @param new_integrals_indices Indices of new integrals incremented by 1.
      * If given index is equal to its predecessor, then its integral and heuristic
@@ -189,10 +195,11 @@ namespace Sym::Kernel {
      */
     __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
                                      ExpressionArray<> integrals_destinations,
-                                     ExpressionArray<> expressions_destinations,
+                                     const ExpressionArray<>::Iterator expressions_destinations,
                                      ExpressionArray<> help_spaces,
                                      const Util::DeviceArray<uint32_t> new_integrals_indices,
-                                     const Util::DeviceArray<uint32_t> new_expressions_indices);
+                                     const Util::DeviceArray<uint32_t> new_expressions_indices,
+                                     Util::DeviceArray<EvaluationStatus> statuses);
 
     /*
      * @brief Propagates information about failed SubexpressionVacancy upwards to parent

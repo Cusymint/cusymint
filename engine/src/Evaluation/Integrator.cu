@@ -10,6 +10,12 @@
 #include "Utils/Meta.cuh"
 
 namespace Sym {
+    namespace {
+        __host__ __device__ bool is_evaluation_status_done(EvaluationStatus status) {
+            return evaluation_status == EvaluationStatus::Done;
+        }
+    }
+
     std::vector<Sym::Symbol>
     Integrator::replace_nth_with_tree(std::vector<Sym::Symbol> expression, const size_t n,
                                       const std::vector<Sym::Symbol>& tree) {
@@ -78,14 +84,38 @@ namespace Sym {
     Integrator::Integrator() :
         MAX_CHECK_COUNT(KnownIntegral::COUNT > Heuristic::COUNT ? KnownIntegral::COUNT
                                                                 : Heuristic::COUNT),
-        SCAN_ARRAY_SIZE(MAX_CHECK_COUNT * MAX_EXPRESSION_COUNT),
-        expressions(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
-        expressions_swap(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
-        integrals(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
-        integrals_swap(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
-        help_space(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT, integrals.size()),
-        scan_array_1(SCAN_ARRAY_SIZE, true),
-        scan_array_2(SCAN_ARRAY_SIZE, true) {}
+        expressions(INITIAL_ARRAYS_SYMBOLS_CAPACITY, INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
+        expressions_swap(INITIAL_ARRAYS_SYMBOLS_CAPACITY, INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
+        integrals(INITIAL_ARRAYS_SYMBOLS_CAPACITY, INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
+        integrals_swap(INITIAL_ARRAYS_SYMBOLS_CAPACITY, INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
+        help_space(INITIAL_ARRAYS_SYMBOLS_CAPACITY * HELP_SPACE_MULTIPLIER,
+                   INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
+        scan_array_1(MAX_CHECK_COUNT * INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
+        scan_array_2(MAX_CHECK_COUNT * INITIAL_ARRAYS_EXPRESSIONS_CAPACITY) {}
+
+    void Integrator::reset_evaluation_statuses() {
+        evaluation_statuses.set_mem(EvaluationStatus::Incomplete);
+    }
+
+    void Integrator::resize_evaluation_statuses(const size_t size) {
+        if (evaluation_statuses.size() < size) {
+            evaluation_statuses.resize(size * REALLOC_MULTIPLIER);
+        }
+    }
+
+    bool Integrator::are_evaluation_statuses_done(const size_t count) {
+        // `at(0) + count` instead of `at(count)` because `at` performs bounds checking, and we are
+        // potentially going outside of the array
+        return thrust::count_if(evaluation_statuses.at(0), evaluation_statuses.at(0) + count,
+                                is_evaluation_status_done) == count;
+    }
+
+    void Integrator::resize_scan_arrays(const size_t size) {
+        if (scan_array_1.size() < size) {
+            scan_array_1.resize(size * REALLOC_MULTIPLIER);
+            scan_array_2.resize(size * REALLOC_MULTIPLIER);
+        }
+    }
 
     void Integrator::simplify_integrals() {
         integrals_swap.resize(integrals.size());
@@ -95,6 +125,9 @@ namespace Sym {
     }
 
     void Integrator::check_for_known_integrals() {
+        resize_scan_arrays(integrals.size() * MAX_CHECK_COUNT);
+        scan_array_1.zero_mem();
+
         Kernel::check_for_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_1);
         cudaDeviceSynchronize();
 
@@ -104,10 +137,23 @@ namespace Sym {
     }
 
     void Integrator::apply_known_integrals() {
-        Kernel::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
-                                                                   help_space, scan_array_1);
-        cudaDeviceSynchronize();
-        expressions.increment_size_from_device(scan_array_1.last());
+        const size_t new_expressions_count = scan_array_1.last_cpu();
+        resize_evaluation_statuses(new_expressions_count);
+        reset_evaluation_statuses();
+
+        const size_t old_expressions_size = expressions.size();
+        expressions.resize(expressions.size() + new_expressions_count);
+
+        help_space.resize(new_expressions_count); // TODO: SAME EXPRESSION SIZES AS DESTINATIONS
+
+        while (!are_evaluation_statuses_done(new_expressions_count)) {
+            // TODO: Reoffset expressions, help_spaces
+
+            Kernel::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(
+                integrals, expressions.iterator(0), expressions.iterator(old_expressions_size),
+                help_space, scan_array_1, evaluation_statuses);
+            cudaDeviceSynchronize();
+        }
 
         Kernel::propagate_solved_subexpressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions);
         cudaDeviceSynchronize();
@@ -119,7 +165,11 @@ namespace Sym {
     }
 
     void Integrator::remove_unnecessary_candidates() {
+        resize_scan_arrays(std::max(expressions.size(), integrals.size()));
         scan_array_1.zero_mem();
+        scan_array_2.zero_mem();
+        cudaDeviceSynchronize();
+
         Kernel::find_redundand_expressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1);
         cudaDeviceSynchronize();
 
@@ -133,6 +183,9 @@ namespace Sym {
                                scan_array_2.data());
         cudaDeviceSynchronize();
 
+        expressions_swap.resize(expressions.size(), INITIAL_EXPRESSIONS_CAPACITY);
+        integrals_swap.resize(integrals.size(), INITIAL_EXPRESSIONS_CAPACITY);
+
         Kernel::remove_expressions<true>
             <<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1, expressions_swap);
         Kernel::remove_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, scan_array_2, scan_array_1,
@@ -141,13 +194,16 @@ namespace Sym {
 
         std::swap(expressions, expressions_swap);
         std::swap(integrals, integrals_swap);
-        expressions.resize_from_device(scan_array_1.last());
-        integrals.resize_from_device(scan_array_2.last());
+        expressions.resize(scan_array_1.last_cpu());
+        integrals.resize(scan_array_2.last_cpu());
     }
 
     void Integrator::check_heuristics_applicability() {
+        resize_scan_arrays(integrals.size() * MAX_CHECK_COUNT);
         scan_array_1.zero_mem();
         scan_array_2.zero_mem();
+        cudaDeviceSynchronize();
+
         Kernel::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(
             integrals, expressions, scan_array_1, scan_array_2);
         cudaDeviceSynchronize();
@@ -160,9 +216,20 @@ namespace Sym {
     }
 
     void Integrator::apply_heuristics() {
-        Kernel::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(
-            integrals, integrals_swap, expressions, help_space, scan_array_1, scan_array_2);
-        cudaDeviceSynchronize();
+        const size_t new_integrals_count = scan_array_1.last_cpu();
+        resize_evaluation_statuses(new_integrals_count);
+        reset_evaluation_statuses();
+
+        integrals_swap.resize(new_integrals_count);
+        help_space.resize(new_integrals_count); // TODO: SAME EXPRESSION SIZES AS DESTINATIONS
+
+        while (!are_evaluation_statuses_done()) {
+            // TODO REOFFSET integrals_swap, expressions, help_spaces
+
+            Kernel::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(
+                integrals, integrals_swap, expressions, help_space, scan_array_1, scan_array_2);
+            cudaDeviceSynchronize();
+        }
 
         std::swap(integrals, integrals_swap);
         integrals.resize_from_device(scan_array_1.last());

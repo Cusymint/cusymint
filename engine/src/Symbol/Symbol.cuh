@@ -367,9 +367,11 @@ namespace Sym {
          *
          * @param destination Location to which the tree is going to be copied
          *
-         * @return New size of the symbol tree
+         * @return New size of the symbol tree when the comppression was successfull, an error when
+         * the destination's capacity is too small
          */
-        __host__ __device__ size_t compress_reverse_to(Symbol* const destination);
+        __host__ __device__ Util::SimpleResult<size_t>
+        compress_reverse_to(SymbolIterator destination);
 
         /*
          * @brief Removes holes from symbol tree and copies it to `destination`.
@@ -388,18 +390,23 @@ namespace Sym {
          * @brief Simplifies an expression
          *
          * @param help_space Help space
+         * @param
+         *
+         * @return A good result when the simplification succeds, an error result when the
+         * help_space is too small or when the simplification result would be larger than `capacity`
          */
-        __host__ __device__ void simplify(Symbol& help_space);
+        __host__ __device__ Util::BinaryResult simplify(SymbolIterator& help_space,
+                                                        const size_t capacity);
 
         /*
          * @brief Simplified an expression. Can leave the expression with holes.
          *
-         * @param help_space Help space.
+         * @param help_space Help space
          *
          * @return `true` if expression was simplified, `false` if simplified result
          * would take more space than `size()` or expression needs to be simplified again.
          */
-        __host__ __device__ bool simplify_in_place(Symbol& help_space);
+        __host__ __device__ bool simplify_in_place(SymbolIterator& help_space);
 
         /*
          * @brief Recalculates sizes and argument offsets in the given expression. There cannot be

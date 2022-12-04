@@ -104,7 +104,8 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) {
+    __host__ __device__ Util::SimpleResult<size_t>
+    Symbol::compress_reverse_to(SymbolIterator destination) {
         mark_to_be_copied_and_propagate_additional_size(destination);
 
         Symbol* compressed_reversed_destination = destination;
@@ -146,7 +147,8 @@ namespace Sym {
         return new_size;
     }
 
-    __host__ __device__ void Symbol::simplify(Symbol& help_space) {
+    __host__ __device__ Util::BinaryResult Symbol::simplify(SymbolIterator& help_space,
+                                                            const size_t capacity) {
         bool success = false;
 
         while (!success) {
@@ -161,7 +163,7 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ bool Symbol::simplify_in_place(Symbol& help_space) {
+    __host__ __device__ bool Symbol::simplify_in_place(SymbolIterator& help_space) {
         return VIRTUAL_CALL(*this, simplify_in_place, &help_space);
     }
 
