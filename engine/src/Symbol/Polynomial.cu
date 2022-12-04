@@ -178,6 +178,17 @@ namespace Sym {
         numerator.make_proper();
     }
 
+    // __host__ __device__ static int try_solve_polynomial_in_complex_rationals(Polynomial& polynomial,
+    //                                                                          Polynomial& result) {
+    //     for (size_t i = 0;i<= polynomial.rank;++i) {
+    //         if (floor(polynomial[i]) != polynomial[i]) {
+    //             return 0;
+    //         }
+    //     }
+        
+
+    // }
+
     __host__ __device__ void Polynomial::make_proper() {
         auto i = static_cast<ssize_t>(rank);
         while (i > 0 && abs(coefficients()[i--]) < Consts::EPS) {

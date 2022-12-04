@@ -6,7 +6,10 @@
 #include <cstddef>
 
 namespace Sym {
+    enum PolynomialForm { Sum, Product };
+
     DECLARE_SYMBOL(Polynomial, true)
+    PolynomialForm form;
     size_t rank;
 
     __host__ __device__ static Polynomial with_rank(size_t rank);
@@ -21,8 +24,31 @@ namespace Sym {
     __host__ __device__ static void make_polynomial_at(const Symbol* const symbol,
                                                        Symbol* const destination);
 
+    /*
+     * @brief Divides polynomials `numerator` by `denominator` and modifies `numerator` and `result`
+     * according to formula `p(x)/q(x) = s(x) + r(x)/q(x)`.
+     * `numerator`'s rank must be greater than `denominator`'s, and rank of `result` must be equal
+     * to difference of `numerator`'s and `denominator`'s ranks.
+     *
+     * @param `numerator` Dividend of the operation (`p(x)`, shall be updated to `r(x)`)
+     * @param `denominator` Divisor of the operation (`q(x)`)
+     * @param `result` Result of the operation (shall be updated to `s(x)`)
+     */
     __host__ __device__ static void divide_polynomials(Polynomial& numerator,
                                                        Polynomial& denominator, Polynomial& result);
+
+    __host__ __device__ void calculate_derivative_to(Polynomial& derivative);
+
+    // /*
+    //  * @brief Tries to find `polynomial`'s roots in complex extension of rational numbers. Rank of `result`
+    //  * must be equal to `polynomial`'s rank.
+    //  *
+    //  * @param `polynomial` Polynomial to be solved (its `form` must be `Sum`)
+    //  * @param `result` Polynomial, where roots will be stored (its `form` shall be changed to `Product`)
+    //  *
+    //  * @return Number of roots found
+    //  */
+    // __host__ __device__ static int try_solve_polynomial_in_complex_rationals(Polynomial& polynomial, Polynomial& result);
 
     __host__ __device__ void expand_to(Symbol* destination) const;
     [[nodiscard]] __host__ __device__ inline size_t expanded_size() const;
