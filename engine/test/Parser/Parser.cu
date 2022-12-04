@@ -140,5 +140,11 @@ namespace Test {
 
     PARSER_TEST(NegationOfPower, "-x^2", -(Sym::var() ^ Sym::num(2)))
     PARSER_TEST(PowerOfNegation, "(-x)^2", (-Sym::var()) ^ Sym::num(2))
+    PARSER_TEST(NegatedExponent, "x^-2", Sym::var() ^ (-Sym::num(2)))
 
+    PARSER_TEST(MultiplicationWithNegationWithoutSign, "x (-x)", Sym::var() * (-Sym::var()))
+    PARSER_TEST(SubtractionWithSpace, "x -x", Sym::var() - Sym::var())
+    PARSER_TEST(MultiplicationWithNegation, "x*-x", Sym::var() * (-Sym::var()))
+    PARSER_TEST(AdditionWithNegation, "x+--x", Sym::var() + (-(-Sym::var())))
+    PARSER_TEST(NegationInSubtraction, "-x--x", (-Sym::var()) - (-Sym::var()))
 }

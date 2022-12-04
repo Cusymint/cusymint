@@ -58,6 +58,10 @@ namespace Parser {
     }
 
     std::vector<Sym::Symbol> Parser::factor() {
+        if (tok == Token::Minus) {
+            next_token();
+            return -factor();
+        }
         std::vector<Sym::Symbol> fact = power_arg();
         if (tok == Token::Caret) {
             next_token();
@@ -94,9 +98,9 @@ namespace Parser {
             internal_expression = expr();
             match_and_get_next_token(Token::CloseBrace); // )
             return internal_expression;
-        case Token::Minus:
-            next_token(); // -
-            return -power_arg();
+        // case Token::Minus:
+        //     next_token(); // -
+        //     return -power_arg();
         case Token::Log:
             next_token();                                // log
             match_and_get_next_token(Token::Underscore); // _
