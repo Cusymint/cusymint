@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:cusymint_app/features/client/client_factory.dart';
 import 'package:cusymint_app/features/home/blocs/main_page_bloc.dart';
+import 'package:cusymint_app/features/home/utils/client_error_translator.dart';
 import 'package:cusymint_app/features/navigation/navigation.dart';
 import 'package:cusymint_client/cusymint_client.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
@@ -74,10 +75,7 @@ class _HomeBodyState extends State<HomeBody> {
                   outputInTex: state.outputInTex,
                   isLoading: state.isLoading,
                   hasCriticalErrors: state.errors.isNotEmpty,
-                  // TODO: translate errors
-                  errors: state.errors
-                      .map((ResponseError e) => e.errorMessage)
-                      .toList(),
+                  errors: ClientErrorTranslator.translateList(state.errors),
                   buttonRowCallbacks: state.hasOutput
                       ? CuButtonRowCallbacks(
                           onCopyTex: () async => _copyTexToClipboard(

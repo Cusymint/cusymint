@@ -21,4 +21,8 @@ class ClientErrorTranslator {
 
     return Strings.errorUnknown.tr(args: [error.errorMessage]);
   }
+
+  static List<String> translateList(List<ResponseError> errors) {
+    return errors.map((ResponseError e) => translate(e)).toList();
+  }
 }

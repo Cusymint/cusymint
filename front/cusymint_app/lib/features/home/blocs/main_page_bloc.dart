@@ -49,8 +49,11 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
         outputInUtf: Wrapped(response.outputInUtf),
       ));
     } catch (e) {
-      // TODO: Handle error
-      //emit(SolveErrorState(userInput: event.input, errors: []));
+      emit(MainPageState(
+        errors: [ResponseError(e.toString())],
+        isLoading: false,
+        userInput: event.input,
+      ));
     }
   }
 
@@ -86,7 +89,11 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
         outputInUtf: Wrapped(response.outputInUtf),
       ));
     } catch (e) {
-      // TODO: nice error handling
+      emit(MainPageState(
+        errors: [ResponseError(e.toString())],
+        isLoading: false,
+        userInput: event.input,
+      ));
     }
   }
 
