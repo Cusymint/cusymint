@@ -21,6 +21,16 @@ namespace Sym {
     __host__ __device__ static void make_polynomial_at(const Symbol* const symbol,
                                                        Symbol* const destination);
 
+    /*
+     * @brief Divides polynomials `numerator` by `denominator` and modifies `numerator` and `result`
+     * according to formula `p(x)/q(x) = s(x) + r(x)/q(x)`.
+     * `numerator`'s rank must be greater than `denominator`'s, and rank of `result` must be equal
+     * to difference of `numerator`'s and `denominator`'s ranks.
+     *
+     * @param `numerator` Dividend of the operation (`p(x)`, shall be updated to `r(x)`)
+     * @param `denominator` Divisor of the operation (`q(x)`)
+     * @param `result` Result of the operation (shall be updated to `s(x)`)
+     */
     __host__ __device__ static void divide_polynomials(Polynomial& numerator,
                                                        Polynomial& denominator, Polynomial& result);
 
