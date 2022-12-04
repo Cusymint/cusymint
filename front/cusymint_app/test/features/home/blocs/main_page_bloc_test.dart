@@ -23,130 +23,91 @@ void main() {
   blocTest(
     'emits [] when nothing is added',
     build: () => _createBloc(clientMock),
+    wait: solveDelay + solveDelay,
     expect: () => [],
   );
 
-  // blocTest(
-  //   'emits SolvingState and SolvedState when SolveRequested',
-  //   build: () => _createBloc(clientMock),
-  //   act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
-  //   wait: solveDelay + solveDelay,
-  //   expect: () => [
-  //     isA<SolvingState>().having(
-  //       (state) => state.userInput,
-  //       'correct user input',
-  //       equals('x'),
-  //     ),
-  //     isA<SolvedState>()
-  //         .having(
-  //           (state) => state.userInput,
-  //           'correct result',
-  //           equals('x'),
-  //         )
-  //         .having(
-  //           (state) => state.inputInTex,
-  //           'correct input',
-  //           equals(correctResponse.inputInTex),
-  //         )
-  //         .having(
-  //           (state) => state.inputInUtf,
-  //           'correct input',
-  //           equals(correctResponse.inputInUtf),
-  //         )
-  //         .having(
-  //           (state) => state.outputInTex,
-  //           'correct output',
-  //           equals(correctResponse.outputInTex),
-  //         )
-  //         .having(
-  //           (state) => state.outputInUtf,
-  //           'correct output',
-  //           equals(correctResponse.outputInUtf),
-  //         ),
-  //   ],
-  // );
+  blocTest(
+    'emits loading state and state with solution when SolveRequested',
+    build: () => _createBloc(clientMock),
+    act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
+    wait: solveDelay + solveDelay,
+    expect: () => [
+      _isMainPageStateLoadingWithInput('x')
+          .having((s) => s.errors, 'errors', isEmpty),
+      isA<MainPageState>()
+          .having(
+            (state) => state.userInput,
+            'correct input',
+            equals('x'),
+          )
+          ._havingInputInTex(correctResponse.inputInTex)
+          ._havingInputInUtf(correctResponse.inputInUtf)
+          ._havingOutputInTex(correctResponse.outputInTex)
+          ._havingOutputInUtf(correctResponse.outputInUtf)
+          ._notHavingErrors(),
+    ],
+  );
 
-  // blocTest(
-  //   'emits SolvingState and SolveErrorState after client failure',
-  //   build: () => _createBloc(clientFailuresMock),
-  //   act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
-  //   wait: solveDelay + solveDelay,
-  //   expect: () => [
-  //     isA<SolvingState>().having(
-  //       (state) => state.userInput,
-  //       'correct user input',
-  //       equals('x'),
-  //     ),
-  //     isA<SolveErrorState>()
-  //         .having(
-  //           (state) => state.userInput,
-  //           'correct user input',
-  //           equals('x'),
-  //         )
-  //         .having(
-  //           (state) => state.errors,
-  //           'some errors',
-  //           isNotEmpty,
-  //         ),
-  //   ],
-  // );
+  blocTest(
+    'emits loading state and state with errors after client failure',
+    build: () => _createBloc(clientFailuresMock),
+    act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
+    wait: solveDelay + solveDelay,
+    expect: () => [
+      _isMainPageStateLoadingWithInput('x'),
+      isA<MainPageState>()
+          .having(
+            (state) => state.userInput,
+            'correct user input',
+            equals('x'),
+          )
+          ._havingErrors(),
+    ],
+  );
 
-  // blocTest(
-  //   'emits SolvingState and SolveErrorState on client exception',
-  //   build: () => _createBloc(
-  //     ExceptionThrowingClient(waitDuration: solveDelay),
-  //   ),
-  //   act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
-  //   wait: solveDelay + solveDelay,
-  //   expect: () => [
-  //     isA<SolvingState>().having(
-  //       (state) => state.userInput,
-  //       'correct user input',
-  //       equals('x'),
-  //     ),
-  //     isA<SolveErrorState>()
-  //         .having(
-  //           (state) => state.userInput,
-  //           'correct user input',
-  //           equals('x'),
-  //         )
-  //         .having(
-  //           (state) => state.errors,
-  //           'some errors',
-  //           isNotEmpty,
-  //         ),
-  //   ],
-  // );
+  blocTest(
+    'emits loading state and error state on client exception',
+    build: () => _createBloc(
+      ExceptionThrowingClient(waitDuration: solveDelay),
+    ),
+    act: (MainPageBloc bloc) => bloc.add(const SolveRequested('x')),
+    wait: solveDelay + solveDelay,
+    expect: () => [
+      _isMainPageStateLoadingWithInput('x'),
+      isA<MainPageState>()
+          .having(
+            (state) => state.userInput,
+            'correct user input',
+            equals('x'),
+          )
+          ._havingErrors(),
+    ],
+  );
 
-  // blocTest(
-  //   'emits InterpretingState and InterpretedState when InputChanged',
-  //   build: () => _createBloc(clientMock),
-  //   wait: interpretDelay * 8,
-  //   act: (MainPageBloc bloc) => bloc.add(const InputChanged('x')),
-  //   expect: () => [
-  //     isA<InterpretingState>().having(
-  //       (state) => state.userInput,
-  //       'correct user input',
-  //       equals('x'),
-  //     ),
-  //     isA<InterpretedState>()
-  //         .having(
-  //           (state) => state.userInput,
-  //           'correct result',
-  //           equals('x'),
-  //         )
-  //         .having(
-  //           (state) => state.inputInTex,
-  //           'correct input',
-  //           equals(correctResponse.inputInTex),
-  //         )
-  //         .having(
-  //           (state) => state.inputInUtf,
-  //           'correct input',
-  //           equals(correctResponse.inputInUtf),
-  //         ),
-  //   ],
-  // );
+  blocTest(
+    'emits loading and interpreted state when InputChanged',
+    build: () => _createBloc(clientMock),
+    wait: interpretDelay * 8,
+    act: (MainPageBloc bloc) => bloc.add(const InputChanged('x')),
+    expect: () => [
+      _isMainPageStateLoadingWithInput('x')
+          ._notHavingInput()
+          ._notHavingOutput()
+          ._notHavingErrors(),
+      isA<MainPageState>()
+          .having(
+            (state) => state.userInput,
+            'correct user input',
+            equals('x'),
+          )
+          .having((state) => state.isLoading, 'loaded', isFalse)
+          .having((state) => state.outputInTex, 'output', isNull)
+          .having((state) => state.outputInUtf, 'output', isNull)
+          ._havingInputInTex(correctResponse.inputInTex)
+          ._havingInputInUtf(correctResponse.inputInUtf),
+    ],
+  );
 
   test('ClientFactoryMock returns specified client', () {
     const client1 = clientFailuresMock;
@@ -157,6 +118,43 @@ void main() {
     final factory2 = ClientFactoryMock(client2);
     expect(factory2.client, equals(client2));
   });
+}
+
+TypeMatcher<MainPageState> _isMainPageStateLoadingWithInput(String input) =>
+    isA<MainPageState>()
+        .having(
+          (state) => state.userInput,
+          'correct user input',
+          equals(input),
+        )
+        .having((state) => state.isLoading, 'loading', isTrue);
+
+extension on TypeMatcher<MainPageState> {
+  TypeMatcher<MainPageState> _havingInputInTex(String? input) =>
+      having((state) => state.inputInTex, 'input', equals(input));
+
+  TypeMatcher<MainPageState> _havingInputInUtf(String? input) =>
+      having((state) => state.inputInUtf, 'input', equals(input));
+
+  TypeMatcher<MainPageState> _havingOutputInTex(String? output) =>
+      having((state) => state.outputInTex, 'output', equals(output));
+
+  TypeMatcher<MainPageState> _havingOutputInUtf(String? output) =>
+      having((state) => state.outputInUtf, 'output', equals(output));
+
+  TypeMatcher<MainPageState> _havingErrors() =>
+      having((state) => state.errors, 'errors', isNotEmpty);
+
+  TypeMatcher<MainPageState> _notHavingErrors() =>
+      having((state) => state.errors, 'errors', isEmpty);
+
+  TypeMatcher<MainPageState> _notHavingInput() =>
+      having((state) => state.inputInTex, 'inputInTex', isNull)
+          .having((state) => state.inputInUtf, 'inputInUtf', isNull);
+
+  TypeMatcher<MainPageState> _notHavingOutput() =>
+      having((state) => state.outputInTex, 'outputInTex', isNull)
+          .having((state) => state.outputInUtf, 'outputInUtf', isNull);
 }
 
 MainPageBloc _createBloc(CusymintClient client) {

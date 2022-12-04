@@ -14,10 +14,12 @@ class CusymintClientMock implements CusymintClient {
   @override
   Future<Response> interpretIntegral(Request request) async {
     await Future.delayed(interpretDelay);
-    final responseWithoutOutput = fakeResponse.copyWith(
-      outputInUtf: null,
-      outputInTex: null,
+    final responseWithoutOutput = Response(
+      inputInUtf: fakeResponse.inputInUtf,
+      inputInTex: fakeResponse.inputInTex,
+      errors: fakeResponse.errors,
     );
+
     return Future.value(responseWithoutOutput);
   }
 
