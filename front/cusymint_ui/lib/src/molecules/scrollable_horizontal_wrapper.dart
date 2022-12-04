@@ -1,8 +1,13 @@
 import 'package:cusymint_ui/cusymint_ui.dart';
 
 class CuScrollableHorizontalWrapper extends StatefulWidget {
-  const CuScrollableHorizontalWrapper({super.key, required this.child});
+  const CuScrollableHorizontalWrapper({
+    super.key,
+    required this.child,
+    this.thumbVisibility = true,
+  });
 
+  final bool thumbVisibility;
   final Widget child;
 
   @override
@@ -23,7 +28,7 @@ class _CuScrollableHorizontalWrapperState
   @override
   Widget build(BuildContext context) {
     return Scrollbar(
-      thumbVisibility: true,
+      thumbVisibility: widget.thumbVisibility,
       controller: _scrollController,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,

@@ -11,7 +11,12 @@ class ExampleIntegralsCubit extends Cubit<ExampleIntegralsState> {
   }
 
   final Random _random;
-  final List<ExampleIntegral> exampleIntegrals = [];
+  final List<ExampleIntegral> exampleIntegrals = [
+    const ExampleIntegral(
+      inputInTex: '\\int x^2 - 53 + 2*x^6 \\, \text{d}x',
+      inputInUtf: 'x^2 - 53 + 2*x^6',
+    ),
+  ];
 
   /// Generates a list of example integrals.
   ///

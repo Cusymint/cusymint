@@ -3,7 +3,6 @@ import 'package:cusymint_app/features/client/client_factory.dart';
 import 'package:cusymint_app/features/home/blocs/main_page_bloc.dart';
 import 'package:cusymint_app/features/home/utils/client_error_translator.dart';
 import 'package:cusymint_app/features/navigation/navigation.dart';
-import 'package:cusymint_client/cusymint_client.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:flutter/services.dart';

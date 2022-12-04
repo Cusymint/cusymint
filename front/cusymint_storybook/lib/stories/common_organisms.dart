@@ -55,6 +55,29 @@ class CommonOrganisms extends StorybookPart {
           },
         ),
         Story(
+          name: 'Organisms/ExampleIntegralsRow',
+          builder: (context) {
+            final texCards = <CuTexCard>[];
+
+            for (var i = 0;
+                i <
+                    context.knobs.sliderInt(
+                        label: 'Cards Count', initial: 3, min: 0, max: 15);
+                i++) {
+              texCards.add(
+                CuTexCard(
+                  '\\int 15sin(x) + \\frac{cos(x)}{sin(x) + 1}\\text{d}x',
+                  onTap: () {},
+                ),
+              );
+            }
+
+            return CuExampleIntegralsRow(
+              texCards: texCards,
+            );
+          },
+        ),
+        Story(
           name: 'Organisms/Drawer',
           builder: (context) => CuScaffold(
             body: const Center(child: CuText('Drawer')),

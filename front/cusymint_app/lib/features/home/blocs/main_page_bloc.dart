@@ -6,7 +6,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rxdart/rxdart.dart';
 
 class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
-  MainPageBloc({required this.clientFactory}) : super(const MainPageState()) {
+  MainPageBloc({
+    required this.clientFactory,
+    String? initialExpression,
+  }) : super(const MainPageState()) {
     on<SolveRequested>(
       _solveIntegral,
       transformer: restartable(),
@@ -19,6 +22,10 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
       _onClearRequested,
       transformer: restartable(),
     );
+
+    if (initialExpression != null) {
+      add(SolveRequested(initialExpression));
+    }
   }
 
   final ClientFactory clientFactory;
