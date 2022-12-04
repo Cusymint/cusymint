@@ -36,17 +36,10 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
       SolveRequested event, Emitter<MainPageState> emit) async {
     emit(state.copyWith(isLoading: true, errors: [], userInput: event.input));
 
-    final watch = Stopwatch()..start();
-
     final request = Request(event.input);
 
     try {
       final response = await _client.solveIntegral(request);
-
-      watch.stop();
-
-      // TODO: do something with duration
-      final duration = watch.elapsed;
 
       emit(state.copyWith(
         isLoading: false,
