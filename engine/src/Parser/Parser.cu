@@ -98,9 +98,6 @@ namespace Parser {
             internal_expression = expr();
             match_and_get_next_token(Token::CloseBrace); // )
             return internal_expression;
-        // case Token::Minus:
-        //     next_token(); // -
-        //     return -power_arg();
         case Token::Log:
             next_token();                                // log
             match_and_get_next_token(Token::Underscore); // _
