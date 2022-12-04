@@ -17,7 +17,7 @@ namespace Parser {
     //
     // integral -> expr | int_symbol expr | int_symbol expr 'dx'
     // expr -> term { addop term }					        left-associative
-    // term -> factor { mulop factor }				      left-associative
+    // term -> factor { mulop factor }				      left-associative; mulop can be empty
     // factor -> power_arg | power_arg ^ factor		  right-associative
     // power_arg -> num | const | var | ( expr ) | log '_' power_arg ( expr ) | function ( expr )
     // function -> arcsin | arccos | arctg | arctan | arcctg | arccot | cos | ctg | cot | cosh |
