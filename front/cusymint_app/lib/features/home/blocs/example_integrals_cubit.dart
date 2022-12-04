@@ -13,8 +13,12 @@ class ExampleIntegralsCubit extends Cubit<ExampleIntegralsState> {
   final Random _random;
   final List<ExampleIntegral> exampleIntegrals = [
     const ExampleIntegral(
-      inputInTex: '\\int x^2 - 53 + 2*x^6 \\, \text{d}x',
+      inputInTex: '\\int x^2 - 53 + 2x^6 \\, \\text{d}x',
       inputInUtf: 'x^2 - 53 + 2*x^6',
+    ),
+    const ExampleIntegral(
+      inputInTex: '\\int e^x \\cdot e^x^x \\cdot e^x^x \\, \\text{d}x',
+      inputInUtf: 'e^x * e^x^x * e^x^x',
     ),
   ];
 
