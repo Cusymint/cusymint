@@ -1,10 +1,12 @@
 #include "Parser.cuh"
+
+#include <stdexcept>
+#include <vector>
+
 #include "Parser/Scanner.cuh"
 #include "Symbol/Integral.cuh"
 #include "Symbol/Logarithm.cuh"
 #include "Symbol/Symbol.cuh"
-#include <stdexcept>
-#include <vector>
 
 namespace Parser {
     Parser::Parser(Scanner* scanner) : scanner(scanner) {}
