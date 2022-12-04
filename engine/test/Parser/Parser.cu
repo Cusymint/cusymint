@@ -116,7 +116,7 @@ namespace Test {
 
     PARSER_TEST(TrimSpaces, "  2 +    3  * sin   (  c )       ",
                 Sym::num(2) + Sym::num(3) * Sym::sin(Sym::cnst("c")))
-    PARSER_TEST_ERR(DoesNotRecognizeFunctionNameSplitWithSpaces, "t g(x)")
+    PARSER_TEST_ERR(DoesNotRecognizeFunctionNameSplitWithSpaces, "t an(x)")
 
     PARSER_TEST(IntWithDifferential, "int x^2 dx", Sym::integral(Sym::var() ^ Sym::num(2)))
     PARSER_TEST(IntWithoutDifferential, "int x^2", Sym::integral(Sym::var() ^ Sym::num(2)))
@@ -129,5 +129,16 @@ namespace Test {
     PARSER_TEST(IntegrateWithoutDifferential, "integrate x^2",
                 Sym::integral(Sym::var() ^ Sym::num(2)))
     PARSER_TEST_ERR(ErrorOnDifferentialWithoutIntegral, "x^2 dx")
+
+    PARSER_TEST(SimpleMultiplicationWithoutSign, "2x", Sym::num(2) * Sym::var())
+    PARSER_TEST(MultiplicationOfLettersWithoutSign, "a b", Sym::cnst("a") * Sym::cnst("b"))
+    PARSER_TEST(AdvancedMultiplicationWithoutSign, "31sin(7x y) a^2b^3 2^t(1+1)(x+cos(x))",
+                Sym::num(31) * Sym::sin(Sym::num(7) * Sym::var() * Sym::cnst("y")) *
+                    (Sym::cnst("a") ^ Sym::num(2)) * (Sym::cnst("b") ^ Sym::num(3)) *
+                    (Sym::num(2) ^ Sym::cnst("t")) * (Sym::num(1) + Sym::num(1)) *
+                    (Sym::var() + Sym::cos(Sym::var())))
+
+    PARSER_TEST(NegationOfPower, "-x^2", -(Sym::var() ^ Sym::num(2)))
+    PARSER_TEST(PowerOfNegation, "(-x)^2", (-Sym::var()) ^ Sym::num(2))
 
 }

@@ -1,4 +1,5 @@
 #include "Parser.cuh"
+#include "Parser/Scanner.cuh"
 #include "Symbol/Integral.cuh"
 #include "Symbol/Symbol.cuh"
 #include <stdexcept>
@@ -41,10 +42,17 @@ namespace Parser {
 
     std::vector<Sym::Symbol> Parser::term() {
         std::vector<Sym::Symbol> product = factor();
-        while (tok == Token::Dot || tok == Token::Dash) {
-            SymbolicOperator oper = tok == Token::Dot ? Sym::operator* : Sym::operator/;
-            next_token();
-            product = oper(product, factor());
+        while (tok != Token::Plus && tok != Token::Minus && tok != Token::End &&
+               tok != Token::Error && tok != Token::CloseBrace && tok != Token::Differential) {
+            if (tok == Token::Dash) {
+                next_token();
+                product = product / factor();
+                continue;
+            }
+            if (tok == Token::Dot) {
+                next_token();
+            }
+            product = product * factor();
         }
         return product;
     }
