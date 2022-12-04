@@ -24,7 +24,10 @@ class WelcomePage extends StatelessWidget {
             CuTexCard(
               integral.inputInTex,
               onTap: () {
-                context.router.push(HomeRoute(isTextSelected: true));
+                context.router.push(HomeRoute(
+                  isTextSelected: false,
+                  initialExpression: integral.inputInUtf,
+                ));
               },
             ),
         ],

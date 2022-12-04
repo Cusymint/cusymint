@@ -14,13 +14,18 @@ class HomePage extends StatelessWidget {
   const HomePage({
     super.key,
     this.isTextSelected = false,
+    this.initialExpression,
   });
 
   final bool isTextSelected;
+  final String? initialExpression;
 
   @override
   Widget build(BuildContext context) {
-    final mainPageBloc = MainPageBloc(clientFactory: ClientFactory.of(context));
+    final mainPageBloc = MainPageBloc(
+      clientFactory: ClientFactory.of(context),
+      initialExpression: initialExpression,
+    );
 
     return HomeBody(
       mainPageBloc: mainPageBloc,
@@ -148,6 +153,12 @@ class _MainPageInput extends StatefulWidget {
 
 class _MainPageInputState extends State<_MainPageInput> {
   final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = widget.mainPageBloc.initialExpression ?? '';
+  }
 
   @override
   void dispose() {

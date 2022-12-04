@@ -8,7 +8,7 @@ import 'package:rxdart/rxdart.dart';
 class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
   MainPageBloc({
     required this.clientFactory,
-    String? initialExpression,
+    this.initialExpression,
   }) : super(const MainPageState()) {
     on<SolveRequested>(
       _solveIntegral,
@@ -24,10 +24,11 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
     );
 
     if (initialExpression != null) {
-      add(SolveRequested(initialExpression));
+      add(SolveRequested(initialExpression!));
     }
   }
 
+  final String? initialExpression;
   final ClientFactory clientFactory;
   CusymintClient get _client => clientFactory.client;
 
