@@ -17,8 +17,20 @@ class ExampleIntegralsCubit extends Cubit<ExampleIntegralsState> {
       inputInUtf: 'x^2 - 53 + 2*x^6',
     ),
     const ExampleIntegral(
-      inputInTex: '\\int e^x \\cdot e^x^x \\cdot e^x^x \\, \\text{d}x',
-      inputInUtf: 'e^x * e^x^x * e^x^x',
+      inputInTex: '\\int e^x \\cdot e^{e^x} \\cdot e^{e^{e^x}} \\, \\text{d}x',
+      inputInUtf: 'e^x * e^(e^x) * e^(e^(e^x))',
+    ),
+    const ExampleIntegral(
+      inputInTex: '\\int \\sin^2(x) + \\cos^2(x) \\, \\text{d}x',
+      inputInUtf: '(sin(x))^2 + (cos(x))^2',
+    ),
+    const ExampleIntegral(
+      inputInTex: '\\int \\frac{1}{x} \\, \\text{d}x',
+      inputInUtf: '1/x',
+    ),
+    const ExampleIntegral(
+      inputInTex: '\\int ax^2 + bx + c \\, \\text{d}x',
+      inputInUtf: 'a*x^2 + b*x + c',
     ),
   ];
 
