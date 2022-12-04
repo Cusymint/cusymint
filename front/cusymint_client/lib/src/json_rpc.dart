@@ -5,7 +5,6 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'interface.dart';
 
-// TODO: reuse channel
 class CusymintClientJsonRpc implements CusymintClient {
   CusymintClientJsonRpc({
     required this.uri,
