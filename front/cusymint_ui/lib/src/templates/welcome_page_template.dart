@@ -28,7 +28,7 @@ class CuWelcomePageTemplate extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Hero(tag: 'logo', child: CuLogo()),
+                    const Hero(tag: 'logo', child: CuLogo(width: 300)),
                     CuText.bold14(
                       Strings.subtitle.tr(),
                       color: CuColors.of(context).white,
@@ -61,6 +61,8 @@ class CuWelcomePageTemplate extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (texCards.isNotEmpty)
+                    CuText.med14(Strings.tryExamples.tr()),
                   CuExampleIntegralsRow(
                     texCards: texCards,
                   ),
