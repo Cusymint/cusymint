@@ -38,6 +38,7 @@ namespace Sym {
                                                        Polynomial& denominator, Polynomial& result);
 
     __host__ __device__ void calculate_derivative_to(Polynomial& derivative);
+    __host__ __device__ void square_free_decomposition();
 
     // /*
     //  * @brief Tries to find `polynomial`'s roots in complex extension of rational numbers. Rank of `result`
