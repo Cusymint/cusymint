@@ -124,7 +124,7 @@ namespace Sym::Kernel {
             }
 
             Symbol& destination = destinations[removability[expr_idx] - 1];
-            expressions[expr_idx].copy_to(&destination);
+            expressions[expr_idx].copy_to(destination);
 
             destination.if_is_do<SubexpressionCandidate>([&removability](auto& dst) {
                 dst.vacancy_expression_idx = removability[dst.vacancy_expression_idx] - 1;
@@ -192,6 +192,10 @@ namespace Sym::Kernel {
      * (specified in `check_heuristics_applicability()`) haven't found any solution.
      * `new_integrals_indices[0]` will override `1` to `0`.
      * @param new_expressions_indices Analogical to `new_integrals_indices` for `expressions`
+     * @param integral_statuses Evaluation statuses for all created integrals that are set according to the
+     * result of applications
+     * @param expression_statuses Evaluation statuses for all created expressions that are set according to the
+     * result of applications
      */
     __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
                                      ExpressionArray<> integrals_destinations,
@@ -199,7 +203,8 @@ namespace Sym::Kernel {
                                      ExpressionArray<> help_spaces,
                                      const Util::DeviceArray<uint32_t> new_integrals_indices,
                                      const Util::DeviceArray<uint32_t> new_expressions_indices,
-                                     Util::DeviceArray<EvaluationStatus> statuses);
+                                     Util::DeviceArray<EvaluationStatus> integral_statuses,
+                                     Util::DeviceArray<EvaluationStatus> expression_statuses);
 
     /*
      * @brief Propagates information about failed SubexpressionVacancy upwards to parent
@@ -216,7 +221,7 @@ namespace Sym::Kernel {
      * @brief Propagates information about failed SubexpressionCandidate downwards
      *
      * @param expression Expressions to update
-     * @param failurs Arrays that should point out already failed expressions, all descendands
+     * @param failures Arrays that should point out already failed expressions, all descendands
      * of which are going to be failed (failures[i] == 0 iff failed, 1 otherwise)
      */
     __global__ void propagate_failures_downwards(ExpressionArray<> expressions,

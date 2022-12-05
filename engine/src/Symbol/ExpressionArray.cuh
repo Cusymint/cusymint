@@ -3,11 +3,13 @@
 
 #include "Symbol.cuh"
 
+#include <thrust/scan.h>
+
+#include "Evaluation/Status.cuh"
 #include "Utils/CompileConstants.cuh"
 #include "Utils/DeviceArray.cuh"
 
 namespace Sym {
-    template <class T = Symbol>
     __global__ void set_new_expression_capacities(
         Util::DeviceArray<size_t> expression_capacities,
         Util::DeviceArray<size_t> expression_capacities_sum, const size_t old_expression_count,
@@ -26,33 +28,61 @@ namespace Sym {
         }
     }
 
-    template <class T = Symbol>
-    __global__ void reoffset_indices(const Util::DeviceArray<bool> indices,
-                                     Util::DeviceArray<size_t> expression_capacities,
-                                     Util::DeviceArray<size_t> expression_capacities_sum,
-                                     const size_t realloc_multiplier) {
+    __global__ void multiply_sizes(const Util::DeviceArray<EvaluationStatus> statuses,
+                                   Util::DeviceArray<size_t> expression_capacities,
+                                   const size_t realloc_multiplier, const size_t expression_count,
+                                   const size_t start) {
         const size_t thread_idx = Util::thread_idx();
         const size_t thread_count = Util::thread_count();
 
-        const size_t indices_count = Util::min(indices.size(), expression_capacities.size());
+        for (size_t i = thread_idx; i < expression_count - start; i += thread_count) {
+            const size_t one_zero = statuses[i] == EvaluationStatus::ReallocationRequest ? 1 : 0;
+            // Multiplier equal to `realloc_multiplier` when `indices[i]` is `true`, equal to `1`
+            // otherwise
+            expression_capacities[i + start] =
+                (one_zero * (realloc_multiplier - 1) + 1) * expression_capacities[i + start];
+        }
+    }
 
-        for (size_t i = thread_idx; i < indices_count; i += thread_count) {
-            if (indices[i]) {
-                expression_capacities[i] *= realloc_multiplier;
-                // TODO: zmiany indeksów + przekopiowanie danych !!!!!!!!!!!
+    __global__ void reoffset_data(const Util::DeviceArray<Symbol> old_data,
+                                  Util::DeviceArray<Symbol> new_data,
+                                  const Util::DeviceArray<size_t> old_expression_capacities_sum,
+                                  const Util::DeviceArray<size_t> new_expression_capacities_sum,
+                                  const size_t expression_count) {
+        const size_t thread_idx = Util::thread_idx();
+        const size_t thread_count = Util::thread_count();
+
+        for (size_t expr_idx = thread_idx; expr_idx < expression_count; expr_idx += thread_count) {
+            const size_t old_data_idx =
+                expr_idx == 0 ? 0 : old_expression_capacities_sum[expr_idx - 1];
+            const size_t new_data_idx =
+                expr_idx == 0 ? 0 : new_expression_capacities_sum[expr_idx - 1];
+            const size_t expr_capacity = old_expression_capacities_sum[expr_idx] - old_data_idx;
+
+            for (size_t sym_idx = 0; sym_idx < expr_capacity; ++sym_idx) {
+                new_data[new_data_idx + sym_idx] = old_data[old_data_idx + sym_idx];
             }
         }
     }
 
     /*
-     * @brief Array of expressions of different lengths in CUDA memory. Each expression begins with
-     * a symbol of type T.
+     * @brief Array of expressions of different lengths in CUDA memory. Each expression begins
+     * with a symbol of type T.
      */
     template <class T = Symbol> class ExpressionArray {
+        template <class U> friend class ExpressionArray;
+
+        static constexpr size_t KERNEL_BLOCK_SIZE = 1024;
+        static constexpr size_t KERNEL_BLOCK_COUNT = 4;
+
         // When doing a reallocation, how many times more memory to allocate than is actually needed
         static constexpr size_t REALLOC_MULTIPLIER = 2;
 
         Util::DeviceArray<Symbol> data;
+
+        // Swap memory used for reoffsetting. Contains garbage, but is kept at the same size as
+        // `data`.
+        Util::DeviceArray<Symbol> data_swap;
 
         // Capacity of every expression. Can potentially have bigger size than there are
         // expressions. In that case, values starting with `expression_count`-th coordinate should
@@ -63,10 +93,23 @@ namespace Sym {
         // `expression_capacities`
         Util::DeviceArray<size_t> expression_capacities_sum;
 
+        // Swap memory used for reoffsetting. Contains garbage, but is kept at the same size as
+        // `expression_capacities`
+        Util::DeviceArray<size_t> expression_capacities_sum_swap;
+
         // Number of expressions actually held in the array
         size_t expression_count = 0;
 
-        template <class U> friend class ExpressionArray;
+        void resize_data(const size_t size) {
+            data.resize(size);
+            data_swap.resize(size);
+        }
+
+        void resize_expression_capacities(const size_t size) {
+            expression_capacities.resize(size);
+            expression_capacities_sum.resize(size);
+            expression_capacities_sum_swap.resize(size);
+        }
 
       public:
         /*
@@ -79,23 +122,29 @@ namespace Sym {
          */
         explicit ExpressionArray(const size_t symbols_capacity, const size_t expressions_capacity) :
             data(symbols_capacity),
+            data_swap(symbols_capacity),
             expression_capacities(expression_capacity),
-            expression_capacities_sum(expressions_capacity) {}
+            expression_capacities_sum(expressions_capacity),
+            expression_capacities_sum_swap(expressions_capacity) {}
 
         template <class U>
         ExpressionArray(const ExpressionArray<U>& other) // NOLINT(google-explicit-constructor)
             :
             data(other.data),
+            data_swap(other.data.size()),
             expression_capacities(other.expression_capacities),
-            expression_capacities_sum(other.expression_offsets),
+            expression_capacities_sum(other.expression_capacities_sum),
+            expression_capacities_sum_swap(other.expression_capacities_sum.size()),
             expression_count(expression_count) {}
 
         template <class U>
         ExpressionArray(ExpressionArray<U>&& other) // NOLINT(google-explicit-constructor)
             :
             data(std::forward(other.data)),
+            data_swap(other.data.size()),
             expression_capacities(std::forward(other.expression_capacities)),
             expression_capacities_sum(std::forward(other.expression_offsets)),
+            expression_capacities_sum_swap(other.expression_capacities_sum.size()),
             expression_count(other.expression_count) {}
 
         template <class U> ExpressionArray& operator=(const ExpressionArray<U>& other) {
@@ -104,8 +153,10 @@ namespace Sym {
             }
 
             data = other.data;
+            data_swap.resize(other.data.size());
             expression_capacities = other.expression_capacities;
             expression_capacities_sum = other.expression_offsets;
+            expression_capacities_sum_swap.resize(other.expression_capacities_sum.size());
             expression_count = other.expression_count;
 
             return *this;
@@ -133,15 +184,14 @@ namespace Sym {
                 expressions_sizes_sum.push_back(current_size_sum);
             }
 
-            expression_capacities.resize(expressions.size());
-            expression_capacities_sum.resize(expressions.size());
+            resize_expression_capacities(expressions.size());
 
             cudaMemcpy(expression_capacities.data(), expressions_sizes.data(),
                        expressions_sizes.size() * sizeof(size_t), cudaMemcpyHostToDevice);
             cudaMemcpy(expression_capacities_sum.data(), expressions_sizes_sum.data(),
                        expressions_sizes_sum.size() * sizeof(size_t), cudaMemcpyHostToDevice);
 
-            data.resize(current_size_sum);
+            resize_data(current_size_sum);
 
             for (size_t expr_idx = 0; expr_idx < expressions.size(); ++expr_idx) {
                 cudaMemcpy(at(expr_idx), expressions[expr_idx].data(),
@@ -194,25 +244,39 @@ namespace Sym {
         }
 
         /*
+         * @brief Changes the number of held expressions to `new_expression_count`. Current `size()`
+         * has to be larger or equal to `new_expression_count`
+         */
+        void shrink_to(const size_t new_expression_count) {
+            if constexpr (Consts::DEBUG) {
+                if (new_expression_count > expression_count) {
+                    Util::crash(
+                        "Trying to shrink an array of %lu elements to a larger size of %lu!",
+                        new_expression_count, expression_count);
+                }
+            }
+            expression_count = new_expression_count;
+        }
+
+        /*
          * @brief Changes the number of held expressions to `new_expression_count`.
          *
          * @param new_expression_count Number of expressions in the array after the call
          * @param new_expressions_capacity If new expressions will be created, they will all have a
          * capacity of `new_expressions_capacity`
          */
-        void resize(const size_t new_expression_count, const size_t new_expressions_capacity = 1) {
+        void resize(const size_t new_expression_count, const size_t new_expressions_capacity) {
             if (new_expression_count <= expression_count) {
-                expression_count = new_expression_count;
+                shrink_to(new_expression_count);
                 return;
             }
 
             const size_t additional_expr_count = new_expression_count - expression_count;
 
             if (expression_capacities.size() < new_expression_count) {
-                expression_capacities.resize(new_expression_count * REALLOC_MULTIPLIER);
-                expression_capacities_sum.resize(new_expression_count * REALLOC_MULTIPLIER);
+                resize_expression_capacities(new_expression_count * REALLOC_MULTIPLIER);
 
-                set_new_expression_capacities<<<1, 1024>>>(
+                set_new_expression_capacities<<<KERNEL_BLOCK_COUNT, KERNEL_BLOCK_SIZE>>>(
                     expression_capacities, expression_capacities_sum, expression_count,
                     new_expression_count, new_expressions_capacity);
             }
@@ -224,42 +288,87 @@ namespace Sym {
                 current_total_capacity + additional_expr_count * new_expressions_capacity;
 
             if (new_required_capacity > data.size()) {
-                data.resize(new_required_capacity * REALLOC_MULTIPLIER);
+                resize_data(new_required_capacity * REALLOC_MULTIPLIER);
             }
 
             expression_count = new_expression_count;
         }
 
         /*
-         * @brief Multiplies capacities of expressions at selected indices by REALLOC_MULTIPLIER
+         * @brief Multiplies capacities of expressions at selected indices by REALLOC_MULTIPLIER.
+         * Current content of the array is correctly moved according to new offset values.
          *
-         * @param indices Array of `bool`s. If `indices[i] == true`, then the capacity of expression
-         * at the `i`-th index will be multiplied by REALLOC_MULTIPLIER
+         * @param statuses Array of `EvaluationStatus`s. If `indices[i] ==
+         * EvaluationStatus::ReallocationRequest`, then the capacity of expression at the
+         * `(start+i)`-th index will be multiplied by REALLOC_MULTIPLIER
+         * @param start Index at which the reallocations can potentially start
          */
-        void reoffset_indices(const Util::DeviceArray<bool> indices) {
-            reoffset_indices<<<1, 1024>>>(indices, expression_capacities, expression_capacities_sum,
-                                          REALLOC_MULTIPLIER);
+        void reoffset_indices(const Util::DeviceArray<EvaluationStatus> statuses,
+                              const size_t start = 0) {
+            multiply_sizes<<<KERNEL_BLOCK_COUNT, KERNEL_BLOCK_SIZE>>>(
+                statuses, expression_capacities, REALLOC_MULTIPLIER, expression_count, start);
+            cudaDeviceSynchronize();
+
+            thrust::inclusive_scan(thrust::device, expression_capacities.begin(),
+                                   expression_capacities.end(),
+                                   expression_capacities_sum_swap.data());
+            cudaDeviceSynchronize();
+
+            const size_t new_min_capacity =
+                expression_capacities_sum_swap.to_cpu(expression_count - 1);
+            if (new_min_capacity > data.size()) {
+                resize_data(new_min_capacity * REALLOC_MULTIPLIER);
+            }
+
+            reoffset_data<<<KERNEL_BLOCK_COUNT, KERNEL_BLOCK_SIZE>>>(
+                data, data_swap, expression_capacities_sum, expression_capacities_sum_swap,
+                expression_count);
+            cudaDeviceSynchronize();
+
+            std::swap(data, data_swap);
+            std::swap(expression_capacities_sum, expression_capacities_sum_swap);
         }
 
         /*
          * @brief Sets expression count and their offsets to the same as the ones in `other`.
          * Current contents of the array turns into garbage.
          *
-         * @param other Array from which sizes and offsets are going to be copied
+         * @param other Iterator to an array from which sizes and offsets are going to be copied.
+         * Everything will be copied as if the array begun at the element the iterator is pointing
+         * to.
          */
-        template <class U> void reoffset_like(ExpressionArray<U> other) {
-            if (other.size() > data.size()) {
-                data.resize(other.size() * REALLOC_MULTIPLIER);
+        template <class U = Symbol>
+        void reoffset_like(const typename ExpressionArray<U>::Iterator& other) {
+            if (other.expression_count() == 0) {
+                expression_count = 0;
+                return;
             }
 
-            if (other.expression_count > expression_capacities.size()) {
-                expression_capacities.resize(other.expression_count * REALLOC_MULTIPLIER);
-                expression_capacities_sum.resize(other.expression_count * REALLOC_MULTIPLIER);
+            // Not including the element pointed to
+            const size_t other_total_size_up_to_iterator =
+                other.index_ == 0 ? 0
+                                  : other.array->expression_capacities_sum.to_cpu(other.index_ - 1);
+
+            const size_t other_total_size =
+                other.array->expression_capacities_sum.to_cpu(other.array->expression_count - 1);
+
+            // Including the element pointed to
+            const size_t other_total_size_past_iterator =
+                other_total_size - other_total_size_up_to_iterator;
+
+            if (other_total_size_past_iterator > data.size()) {
+                resize_data(other_total_size_past_iterator * REALLOC_MULTIPLIER);
             }
 
-            cudaMemcpy(expression_capacities.data(), other.expression_capacities.data(),
+            if (other.expression_count() > expression_capacities.size()) {
+                resize_expression_capacities(other.expression_count() * REALLOC_MULTIPLIER);
+            }
+
+            cudaMemcpy(expression_capacities.data(),
+                       other.array->expression_capacities.data() + other.index_,
                        other.expression_capacity * sizeof(size_t), cudaMemcpyDeviceToDevice);
-            cudaMemcpy(expression_capacities_sum.data(), other.expression_capacities_sum.data(),
+            cudaMemcpy(expression_capacities_sum.data(),
+                       other.array->expression_capacities_sum.data() + other.index_,
                        other.expression_capacity * sizeof(size_t), cudaMemcpyDeviceToDevice);
 
             expression_count = other.expression_count;
@@ -335,6 +444,8 @@ namespace Sym {
          * @brief Iterator to an expression in an `ExpressionArray`
          */
         template <class U> class GenericIterator {
+            template <class V> friend class ExpressionArray;
+
             U* array;
             size_t index_;
 
@@ -458,7 +569,17 @@ namespace Sym {
             /*
              * @brief `index`-th symbol of the expression pointed to by the iterator
              */
-            __host__ __device__ T& operator[](const size_t index) const { return array + index; }
+            [[nodiscard]] __host__ __device__ T& operator[](const size_t index) const {
+                return array + index;
+            }
+
+            /*
+             * @brief How many expressions onwards there are in the array starting from the one
+             * pointed to by the iterator
+             */
+            [[nodiscard]] __host__ __device__ size_t expression_count() const {
+                return array->expression_count - index_;
+            }
         };
 
         using Iterator = GenericIterator<ExpressionArray>;
@@ -467,7 +588,7 @@ namespace Sym {
         /*
          * @brief Constructs an iterator pointing to the index-th expression
          */
-        [[nodiscard]] __host__ __device__ Iterator iterator(const size_t index) {
+        [[nodiscard]] __host__ __device__ Iterator iterator(const size_t index = 0) {
             return Iterator(*this, index);
         }
 

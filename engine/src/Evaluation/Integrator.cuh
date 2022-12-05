@@ -19,10 +19,12 @@ namespace Sym {
         static constexpr size_t INITIAL_ARRAYS_SYMBOLS_CAPACITY =
             INITIAL_ARRAYS_EXPRESSIONS_CAPACITY * INITIAL_EXPRESSIONS_CAPACITY;
 
+        // Sizes of `scan_array_X` and `evaluation_statuses` are multiplied by this value on
+        // reallocation
         static constexpr size_t REALLOC_MULTIPLIER = 2;
         static constexpr size_t HELP_SPACE_MULTIPLIER = 2;
 
-        const size_t MAX_CHECK_COUNT;
+        const size_t CHECK_COUNT;
 
         ExpressionArray<> expressions;
         ExpressionArray<> expressions_swap;
@@ -32,10 +34,15 @@ namespace Sym {
 
         ExpressionArray<> help_space;
 
+        // Scan arrays used in various algorithms. Their size can be larger than the actually used
+        // part.
         Util::DeviceArray<uint32_t> scan_array_1;
         Util::DeviceArray<uint32_t> scan_array_2;
 
-        Util::DeviceArray<EvaluationStatus> evaluation_statuses;
+        // EvaluationStatus arrays used for checking reallocation requests. Their size can be larger
+        // than the actually used part.
+        Util::DeviceArray<EvaluationStatus> evaluation_statuses_1;
+        Util::DeviceArray<EvaluationStatus> evaluation_statuses_2;
 
         /*
          * @brief Replaces nth symbol in `expression` with `tree`, skipping the first element of
@@ -79,18 +86,23 @@ namespace Sym {
         /*
          * @brief Sets all evaluation statuses to `EvaluationStatus::Incomplete`
          */
-        void reset_evaluation_statuses();
+        static void
+        reset_evaluation_statuses(Util::DeviceArray<EvaluationStatus>& evaluation_statuses);
 
         /*
          * @brief Resizes `evaluation_statuses` to at least `size` if its size is smaller than
          * `size`, does nothing if its size is already at least `size`
          */
-        void resize_evaluation_statuses(const size_t size);
+        static void
+        resize_evaluation_statuses(Util::DeviceArray<EvaluationStatus>& evaluation_statuses,
+                                   const size_t size);
 
         /*
-         * @brief Checks if all first `count` statuses are equal to `EvaluationStatus::Done`
+         * @brief Checks if the first `count` statuses are equal to `EvaluationStatus::Done`
          */
-        bool are_evaluation_statuses_done(const size_t count);
+        static bool
+        are_evaluation_statuses_done(const Util::DeviceArray<EvaluationStatus>& evaluation_statuses,
+                                     const size_t count);
 
         /*
          * @brief Resizes `scan_array_1` and `scan_array_2` to at least `size` if their size is

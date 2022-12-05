@@ -326,7 +326,8 @@ namespace Sym::Kernel {
                                      ExpressionArray<> help_spaces,
                                      const Util::DeviceArray<uint32_t> new_integrals_indices,
                                      const Util::DeviceArray<uint32_t> new_expressions_indices,
-                                     Util::DeviceArray<EvaluationStatus> statuses) {
+                                     Util::DeviceArray<EvaluationStatus> integral_statuses,
+                                     Util::DeviceArray<EvaluationStatus> expression_statuses) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -342,21 +343,35 @@ namespace Sym::Kernel {
                 }
 
                 const size_t idx = index_from_scan(new_integrals_indices, appl_idx);
+                const size_t new_integral_count =
+                    new_integrals_indices[appl_idx] -
+                    (appl_idx == 0 ? 0 : new_integrals_indices[appl_idx - 1]);
+                const size_t new_expression_count =
+                    new_expressions_indices[appl_idx] -
+                    (appl_idx == 0 ? 0 : new_expressions_indices[appl_idx - 1]);
 
-                if (statuses[idx] == EvaluationStatus::Done) {
+                if (integral_statuses[idx] == EvaluationStatus::Done) {
                     continue;
                 }
 
                 if (new_expressions_indices[appl_idx] != 0) {
                     const size_t expr_dst_idx = index_from_scan(new_expressions_indices, appl_idx);
-                    statuses[idx] = Heuristic::APPLICATIONS[trans_idx](
+                    integral_statuses[idx] = Heuristic::APPLICATIONS[trans_idx](
                         integrals[int_idx], integrals_destinations.iterator(idx),
                         expressions_destinations + expr_dst_idx, help_spaces.iterator(idx));
                 }
                 else {
-                    statuses[idx] = Heuristic::APPLICATIONS[trans_idx](
+                    integral_statuses[idx] = Heuristic::APPLICATIONS[trans_idx](
                         integrals[int_idx], integrals_destinations.iterator(idx),
                         ExpressionArray<>::Iterator::null(), help_spaces.iterator(idx));
+                }
+
+                for (size_t status_idx = 1; status_idx < new_integral_count; ++status_idx) {
+                    integral_statuses[idx + status_idx] = integral_statuses[idx];
+                }
+
+                for (size_t status_idx = 0; status_idx < new_expression_count; ++status_idx) {
+                    expression_statuses[idx + status_idx] = expression_statuses[idx];
                 }
             }
         }
