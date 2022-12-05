@@ -58,6 +58,7 @@ namespace Sym::Collapser {
         Symbol::copy_and_reverse_symbol_sequence(collapsed.data(), reversed.data(), new_size);
 
         std::vector<Symbol> help_space(EXPRESSION_MAX_SYMBOL_COUNT);
+        collapsed.resize(EXPRESSION_MAX_SYMBOL_COUNT);
         collapsed.data()->simplify(help_space.data());
         collapsed.resize(collapsed.data()->size());
 

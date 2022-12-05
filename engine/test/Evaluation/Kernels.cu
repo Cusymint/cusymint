@@ -15,10 +15,16 @@ namespace Test {
             "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)",
             "1/(1/(1/(1/(x))))",
             "2*5*7*x^5/(--(14*x^2))",
-        }; // TODO: add "3*(2*x+4*(10*x+2)+5)+1" when feature/expression-splitting merged
+            "3*(2*x+4*(10*x+2)+5)+1",
+        };
         StringVector solutions_vector = {
-            "1", "e^(pi*x*sin(x))", "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)", "x", "5*x^3",
-        }; // TODO: add "40+126*x" when feature/expression-splitting merged
+            "1",
+            "e^(pi*x*sin(x))",
+            "2*x^2/(3+x+5*x^2+10*x^3+x^6)+x^3/(3+x+5*x^2+10*x^3+x^6)+9/(3+x+5*x^2+10*x^3+x^6)",
+            "x",
+            "5*x^3",
+            "40+126*x",
+        };
         Sym::ExpressionArray<Sym::SubexpressionCandidate> expressions =
             from_string_vector_with_candidate(expressions_vector);
         Sym::ExpressionArray<Sym::SubexpressionCandidate> destination =
@@ -341,7 +347,8 @@ namespace Test {
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
         EXPECT_TRUE(are_expr_vectors_equal(expressions.to_vector(), expected_expressions_vector));
-        test_heuristics_correctly_checked(new_integrals_flags, new_expressions_flags, expected_heuristics);
+        test_heuristics_correctly_checked(new_integrals_flags, new_expressions_flags,
+                                          expected_heuristics);
     }
 
     KERNEL_TEST(ApplyHeuristics) {
