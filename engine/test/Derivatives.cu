@@ -15,6 +15,7 @@
 
 namespace Test {
     namespace {
+
         void test_derivative(std::vector<Sym::Symbol> expression,
                              std::vector<Sym::Symbol> expected_derivative) {
             std::vector<Sym::Symbol> help_space(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
@@ -22,14 +23,16 @@ namespace Test {
 
             const auto size = expression.data()->derivative_to(derivative.data());
 
-            derivative.resize(size);
-
             EXPECT_EQ(size, derivative.data()->size())
                 << "Tried to calculate derivative of:\n  " << expression.data()->to_string()
                 << "\n but calculated size does not match actual size";
 
+            expected_derivative.resize(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+
             expected_derivative.data()->simplify(help_space.data());
             derivative.data()->simplify(help_space.data());
+
+            derivative.resize(size);
 
             EXPECT_TRUE(
                 Sym::Symbol::are_expressions_equal(*derivative.data(), *expected_derivative.data()))

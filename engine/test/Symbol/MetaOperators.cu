@@ -7,6 +7,7 @@
 #include "Evaluation/Integrator.cuh"
 #include "Parser/Parser.cuh"
 #include "Symbol/Integral.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/MetaOperators.cuh"
 #include "Symbol/Product.cuh"
 #include "Symbol/Solution.cuh"
@@ -14,7 +15,6 @@
 #include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Symbol/Variable.cuh"
-#include "Symbol/Macros.cuh"
 
 #define _META_TEST_MATCH(_name, _pattern, _expression, _should_match)      \
     TEST(MetaOperatorsMatchTest, _name) {                                  \
@@ -144,7 +144,7 @@ namespace Test {
     META_TEST_INIT(SingleVacancy, SingleIntegralVacancy, single_integral_vacancy())
 
     // From::Create::WithMap
-    TEST(MetaOperatorsInitTest, FromCreateWithMap) {
+    TEST(MetaOperatorsInitTest, FromCreateWithSimpleMap) {
         auto expression = Parser::parse_function("x+4+x^6+e^(2*x)+9+cos(sin(x))+2*u");
         auto expected_expression =
             Parser::parse_function("arcsin(x)*arcsin(4)*arcsin(x^6)*arcsin(e^(2*x))*arcsin(9)*"
@@ -155,6 +155,50 @@ namespace Test {
 
         From<Addition>::Create<Product>::WithMap<Arcsin>::init(
             *destination.data(), {{expression.data()->as<Addition>(), count}});
+
+        destination.resize(destination.data()->size());
+
+        EXPECT_TRUE(Symbol::are_expressions_equal(*destination.data(), *expected_expression.data()))
+            << "Expressions do not match:\n"
+            << destination.data()->to_string() << " <- got,\n"
+            << expected_expression.data()->to_string() << " <- expected\n";
+    }
+
+    template <class T> using Map = Add<Pow<Num, T>, Num>;
+    TEST(MetaOperatorsInitTest, FromCreateWithComplexMap) {
+
+        auto expression = Parser::parse_function("x+4+x^6+e^(2*x)+9+cos(sin(x))+2*u");
+        auto expected_expression =
+            Parser::parse_function("(2^x+3)*(2^4+3)*(2^x^6+3)*(2^e^(2*x)+3)*(2^9+3)*"
+                                   "(2^cos(sin(x))+3)*(2^(2*u)+3)");
+
+        size_t const count = expression.data()->as<Addition>().tree_size();
+        std::vector<Symbol> destination(EXPRESSION_MAX_SYMBOL_COUNT);
+
+        From<Addition>::Create<Product>::WithMap<Map>::init(
+            *destination.data(), {{expression.data()->as<Addition>(), count}, 2, 3});
+
+        destination.resize(destination.data()->size());
+
+        EXPECT_TRUE(Symbol::are_expressions_equal(*destination.data(), *expected_expression.data()))
+            << "Expressions do not match:\n"
+            << destination.data()->to_string() << " <- got,\n"
+            << expected_expression.data()->to_string() << " <- expected\n";
+    }
+
+    template <class T> using Map2 = Pow<T, Copy>;
+    TEST(MetaOperatorsInitTest, FromCreateWithComplexMapWithCopy) {
+
+        auto expression = Parser::parse_function("x+sin(x)");
+        auto to_be_copied = Parser::parse_function("cos(e^x)");
+        auto expected_expression =
+            Parser::parse_function("x^cos(e^x)*sin(x)^cos(e^x)");
+
+        size_t const count = expression.data()->as<Addition>().tree_size();
+        std::vector<Symbol> destination(EXPRESSION_MAX_SYMBOL_COUNT);
+
+        From<Addition>::Create<Product>::WithMap<Map2>::init(
+            *destination.data(), {{expression.data()->as<Addition>(), count}, *to_be_copied.data()});
 
         destination.resize(destination.data()->size());
 

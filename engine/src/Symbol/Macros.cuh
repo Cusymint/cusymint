@@ -413,27 +413,49 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ SimplificationResult simplify_pairs(Symbol* const help_space);        \
                                                                                               \
     /*                                                                                        \
-     * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi   \
+     * @brief Checks if two expressions can be simplified with operator. Does so if yes.      \
      *                                                                                        \
-     * @param expr1 Pierwszy argument operatora                                               \
-     * @param expr2 Drugi argument operatora                                                  \
+     * @param expr1 First operator argument                                                   \
+     * @param expr2 Second operator argument                                                  \
      * @param help_space The help space                                                       \
      *                                                                                        \
-     * @return `Success` jeśli wykonano uproszczenie, `NoAction`, jeśli nie,                \
-     * `NeedsSpace`, jeśli potrzeba dodatkowego miejsca na uproszczenie.                     \
+     * @return `Success` if simplification happened, `NoAction`, if not,                      \
+     * `NeedsSpace`, if it is needed more space to perform a simplification.                  \
      */                                                                                       \
     __host__ __device__ static SimplificationResult try_fuse_symbols(                         \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);                  \
+                                                                                              \
+    /*                                                                                        \
+     * @brief Compares `expr1` and `expr2` accurate to within their coefficients              \
+     * and checks if symbols can be merged by adding these coefficients. If yes, inserts      \
+     * fused symbol into `destination`.                                                       \
+     *                                                                                        \
+     * @param expr1 First operator argument                                                   \
+     * @param expr2 Second operator argument                                                  \
+     * @param help_space The help space                                                       \
+     *                                                                                        \
+     * @return `Util::Order::Less` if `expr1` comes before `expr2` in the expression          \
+     * order, `Util::Order::Greater` if `expr2` comes before `expr1`, and                     \
+     * `Util::Order::Equal`, if expressions are equal accurate to within their coefficients   \
+     */                                                                                       \
+    template <bool COMPARE_ONLY = false>                                                      \
+    __host__ __device__ static Util::Order compare_and_try_fuse_symbols(                      \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const destination);                 \
     /*                                                                                        \
      * @brief Counts symbols in simplified tree.                                              \
      *                                                                                        \
      * @return Count of symbols in the tree.                                                  \
      */                                                                                       \
-    __host__ __device__ size_t tree_size();
+    __host__ __device__ size_t tree_size() const;
 
 #define DEFINE_TRY_FUSE_SYMBOLS(_name)                                \
     __host__ __device__ SimplificationResult _name::try_fuse_symbols( \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space)
+
+#define DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(_name)                       \
+    template <bool COMPARE_ONLY>                                         \
+    __host__ __device__ Util::Order _name::compare_and_try_fuse_symbols( \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const destination)
 
 #define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                  \
     DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                      \
@@ -520,7 +542,7 @@ template <class T, class U> struct MacroType<T(U)> {
             arg1().is(_name::TYPE) ? arg1().as<_name>().tree_size() - 1 : 0;                               \
         const size_t arg2_height =                                                                         \
             arg2().is(_name::TYPE) ? arg2().as<_name>().tree_size() - 1 : 0;                               \
-        const size_t new_tree_size = 1 + arg1_height + arg2_height;                                        \
+        size_t new_tree_size = 1 + arg1_height + arg2_height;                                              \
                                                                                                            \
         /* Initialize a sufficient number of tree iterators */                                             \
         for (size_t i = 0; i < new_tree_size; ++i) {                                                       \
@@ -535,17 +557,25 @@ template <class T, class U> struct MacroType<T(U)> {
         Symbol* const help_space_back = help_space + size;                                                 \
         Symbol* current_dst_back = help_space_back;                                                        \
         while (left_tree_iter.is_valid() && right_tree_iter.is_valid()) {                                  \
-            const auto ordering = Symbol::compare_expressions(                                             \
-                *left_tree_iter.current(), *right_tree_iter.current(), *help_space_back);                  \
+            const auto ordering = _name::compare_and_try_fuse_symbols(                                     \
+                left_tree_iter.current(), right_tree_iter.current(), help_space_back);                     \
+            /*Symbol::compare_expressions(                                                                 \
+             *left_tree_iter.current(), *right_tree_iter.current(), *help_space_back); */                  \
             Symbol* current;                                                                               \
             if (ordering == Util::Order::Greater) {                                                        \
                                                                                                            \
                 current = left_tree_iter.current();                                                        \
                 left_tree_iter.advance();                                                                  \
             }                                                                                              \
-            else {                                                                                         \
+            else if (ordering == Util::Order::Less) {                                                      \
                 current = right_tree_iter.current();                                                       \
                 right_tree_iter.advance();                                                                 \
+            }                                                                                              \
+            else {                                                                                         \
+                current = help_space_back;                                                                 \
+                left_tree_iter.advance();                                                                  \
+                right_tree_iter.advance();                                                                 \
+                --new_tree_size;                                                                           \
             }                                                                                              \
                                                                                                            \
             Symbol* const current_dst = current_dst_back - current->size();                                \
@@ -582,8 +612,8 @@ template <class T, class U> struct MacroType<T(U)> {
         iterator.advance();                                                                                \
                                                                                                            \
         while (iterator.is_valid()) {                                                                      \
-            if (Symbol::compare_expressions(*last, *iterator.current(), help_space) ==                     \
-                Util::Order::Less) {                                                                       \
+            if (_name::compare_and_try_fuse_symbols<true>(last, iterator.current(),                        \
+                                                          &help_space) != Util::Order::Greater) {          \
                 return false;                                                                              \
             }                                                                                              \
                                                                                                            \
@@ -635,7 +665,7 @@ template <class T, class U> struct MacroType<T(U)> {
     /*                                                                                                     \
      * @brief Number of leaves in a two argument operator tree                                             \
      */                                                                                                    \
-    __host__ __device__ size_t _name::tree_size() {                                                        \
+    __host__ __device__ size_t _name::tree_size() const {                                                  \
         /* In every sum, number of terms is equal to number of operator signs plus 1.                      \
          * When an addition tree is simplified, all operator symbols are placed in a row,                  \
          * so it suffices to calculate address of the last operator symbol. The offset between             \
