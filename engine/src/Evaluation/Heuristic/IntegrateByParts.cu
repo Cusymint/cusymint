@@ -12,6 +12,11 @@ namespace Sym::Heuristic {
         __host__ __device__ void extract_second_factor(const Symbol& product,
                                                        const Symbol& first_factor,
                                                        Symbol& destination, Symbol& help_space) {
+            if (first_factor.is(1)) {
+                product.copy_to(&destination);
+                return;
+            }
+
             // assume that first_factor and product are sorted
             ConstTreeIterator<Product> product_it(&product);
             ConstTreeIterator<Product> first_factor_it(&first_factor);
@@ -89,26 +94,34 @@ namespace Sym::Heuristic {
                                        Symbol& help_space) {
         const auto& integrand = *integral.arg().as<Integral>().integrand();
 
-        if (integrand.is(Type::Product)) {
-            const auto& product = integrand.as<Product>();
-            const size_t second_factor_size = product.size - first_function_derivative.size() - 1;
-
-            Candidate<Add<Neg<SingleIntegralVacancy>, Mul<Copy, Skip>>>::init(
-                *expression_dst, {{integral.vacancy_expression_idx, integral.vacancy_idx, 1},
-                                  first_function,
-                                  second_factor_size});
-
-            Symbol& second_factor_dst = (*expression_dst)
-                                            .as<SubexpressionCandidate>()
-                                            .arg()
-                                            .as<Addition>()
-                                            .arg2()
-                                            .as<Product>()
-                                            .arg2();
-
-            extract_second_factor(product, first_function_derivative, second_factor_dst,
-                                  help_space);
+        size_t second_factor_size;
+        if (first_function_derivative.is(1)) {
+            second_factor_size = integrand.size();
         }
+        else if (integrand.size() == first_function_derivative.size()) {
+            // first_function_derivative is a subexpression of integrand, so this must mean that
+            // they are equal and second factor is Integer<1>
+            second_factor_size = 1;
+        }
+        else {
+            // if sizes are not equal and derivative is not 1, then integrand is a product
+            second_factor_size = integrand.size() - first_function_derivative.size() - 1;
+        }
+
+        Candidate<Add<Neg<SingleIntegralVacancy>, Mul<Copy, Skip>>>::init(
+            *expression_dst, {{integral.vacancy_expression_idx, integral.vacancy_idx, 1},
+                              first_function,
+                              second_factor_size});
+
+        Symbol& second_factor_dst = (*expression_dst)
+                                        .as<SubexpressionCandidate>()
+                                        .arg()
+                                        .as<Addition>()
+                                        .arg2()
+                                        .as<Product>()
+                                        .arg2();
+
+        extract_second_factor(integrand, first_function_derivative, second_factor_dst, help_space);
 
         if constexpr (Consts::DEBUG) {
             if (second_factor_dst.size() != second_factor_size) {

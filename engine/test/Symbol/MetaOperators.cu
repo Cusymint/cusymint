@@ -122,7 +122,7 @@ namespace Test {
     META_TEST_INIT(Integer, Integer<69>, "69")
     META_TEST_INIT(NumericConstant, Num, "123.456", 123.456)
     META_TEST_INIT(Copy, Copy, "x^2", *(var() ^ num(2)).data())
-    META_TEST_INIT(Skip, Skip, unknown_with_size(10), 10)
+    META_TEST_INIT(Skip, Skip, unknown_with_size(1), 1)
     // Simple OneArgOperators
     META_TEST_INIT(Sine, Sin<E>, "sin(e)")
     META_TEST_INIT(Cosine, Cos<Var>, "cos(x)")
