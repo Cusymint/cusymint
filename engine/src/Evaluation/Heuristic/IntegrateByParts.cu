@@ -2,6 +2,7 @@
 
 #include "Evaluation/StaticFunctions.cuh"
 #include "Symbol/MetaOperators.cuh"
+#include "Symbol/TreeIterator.cuh"
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Utils/CompileConstants.cuh"
