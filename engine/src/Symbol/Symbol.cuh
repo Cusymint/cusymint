@@ -538,7 +538,7 @@ namespace Sym {
          *
          * @return Number of symbols inserted.
          */
-        __host__ __device__ size_t derivative_to(Symbol* const destination);
+        __host__ __device__ size_t derivative_to(Symbol& destination);
     };
 
     /*

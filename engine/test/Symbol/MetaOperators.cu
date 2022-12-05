@@ -13,6 +13,7 @@
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Symbol/Unknown.cuh"
 #include "Symbol/Variable.cuh"
 #include "Symbol/Macros.cuh"
 
@@ -104,6 +105,14 @@ namespace Test {
         void test_meta_init(const std::string& expected_expression, const Args&... args) {
             test_meta_init<T, Args...>(Parser::parse_function(expected_expression), args...);
         }
+
+        std::vector<Sym::Symbol> unknown_with_size(size_t size) {
+            std::vector<Sym::Symbol> result;
+            auto unknown = Unknown::create();
+            unknown.size = size;
+            result.push_back(*unknown.symbol());
+            return result;
+        }
     }
 
     // Init
@@ -113,6 +122,7 @@ namespace Test {
     META_TEST_INIT(Integer, Integer<69>, "69")
     META_TEST_INIT(NumericConstant, Num, "123.456", 123.456)
     META_TEST_INIT(Copy, Copy, "x^2", *(var() ^ num(2)).data())
+    META_TEST_INIT(Skip, Skip, unknown_with_size(10), 10)
     // Simple OneArgOperators
     META_TEST_INIT(Sine, Sin<E>, "sin(e)")
     META_TEST_INIT(Cosine, Cos<Var>, "cos(x)")
@@ -163,6 +173,8 @@ namespace Test {
             << destination.data()->to_string() << " <- got,\n"
             << expected_expression.data()->to_string() << " <- expected\n";
     }
+
+    // Init_reverse TODO
 
     // Match
     META_TEST_MATCH(Variable, Var, "x")

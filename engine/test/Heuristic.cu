@@ -18,5 +18,7 @@ namespace Test {
     HEURISTIC_TEST(LongSumIntegral, "1+cos(x)+sin(x)+1/(1+x^2)+pi+e",
                    "sin(x)-cos(x)+arctan(x)+x*(pi+e+1)")
 
+    HEURISTIC_TEST(LogarithmByParts, "ln(x)", "x*ln(x)-x")
+
     // TODO: Universal substitution when simplification is powerful enough
 };

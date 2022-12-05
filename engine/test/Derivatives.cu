@@ -20,7 +20,7 @@ namespace Test {
             std::vector<Sym::Symbol> help_space(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
             std::vector<Sym::Symbol> derivative(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
 
-            const auto size = expression.data()->derivative_to(derivative.data());
+            const auto size = expression.data()->derivative_to(*derivative.data());
 
             derivative.resize(size);
 

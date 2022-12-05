@@ -45,6 +45,8 @@ namespace Sym::Static {
         __device__ Symbol E_TO_X[EToX::Size::get_value()];
         // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables, cert-err58-cpp)
 
+        __device__ Symbol ONE[Integer<1>::Size::get_value()];
+
         __device__ Symbol* const STATIC_FUNCTIONS[] = {
             IDENTITY,        SIN_X,
             COS_X,           TAN_X,
@@ -52,6 +54,7 @@ namespace Sym::Static {
             UNIVERSAL_COS_X, UNIVERSAL_TAN_X,
             UNIVERSAL_COT_X, UNIVERSAL_DERIVATIVE,
             TAN_X_OVER_2,    E_TO_X,
+            ONE,
         };
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
@@ -61,6 +64,7 @@ namespace Sym::Static {
             UniversalCosX::init, UniversalTanX::init,
             UniversalCotX::init, UniversalDerivative::init,
             init_tan_x_over_2,   EToX::init,
+            Integer<1>::init,
         };
 
         constexpr size_t STATIC_FUNCTION_COUNT =
@@ -91,6 +95,8 @@ namespace Sym::Static {
     __device__ const Symbol& tan_x_over_2() { return *TAN_X_OVER_2; }
 
     __device__ const Symbol& e_to_x() { return *E_TO_X; }
+
+    __device__ const Symbol& one() { return *ONE; }
 
     void init_functions() {
         static constexpr size_t BLOCK_SIZE = 1024;

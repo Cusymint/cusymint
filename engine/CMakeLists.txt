@@ -50,6 +50,7 @@ add_library(
   ${EVALUATION_DIR}/Heuristic/SubstituteEToX.cu
   ${EVALUATION_DIR}/Heuristic/UniversalSubstitution.cu
   ${EVALUATION_DIR}/Heuristic/BringOutConstantsFromProduct.cu
+  ${EVALUATION_DIR}/Heuristic/IntegrateByParts.cu
   ${EVALUATION_DIR}/KnownIntegral/KnownIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/ConstantIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/PowerFunction.cu

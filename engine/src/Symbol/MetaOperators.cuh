@@ -52,6 +52,11 @@ namespace Sym {
         __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args) {
             return cuda::std::get<0>(args);
         }
+        
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
+            dst.init_from(Unknown::create());
+            dst.as<Unknown>().size = cuda::std::get<0>(args);
+        }
     };
 
     template <class T, class U> struct PatternPair {
