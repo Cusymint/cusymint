@@ -148,7 +148,7 @@ namespace Sym {
                 // TODO: handle expressions longer than EXPRESSION_MAX_SYMBOL_COUNT
 
                 const auto triangle =
-                    Util::PascalTriangle::generate(num, reinterpret_cast<size_t*>(help_space));
+                    Util::PascalTriangle::generate(num, *reinterpret_cast<size_t*>(help_space));
                 Symbol* const help_space_back =
                     reinterpret_cast<Symbol*>(triangle.data + triangle.occupied_size());
 

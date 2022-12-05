@@ -21,21 +21,22 @@ namespace Util {
          * This is the only proper way to obtain `PascalTriangle`.
          *
          * @param `n` Height of Pascal's triangle to be generated.
-         * @param `data` Pointer to an array to fill with generated values.
+         * @param `data` An array to fill with generated values.
          *
          * @return A `PascalTriangle` structure representing generated triangle.
          */
-        __host__ __device__ static PascalTriangle generate(const size_t n, size_t* const data) {
+        __host__ __device__ static PascalTriangle generate(const size_t n, size_t& data) {
+            size_t* const data_ptr = &data;
             for (size_t i = 0; i <= n; ++i) {
                 const auto offset = i * (i + 1) / 2;
-                data[offset] = 1;
-                data[offset + i] = 1;
+                data_ptr[offset] = 1;
+                data_ptr[offset + i] = 1;
                 for (size_t j = 1; j < i; ++j) {
                     const auto off2 = offset + j;
-                    data[off2] = data[off2 - i] + data[off2 - i - 1];
+                    data_ptr[off2] = data_ptr[off2 - i] + data_ptr[off2 - i - 1];
                 }
             }
-            return {data, n};
+            return {data_ptr, n};
         }
 
         /*

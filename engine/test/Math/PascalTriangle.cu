@@ -9,7 +9,7 @@ namespace Test {
     namespace {
         void test_binom_value(size_t n, size_t i, size_t expected_value) {
             size_t* data = new size_t[(n + 1) * (n + 2) / 2];
-            auto triangle = Util::PascalTriangle::generate(n, data);
+            auto triangle = Util::PascalTriangle::generate(n, *data);
 
             EXPECT_EQ(triangle.binom(n,i), expected_value);
         }
