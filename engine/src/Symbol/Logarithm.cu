@@ -34,11 +34,24 @@ namespace Sym {
             // Therefore, it is not necessary to do any copying, we only need to
             // change types of 2 first symbols, size of the second and add second_arg_offset
             // to new Product symbol.
+            const auto offset = arg().power.second_arg_offset;
             arg().power.type = Type::Logarithm;
             arg().as<Logarithm>().seal();
-            this->type = Type::Product;
-            this->as<Product>()->seal_arg1();
-            return true;
+            type = Type::Product;
+            as<Product>()->second_arg_offset =
+                offset + 1; // seal_arg_1 may not work in this case (e.g. size of f(x) changes)
+            return false;   // resulting Product is not sorted
+        }
+
+        if (arg().is(Type::Product)) {
+            const auto count = arg().as<Product>().tree_size();
+            if (size < arg().size() + count) {
+                additional_required_size = count - 1;
+                return false;
+            }
+            From<Product>::Create<Addition>::WithMap<Ln>::init(*help_space, {{arg().as<Product>(), count}});
+            help_space->copy_to(symbol());
+            return false;
         }
         return true;
     }

@@ -112,5 +112,5 @@ namespace Test {
     COLLAPSE_NTH_TEST(CollapseWholeTree, tree_to_collapse, 0,
                       "sin((2*(e+ln(x)))*arctan(x*(1/x))^pi)+x^2")
 
-    COLLAPSE_TEST(CollapseAndSimplifyTree, tree_to_collapse, "x^2+sin((2*(e+ln(x)))*arctan(1)^pi)")
+    COLLAPSE_TEST(CollapseAndSimplifyTree, tree_to_collapse, "x^2+sin(2*e*arctan(1)^pi+2*arctan(1)^pi*ln(x))")
 }

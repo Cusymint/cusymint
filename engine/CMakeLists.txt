@@ -16,6 +16,7 @@ set(SOLVER_DIR "${SRC_DIR}/Solver")
 set(TEST_DIR "test")
 set(TEST_PARSER_DIR "${TEST_DIR}/Parser")
 set(TEST_SYMBOL_DIR "${TEST_DIR}/Symbol")
+set(TEST_MATH_DIR "${TEST_DIR}/Math")
 set(TEST_EVALUATION_DIR "${TEST_DIR}/Evaluation")
 
 # Define build targets
@@ -74,6 +75,7 @@ add_executable(
   ${TEST_DIR}/Symbol.cu
   ${TEST_DIR}/Derivatives.cu
   ${TEST_SYMBOL_DIR}/MetaOperators.cu
+  ${TEST_MATH_DIR}/PascalTriangle.cu
   ${TEST_EVALUATION_DIR}/IntegratorUtils.cu
   ${TEST_EVALUATION_DIR}/Kernels.cu
   ${TEST_EVALUATION_DIR}/Collapser.cu)
