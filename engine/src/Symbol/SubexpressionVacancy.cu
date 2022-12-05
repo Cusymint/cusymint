@@ -7,7 +7,17 @@
 
 namespace Sym {
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(SubexpressionVacancy)
-    DEFINE_SIMPLE_ARE_EQUAL(SubexpressionVacancy)
+    DEFINE_ARE_EQUAL(SubexpressionVacancy) {
+        if (!(BASE_ARE_EQUAL(SubexpressionVacancy))) {
+            return false;
+        }
+        const auto& other_vacancy = symbol->as<SubexpressionVacancy>();
+        return (is_solved == 0 && other_vacancy.is_solved == 0 &&
+                candidate_integral_count == other_vacancy.candidate_integral_count &&
+                candidate_expression_count == other_vacancy.candidate_expression_count) ||
+               (is_solved == 1 && other_vacancy.is_solved == 1 &&
+                solver_idx == other_vacancy.solver_idx);
+    }
     DEFINE_INVALID_COMPARE_TO(SubexpressionVacancy)
     DEFINE_SIMPLE_COMPRESS_REVERSE_TO(SubexpressionVacancy)
     DEFINE_INVALID_IS_FUNCTION_OF(SubexpressionVacancy)

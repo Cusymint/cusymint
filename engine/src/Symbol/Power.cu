@@ -243,7 +243,7 @@ namespace Sym {
     }
 
     std::string Power::to_string() const {
-        return fmt::format("{}^{}", arg1().to_string(), arg2().to_string());
+        return fmt::format("({})^{}", arg1().to_string(), arg2().to_string());
     }
 
     std::string Power::to_tex() const {

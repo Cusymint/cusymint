@@ -65,7 +65,7 @@ namespace Sym {
      * `derivative`=2*(var^(1/2))
      * @param destination Where the result is going to be saved
      */
-    __device__ void integrate_by_substitution_with_derivative(
+    __host__ __device__ void integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
         const size_t pattern_count, const Symbol& derivative, Symbol& destination) const;
 

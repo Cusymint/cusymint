@@ -2,6 +2,7 @@
 
 #include "Heuristic/Heuristic.cuh"
 #include "KnownIntegral/KnownIntegral.cuh"
+#include "Symbol/SymbolType.cuh"
 
 namespace Sym {
     __device__ bool is_nonzero(const size_t index,
@@ -52,8 +53,10 @@ namespace Sym::Kernel {
             return true;
         }
 
-        unsigned int subexpressions_left = atomicSub(
-            &expressions[vacancy_expr_idx].subexpression_candidate.subexpressions_left, 1);
+        unsigned int subexpressions_left =
+            atomicSub(&expressions[vacancy_expr_idx].subexpression_candidate.subexpressions_left,
+                      1) -
+            1;
 
         return subexpressions_left == 0;
     }
@@ -197,7 +200,7 @@ namespace Sym::Kernel {
             removability[expr_idx] = 1;
             size_t current_expr_idx = expr_idx;
 
-            while (current_expr_idx != 0) {
+            while (expressions[current_expr_idx].is(Sym::Type::SubexpressionCandidate)) {
                 const size_t& parent_idx =
                     expressions[current_expr_idx].subexpression_candidate.vacancy_expression_idx;
                 const size_t& parent_vacancy_idx =
@@ -340,7 +343,6 @@ namespace Sym::Kernel {
 
         for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
              expr_idx += thread_count) {
-            SubexpressionCandidate& self_candidate = expressions[expr_idx].subexpression_candidate;
 
             // Some other thread was here already, as `failures` starts with 1 everywhere
             if (failures[expr_idx] == 0) {
@@ -379,7 +381,7 @@ namespace Sym::Kernel {
                 SubexpressionVacancy& parent_vacancy =
                     expressions[parent_idx][vacancy_idx].subexpression_vacancy;
 
-                if (parent_vacancy.candidate_integral_count != 0 || parent_vacancy.is_solved == 1) {
+                if (parent_vacancy.is_solved == 1) {
                     break;
                 }
 
@@ -387,7 +389,8 @@ namespace Sym::Kernel {
                     atomicSub(&parent_vacancy.candidate_expression_count, 1) - 1;
 
                 // Go upwards if parent is failed
-                if (parent_vacancy_candidates_left != 0 || !try_set(failures[parent_idx], 0U)) {
+                if (parent_vacancy.candidate_integral_count != 0 ||
+                    parent_vacancy_candidates_left != 0 || !try_set(failures[parent_idx], 0U)) {
                     break;
                 }
 

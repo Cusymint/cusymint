@@ -2,10 +2,20 @@
 
 #include "Symbol.cuh"
 #include "Symbol/Macros.cuh"
+#include <fmt/core.h>
 
 namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(SubexpressionCandidate)
-    DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(SubexpressionCandidate)
+    DEFINE_ARE_EQUAL(SubexpressionCandidate) {
+        if (!(BASE_ARE_EQUAL(SubexpressionCandidate)) ||
+            !(ONE_ARGUMENT_OP_ARE_EQUAL(SubexpressionCandidate))) {
+            return false;
+        }
+        const auto& other_candidate = symbol->as<SubexpressionCandidate>();
+        return vacancy_expression_idx == other_candidate.vacancy_expression_idx &&
+               vacancy_idx == other_candidate.vacancy_idx &&
+               subexpressions_left == other_candidate.subexpressions_left;
+    }
     DEFINE_INVALID_COMPARE_TO(SubexpressionCandidate)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(SubexpressionCandidate)
     DEFINE_INVALID_DERIVATIVE(SubexpressionCandidate)
@@ -17,8 +27,8 @@ namespace Sym {
     }
 
     [[nodiscard]] std::string SubexpressionCandidate::to_string() const {
-        return "SubexpressionCandidate{(" + std::to_string(vacancy_expression_idx) + ", " +
-               std::to_string(vacancy_idx) + "), (" + arg().to_string() + ")}";
+        return fmt::format("SubexpressionCandidate{{({}, {}, {}), ({})}}", vacancy_expression_idx,
+                           vacancy_idx, subexpressions_left, arg().to_string());
     }
 
     [[nodiscard]] std::string SubexpressionCandidate::to_tex() const {
@@ -38,7 +48,7 @@ namespace Sym {
         auto& candidate = candidate_vec.data()->as<SubexpressionCandidate>();
         candidate.vacancy_expression_idx = 0;
         candidate.vacancy_idx = 0;
-        candidate.subexpressions_left = 1;
+        candidate.subexpressions_left = 0;
         return candidate_vec;
     }
 }
