@@ -16,7 +16,8 @@ namespace Sym::Heuristic {
         const Symbol* linear_expr = nullptr;
 
         for (size_t i = 0; i < integrand.size(); ++i) {
-            if (Add<Const, Mul<Const, Var>>::match(*integrand.at(i))) {
+            if (AnyOf<Add<Const, Mul<Const, Var>>, Mul<Const, Var>, Add<Const, Var>>::match(
+                    *integrand.at(i))) {
                 linear_expr = integrand.at(i);
                 break;
             }
@@ -40,8 +41,17 @@ namespace Sym::Heuristic {
         for (size_t i = 0; i < integrand.size(); ++i) {
             if (Add<Const, Mul<Const, Var>>::match(*integrand.at(i))) {
                 linear_expr = integrand.at(i);
-                // free_term = &integrand.at(i)->as<Addition>().arg1();
                 linear_coef = &integrand.at(i)->as<Addition>().arg2().as<Product>().arg1();
+                break;
+            }
+            if (Mul<Const, Var>::match(*integrand.at(i))) {
+                linear_expr = integrand.at(i);
+                linear_coef = &integrand.at(i)->as<Product>().arg1();
+                break;
+            }
+            if (Add<Const, Var>::match(*integrand.at(i))) {
+                linear_expr = integrand.at(i);
+                linear_coef = &Static::one();
                 break;
             }
         }

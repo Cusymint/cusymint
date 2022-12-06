@@ -3,6 +3,7 @@
 #include <thrust/scan.h>
 
 #include "IntegratorUtils.cuh"
+#include "Symbol/Integral.cuh"
 
 #define KERNEL_TEST(_name) TEST(Kernels, _name)
 
@@ -325,12 +326,13 @@ namespace Test {
         ExprVector expressions_vector = {vacancy(0, 0), vacancy(0, 0), vacancy(0, 0),
                                          vacancy(0, 0), vacancy(0, 0), vacancy(0, 0)};
 
-        std::vector<HeuristicPairVector> expected_heuristics = {{{1, {2, 1}}, {2, {1, 0}}},
-                                                                {{0, {1, 0}}},
-                                                                {{3, {1, 1}}},
-                                                                {{1, {2, 1}}},
-                                                                {{2, {1, 0}}, {3, {1, 1}}},
-                                                                {}};
+        std::vector<HeuristicPairVector> expected_heuristics = {
+            {{1, {2, 1}}, {2, {1, 0}}},
+            {{0, {1, 0}}},
+            {{3, {1, 1}}, {4, {1, 0}}},
+            {{1, {2, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}, {4, {1, 0}}},
+            {}};
 
         ExprVector expected_expressions_vector =
             get_expected_expression_vector(expected_heuristics);
@@ -361,12 +363,13 @@ namespace Test {
         ExprVector expressions_vector = {vacancy(0, 0), vacancy(0, 0), vacancy(0, 0),
                                          vacancy(0, 0), vacancy(0, 0), vacancy(0, 0)};
 
-        std::vector<HeuristicPairVector> expected_heuristics = {{{1, {2, 1}}, {2, {1, 0}}},
-                                                                {{0, {1, 0}}},
-                                                                {{3, {1, 1}}},
-                                                                {{1, {2, 1}}},
-                                                                {{2, {1, 0}}, {3, {1, 1}}},
-                                                                {}};
+        std::vector<HeuristicPairVector> expected_heuristics = {
+            {{1, {2, 1}}, {2, {1, 0}}},
+            {{0, {1, 0}}},
+            {{3, {1, 1}}, {4, {1, 0}}},
+            {{1, {2, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}, {4, {1, 0}}},
+            {}};
 
         ExprVector expected_expression_vector = get_expected_expression_vector(expected_heuristics);
 
@@ -438,6 +441,12 @@ namespace Test {
             nth_expression_candidate(4, trig2_with_subs),
             nth_expression_candidate(8, Sym::integral(Sym::var()), 3),
             nth_expression_candidate(9, Sym::integral(Sym::tan(Sym::num(0.5) * Sym::var())), 2),
+            nth_expression_candidate(
+                2, Sym::integral(Sym::inv(Sym::num(23) * Sym::cnst("c")) * Sym::var(),
+                                 {Sym::num(23) * Sym::cnst("c") * Sym::var()})),
+            nth_expression_candidate(
+                4, Sym::integral(Sym::inv(Sym::num(0.5)) * (Sym::num(2) * Sym::tan(Sym::var())),
+                                 {Sym::num(0.5) * Sym::var()})),
         };
 
         auto integrals = from_vector<Sym::SubexpressionCandidate>(h_integrals);
