@@ -36,7 +36,6 @@ namespace Sym::Heuristic {
 
         const Symbol* linear_expr = nullptr;
         const Symbol* linear_coef = nullptr;
-        //const Symbol* free_term = nullptr;
 
         for (size_t i = 0; i < integrand.size(); ++i) {
             if (Add<Const, Mul<Const, Var>>::match(*integrand.at(i))) {
@@ -46,9 +45,6 @@ namespace Sym::Heuristic {
                 break;
             }
         }
-
-        //Symbol& substitution = help_space;
-        //Add<Copy, Mul<Copy, Var>>::init(substitution, {*free_term, *linear_coef});
 
         SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
         new_candidate->copy_metadata_from(integral);
