@@ -8,6 +8,76 @@ class CommonOrganisms extends StorybookPart {
   @override
   List<Story> get stories => [
         Story(
+          name: 'Organisms/AnimatedHomeCard',
+          builder: (context) {
+            final hasAllCallbacks = context.knobs.boolean(
+              label: 'Has all callbacks',
+              initial: true,
+            );
+
+            final hasErrors = context.knobs.boolean(
+              label: 'Has errors',
+              initial: false,
+            );
+
+            final isLoading = context.knobs.boolean(
+              label: 'Is loading',
+              initial: false,
+            );
+
+            return CuAnimatedHomeCard(
+              title: context.knobs.nullable.text(
+                label: 'Leading',
+                initial: 'Leading',
+              ),
+              errors: hasErrors ? ['Error 1', 'Error 2', 'Error 3'] : [],
+              hasCriticalErrors: context.knobs.boolean(
+                label: 'Has critical errors',
+                initial: false,
+              ),
+              isLoading: isLoading,
+              inputInTex: context.knobs.nullable.text(
+                label: 'Input in TeX',
+                initial: '\\int 15\\text{d}x',
+              ),
+              outputInTex: context.knobs.nullable.text(
+                label: 'Output in TeX',
+                initial: '7.5x^2 + C',
+              ),
+              buttonRowCallbacks: hasAllCallbacks
+                  ? CuButtonRowCallbacks(
+                      onCopyTex: () {},
+                      onCopyUtf: () {},
+                      onShareUtf: () {},
+                    )
+                  : null,
+            );
+          },
+        ),
+        Story(
+          name: 'Organisms/ExampleIntegralsRow',
+          builder: (context) {
+            final texCards = <CuTexCard>[];
+
+            for (var i = 0;
+                i <
+                    context.knobs.sliderInt(
+                        label: 'Cards Count', initial: 3, min: 0, max: 15);
+                i++) {
+              texCards.add(
+                CuTexCard(
+                  '\\int 15sin(x) + \\frac{cos(x)}{sin(x) + 1}\\text{d}x',
+                  onTap: () {},
+                ),
+              );
+            }
+
+            return CuExampleIntegralsRow(
+              texCards: texCards,
+            );
+          },
+        ),
+        Story(
           name: 'Organisms/Drawer',
           builder: (context) => CuScaffold(
             body: const Center(child: CuText('Drawer')),

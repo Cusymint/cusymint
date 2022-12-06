@@ -5,7 +5,6 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'interface.dart';
 
-// TODO: reuse channel
 class CusymintClientJsonRpc implements CusymintClient {
   CusymintClientJsonRpc({
     required this.uri,
@@ -65,6 +64,11 @@ class CusymintClientJsonRpc implements CusymintClient {
 
     if (errorMessage.startsWith(unexpectedTokenPrefix)) {
       final token = errorMessage.substring(unexpectedTokenPrefix.length);
+
+      if (token.contains("<end>")) {
+        return UnexpectedEndOfInputError();
+      }
+
       return UnexpectedTokenError(token: token);
     }
 

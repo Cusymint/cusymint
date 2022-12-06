@@ -24,5 +24,11 @@
     "aboutTextGithub": "GitHubie",
     "madeBy": "Stworzone przez",
     "cancel": "Anuluj",
-    "ok": "OK"
+    "ok": "OK",
+   "error": "Błąd",
+   "errorUnknown": "Nieznany błąd: {}",
+   "errorUnexpectedEndOfInput": "Nieoczekiwany koniec wejścia",
+   "errorUnexpectedToken": "Nieznany token {}",
+   "errorNoSolutionFound": "Nie znaleziono rozwiązania",
+   "errorInternal": "Błąd wewnętrzny"
 }
