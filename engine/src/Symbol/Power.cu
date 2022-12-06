@@ -152,10 +152,11 @@ namespace Sym {
                 Symbol* const help_space_back =
                     reinterpret_cast<Symbol*>(triangle.data + triangle.occupied_size());
 
-                const size_t new_size = num * (7 + arg1().size()) - 3;
+                const size_t actual_arg1_size = addition.arg1().size() + addition.arg2().size() + 1;
+                const size_t new_size = num * (7 + actual_arg1_size) - 3;
                 
                 if (size < new_size) {
-                    additional_required_size = new_size - arg1().size() - arg2().size() - 1;
+                    additional_required_size = new_size - actual_arg1_size - arg2().size() - 1;
                     return false;
                 }
 

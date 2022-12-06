@@ -14,7 +14,8 @@ namespace Sym {
     }
 
     [[nodiscard]] __host__ __device__ bool Symbol::is_integer() const {
-        return is(Type::NumericConstant) && as<NumericConstant>().value == floor(as<NumericConstant>().value);
+        return is(Type::NumericConstant) &&
+               as<NumericConstant>().value == floor(as<NumericConstant>().value);
     }
 
     __host__ __device__ void Symbol::copy_symbol_sequence(Symbol* const destination,
