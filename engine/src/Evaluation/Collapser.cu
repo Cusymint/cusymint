@@ -1,5 +1,7 @@
 #include "Collapser.cuh"
+
 #include "Integrator.cuh"
+#include "Symbol/ReverseTreeIterator.cuh"
 
 namespace Sym::Collapser {
     std::vector<Symbol> replace_nth_with_tree(std::vector<Symbol> expression, const size_t n,
@@ -51,6 +53,39 @@ namespace Sym::Collapser {
         return current_collapse;
     }
 
+    void remove_constants_from_sum(std::vector<Symbol>& expression) {
+        if (expression.data()->is_constant()) {
+            expression[0].init_from(NumericConstant::with_value(0));
+            expression.resize(1);
+            return;
+        }
+
+        if (!expression.data()->is(Type::Addition)) {
+            return;
+        }
+
+        auto* const addition = expression.data()->as_ptr<Addition>();
+
+        for (auto* last = addition->last_in_tree(); last >= addition;
+             last = (last->symbol() - 1)->as_ptr<Addition>()) {
+            auto& old_arg2 = last->arg2();
+            last->seal_arg1();
+            old_arg2.move_to(&last->arg2());
+            last->seal();
+
+            if (last->arg2().is_constant()) {
+                last->arg1().move_to(last->symbol());
+                continue;
+            }
+
+            if (last->arg1().is_constant()) {
+                last->arg2().move_to(last->symbol());
+            }
+        }
+
+        expression.resize(expression.data()->size());
+    }
+
     std::vector<Symbol> collapse(const std::vector<std::vector<Symbol>>& tree) {
         auto collapsed = collapse_nth(tree, 0);
         std::vector<Symbol> reversed(collapsed.size());
@@ -61,6 +96,8 @@ namespace Sym::Collapser {
         collapsed.resize(EXPRESSION_MAX_SYMBOL_COUNT);
         collapsed.data()->simplify(help_space.data());
         collapsed.resize(collapsed.data()->size());
+
+        remove_constants_from_sum(collapsed);
 
         return collapsed;
     }

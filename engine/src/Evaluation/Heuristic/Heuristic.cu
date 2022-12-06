@@ -4,6 +4,7 @@
 #include "SplitSum.cuh"
 #include "SubstituteEToX.cuh"
 #include "UniversalSubstitution.cuh"
+#include "LinearSubstitution.cuh"
 
 #include "Utils/Meta.cuh"
 
@@ -16,6 +17,7 @@ namespace Sym::Heuristic {
         is_sum,
         is_function_of_trigs,
         contains_constants_product,
+        is_function_of_linear_function,
     };
 
     __device__ const Application APPLICATIONS[] = {
@@ -23,6 +25,7 @@ namespace Sym::Heuristic {
         split_sum,
         do_universal_substitution,
         bring_out_constants_from_product,
+        substitute_linear_function,
     };
 
 #ifdef __CUDA_ARCH__

@@ -35,6 +35,14 @@ namespace Sym::Collapser {
                                           const size_t n);
 
     /*
+     * @brief Removes constant terms from `expression`, when `expression` is of type `Addition`.
+     * If `expression` is not sum and is constant, changes `expression` to 0.
+     *
+     * @param `expression` Expression to remove constants from.
+     */
+    void remove_constants_from_sum(std::vector<Symbol>& expression);
+
+    /*
      * @brief Collapses a tree of expressions with Solutions with Substitutions and
      * interreferencing SubexpressionCandidates and SubexpressionVacancies to a single
      * expression

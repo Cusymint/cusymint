@@ -22,6 +22,9 @@
 #define COLLAPSE_TEST(_name, _expr_vector, _expected_expression) \
     COLLAPSER_TEST(_name) { test_collapse(_expr_vector, _expected_expression); }
 
+#define REMOVE_CONSTANTS_FROM_SUM_TEST(_name, _expression, _expected_expression) \
+    COLLAPSER_TEST(_name) { test_remove_constants(_expression, _expected_expression); }
+
 namespace Test {
     namespace {
         void test_replace_nth_with_tree(SymVector expression, const size_t n, const SymVector& tree,
@@ -51,9 +54,9 @@ namespace Test {
             auto result = Sym::Collapser::collapse_nth(tree, n);
             EXPECT_TRUE(
                 Sym::Symbol::are_expressions_equal(*result.data(), *expected_expression.data()))
-                << "Unexpected result for collapsing tree with (" << n << ") as root: " << to_string_with_tab(tree) << ":\n "
-                << result.data()->to_string() << " <- got,\n "
-                << expected_expression.data()->to_string() << " <- expected";
+                << "Unexpected result for collapsing tree with (" << n
+                << ") as root: " << to_string_with_tab(tree) << ":\n " << result.data()->to_string()
+                << " <- got,\n " << expected_expression.data()->to_string() << " <- expected";
         }
 
         void test_collapse_nth(const ExprVector& tree, const size_t n,
@@ -72,6 +75,23 @@ namespace Test {
 
         void test_collapse(const ExprVector& tree, const std::string& expected_expression) {
             test_collapse(tree, Parser::parse_function(expected_expression));
+        }
+
+        void test_remove_constants(const SymVector& expression,
+                                   const SymVector& expected_expression) {
+            SymVector result(expression);
+            Sym::Collapser::remove_constants_from_sum(result);
+            EXPECT_TRUE(
+                Sym::Symbol::are_expressions_equal(*result.data(), *expected_expression.data()))
+                << "Unexpected result for removing constants from sum" << expression.data()->to_string() << ":\n "
+                << result.data()->to_string() << " <- got,\n "
+                << expected_expression.data()->to_string() << " <- expected";
+        }
+
+        void test_remove_constants(const std::string& expression,
+                                   const std::string& expected_expression) {
+            test_remove_constants(Parser::parse_function(expression),
+                                  Parser::parse_function(expected_expression));
         }
 
         static ExprVector tree_to_collapse = {
@@ -112,5 +132,11 @@ namespace Test {
     COLLAPSE_NTH_TEST(CollapseWholeTree, tree_to_collapse, 0,
                       "sin((2*(e+ln(x)))*arctan(x*(1/x))^pi)+x^2")
 
-    COLLAPSE_TEST(CollapseAndSimplifyTree, tree_to_collapse, "x^2+sin(2*e*arctan(1)^pi+2*arctan(1)^pi*ln(x))")
+    COLLAPSE_TEST(CollapseAndSimplifyTree, tree_to_collapse,
+                  "x^2+sin(2*e*arctan(1)^pi+2*arctan(1)^pi*ln(x))")
+
+    REMOVE_CONSTANTS_FROM_SUM_TEST(RemoveWholeConstantSum, "1+c+sin(e^pi)", "0")
+    REMOVE_CONSTANTS_FROM_SUM_TEST(RemoveConstantTerm, "arcsin(4)*e^(1+2+v+log_pi(e))*sin^e(1)/2", "0")
+    REMOVE_CONSTANTS_FROM_SUM_TEST(DoNotRemoveNonConstant, "arcsin(4)*e^(1+2+v+log_x(e))*sin^e(1)/2", "arcsin(4)*e^(1+2+v+log_x(e))*sin^e(1)/2")
+    REMOVE_CONSTANTS_FROM_SUM_TEST(RemoveConstantsFromNonConstantSum, "x^4+3x^2+c*pi+x+1", "x^4+3x^2+x") 
 }
