@@ -13,13 +13,12 @@ namespace Sym {
     DEFINE_NO_OP_PUSH_CHILDREN_ONTO_STACK(Variable)
     DEFINE_SIMPLE_SEAL_WHOLE(Variable)
 
-    DEFINE_IS_FUNCTION_OF(Variable) {
+    DEFINE_IS_FUNCTION_OF(Variable) { // NOLINT(misc-unused-parameters)
         for (size_t i = 0; i < expression_count; ++i) {
             if (!expressions[i]->is(Type::Variable)) {
                 return false;
             }
         }
-
         return true;
     }
 

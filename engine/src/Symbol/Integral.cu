@@ -46,9 +46,7 @@ namespace Sym {
                symbol->integral.integrand_offset == integrand_offset;
     }
 
-    DEFINE_IS_FUNCTION_OF(Integral) {
-        return integrand()->is_function_of(expressions, expression_count);
-    }
+    DEFINE_IS_FUNCTION_OF(Integral) { return results[integrand_offset]; } // NOLINT
 
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Integral) {
         if (substitution_count > 0) {

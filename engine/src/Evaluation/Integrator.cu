@@ -1,11 +1,12 @@
+#include "Evaluation/Heuristic/Heuristic.cuh"
 #include "Integrator.cuh"
 
 #include <thrust/execution_policy.h>
 #include <thrust/scan.h>
 
+#include "Collapser.cuh"
 #include "IntegratorKernels.cuh"
 #include "StaticFunctions.cuh"
-#include "Collapser.cuh"
 
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Meta.cuh"
@@ -19,7 +20,8 @@ namespace Sym {
         expressions_swap(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
         integrals(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
         integrals_swap(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT),
-        help_spaces(MAX_EXPRESSION_COUNT, EXPRESSION_MAX_SYMBOL_COUNT, integrals.size()),
+        help_spaces(MAX_EXPRESSION_COUNT * Heuristic::COUNT, EXPRESSION_MAX_SYMBOL_COUNT,
+                    integrals.size()),
         scan_array_1(SCAN_ARRAY_SIZE, true),
         scan_array_2(SCAN_ARRAY_SIZE, true) {}
 
@@ -85,7 +87,7 @@ namespace Sym {
         scan_array_1.zero_mem();
         scan_array_2.zero_mem();
         Kernel::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(
-            integrals, expressions, scan_array_1, scan_array_2);
+            integrals, expressions, help_spaces, scan_array_1, scan_array_2);
         cudaDeviceSynchronize();
 
         thrust::inclusive_scan(thrust::device, scan_array_1.begin(), scan_array_1.end(),

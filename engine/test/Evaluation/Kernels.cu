@@ -336,13 +336,15 @@ namespace Test {
             get_expected_expression_vector(expected_heuristics);
 
         auto expressions = from_vector(expressions_vector);
+        auto help_spaces = with_count(2 * integrals_vector.size());
+
         Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
         Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
 
         Sym::Kernel::check_heuristics_applicability<<<Sym::Integrator::BLOCK_COUNT,
                                                       Sym::Integrator::BLOCK_SIZE>>>(
-            from_string_vector_with_candidate(integrals_vector), expressions, new_integrals_flags,
-            new_expressions_flags);
+            from_string_vector_with_candidate(integrals_vector), expressions, help_spaces,
+            new_integrals_flags, new_expressions_flags);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
@@ -442,13 +444,14 @@ namespace Test {
 
         auto integrals = from_vector<Sym::SubexpressionCandidate>(h_integrals);
         auto expressions = from_vector(expressions_vector);
+        auto help_spaces = with_count(2 * integrals_vector.size());
 
         Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
         Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
 
         Sym::Kernel::check_heuristics_applicability<<<Sym::Integrator::BLOCK_COUNT,
                                                       Sym::Integrator::BLOCK_SIZE>>>(
-            integrals, expressions, new_integrals_flags, new_expressions_flags);
+            integrals, expressions, help_spaces, new_integrals_flags, new_expressions_flags);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
@@ -459,7 +462,6 @@ namespace Test {
         cudaDeviceSynchronize();
 
         auto integrals_destinations = with_count(2 * integrals_vector.size());
-        auto help_spaces = with_count(2 * integrals_vector.size());
 
         Sym::Kernel::
             apply_heuristics<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(

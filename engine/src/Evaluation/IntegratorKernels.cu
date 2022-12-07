@@ -263,6 +263,7 @@ namespace Sym::Kernel {
     __global__ void
     check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
                                    ExpressionArray<> expressions,
+                                   ExpressionArray<> help_spaces,
                                    Util::DeviceArray<uint32_t> new_integrals_flags,
                                    Util::DeviceArray<uint32_t> new_expressions_flags) {
         const size_t thread_count = Util::thread_count();
@@ -274,9 +275,10 @@ namespace Sym::Kernel {
              check_idx += check_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
-                Heuristic::CheckResult result =
-                    Heuristic::CHECKS[check_idx](integrals[int_idx].arg().as<Integral>());
+                const size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
+                const size_t help_space_idx = integrals.size() * check_idx + int_idx;
+                const Heuristic::CheckResult result =
+                    Heuristic::CHECKS[check_idx](integrals[int_idx].arg().as<Integral>(), help_spaces[help_space_idx]);
                 new_integrals_flags[appl_idx] = result.new_integrals;
                 new_expressions_flags[appl_idx] = result.new_expressions;
 

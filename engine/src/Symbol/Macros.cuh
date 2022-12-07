@@ -40,9 +40,10 @@ template <class T, class U> struct MacroType<T(U)> {
 
 #define SIMPLIFY_IN_PLACE_HEADER(_fname) __host__ __device__ bool _fname(Symbol* const help_space)
 
-#define IS_FUNCTION_OF_HEADER(_fname)                                       \
-    __host__ __device__ bool _fname(const Symbol* const* const expressions, \
-                                    const size_t expression_count) const
+#define IS_FUNCTION_OF_HEADER(_fname)                                                         \
+    __host__ __device__ bool _fname(const Symbol* const* const expressions,                   \
+                                    const size_t expression_count, const bool* const results) \
+        const
 
 #define PUSH_CHILDREN_ONTO_STACK_HEADER(_fname, _const) \
     __host__ __device__ void _fname(Util::StaticStack<_const Symbol*>& stack) _const
@@ -165,6 +166,16 @@ template <class T, class U> struct MacroType<T(U)> {
 
 #define DEFINE_IS_FUNCTION_OF(_name) IS_FUNCTION_OF_HEADER(_name::is_function_of)
 
+#define BASE_ONE_ARGUMENT_IS_FUNCTION_OF \
+    if (results[1]) {                    \
+        return true;                     \
+    }
+
+#define BASE_TWO_ARGUMENT_IS_FUNCTION_OF            \
+    if (results[1] && results[second_arg_offset]) { \
+        return true;                                \
+    }
+
 #define DEFINE_INVALID_IS_FUNCTION_OF(_name)                                            \
     IS_FUNCTION_OF_HEADER(_name::is_function_of) /* NOLINT(misc-unused-parameters) */ { \
         Util::crash("is_function_of called on %s, this should not happen!", #_name);    \
@@ -173,6 +184,8 @@ template <class T, class U> struct MacroType<T(U)> {
 
 #define DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(_name)                     \
     DEFINE_IS_FUNCTION_OF(_name) {                                           \
+        BASE_ONE_ARGUMENT_IS_FUNCTION_OF                                     \
+                                                                             \
         for (size_t i = 0; i < expression_count; ++i) {                      \
             if (expressions[i]->is<_name>() &&                               \
                 Symbol::are_expressions_equal(*symbol(), *expressions[i])) { \
@@ -180,7 +193,7 @@ template <class T, class U> struct MacroType<T(U)> {
             }                                                                \
         }                                                                    \
                                                                              \
-        return arg().is_function_of(expressions, expression_count);          \
+        return false;                                                        \
     }
 
 #define BASE_ARE_EQUAL(_name) \

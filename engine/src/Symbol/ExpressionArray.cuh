@@ -32,7 +32,7 @@ namespace Sym {
             expression_size(expression_size),
             expression_capacity(expression_capacity),
             expression_count(expression_count),
-            data(expression_size * expression_capacity) {}
+            data(expression_size * expression_capacity, true) {}
 
         template <class U>
         ExpressionArray(const ExpressionArray<U>& other) // NOLINT(google-explicit-constructor)

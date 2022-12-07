@@ -40,9 +40,7 @@ namespace Sym {
                symbol->solution.expression_offset == expression_offset;
     }
 
-    DEFINE_IS_FUNCTION_OF(Solution) {
-        return expression()->is_function_of(expressions, expression_count);
-    } // NOLINT
+    DEFINE_IS_FUNCTION_OF(Solution) { return results[expression_offset]; } // NOLINT
 
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Solution) {
         if (substitution_count > 0) {
@@ -138,7 +136,8 @@ namespace Sym {
         return res;
     }
 
-    std::vector<Symbol> solution(const std::vector<Symbol>& arg, const std::vector<std::vector<Symbol>>& substitutions) {
+    std::vector<Symbol> solution(const std::vector<Symbol>& arg,
+                                 const std::vector<std::vector<Symbol>>& substitutions) {
         size_t res_size = arg.size() + 1;
         for (const auto& sub : substitutions) {
             res_size += sub.size() + 1;
@@ -153,7 +152,7 @@ namespace Sym {
         solution->seal_substitutions(substitutions.size(), current_dst - res.data()->child());
         arg.data()->copy_to(solution->expression());
         solution->seal();
-        
+
         return res;
     }
 }
