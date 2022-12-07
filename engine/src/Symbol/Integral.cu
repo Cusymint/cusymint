@@ -36,9 +36,9 @@ namespace Sym {
         symbol().copy_single_to(*destination);
         destination->as<Integral>().size = new_integrand_size + new_substitutions_size + 1;
         destination->as<Integral>().integrand_offset = new_substitutions_size + 1;
-
-        return 1;
     }
+
+    DEFINE_COMPRESSION_SIZE(Integral) { return 1; }
 
     DEFINE_ARE_EQUAL(Integral) {
         return BASE_ARE_EQUAL(Integral) &&
@@ -76,10 +76,12 @@ namespace Sym {
 
     __host__ __device__ void Integral::seal() { size = integrand_offset + integrand().size(); }
 
-    __host__ __device__ Symbol& Integral::integrand() { return symbol()[integrand_offset]; }
-
     __host__ __device__ const Symbol& Integral::integrand() const {
-        return const_cast<Symbol&>(const_cast<Integral* const>(this)->integrand());
+        return symbol()[integrand_offset];
+    }
+
+    __host__ __device__ Symbol& Integral::integrand() {
+        return const_cast<Symbol&>(const_cast<const Integral*>(this)->integrand());
     }
 
     [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
@@ -87,7 +89,7 @@ namespace Sym {
                                                         SymbolIterator& destination) const {
         const size_t required_space = integrand_offset + 1 + substitution_expr.size();
         if (destination.capacity() < required_space) {
-            return Util::SimpleResult<size_t>::error();
+            return Util::SimpleResult<size_t>::make_error();
         }
 
         Symbol::copy_symbol_sequence(&destination.current(), &symbol(), integrand_offset);
@@ -99,7 +101,7 @@ namespace Sym {
         destination->as<Integral>().integrand_offset += new_substitution->size();
         destination->as<Integral>().size += new_substitution->size();
 
-        return Util::SimpleResult<size_t>::good(required_space);
+        return Util::SimpleResult<size_t>::make_good(required_space);
     }
 
     __host__ __device__ void Integral::copy_without_integrand_to(Symbol* const destination) const {
@@ -136,7 +138,7 @@ namespace Sym {
         TRY(destination += int_and_substitutions_size);
 
         if (!destination.can_offset_by(2 + derivative.size())) {
-            return Util::BinaryResult::error();
+            return Util::BinaryResult::make_error();
         }
 
         Mul<Inv<Copy>, None>::init(destination.current(), {derivative});
@@ -169,6 +171,8 @@ namespace Sym {
         // this is required
         Symbol::seal_whole(destination_integral.integrand(), destination.index() - integrand_idx);
         destination_integral.seal();
+
+        return Util::BinaryResult::make_good();
     }
 
     __host__ __device__ const Substitution& Integral::first_substitution() const {

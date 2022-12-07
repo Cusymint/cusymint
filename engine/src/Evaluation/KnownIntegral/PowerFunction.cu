@@ -8,7 +8,7 @@ namespace Sym::KnownIntegral {
     }
 
     __device__ EvaluationStatus integrate_power_function(
-        const Integral& integral, const ExpressionArray<>::Iterator& destination,
+        const Integral& integral, SymbolIterator& destination,
         const ExpressionArray<>::Iterator& /*help_space*/) {
         const Symbol& exponent = integral.integrand().as<Power>().arg2();
         return simple_solution<Mul<Inv<Add<Copy, Num>>, Pow<Var, Add<Copy, Num>>>>(

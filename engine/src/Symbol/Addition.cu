@@ -20,7 +20,7 @@ namespace Sym {
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
         simplify_structure(help_space);
 
-        if (!symbol()->is(Type::Addition)) {
+        if (!symbol().is(Type::Addition)) {
             return true;
         }
 
@@ -101,8 +101,8 @@ namespace Sym {
     }
 
     DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Addition) {
-        double coef1;
-        double coef2;
+        double coef1 = 0.0;
+        double coef2 = 0.0;
         const Symbol& base1 = extract_base_and_coefficient(*expr1, coef1);
         const Symbol& base2 = extract_base_and_coefficient(*expr2, coef2);
 
@@ -128,7 +128,7 @@ namespace Sym {
             destination->init_from(NumericConstant::with_value(0));
         }
         else if (sum == 1) {
-            base1.copy_to(destination);
+            base1.copy_to(*destination);
         }
         else if (sum == -1) {
             Neg<Copy>::init(*destination, {base1});

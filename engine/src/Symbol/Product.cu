@@ -64,7 +64,7 @@ namespace Sym {
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
         simplify_structure(help_space);
 
-        if (!symbol()->is(Type::Product)) {
+        if (!symbol().is(Type::Product)) {
             return true;
         }
 
@@ -186,8 +186,8 @@ namespace Sym {
     __host__ __device__ SimplificationResult Product::try_split_into_sum(Symbol* const expr1,
                                                                          Symbol* const expr2,
                                                                          Symbol* const help_space) {
-        Addition* sum;
-        Symbol* second_arg;
+        Addition* sum = nullptr;
+        Symbol* second_arg = nullptr;
 
         if (!expr1->is(Type::Addition) && !expr2->is(Type::Addition)) {
             return SimplificationResult::NoAction;
@@ -271,7 +271,7 @@ namespace Sym {
             return split_result;
         }
 
-        // TODO: Jakieś tożsamości trygonometryczne
+        // TODO: Some trigonometric identities
 
         return SimplificationResult::NoAction;
     }
@@ -279,12 +279,12 @@ namespace Sym {
     DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Product) {
         NumericConstant one = NumericConstant::with_value(1);
 
-        const Symbol* base1;
-        const Symbol* base2;
-        const Symbol* exponent1 = one.symbol();
-        const Symbol* exponent2 = one.symbol();
-        double coef1;
-        double coef2;
+        const Symbol* base1 = nullptr;
+        const Symbol* base2 = nullptr;
+        const Symbol* exponent1 = &one.symbol();
+        const Symbol* exponent2 = &one.symbol();
+        double coef1 = 0.0;
+        double coef2 = 0.0;
 
         extract_base_exponent_and_coefficient(*expr1, base1, exponent1, coef1);
         extract_base_exponent_and_coefficient(*expr2, base2, exponent2, coef2);
@@ -303,7 +303,7 @@ namespace Sym {
                 return Util::Order::Equal;
             }
             if (exp_sum == 1) {
-                base1->copy_to(destination);
+                base1->copy_to(*destination);
                 return Util::Order::Equal;
             }
             if (base1->is(Type::NumericConstant)) {

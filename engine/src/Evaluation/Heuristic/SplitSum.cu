@@ -14,7 +14,7 @@ namespace Sym::Heuristic {
     __device__ EvaluationStatus split_sum(const SubexpressionCandidate& integral,
                                           const ExpressionArray<>::Iterator& integral_dst,
                                           const ExpressionArray<>::Iterator& expression_dst,
-                                          const ExpressionArray<>& /*help_space*/) {
+                                          const ExpressionArray<>::Iterator& /*help_space*/) {
         const auto& integrand = integral.arg().as<Integral>().integrand().as<Addition>();
 
         using ExpressionType = Candidate<Add<SingleIntegralVacancy, SingleIntegralVacancy>>;

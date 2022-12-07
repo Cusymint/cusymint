@@ -2,6 +2,7 @@
 
 #include <fmt/core.h>
 
+#include "Evaluation/Integrator.cuh"
 #include "MetaOperators.cuh"
 #include "Symbol.cuh"
 #include "Symbol/Addition.cuh"
@@ -89,6 +90,7 @@ namespace Sym {
                     iterator.current()->init_from(NumericConstant::with_value(1));
                     base_changed = true;
                 }
+
                 if (iterator.current()->is(Type::Logarithm) && base->is(Type::KnownConstant) &&
                     base->as<KnownConstant>().value == KnownConstantValue::E) {
                     iterator.current()->as<Logarithm>().arg().copy_to(*help_space);
@@ -96,16 +98,26 @@ namespace Sym {
                     iterator.current()->init_from(NumericConstant::with_value(1));
                     base_changed = true;
                 }
+
                 iterator.advance();
             }
+
             if (base == help_space) {
                 arg1().init_from(ExpanderPlaceholder::with_size(base->size()));
                 Symbol& compressed_reversed = *(base + base->size());
-                const auto compressed_size = symbol().compress_reverse_to(&compressed_reversed);
+                const auto compressed_size =
+                    symbol()
+                        .compress_reverse_to(
+                            SymbolIterator::from_at(compressed_reversed, 0,
+                                                    size * Integrator::HELP_SPACE_MULTIPLIER -
+                                                        base->size())
+                                .good())
+                        .good();
                 Symbol::copy_and_reverse_symbol_sequence(symbol(), compressed_reversed,
                                                          compressed_size);
                 base->copy_to(arg1());
             }
+
             // if power base was changed, there may be remaining ones to simplify
             if (base_changed) {
                 arg2().as<Product>().eliminate_ones();
@@ -149,11 +161,11 @@ namespace Sym {
 
                 const auto triangle =
                     Util::PascalTriangle::generate(num, *reinterpret_cast<size_t*>(help_space));
-                Symbol* const help_space_back =
+                auto* const help_space_back =
                     reinterpret_cast<Symbol*>(triangle.data + triangle.occupied_size());
 
                 const size_t new_size = num * (7 + arg1().size()) - 3;
-                
+
                 if (size < new_size) {
                     additional_required_size = new_size - arg1().size() - arg2().size() - 1;
                     return false;
@@ -178,7 +190,9 @@ namespace Sym {
 
                 if constexpr (Consts::DEBUG) {
                     if (help_space_back->size() != new_size) {
-                        Util::crash("After binomial expanding sizes do not match: expected %lu, got %lu", new_size, help_space_back->size());
+                        Util::crash(
+                            "After binomial expanding sizes do not match: expected %lu, got %lu",
+                            new_size, help_space_back->size());
                     }
                 }
 

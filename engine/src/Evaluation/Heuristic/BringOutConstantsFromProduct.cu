@@ -68,6 +68,8 @@ namespace Sym::Heuristic {
                     next_function_dst += current_size;
                 }
             }
+
+            return Util::BinaryResult::make_good();
         }
     }
 
@@ -149,5 +151,7 @@ namespace Sym::Heuristic {
         integral_candidate->seal();
 
         expression_candidate->seal();
+
+        return EvaluationStatus::Done;
     }
 }

@@ -7,9 +7,9 @@ namespace Sym::KnownIntegral {
         return integral.integrand().is(Type::Variable) ? 1 : 0;
     }
 
-    __device__ EvaluationStatus integrate_simple_variable(
-        const Integral& integral, const ExpressionArray<>::Iterator& destination,
-        const ExpressionArray<>::Iterator& /*help_space*/) {
+    __device__ EvaluationStatus
+    integrate_simple_variable(const Integral& integral, SymbolIterator& destination,
+                              const ExpressionArray<>::Iterator& /*help_space*/) {
         return simple_solution<Prod<Num, Pow<Var, Integer<2>>>>(destination, {integral, 0.5});
     }
 }

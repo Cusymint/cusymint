@@ -7,9 +7,9 @@ namespace Sym::KnownIntegral {
         return integral.integrand().is_constant() ? 1 : 0;
     }
 
-    __device__ EvaluationStatus integrate_constant_integral(
-        const Integral& integral, const ExpressionArray<>::Iterator& destination,
-        const ExpressionArray<>::Iterator& /*help_space*/) {
+    __device__ EvaluationStatus
+    integrate_constant_integral(const Integral& integral, SymbolIterator& destination,
+                                const ExpressionArray<>::Iterator& /*help_space*/) {
         return simple_solution<Mul<Copy, Var>>(destination, {integral, integral.integrand()});
     }
 }

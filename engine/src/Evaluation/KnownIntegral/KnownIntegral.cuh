@@ -9,8 +9,7 @@
 
 namespace Sym::KnownIntegral {
     using Check = size_t (*)(const Integral& integral);
-    using Application = EvaluationStatus (*)(const Integral& integral,
-                                             const SymbolIterator& destination,
+    using Application = EvaluationStatus (*)(const Integral& integral, SymbolIterator& destination,
                                              const ExpressionArray<>::Iterator& help_space);
 
     extern __device__ const Check CHECKS[];
@@ -27,7 +26,7 @@ namespace Sym::KnownIntegral {
      */
     template <class MetaOperator>
     __device__ EvaluationStatus
-    simple_solution(const ExpressionArray<>::Iterator& destination,
+    simple_solution(SymbolIterator& destination,
                     const typename SolutionOfIntegral<MetaOperator>::AdditionalArgs& args) {
         using SolutionType = SolutionOfIntegral<MetaOperator>;
 

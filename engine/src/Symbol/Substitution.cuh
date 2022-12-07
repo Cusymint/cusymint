@@ -12,14 +12,6 @@ namespace Sym {
 
     size_t substitution_idx;
 
-    /*
-     * @brief Odwraca i kompresuje ciąg podstawień (`compress_reverse_to` robi to tylko dla
-     * pojedynczego podstawienia)
-     *
-     * @param destination Docelowa lokalizacja podstawień
-     */
-    __host__ __device__ size_t compress_reverse_substitutions_to(Symbol* const destination);
-
     __host__ __device__ static void create(const Symbol* const expression,
                                            Symbol* const destination,
                                            const size_t substitution_idx);
@@ -32,17 +24,17 @@ namespace Sym {
     [[nodiscard]] __host__ __device__ bool is_last_substitution() const;
 
     /*
-     * @brief Zamienia wszystkie wystąpienia zmiennej w wyrażeniu na nazwę z `SUBSTITUTION_NAMES`
-     * zależnie od wartości `substitution_idx`
+     * @brief Changes all occurrences of `Variable` in the expression to a name from
+     * `SUBSTITUTION_NAMES` based on the value of `substitution_idx
      *
-     * @return Wyrażenie z zamienioną zmienną
+     * @return Expression with the constant substituted
      */
     [[nodiscard]] std::vector<Symbol> expression_with_constant() const;
 
     /*
-     * @brief Zwraca podstawienie jako string, ale bez uwzględniania kolejnych podstawień.
+     * @brief Substitution as a string, but without subsequent substitutions
      *
-     * @return String przedstawiający podstawienie
+     * @return String representing the substitution
      */
     [[nodiscard]] std::string to_string_this() const;
     [[nodiscard]] std::string to_string() const;

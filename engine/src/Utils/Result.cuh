@@ -15,14 +15,14 @@
         result.good();           \
     })
 
-#define TRY_PASS(_T, _result)           \
-    ({                                  \
-        auto result = (_result);        \
-        if (result.is_error()) {        \
+#define TRY_PASS(_T, _result)         \
+    ({                                \
+        auto result = (_result);      \
+        if (result.is_error()) {      \
             return result.pass<_T>(); \
-        }                               \
-                                        \
-        result.good();                  \
+        }                             \
+                                      \
+        result.good();                \
     })
 
 namespace Util {
@@ -30,20 +30,21 @@ namespace Util {
      * @brief Class for storing something, or an error
      */
     template <class T, class E> class Result {
-        union {
-            T good;
+        union ValueType {
             E error;
-        } value;
+            T good;
 
+            __host__ __device__ ValueType() : error() {}
+        };
+
+        ValueType value;
         bool is_good_ = false;
-
-        Result() = default;
 
       public:
         /*
          * @brief Creates a result containing a constructed good result
          */
-        template <class... Args> __host__ __device__ static Result good(Args... args) {
+        template <class... Args> __host__ __device__ static Result make_good(Args... args) {
             Result result;
             result.value.good = T(args...);
             result.is_good_ = true;
@@ -54,7 +55,7 @@ namespace Util {
         /*
          * @brief Creates a result containing a constructed error
          */
-        template <class... Args> __host__ __device__ static Result error(Args... args) {
+        template <class... Args> __host__ __device__ static Result make_error(Args... args) {
             Result result;
             result.value.error = E(args...);
             result.is_good_ = false;
@@ -114,7 +115,7 @@ namespace Util {
          * @brief The error contained in the result, but with a different type of good value
          */
         template <class U> [[nodiscard]] __host__ __device__ Result<U, E> pass() const {
-            return Result<U, E>::error(error());
+            return Result<U, E>::make_error(error());
         }
 
         /*
@@ -124,10 +125,10 @@ namespace Util {
         template <class F, class M>
         [[nodiscard]] __host__ __device__ Result<T, F> map_err(const M& mapper) const {
             if (is_good()) {
-                return Result<T, F>::good(good());
+                return Result<T, F>::make_good(good());
             }
 
-            Result<T, F>::error(mapper(error()));
+            Result<T, F>::make_error(mapper(error()));
         }
 
         /*
@@ -137,10 +138,10 @@ namespace Util {
         template <class U, class M>
         [[nodiscard]] __host__ __device__ Result<U, E> map_good(const M& mapper) const {
             if (is_error()) {
-                return Result<U, E>::error(error());
+                return Result<U, E>::make_error(error());
             }
 
-            Result<U, E>::good(mapper(good()));
+            Result<U, E>::make_good(mapper(good()));
         }
     };
 

@@ -91,8 +91,8 @@ namespace Test {
         cudaDeviceSynchronize();
 
         auto expressions =
-            from_vector({Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
-                         Sym::single_integral_vacancy(), Sym::single_integral_vacancy()});
+            Sym::ExpressionArray({Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
+                                  Sym::single_integral_vacancy(), Sym::single_integral_vacancy()});
         auto help_spaces = with_count(integrals.size());
 
         Sym::Kernel::
@@ -137,7 +137,7 @@ namespace Test {
             nth_expression_candidate(5, vacancy_solved_by(10) + vacancy_solved_by(7), 2),
             nth_expression_candidate(6, vacancy_solved_by(9) * vacancy_solved_by(8), 3)};
 
-        auto expressions = from_vector(vacancy_tree);
+        auto expressions = Sym::ExpressionArray(vacancy_tree);
 
         Sym::Kernel::propagate_solved_subexpressions<<<Sym::Integrator::BLOCK_COUNT,
                                                        Sym::Integrator::BLOCK_SIZE>>>(expressions);
@@ -163,7 +163,7 @@ namespace Test {
 
         Sym::Kernel::find_redundand_expressions<<<Sym::Integrator::BLOCK_COUNT,
                                                   Sym::Integrator::BLOCK_SIZE>>>(
-            from_vector(vacancy_tree), removability);
+            Sym::ExpressionArray(vacancy_tree), removability);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
@@ -192,14 +192,13 @@ namespace Test {
 
         Sym::Kernel::find_redundand_expressions<<<Sym::Integrator::BLOCK_COUNT,
                                                   Sym::Integrator::BLOCK_SIZE>>>(
-            from_vector(vacancy_tree), removability);
+            Sym::ExpressionArray(vacancy_tree), removability);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
-        Sym::Kernel::
-            find_redundand_integrals<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
-                from_vector(integrals_tree), from_vector(vacancy_tree), removability,
-                integral_removability);
+        Sym::Kernel::find_redundand_integrals(Sym::ExpressionArray(integrals_tree),
+                                              Sym::ExpressionArray(vacancy_tree), removability,
+                                              integral_removability);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
@@ -241,7 +240,7 @@ namespace Test {
             .candidate_integral_count = 0;
 
         Util::DeviceArray<uint32_t> removability(vacancy_tree.size(), true);
-        auto expressions = from_vector(vacancy_tree);
+        auto expressions = Sym::ExpressionArray(vacancy_tree);
         auto result = with_count(expressions.size());
         auto result_zeroed = with_count(expressions.size());
 
@@ -304,7 +303,7 @@ namespace Test {
 
         Sym::Kernel::
             remove_integrals<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
-                from_vector<Sym::SubexpressionCandidate>(integral_vector),
+                Sym::ExpressionArray<Sym::SubexpressionCandidate>(integral_vector),
                 integral_removability_scan, expressions_removability_scan, result);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
@@ -335,7 +334,7 @@ namespace Test {
         ExprVector expected_expressions_vector =
             get_expected_expression_vector(expected_heuristics);
 
-        auto expressions = from_vector(expressions_vector);
+        auto expressions = Sym::ExpressionArray(expressions_vector);
         Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
         Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
 
@@ -440,8 +439,8 @@ namespace Test {
             nth_expression_candidate(9, Sym::integral(Sym::tan(Sym::num(0.5) * Sym::var())), 2),
         };
 
-        auto integrals = from_vector<Sym::SubexpressionCandidate>(h_integrals);
-        auto expressions = from_vector(expressions_vector);
+        auto integrals = Sym::ExpressionArray<Sym::SubexpressionCandidate>(h_integrals);
+        auto expressions = Sym::ExpressionArray(expressions_vector);
 
         Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
         Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
@@ -514,7 +513,7 @@ namespace Test {
 
         ScanVector expected_failures_vector = {1, 0, 1, 1, 1, 0, 0, 0, 1, 0};
 
-        auto expressions = from_vector(vacancy_tree);
+        auto expressions = Sym::ExpressionArray(vacancy_tree);
         Util::DeviceArray<uint32_t> failures(vacancy_tree.size());
         failures.set_mem(1);
 
@@ -546,7 +545,7 @@ namespace Test {
         ScanVector expected_failures_vector = {1, 0, 0, 0, 0, 0, 1, 1};
 
         Util::DeviceArray<uint32_t> failures(failures_vector);
-        auto expressions = from_vector(vacancy_tree);
+        auto expressions = Sym::ExpressionArray(vacancy_tree);
 
         Sym::Kernel::propagate_failures_downwards<<<Sym::Integrator::BLOCK_COUNT,
                                                     Sym::Integrator::BLOCK_SIZE>>>(expressions,

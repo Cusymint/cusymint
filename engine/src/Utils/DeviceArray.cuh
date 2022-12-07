@@ -52,7 +52,7 @@ namespace Util {
         /*
          * @brief Creates an empty `DeviceArray`
          */
-        DeviceArray() : data_size(0), is_data_owner(true) { data_ptr = nullptr; }
+        DeviceArray() : is_data_owner(true) {}
 
         /*
          * @brief Allocates an array of size `size`
@@ -284,7 +284,7 @@ namespace Util {
         /*
          * @brief Value of the last element of the array moved to the CPU
          */
-        inline T last_cpu() { return to_cpu(data_size - 1); }
+        inline T last_cpu() const { return to_cpu(data_size - 1); }
 
         ~DeviceArray() { free_data(); }
     };

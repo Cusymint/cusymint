@@ -19,8 +19,8 @@ namespace Sym {
         return {
             .type = Sym::Type::ExpanderPlaceholder,
             .size = 1,
-            .simplified = true,
             .additional_required_size = size - 1,
+            .simplified = true,
         };
     }
 

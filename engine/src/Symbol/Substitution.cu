@@ -18,19 +18,9 @@ namespace Sym {
         const size_t new_expression_size = (destination - 1)->size();
         symbol().copy_single_to(*destination);
         destination->as<Substitution>().size = new_expression_size + 1;
-        return 1;
     }
 
-    __host__ __device__ size_t
-    Substitution::compress_reverse_substitutions_to(Symbol* const destination) {
-        size_t offset = 0;
-        if (!is_last_substitution()) {
-            offset = next_substitution().compress_reverse_substitutions_to(destination);
-        }
-
-        const size_t new_substitution_size = symbol().compress_reverse_to(destination + offset);
-        return new_substitution_size + offset;
-    }
+    DEFINE_COMPRESSION_SIZE(Substitution) { return 1; }
 
     DEFINE_ARE_EQUAL(Substitution) {
         return BASE_ARE_EQUAL(Substitution) &&
@@ -129,11 +119,11 @@ namespace Sym {
         return const_cast<Symbol&>(const_cast<const Substitution*>(this)->expression());
     }
 
-    __host__ __device__ Substitution& Substitution::next_substitution() {
+    __host__ __device__ const Substitution& Substitution::next_substitution() const {
         return (&expression() + expression().size())->as<Substitution>();
     }
 
-    __host__ __device__ const Substitution& Substitution::next_substitution() const {
+    __host__ __device__ Substitution& Substitution::next_substitution() {
         return const_cast<Substitution&>(
             const_cast<const Substitution*>(this)->next_substitution());
     }
@@ -159,7 +149,9 @@ namespace Sym {
 
         const size_t new_size = expr.size() + variable_indices.size() * (expression().size() - 1);
         std::vector<Symbol> new_expr(new_size);
-        expr.data()->compress_to(*new_expr.data());
+        auto new_expr_iterator =
+            SymbolIterator::from_at(*new_expr.data(), 0, new_expr.size()).good();
+        expr.data()->compress_to(new_expr_iterator);
 
         size_t offset = 0;
         for (size_t variable_indice : variable_indices) {

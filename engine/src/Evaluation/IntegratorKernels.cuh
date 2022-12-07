@@ -6,8 +6,6 @@
 #include "Symbol/ExpressionArray.cuh"
 
 namespace Sym {
-    constexpr size_t MAX_EXPRESSION_COUNT = 128;
-
     /*
      * @brief Checks if inclusive_scan[index] is signaling a zero-sized element
      *
@@ -27,9 +25,11 @@ namespace Sym::Kernel {
      * @param expressions Expressions to simplify
      * @param destination Destination to save the simplified expressions
      * @param help_spaces Help space required for some simplifications
+     * @param statuses Evaluation statuses used for reporting reallocation requests
      */
     __global__ void simplify(const ExpressionArray<> expressions, ExpressionArray<> destination,
-                             ExpressionArray<> help_spaces);
+                             ExpressionArray<> help_spaces,
+                             Util::DeviceArray<EvaluationStatus> statuses);
 
     /*
      * @brief Checks whether `integrals` have known solutions
@@ -46,20 +46,19 @@ namespace Sym::Kernel {
 
     /*
      * @brief Solves integrals using the `applicability` information from
-     * `check_for_known_integrals` and sets `SubexpressionCandidates` in `expressions` as solved by
-     * a corresponding `SubexpressionVacancy`
+     * `check_for_known_integrals` and sets `SubexpressionCandidates` in `expressions` as solved
+     * by a corresponding `SubexpressionVacancy`
      *
      * @param integrals Integrals with potentially known solutions
-     * @param expressions Expressions containing SubexpressionVacancies.
-     * @param expressions_dsts Iterator to the first expression where the results will be saved. It
-     * should be possible to advance it as far as there will be solved integrals.
+     * @param expressions Expressions containing SubexpressionVacancies, and also where results will
+     * be saved.
+     * @param dst_offset Starting index at which results will be saved.
      * @param help_spaces Help space used in applying known integrals
      * @param applicability Result of `inclusive_scan` on `check_for_known_integrals()`
      * applicability array
      */
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
-                                          const ExpressionArray<>::Iterator expressions,
-                                          const ExpressionArray<>::Iterator expressions_dsts,
+                                          ExpressionArray<> expressions, const size_t dst_offset,
                                           ExpressionArray<> help_spaces,
                                           const Util::DeviceArray<uint32_t> applicability,
                                           Util::DeviceArray<EvaluationStatus> statuses);
@@ -182,24 +181,26 @@ namespace Sym::Kernel {
      * @brief Applies heuristics to integrals
      *
      * @param integrals Integrals to which heuristics will be applied
-     * @param integrals_destinations Destinations of transformed integrals. Has to contain enough
+     * @param integrals_dst Destinations of transformed integrals. Has to contain
+     * enough expressions to contain all results.
+     * @param expressions_dst Destination for new expressions. Has to contain enough
      * expressions to contain all results.
-     * @param expressions_destinations Destination for new expressions. Has to contain enough
-     * expressions to contain all results.
+     * @param expressions_dst_offset Starting index at which result expressions will be saved
      * @param help_spaces Help space for transformations
      * @param new_integrals_indices Indices of new integrals incremented by 1.
      * If given index is equal to its predecessor, then its integral and heuristic
      * (specified in `check_heuristics_applicability()`) haven't found any solution.
      * `new_integrals_indices[0]` will override `1` to `0`.
      * @param new_expressions_indices Analogical to `new_integrals_indices` for `expressions`
-     * @param integral_statuses Evaluation statuses for all created integrals that are set according to the
-     * result of applications
-     * @param expression_statuses Evaluation statuses for all created expressions that are set according to the
-     * result of applications
+     * @param integral_statuses Evaluation statuses for all created integrals that are set
+     * according to the result of applications
+     * @param expression_statuses Evaluation statuses for all created expressions that are set
+     * according to the result of applications
      */
     __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
-                                     ExpressionArray<> integrals_destinations,
-                                     const ExpressionArray<>::Iterator expressions_destinations,
+                                     ExpressionArray<> integrals_dst,
+                                     ExpressionArray<> expressions_dst,
+                                     const size_t expressions_dst_offset,
                                      ExpressionArray<> help_spaces,
                                      const Util::DeviceArray<uint32_t> new_integrals_indices,
                                      const Util::DeviceArray<uint32_t> new_expressions_indices,
@@ -240,7 +241,6 @@ namespace Sym::Kernel {
     find_redundand_integrals(const ExpressionArray<> integrals,
                              const Util::DeviceArray<uint32_t> expressions_removability,
                              Util::DeviceArray<uint32_t> integrals_removability);
-
 }
 
 #endif

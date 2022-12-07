@@ -42,6 +42,7 @@ add_library(
   ${SYMBOL_DIR}/Logarithm.cu
   ${SYMBOL_DIR}/SubexpressionCandidate.cu
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
+  ${SYMBOL_DIR}/ExpressionArray.cu
   ${EVALUATION_DIR}/Collapser.cu
   ${EVALUATION_DIR}/Integrator.cu
   ${EVALUATION_DIR}/IntegratorKernels.cu
@@ -81,10 +82,14 @@ add_executable(
 
 add_executable(
   srvcusymint
-  ${SRC_DIR}/main_server.cu ${SERVER_DIR}/ResponseBuilder.cu
-  ${SERVER_DIR}/Server.cu ${SOLVER_DIR}/CachedParser.cu
-  ${SOLVER_DIR}/Expression.cu ${SOLVER_DIR}/Solver.cu
-  ${SERVER_DIR}/SolverProcessManager.cu ${SERVER_DIR}/JsonSolver.cu
+  ${SRC_DIR}/main_server.cu
+  ${SERVER_DIR}/ResponseBuilder.cu
+  ${SERVER_DIR}/Server.cu
+  ${SOLVER_DIR}/CachedParser.cu
+  ${SOLVER_DIR}/Expression.cu
+  ${SOLVER_DIR}/Solver.cu
+  ${SERVER_DIR}/SolverProcessManager.cu
+  ${SERVER_DIR}/JsonSolver.cu
   ${SERVER_DIR}/Logger.cu)
 
 # Debug build related things
@@ -98,8 +103,6 @@ string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
   target_compile_options(libcusymint PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -g -G >)
   add_compile_definitions(__DEBUG__)
-else()
-  target_compile_options(libcusymint PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:>)
 endif()
 
 # Compilation options

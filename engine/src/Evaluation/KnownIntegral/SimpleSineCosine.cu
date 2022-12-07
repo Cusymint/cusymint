@@ -11,7 +11,7 @@ namespace Sym::KnownIntegral {
     }
 
     __device__ EvaluationStatus
-    integrate_simple_sine(const Integral& integral, const ExpressionArray<>::Iterator& destination,
+    integrate_simple_sine(const Integral& integral, SymbolIterator& destination,
                           const ExpressionArray<>::Iterator& /*help_space*/) {
         return simple_solution<Neg<Cos<Var>>>(destination, {integral});
     }
@@ -21,9 +21,9 @@ namespace Sym::KnownIntegral {
         return integrand[0].is(Type::Cosine) && integrand[1].is(Type::Variable) ? 1 : 0;
     }
 
-    __device__ EvaluationStatus integrate_simple_cosine(
-        const Integral& integral, const ExpressionArray<>::Iterator& destination,
-        const ExpressionArray<>::Iterator& /*help_space*/) {
+    __device__ EvaluationStatus
+    integrate_simple_cosine(const Integral& integral, SymbolIterator& destination,
+                            const ExpressionArray<>::Iterator& /*help_space*/) {
         return simple_solution<Sin<Var>>(destination, {integral});
     }
 }

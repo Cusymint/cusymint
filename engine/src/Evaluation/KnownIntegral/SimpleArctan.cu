@@ -7,9 +7,9 @@ namespace Sym::KnownIntegral {
         return Inv<Add<Integer<1>, Pow<Var, Integer<2>>>>::match(integral.integrand()) ? 1 : 0;
     }
 
-    __device__ EvaluationStatus integrate_simple_arctan(
-        const Integral& integral, const ExpressionArray<>::Iterator& destination,
-        const ExpressionArray<>::Iterator& /*help_space*/) {
+    __device__ EvaluationStatus
+    integrate_simple_arctan(const Integral& integral, SymbolIterator& destination,
+                            const ExpressionArray<>::Iterator& /*help_space*/) {
         return simple_solution<Arctan<Var>>(destination, {integral});
     }
 }

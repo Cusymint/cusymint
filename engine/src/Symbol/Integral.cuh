@@ -18,8 +18,8 @@ namespace Sym {
     __host__ __device__ void seal_single_substitution();
     __host__ __device__ void seal_substitutions(const size_t count, const size_t size);
 
-    [[nodiscard]] __host__ __device__ Symbol& integrand();
     [[nodiscard]] __host__ __device__ const Symbol& integrand() const;
+    [[nodiscard]] __host__ __device__ Symbol& integrand();
 
     /*
      * @brief Copies `*this`, and all its substitutions into dst, and adds expression from

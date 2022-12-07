@@ -1,5 +1,5 @@
-#ifndef INTEGRATE_CUH
-#define INTEGRATE_CUH
+#ifndef INTEGRATOR_CUH
+#define INTEGRATOR_CUH
 
 #include <optional>
 
@@ -12,18 +12,6 @@
 
 namespace Sym {
     class Integrator {
-        // How many symbols can an expression hold initially
-        static constexpr size_t INITIAL_EXPRESSIONS_CAPACITY = 128;
-        // How many expressions of size `INITIAL_EXPRESSION_CAPACITIES` can an array hold initially
-        static constexpr size_t INITIAL_ARRAYS_EXPRESSIONS_CAPACITY = 64;
-        static constexpr size_t INITIAL_ARRAYS_SYMBOLS_CAPACITY =
-            INITIAL_ARRAYS_EXPRESSIONS_CAPACITY * INITIAL_EXPRESSIONS_CAPACITY;
-
-        // Sizes of `scan_array_X` and `evaluation_statuses` are multiplied by this value on
-        // reallocation
-        static constexpr size_t REALLOC_MULTIPLIER = 2;
-        static constexpr size_t HELP_SPACE_MULTIPLIER = 2;
-
         const size_t CHECK_COUNT;
 
         ExpressionArray<> expressions;
@@ -121,14 +109,43 @@ namespace Sym {
 
       public:
         /*
+         * @brief How many times larger a help space expression is than the expression it
+         * corresponds to
+         */
+        static constexpr size_t HELP_SPACE_MULTIPLIER = 2;
+
+        /*
+         * @brief Sizes of `scan_array_X` and `evaluation_statuses` are multiplied by this value on
+         * reallocation
+         */
+        static constexpr size_t REALLOC_MULTIPLIER = 2;
+
+        /*
          * @brief Block size of CUDA kernels used by `solve_integral`
          */
-        static constexpr size_t BLOCK_SIZE = 512;
+        static constexpr size_t BLOCK_SIZE = 256;
 
         /*
          * @brief Block count of CUDA kernels used by `solve_integral`
          */
         static constexpr size_t BLOCK_COUNT = 32;
+
+        /*
+         * @brief How many symbols can an expression hold initially
+         */
+        static constexpr size_t INITIAL_EXPRESSIONS_CAPACITY = 128;
+
+        /*
+         * @brief How many expressions of size `INITIAL_EXPRESSION_CAPACITIES` can an array hold
+         * initially
+         */
+        static constexpr size_t INITIAL_ARRAYS_EXPRESSIONS_CAPACITY = 64;
+
+        /*
+         * @brief How many symbols should new arrays contain
+         */
+        static constexpr size_t INITIAL_ARRAYS_SYMBOLS_CAPACITY =
+            INITIAL_ARRAYS_EXPRESSIONS_CAPACITY * INITIAL_EXPRESSIONS_CAPACITY;
 
         Integrator();
 

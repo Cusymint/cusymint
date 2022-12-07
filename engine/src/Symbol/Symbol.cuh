@@ -35,44 +35,46 @@
     }
 
 // Also works when `_member_function` returns void
-#define VIRTUAL_CALL(_instance, _member_function, ...)                                \
-    (([&]() {                                                                         \
-        switch ((_instance).type()) {                                                 \
-        case Type::Symbol: {                                                          \
-            Util::crash("Trying to access a virtual function (%s) on a pure Symbol",  \
-                        #_member_function);                                           \
-            break;                                                                    \
-        }                                                                             \
-            VC_CASE(NumericConstant, _instance, _member_function, __VA_ARGS__)        \
-            VC_CASE(KnownConstant, _instance, _member_function, __VA_ARGS__)          \
-            VC_CASE(UnknownConstant, _instance, _member_function, __VA_ARGS__)        \
-            VC_CASE(Variable, _instance, _member_function, __VA_ARGS__)               \
-            VC_CASE(ExpanderPlaceholder, _instance, _member_function, __VA_ARGS__)    \
-            VC_CASE(SubexpressionCandidate, _instance, _member_function, __VA_ARGS__) \
-            VC_CASE(SubexpressionVacancy, _instance, _member_function, __VA_ARGS__)   \
-            VC_CASE(Integral, _instance, _member_function, __VA_ARGS__)               \
-            VC_CASE(Solution, _instance, _member_function, __VA_ARGS__)               \
-            VC_CASE(Substitution, _instance, _member_function, __VA_ARGS__)           \
-            VC_CASE(Addition, _instance, _member_function, __VA_ARGS__)               \
-            VC_CASE(Negation, _instance, _member_function, __VA_ARGS__)               \
-            VC_CASE(Product, _instance, _member_function, __VA_ARGS__)                \
-            VC_CASE(Reciprocal, _instance, _member_function, __VA_ARGS__)             \
-            VC_CASE(Power, _instance, _member_function, __VA_ARGS__)                  \
-            VC_CASE(Sine, _instance, _member_function, __VA_ARGS__)                   \
-            VC_CASE(Cosine, _instance, _member_function, __VA_ARGS__)                 \
-            VC_CASE(Tangent, _instance, _member_function, __VA_ARGS__)                \
-            VC_CASE(Cotangent, _instance, _member_function, __VA_ARGS__)              \
-            VC_CASE(Arcsine, _instance, _member_function, __VA_ARGS__)                \
-            VC_CASE(Arccosine, _instance, _member_function, __VA_ARGS__)              \
-            VC_CASE(Arctangent, _instance, _member_function, __VA_ARGS__)             \
-            VC_CASE(Arccotangent, _instance, _member_function, __VA_ARGS__)           \
-            VC_CASE(Logarithm, _instance, _member_function, __VA_ARGS__)              \
-            VC_CASE(Polynomial, _instance, _member_function, __VA_ARGS__)             \
-            VC_CASE(Unknown, _instance, _member_function, __VA_ARGS__)                \
-        }                                                                             \
-                                                                                      \
-        Util::crash("Trying to access a virtual function (%s) on an invalid type",    \
-                    #_member_function);                                               \
+#define VIRTUAL_CALL(_instance, _member_function, ...)                                     \
+    (([&]() {                                                                              \
+        switch ((_instance).type()) {                                                      \
+        case Type::Symbol: {                                                               \
+            Util::crash("Trying to access a virtual function (%s) on a pure Symbol",       \
+                        #_member_function);                                                \
+            break;                                                                         \
+        }                                                                                  \
+            VC_CASE(NumericConstant, _instance, _member_function, __VA_ARGS__)             \
+            VC_CASE(KnownConstant, _instance, _member_function, __VA_ARGS__)               \
+            VC_CASE(UnknownConstant, _instance, _member_function, __VA_ARGS__)             \
+            VC_CASE(Variable, _instance, _member_function, __VA_ARGS__)                    \
+            VC_CASE(ExpanderPlaceholder, _instance, _member_function, __VA_ARGS__)         \
+            VC_CASE(SubexpressionCandidate, _instance, _member_function, __VA_ARGS__)      \
+            VC_CASE(SubexpressionVacancy, _instance, _member_function, __VA_ARGS__)        \
+            VC_CASE(Integral, _instance, _member_function, __VA_ARGS__)                    \
+            VC_CASE(Solution, _instance, _member_function, __VA_ARGS__)                    \
+            VC_CASE(Substitution, _instance, _member_function, __VA_ARGS__)                \
+            VC_CASE(Addition, _instance, _member_function, __VA_ARGS__)                    \
+            VC_CASE(Negation, _instance, _member_function, __VA_ARGS__)                    \
+            VC_CASE(Product, _instance, _member_function, __VA_ARGS__)                     \
+            VC_CASE(Reciprocal, _instance, _member_function, __VA_ARGS__)                  \
+            VC_CASE(Power, _instance, _member_function, __VA_ARGS__)                       \
+            VC_CASE(Sine, _instance, _member_function, __VA_ARGS__)                        \
+            VC_CASE(Cosine, _instance, _member_function, __VA_ARGS__)                      \
+            VC_CASE(Tangent, _instance, _member_function, __VA_ARGS__)                     \
+            VC_CASE(Cotangent, _instance, _member_function, __VA_ARGS__)                   \
+            VC_CASE(Arcsine, _instance, _member_function, __VA_ARGS__)                     \
+            VC_CASE(Arccosine, _instance, _member_function, __VA_ARGS__)                   \
+            VC_CASE(Arctangent, _instance, _member_function, __VA_ARGS__)                  \
+            VC_CASE(Arccotangent, _instance, _member_function, __VA_ARGS__)                \
+            VC_CASE(Logarithm, _instance, _member_function, __VA_ARGS__)                   \
+            VC_CASE(Polynomial, _instance, _member_function, __VA_ARGS__)                  \
+            VC_CASE(Unknown, _instance, _member_function, __VA_ARGS__)                     \
+        }                                                                                  \
+                                                                                           \
+        Util::crash("Trying to access a virtual function (%s) on an invalid type",         \
+                    #_member_function);                                                    \
+        /* To avoid warnings about missing return, it is not going to be called anyways */ \
+        return (_instance).unknown._member_function(__VA_ARGS__);                          \
     })())
 
 namespace Sym {
@@ -221,7 +223,7 @@ namespace Sym {
          * @brief Reference to the `idx`th element after `this`
          */
         [[nodiscard]] __host__ __device__ inline Symbol& operator[](const size_t idx) {
-            return const_cast<Symbol&>(const_cast<Symbol* const>(this)->operator[](idx));
+            return const_cast<Symbol&>(const_cast<const Symbol*>(this)->operator[](idx));
         }
 
         /*
@@ -360,8 +362,8 @@ namespace Sym {
          *
          * @return Same as in the other function
          */
-        __host__ __device__ bool is_function_of(const Symbol* const* const expressions,
-                                                const size_t expression_count) const;
+        [[nodiscard]] __host__ __device__ bool
+        is_function_of(const Symbol* const* const expressions, const size_t expression_count) const;
 
         /*
          * @brief Removes holes from symbol tree and copies it in reverse order to
@@ -372,7 +374,7 @@ namespace Sym {
          * @return New size of the symbol tree when the comppression was successfull, an error when
          * the destination's capacity is too small
          */
-        __host__ __device__ Util::SimpleResult<size_t>
+        [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
         compress_reverse_to(SymbolIterator destination);
 
         /*
@@ -383,7 +385,7 @@ namespace Sym {
          *
          * @return New size of the symbol tree
          */
-        __host__ __device__ size_t compress_to(Symbol& destination);
+        __host__ __device__ Util::SimpleResult<size_t> compress_to(SymbolIterator& destination);
 
         __host__ __device__ void
         mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space);
@@ -397,8 +399,7 @@ namespace Sym {
          * @return A good result when the simplification succeds, an error result when the
          * help_space is too small or when the simplification result would be larger than `capacity`
          */
-        __host__ __device__ Util::BinaryResult simplify(SymbolIterator& help_space,
-                                                        const size_t capacity);
+        [[nodiscard]] __host__ __device__ Util::BinaryResult simplify(SymbolIterator& help_space);
 
         /*
          * @brief Simplified an expression. Can leave the expression with holes.
@@ -408,7 +409,7 @@ namespace Sym {
          * @return `true` if expression was simplified, `false` if simplified result
          * would take more space than `size()` or expression needs to be simplified again.
          */
-        __host__ __device__ bool simplify_in_place(SymbolIterator& help_space);
+        [[nodiscard]] __host__ __device__ bool simplify_in_place(SymbolIterator& help_space);
 
         /*
          * @brief Recalculates sizes and argument offsets in the given expression. There cannot be
@@ -548,8 +549,6 @@ namespace Sym {
         size_t index_ = 0;
         size_t capacity_ = 0;
 
-        GenericSymbolIterator() = default;
-
       public:
         /*
          * @brief Creates an iterator to a symbol sequence
@@ -564,15 +563,15 @@ namespace Sym {
         __host__ __device__ static Util::SimpleResult<GenericSymbolIterator>
         from_at(S& parent, const size_t index, const size_t capacity) {
             GenericSymbolIterator iterator;
-            iterator.parent = parent;
+            iterator.parent = &parent;
             iterator.index_ = index;
             iterator.capacity_ = capacity;
 
             if (index >= capacity) {
-                return Util::SimpleResult<GenericSymbolIterator>::error();
+                return Util::SimpleResult<GenericSymbolIterator>::make_error();
             }
 
-            return Util::SimpleResult<GenericSymbolIterator>::good(iterator);
+            return Util::SimpleResult<GenericSymbolIterator>::make_good(iterator);
         }
 
         /*
@@ -595,8 +594,8 @@ namespace Sym {
         /*
          * @brief Const symbol pointed to by the iterator
          */
-        [[nodiscard]] __host__ __device__ const Symbol* const_current() const {
-            return (*parent)[index_];
+        [[nodiscard]] __host__ __device__ const Symbol& const_current() const {
+            return parent[index_];
         };
 
         /*
@@ -607,7 +606,7 @@ namespace Sym {
         };
 
         [[nodiscard]] __host__ __device__ const Symbol& operator*() const {
-            return parent->operator[](index_);
+            return const_current();
         };
 
         [[nodiscard]] __host__ __device__ Symbol& operator*() {
@@ -624,7 +623,7 @@ namespace Sym {
          */
         template <class O>
         [[nodiscard]] __host__ __device__ bool can_offset_by(const O offset) const {
-            return index_ + offset < parent->capacity();
+            return index_ + offset < capacity_;
         }
 
         /*
@@ -655,11 +654,11 @@ namespace Sym {
         template <class O>
         [[nodiscard]] __host__ __device__ Util::BinaryResult operator+=(const O offset) {
             if (!can_offset_by(offset)) {
-                return Util::BinaryResult::error();
+                return Util::BinaryResult::make_error();
             }
 
             index_ += offset;
-            return Util::BinaryResult::good();
+            return Util::BinaryResult::make_good();
         }
 
         /*

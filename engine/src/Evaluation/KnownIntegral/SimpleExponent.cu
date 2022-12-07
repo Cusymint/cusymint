@@ -10,7 +10,7 @@ namespace Sym::KnownIntegral {
     }
 
     __device__ EvaluationStatus integrate_simple_exponent(
-        const Integral& integral, const ExpressionArray<>::Iterator& destination,
+        const Integral& integral, SymbolIterator& destination,
         const ExpressionArray<>::Iterator& /*help_space*/) {
         return simple_solution<Pow<E, Var>>(destination, {integral});
     }

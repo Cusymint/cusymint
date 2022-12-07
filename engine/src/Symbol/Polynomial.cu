@@ -5,9 +5,9 @@
 #include "Addition.cuh"
 #include "Macros.cuh"
 #include "MetaOperators.cuh"
-#include "TreeIterator.cuh"
 #include "Symbol.cuh"
 #include "SymbolType.cuh"
+#include "TreeIterator.cuh"
 
 #include "Utils/CompileConstants.cuh"
 
@@ -24,8 +24,9 @@ namespace Sym {
         }
         Symbol& new_destination = *(destination + additional_required_size);
         Symbol::copy_and_reverse_symbol_sequence(new_destination, symbol(), size);
-        return size + additional_required_size;
     }
+
+    DEFINE_COMPRESSION_SIZE(Polynomial) { return size + additional_required_size; }
 
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(Polynomial)
     DEFINE_INTO_DESTINATION_OPERATOR(Polynomial)

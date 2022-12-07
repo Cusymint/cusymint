@@ -428,9 +428,13 @@ namespace Sym {
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             auto& integral = cuda::std::get<0>(args).get();
             auto* const solution = dst << Solution::builder();
-            Symbol::copy_symbol_sequence(solution->first_substitution().symbol(),
-                                         integral.first_substitution().symbol(),
-                                         integral.substitutions_size());
+
+            if (integral.substitutions_size() != 0) {
+                Symbol::copy_symbol_sequence(&solution->first_substitution().symbol(),
+                                             &integral.first_substitution().symbol(),
+                                             integral.substitutions_size());
+            }
+
             solution->seal_substitutions(integral.substitution_count,
                                          integral.substitutions_size());
 

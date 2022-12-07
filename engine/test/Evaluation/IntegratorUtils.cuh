@@ -34,28 +34,22 @@ namespace Test {
     using HeuristicPairVector = std::vector<Util::Pair<uint32_t, Sym::Heuristic::CheckResult>>;
     using ScanVector = std::vector<uint32_t>;
 
-    std::string get_different_fields(ScanVector vec1, ScanVector vec2); 
+    std::string get_different_fields(ScanVector vec1, ScanVector vec2);
 
     void test_known_integrals_correctly_checked(Util::DeviceArray<uint32_t> result,
-                                std::vector<IndexVector> index_vectors); 
+                                                std::vector<IndexVector> index_vectors);
 
     void test_heuristics_correctly_checked(Util::DeviceArray<uint32_t> integral_result,
-                                Util::DeviceArray<uint32_t> expression_result,
-                                std::vector<HeuristicPairVector> heuristics); 
+                                           Util::DeviceArray<uint32_t> expression_result,
+                                           std::vector<HeuristicPairVector> heuristics);
 
     ExprVector parse_strings_with_map(StringVector& strings, SymVector (*map)(const SymVector&));
 
     std::string to_string_with_tab(const ExprVector& vec1);
 
-    std::string failure_message(const ExprVector& vec1, const ExprVector& vec2); 
+    std::string failure_message(const ExprVector& vec1, const ExprVector& vec2);
 
-    testing::AssertionResult are_expr_vectors_equal(const ExprVector& vec1,
-                                                    const ExprVector& vec2);
-
-    template <typename T = Sym::Symbol> Sym::ExpressionArray<T> from_vector(ExprVector vector) {
-        return Sym::ExpressionArray<T>(vector, Sym::MAX_EXPRESSION_COUNT,
-                                       Sym::EXPRESSION_MAX_SYMBOL_COUNT);
-    }
+    testing::AssertionResult are_expr_vectors_equal(const ExprVector& vec1, const ExprVector& vec2);
 
     Sym::ExpressionArray<Sym::SubexpressionCandidate>
     from_string_vector_with_candidate(StringVector vector);
@@ -70,11 +64,11 @@ namespace Test {
 
     SymVector failed_vacancy();
 
-    SymVector nth_expression_candidate(size_t n, const SymVector& child, size_t vacancy_idx = 0); 
+    SymVector nth_expression_candidate(size_t n, const SymVector& child, size_t vacancy_idx = 0);
 
-    SymVector nth_expression_candidate(size_t n, const std::string& child, size_t vacancy_idx = 0); 
+    SymVector nth_expression_candidate(size_t n, const std::string& child, size_t vacancy_idx = 0);
 
-    ExprVector get_expected_expression_vector(std::vector<HeuristicPairVector> heuristics_vector); 
+    ExprVector get_expected_expression_vector(std::vector<HeuristicPairVector> heuristics_vector);
 }
 
 #endif

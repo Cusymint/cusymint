@@ -21,8 +21,7 @@ namespace Sym::Kernel {
      * @brief Try to set `expressions[potential_solver_idx]` (SubexpressionCandidate)
      * as a solution to its SubexpressionVacancy
      *
-     * @param expressions Iterator to the first element of the expressions array with a candidate to
-     * solve and a missing subexpression
+     * @param expressions Expressions array with a candidate to solve and a missing subexpression
      * @param potential_solver_idx Index of the potential solver
      *
      * @return `false` when haven't managed to set chosen candidate as a solution to
@@ -30,13 +29,13 @@ namespace Sym::Kernel {
      * `true` when managed to set chosen candidate as a solution and parent doesn't have any
      * unsolved subexpressions left.
      */
-    __device__ bool try_set_solver_idx(const Sym::ExpressionArray<>::Iterator& expressions,
+    __device__ bool try_set_solver_idx(Sym::ExpressionArray<>& expressions,
                                        const size_t potential_solver_idx) {
-        const auto potential_solver = expressions + potential_solver_idx;
+        const auto potential_solver = expressions.iterator(potential_solver_idx);
 
         const size_t& vacancy_expr_idx =
             potential_solver->as<SubexpressionCandidate>().vacancy_expression_idx;
-        const auto vacancy_expr = expressions + vacancy_expr_idx;
+        const auto vacancy_expr = expressions.iterator(vacancy_expr_idx);
 
         const size_t& vacancy_idx = potential_solver->as<SubexpressionCandidate>().vacancy_idx;
 
@@ -98,7 +97,17 @@ namespace Sym::Kernel {
             }
 
             expressions[expr_idx].copy_to(destination[expr_idx]);
-            statuses[expr_idx] = destination[expr_idx].simplify(*help_spaces.at(expr_idx));
+            auto help_space_iterator = SymbolIterator::from_at(
+                help_spaces[expr_idx], 0, help_spaces.expression_capacity(expr_idx));
+
+            if (help_space_iterator.is_error()) {
+                statuses[expr_idx] = EvaluationStatus::ReallocationRequest;
+                continue;
+            }
+
+            auto good_iterator = help_space_iterator.good();
+            const auto result = destination[expr_idx].simplify(good_iterator);
+            statuses[expr_idx] = result_to_evaluation_status(result);
         }
     }
 
@@ -114,7 +123,7 @@ namespace Sym::Kernel {
              check_idx += check_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
+                size_t appl_idx = integrals.size() * check_idx + int_idx;
                 applicability[appl_idx] =
                     KnownIntegral::CHECKS[check_idx](integrals[int_idx].arg().as<Integral>());
             }
@@ -122,8 +131,7 @@ namespace Sym::Kernel {
     }
 
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
-                                          const ExpressionArray<>::Iterator expressions,
-                                          const ExpressionArray<>::Iterator expressions_dsts,
+                                          ExpressionArray<> expressions, const size_t dst_offset,
                                           ExpressionArray<> help_spaces,
                                           const Util::DeviceArray<uint32_t> applicability,
                                           Util::DeviceArray<EvaluationStatus> statuses) {
@@ -136,7 +144,7 @@ namespace Sym::Kernel {
              trans_idx += trans_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                const size_t appl_idx = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
+                const size_t appl_idx = integrals.size() * trans_idx + int_idx;
 
                 if (!is_nonzero(appl_idx, applicability)) {
                     continue;
@@ -148,25 +156,28 @@ namespace Sym::Kernel {
                     continue;
                 }
 
-                const ExpressionArray<>::Iterator destination = expressions_dsts + idx;
+                const ExpressionArray<>::Iterator destination =
+                    expressions.iterator(idx + dst_offset);
 
                 auto* const subexpr_candidate = *destination << SubexpressionCandidate::builder();
                 subexpr_candidate->copy_metadata_from(integrals[int_idx]);
 
-                auto dst_iterator = SymbolIterator::from_at(subexpr_candidate->arg(), 0,
-                                                            destination.capacity() - 1);
+                auto dst_iterator_res = SymbolIterator::from_at(subexpr_candidate->arg(), 0,
+                                                                destination.capacity() - 1);
 
-                if (dst_iterator.is_error()) {
+                if (dst_iterator_res.is_error()) {
                     statuses[idx] = EvaluationStatus::ReallocationRequest;
                     continue;
                 }
 
-                statuses[idx] = KnownIntegral::APPLICATIONS[trans_idx](
-                    integrals[int_idx].arg().as<Integral>(), dst_iterator.good(),
-                    help_spaces.iterator(idx));
+                auto dst_iterator = dst_iterator_res.good();
+
+                statuses[idx] =
+                    KnownIntegral::APPLICATIONS[trans_idx](integrals[int_idx].arg().as<Integral>(),
+                                                           dst_iterator, help_spaces.iterator(idx));
                 subexpr_candidate->seal();
 
-                try_set_solver_idx(expressions, idx);
+                try_set_solver_idx(expressions, destination.index());
             }
         }
     }
@@ -193,7 +204,7 @@ namespace Sym::Kernel {
                     break;
                 }
 
-                if (!try_set_solver_idx(expressions.iterator(0), current_expr_idx)) {
+                if (!try_set_solver_idx(expressions, current_expr_idx)) {
                     break;
                 }
 
@@ -297,7 +308,7 @@ namespace Sym::Kernel {
              check_idx += check_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
+                size_t appl_idx = integrals.size() * check_idx + int_idx;
                 Heuristic::CheckResult result =
                     Heuristic::CHECKS[check_idx](integrals[int_idx].arg().as<Integral>());
                 new_integrals_flags[appl_idx] = result.new_integrals;
@@ -322,8 +333,9 @@ namespace Sym::Kernel {
     }
 
     __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
-                                     ExpressionArray<> integrals_destinations,
-                                     const ExpressionArray<>::Iterator expressions_destinations,
+                                     ExpressionArray<> integrals_dst,
+                                     ExpressionArray<> expressions_dst,
+                                     const size_t expressions_dst_offset,
                                      ExpressionArray<> help_spaces,
                                      const Util::DeviceArray<uint32_t> new_integrals_indices,
                                      const Util::DeviceArray<uint32_t> new_expressions_indices,
@@ -338,7 +350,7 @@ namespace Sym::Kernel {
              trans_idx += trans_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                const size_t appl_idx = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
+                const size_t appl_idx = integrals.size() * trans_idx + int_idx;
                 if (!is_nonzero(appl_idx, new_integrals_indices)) {
                     continue;
                 }
@@ -355,17 +367,11 @@ namespace Sym::Kernel {
                     continue;
                 }
 
-                if (new_expressions_indices[appl_idx] != 0) {
-                    const size_t expr_dst_idx = index_from_scan(new_expressions_indices, appl_idx);
-                    integral_statuses[idx] = Heuristic::APPLICATIONS[trans_idx](
-                        integrals[int_idx], integrals_destinations.iterator(idx),
-                        expressions_destinations + expr_dst_idx, help_spaces.iterator(idx));
-                }
-                else {
-                    integral_statuses[idx] = Heuristic::APPLICATIONS[trans_idx](
-                        integrals[int_idx], integrals_destinations.iterator(idx),
-                        ExpressionArray<>::Iterator::null(), help_spaces.iterator(idx));
-                }
+                const size_t expr_dst_idx =
+                    expressions_dst_offset + index_from_scan(new_expressions_indices, appl_idx);
+                integral_statuses[idx] = Heuristic::APPLICATIONS[trans_idx](
+                    integrals[int_idx], integrals_dst.iterator(idx),
+                    expressions_dst.iterator(expr_dst_idx), help_spaces.iterator(idx));
 
                 for (size_t status_idx = 1; status_idx < new_integral_count; ++status_idx) {
                     integral_statuses[idx + status_idx] = integral_statuses[idx];

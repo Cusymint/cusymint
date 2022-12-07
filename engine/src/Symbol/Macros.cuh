@@ -29,10 +29,13 @@ template <class T> struct MacroType;
 template <class T, class U> struct MacroType<T(U)> {
     using type = U;
 };
+
 #define MACRO_TYPE(_pattern) MacroType<void(_pattern)>::type
 
 #define COMPRESS_REVERSE_TO_HEADER(_fname) \
-    __host__ __device__ size_t _fname(Symbol* const destination) const
+    __host__ __device__ void _fname(Symbol* const destination) const
+
+#define COMPRESSION_SIZE_HEADER(_fname) __host__ __device__ size_t _fname() const
 
 #define ARE_EQUAL_HEADER(_fname) __host__ __device__ bool _fname(const Symbol* const symbol) const
 
@@ -90,16 +93,17 @@ template <class T, class U> struct MacroType<T(U)> {
         }                                                                                \
                                                                                          \
         __host__ __device__ inline const Symbol& symbol() const {                        \
-            return reinterpret_cast<const Symbol&>(this);                                \
+            return *reinterpret_cast<const Symbol*>(this);                               \
         }                                                                                \
                                                                                          \
         __host__ __device__ inline Symbol& symbol() {                                    \
-            return const_cast<Symbol&>(const_cast<const _name*>(this)->symbol());        \
+            return *const_cast<Symbol*>(&const_cast<const _name*>(this)->symbol());      \
         }                                                                                \
                                                                                          \
         ARE_EQUAL_HEADER(are_equal);                                                     \
         COMPARE_TO_HEADER(compare_to);                                                   \
         COMPRESS_REVERSE_TO_HEADER(compress_reverse_to);                                 \
+        COMPRESSION_SIZE_HEADER(compression_size);                                       \
         SIMPLIFY_IN_PLACE_HEADER(simplify_in_place);                                     \
         IS_FUNCTION_OF_HEADER(is_function_of);                                           \
         PUSH_CHILDREN_ONTO_STACK_HEADER(push_children_onto_stack, );                     \
@@ -213,6 +217,8 @@ template <class T, class U> struct MacroType<T(U)> {
 
 #define DEFINE_COMPRESS_REVERSE_TO(_name) COMPRESS_REVERSE_TO_HEADER(_name::compress_reverse_to)
 
+#define DEFINE_COMPRESSION_SIZE(_name) COMPRESSION_SIZE_HEADER(_name::compression_size)
+
 #define DEFINE_SIMPLE_COMPRESS_REVERSE_TO(_name)                             \
     DEFINE_COMPRESS_REVERSE_TO(_name) {                                      \
         for (size_t i = 0; i < additional_required_size; ++i) {              \
@@ -221,8 +227,9 @@ template <class T, class U> struct MacroType<T(U)> {
                                                                              \
         Symbol& new_destination = *(destination + additional_required_size); \
         symbol().copy_single_to(new_destination);                            \
-        return size + additional_required_size;                              \
-    }
+    }                                                                        \
+                                                                             \
+    DEFINE_COMPRESSION_SIZE(_name) { return size + additional_required_size; }
 
 #define DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                                  \
     DEFINE_COMPRESS_REVERSE_TO(_name) {                                                    \
@@ -235,8 +242,9 @@ template <class T, class U> struct MacroType<T(U)> {
         const size_t new_arg_size = (destination - 1)->size();                             \
         symbol().copy_single_to(*destination);                                             \
         destination->size() = new_arg_size + 1;                                            \
-        return 1;                                                                          \
-    }
+    }                                                                                      \
+                                                                                           \
+    DEFINE_COMPRESSION_SIZE(_name) { return 1; }
 
 #define DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(_name)                           \
     DEFINE_COMPRESS_REVERSE_TO(_name) {                                             \
@@ -257,14 +265,16 @@ template <class T, class U> struct MacroType<T(U)> {
         symbol().copy_single_to(*destination);                                      \
         destination->size() = new_arg1_size + new_arg2_size + 1;                    \
         destination->as<_name>().second_arg_offset = new_arg1_size + 1;             \
-        return 1;                                                                   \
-    }
+    }                                                                               \
+                                                                                    \
+    DEFINE_COMPRESSION_SIZE(_name) { return 1; }
 
 #define DEFINE_UNSUPPORTED_COMPRESS_REVERSE_TO(_name)                                     \
     DEFINE_COMPRESS_REVERSE_TO(_name) {                                                   \
         Util::crash("ERROR: compress_reverse_to used on unsupported type: %s\n", #_name); \
-        return 0;                                                                         \
-    }
+    }                                                                                     \
+                                                                                          \
+    DEFINE_COMPRESSION_SIZE(_name) { return 0; }
 
 #define DEFINE_INTO_DESTINATION_OPERATOR(_name)                                        \
     __host__ __device__ _name* operator<<(Symbol* const destination, _name&& target) { \
@@ -312,7 +322,7 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ const Symbol& _name::arg() const { return symbol().child(); }            \
                                                                                                  \
     __host__ __device__ Symbol& _name::arg() {                                                   \
-        return const_cast<Symbol&>(const_cast<_name*>(this)->arg());                             \
+        return const_cast<Symbol&>(const_cast<const _name*>(this)->arg());                       \
     }                                                                                            \
                                                                                                  \
     __host__ __device__ void _name::seal() { size = 1 + arg().size(); }                          \
@@ -455,66 +465,68 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ Util::Order _name::compare_and_try_fuse_symbols( \
         Symbol* const expr1, Symbol* const expr2, Symbol* const destination)
 
-#define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                  \
-    DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                      \
-                                                                                                 \
-    __host__ __device__ const Symbol& _name::arg1() const { return Symbol::from(this)[1]; }      \
-                                                                                                 \
-    __host__ __device__ Symbol& _name::arg1() { return Symbol::from(this)[1]; }                  \
-                                                                                                 \
-    __host__ __device__ const Symbol& _name::arg2() const {                                      \
-        return Symbol::from(this)[second_arg_offset];                                            \
-    };                                                                                           \
-                                                                                                 \
-    __host__ __device__ Symbol& _name::arg2() { return Symbol::from(this)[second_arg_offset]; }; \
-                                                                                                 \
-    __host__ __device__ void _name::seal_arg1() { second_arg_offset = 1 + arg1().size(); }       \
-                                                                                                 \
-    __host__ __device__ void _name::seal() { size = 1 + arg1().size() + arg2().size(); }         \
-                                                                                                 \
-    __host__ __device__ void _name::swap_args(Symbol* const help_space) {                        \
-        arg1().copy_to(help_space);                                                              \
-        arg2().copy_to(arg1());                                                                  \
-        seal_arg1();                                                                             \
-        help_space->copy_to(arg2());                                                             \
-        seal();                                                                                  \
-    }                                                                                            \
-                                                                                                 \
-    __host__ __device__ void _name::create(const Symbol* const arg1, const Symbol* const arg2,   \
-                                           Symbol* const destination) {                          \
-        _name* const two_arg_op = destination << _name::builder();                               \
-        arg1->copy_to(two_arg_op->arg1());                                                       \
-        two_arg_op->seal_arg1();                                                                 \
-        arg2->copy_to(two_arg_op->arg2());                                                       \
-        two_arg_op->seal();                                                                      \
-    }                                                                                            \
-    DEFINE_PUSH_CHILDREN_ONTO_STACK(_name) {                                                     \
-        stack.push(&arg1());                                                                     \
-        stack.push(&arg2());                                                                     \
-    }                                                                                            \
-                                                                                                 \
-    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
-        push_children_onto_stack(stack);                                                         \
-        arg2().additional_required_size() += additional_required_size;                           \
-    }                                                                                            \
-                                                                                                 \
-    __host__ __device__ _name* _name::create_reversed_at(Symbol* const destination) {            \
-        _name* const symbol = destination << _name::builder();                                   \
-        symbol->second_arg_offset = (destination - 1)->size() + 1;                               \
-        symbol->size =                                                                           \
-            symbol->second_arg_offset + (destination - symbol->second_arg_offset)->size();       \
-        return symbol;                                                                           \
-    }                                                                                            \
-                                                                                                 \
-    DEFINE_SEAL_WHOLE(_name) {                                                                   \
-        seal_arg1();                                                                             \
-        seal();                                                                                  \
+#define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                    \
+    DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                        \
+                                                                                                   \
+    __host__ __device__ const Symbol& _name::arg1() const { return symbol().child(); }             \
+                                                                                                   \
+    __host__ __device__ Symbol& _name::arg1() {                                                    \
+        return const_cast<Symbol&>(const_cast<const _name*>(this)->arg1());                        \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ const Symbol& _name::arg2() const { return symbol()[second_arg_offset]; }; \
+                                                                                                   \
+    __host__ __device__ Symbol& _name::arg2() {                                                    \
+        return const_cast<Symbol&>(const_cast<const _name*>(this)->arg2());                        \
+    };                                                                                             \
+                                                                                                   \
+    __host__ __device__ void _name::seal_arg1() { second_arg_offset = 1 + arg1().size(); }         \
+                                                                                                   \
+    __host__ __device__ void _name::seal() { size = 1 + arg1().size() + arg2().size(); }           \
+                                                                                                   \
+    __host__ __device__ void _name::swap_args(Symbol* const help_space) {                          \
+        arg1().copy_to(*help_space);                                                               \
+        arg2().copy_to(arg1());                                                                    \
+        seal_arg1();                                                                               \
+        help_space->copy_to(arg2());                                                               \
+        seal();                                                                                    \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ void _name::create(const Symbol* const arg1, const Symbol* const arg2,     \
+                                           Symbol* const destination) {                            \
+        _name* const two_arg_op = destination << _name::builder();                                 \
+        arg1->copy_to(two_arg_op->arg1());                                                         \
+        two_arg_op->seal_arg1();                                                                   \
+        arg2->copy_to(two_arg_op->arg2());                                                         \
+        two_arg_op->seal();                                                                        \
+    }                                                                                              \
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(_name) {                                                       \
+        stack.push(&arg1());                                                                       \
+        stack.push(&arg2());                                                                       \
+    }                                                                                              \
+                                                                                                   \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                     \
+        push_children_onto_stack(stack);                                                           \
+        arg2().additional_required_size() += additional_required_size;                             \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ _name* _name::create_reversed_at(Symbol* const destination) {              \
+        _name* const symbol = destination << _name::builder();                                     \
+        symbol->second_arg_offset = (destination - 1)->size() + 1;                                 \
+        symbol->size =                                                                             \
+            symbol->second_arg_offset + (destination - symbol->second_arg_offset)->size();         \
+        return symbol;                                                                             \
+    }                                                                                              \
+                                                                                                   \
+    DEFINE_SEAL_WHOLE(_name) {                                                                     \
+        seal_arg1();                                                                               \
+        seal();                                                                                    \
     }
 
 #define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
     DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                                \
     __host__ __device__ const _name* _name::last_in_tree() const {                                         \
-        auto* last = this;                                                                                 \
+        const auto* last = this;                                                                           \
         while (last->arg1().is(Type::_name)) {                                                             \
             last = last->arg1().as_ptr<_name>();                                                           \
         }                                                                                                  \
@@ -556,9 +568,7 @@ template <class T, class U> struct MacroType<T(U)> {
         while (left_tree_iter.is_valid() && right_tree_iter.is_valid()) {                                  \
             const auto ordering = _name::compare_and_try_fuse_symbols(                                     \
                 left_tree_iter.current(), right_tree_iter.current(), help_space_back);                     \
-            /*Symbol::compare_expressions(                                                                 \
-             *left_tree_iter.current(), *right_tree_iter.current(), *help_space_back); */                  \
-            Symbol* current;                                                                               \
+            Symbol* current = nullptr;                                                                     \
             if (ordering == Util::Order::Greater) {                                                        \
                                                                                                            \
                 current = left_tree_iter.current();                                                        \

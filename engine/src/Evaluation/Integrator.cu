@@ -1,5 +1,6 @@
 #include "Integrator.cuh"
 
+#include <thrust/count.h>
 #include <thrust/execution_policy.h>
 #include <thrust/scan.h>
 
@@ -12,9 +13,11 @@
 
 namespace Sym {
     namespace {
-        __host__ __device__ bool is_evaluation_status_done(EvaluationStatus status) {
-            return status == EvaluationStatus::Done;
-        }
+        struct EvaluationStatusChecker {
+            __device__ bool operator()(EvaluationStatus status) const {
+                return status == EvaluationStatus::Done;
+            }
+        };
     }
 
     Integrator::Integrator() :
@@ -44,10 +47,8 @@ namespace Sym {
 
     bool Integrator::are_evaluation_statuses_done(
         const Util::DeviceArray<EvaluationStatus>& evaluation_statuses, const size_t count) {
-        // `at(0) + count` instead of `at(count)` because `at` performs bounds checking, and we are
-        // potentially going outside of the array
-        return thrust::count_if(evaluation_statuses.at(0), evaluation_statuses.at(0) + count,
-                                is_evaluation_status_done) == count;
+        return thrust::count_if(thrust::device, evaluation_statuses.at(0),
+                                evaluation_statuses.at(count), EvaluationStatusChecker()) == count;
     }
 
     void Integrator::resize_scan_arrays(const size_t size) {
@@ -58,9 +59,36 @@ namespace Sym {
     }
 
     void Integrator::simplify_integrals() {
-        integrals_swap.resize(integrals.size(), INITIAL_EXPRESSIONS_CAPACITY);
-        Kernel::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_space);
-        cudaDeviceSynchronize();
+        integrals_swap.reoffset_like<SubexpressionCandidate>(integrals.iterator());
+        help_space.reoffset_like<SubexpressionCandidate>(integrals.iterator(),
+                                                         HELP_SPACE_MULTIPLIER);
+        resize_evaluation_statuses(evaluation_statuses_1, integrals.size());
+        reset_evaluation_statuses(evaluation_statuses_1);
+
+        bool success = false;
+        while (!success) {
+            printf("About to launch simplification kernel, integrals.size(): %lu\n",
+                   integrals.size());
+            printf("help_space.size(): %lu\n", help_space.size());
+            printf("help_space.expression_capacity(0): %lu\n", help_space.expression_capacity(0));
+            printf("help_space.symbols_capacity(): %lu\n", help_space.symbols_capacity());
+            printf("integrals_swap.size(): %lu\n", integrals_swap.size());
+            printf("integrals_swap.expression_capacity(0): %lu\n",
+                   integrals_swap.expression_capacity(0));
+            printf("integrals_swap.symbols_capacity(): %lu\n", integrals_swap.symbols_capacity());
+            printf("evaluation_statuses_1.size(): %lu\n", evaluation_statuses_1.size());
+            Kernel::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_space,
+                                                          evaluation_statuses_1);
+            cudaDeviceSynchronize();
+
+            success = are_evaluation_statuses_done(evaluation_statuses_1, integrals.size());
+            if (!success) {
+                integrals_swap.reoffset_indices(evaluation_statuses_1);
+                help_space.reoffset_like<SubexpressionCandidate>(integrals_swap.iterator(),
+                                                                 HELP_SPACE_MULTIPLIER);
+            }
+        }
+
         std::swap(integrals, integrals_swap);
     }
 
@@ -83,24 +111,28 @@ namespace Sym {
 
         const size_t old_expression_count = expressions.size();
         const size_t new_expression_count = old_expression_count + expression_count_diff;
+
+        // No applications possible
+        if (old_expression_count == new_expression_count) {
+            return;
+        }
+
         expressions.resize(new_expression_count, INITIAL_EXPRESSIONS_CAPACITY);
 
         const auto new_expressions = expressions.iterator(old_expression_count);
-
-        help_space.resize(expression_count_diff, INITIAL_EXPRESSIONS_CAPACITY);
-        help_space.reoffset_like(new_expressions);
+        help_space.reoffset_like(new_expressions, HELP_SPACE_MULTIPLIER);
 
         bool success = false;
         while (!success) {
             Kernel::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(
-                integrals, expressions.iterator(), new_expressions, help_space, scan_array_1,
+                integrals, expressions, new_expressions.index(), help_space, scan_array_1,
                 evaluation_statuses_1);
             cudaDeviceSynchronize();
 
             success = are_evaluation_statuses_done(evaluation_statuses_1, expression_count_diff);
             if (!success) {
                 expressions.reoffset_indices(evaluation_statuses_1, old_expression_count);
-                help_space.reoffset_like(new_expressions);
+                help_space.reoffset_like(new_expressions, HELP_SPACE_MULTIPLIER);
             }
         }
 
@@ -135,15 +167,8 @@ namespace Sym {
         const size_t new_expression_count = scan_array_1.last_cpu();
         const size_t new_integral_count = scan_array_2.last_cpu();
 
-        ///////////////
-        // TODO THESE WILL NOT WORK THEY ARE NOT ENOUGH, WE NEED CORRESPONDING CAPACITIES AT
-        // DIFFERENT INDICES
-        expressions_swap.reoffset_like(expressions.iterator());
-        expressions_swap.shrink_to(new_expression_count);
-
-        integrals_swap.reoffset_like<SubexpressionCandidate>(integrals.iterator());
-        integrals_swap.shrink_to(new_integral_count);
-        ///////////////
+        expressions_swap.reoffset_like_scan(expressions, scan_array_1);
+        integrals_swap.reoffset_like_scan<SubexpressionCandidate>(integrals, scan_array_2);
 
         Kernel::remove_expressions<true>
             <<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1, expressions_swap);
@@ -179,6 +204,11 @@ namespace Sym {
         const size_t expression_count_diff = scan_array_2.last_cpu();
         const size_t new_expression_count = old_expression_count + expression_count_diff;
 
+        // No applications possible
+        if (old_expression_count == new_expression_count) {
+            return;
+        }
+
         resize_evaluation_statuses(evaluation_statuses_1, new_integral_count);
         reset_evaluation_statuses(evaluation_statuses_1);
         resize_evaluation_statuses(evaluation_statuses_2, expression_count_diff);
@@ -189,13 +219,13 @@ namespace Sym {
 
         expressions.resize(new_expression_count, INITIAL_EXPRESSIONS_CAPACITY);
         integrals_swap.resize(new_integral_count, INITIAL_EXPRESSIONS_CAPACITY);
-        help_space.reoffset_like<SubexpressionCandidate>(new_integrals);
+        help_space.reoffset_like<SubexpressionCandidate>(new_integrals, HELP_SPACE_MULTIPLIER);
 
         bool success = false;
         while (!success) {
             Kernel::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(
-                integrals, integrals_swap, new_expressions, help_space, scan_array_1, scan_array_2,
-                evaluation_statuses_1, evaluation_statuses_2);
+                integrals, integrals_swap, expressions, new_expressions.index(), help_space,
+                scan_array_1, scan_array_2, evaluation_statuses_1, evaluation_statuses_2);
             cudaDeviceSynchronize();
 
             // No need to check evaluation_statuses_2 as a reallocation request will appear there
@@ -204,7 +234,8 @@ namespace Sym {
             if (!success) {
                 integrals_swap.reoffset_indices(evaluation_statuses_1);
                 expressions_swap.reoffset_indices(evaluation_statuses_2, old_expression_count);
-                help_space.reoffset_like<SubexpressionCandidate>(integrals_swap.iterator());
+                help_space.reoffset_like<SubexpressionCandidate>(integrals_swap.iterator(),
+                                                                 HELP_SPACE_MULTIPLIER);
             }
         }
 
@@ -240,15 +271,8 @@ namespace Sym {
         const size_t new_expression_count = scan_array_1.to_cpu(expressions_swap.size() - 1);
         const size_t new_integral_count = scan_array_2.last_cpu();
 
-        ///////////////
-        // TODO THESE WILL NOT WORK THEY ARE NOT ENOUGH, WE NEED CORRESPONDING CAPACITIES AT
-        // DIFFERENT INDICES
-        expressions_swap.reoffset_like(expressions.iterator());
-        expressions_swap.shrink_to(new_expression_count);
-
-        integrals_swap.reoffset_like<SubexpressionCandidate>(integrals.iterator());
-        integrals_swap.shrink_to(new_integral_count);
-        ///////////////
+        expressions_swap.reoffset_like_scan(expressions, scan_array_1);
+        integrals_swap.reoffset_like_scan<SubexpressionCandidate>(integrals, scan_array_2);
 
         Kernel::remove_expressions<false>
             <<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1, expressions_swap);
@@ -271,7 +295,11 @@ namespace Sym {
         integrals.load_from_vector({first_expression_candidate(integral)});
 
         for (size_t i = 0;; ++i) {
+            printf("loop %lu\n", i);
+            fmt::print("integrals: {}\n", integrals.to_string());
+            fmt::print("expressions: {}\n", expressions.to_string());
             simplify_integrals();
+            fmt::print("integrals after simplify: {}\n", integrals.to_string());
 
             check_for_known_integrals();
             apply_known_integrals();

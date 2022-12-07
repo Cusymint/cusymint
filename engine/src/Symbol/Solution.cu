@@ -30,9 +30,9 @@ namespace Sym {
         symbol().copy_single_to(*destination);
         destination->as<Solution>().size = new_expression_size + new_substitutions_size + 1;
         destination->as<Solution>().expression_offset = new_substitutions_size + 1;
-
-        return 1;
     }
+
+    DEFINE_COMPRESSION_SIZE(Solution) { return 1; }
 
     DEFINE_ARE_EQUAL(Solution) {
         return BASE_ARE_EQUAL(Solution) &&
@@ -140,22 +140,23 @@ namespace Sym {
         return res;
     }
 
-    std::vector<Symbol> solution(const std::vector<Symbol>& arg, const std::vector<std::vector<Symbol>>& substitutions) {
+    std::vector<Symbol> solution(const std::vector<Symbol>& arg,
+                                 const std::vector<std::vector<Symbol>>& substitutions) {
         size_t res_size = arg.size() + 1;
         for (const auto& sub : substitutions) {
             res_size += sub.size() + 1;
         }
         std::vector<Symbol> res(res_size);
         Solution* const solution = res.data() << Solution::builder();
-        Symbol* current_dst = res.data()->child();
+        Symbol* current_dst = &res.data()->child();
         for (size_t i = 0; i < substitutions.size(); ++i) {
             Substitution::create(substitutions[i].data(), current_dst, i);
             current_dst += current_dst->size();
         }
-        solution->seal_substitutions(substitutions.size(), current_dst - res.data()->child());
+        solution->seal_substitutions(substitutions.size(), current_dst - &res.data()->child());
         arg.data()->copy_to(solution->expression());
         solution->seal();
-        
+
         return res;
     }
 }
