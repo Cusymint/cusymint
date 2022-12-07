@@ -121,6 +121,8 @@ namespace Sym {
 
         [[nodiscard]] __host__ __device__ bool is(const double number) const;
 
+        [[nodiscard]] __host__ __device__ bool is_integer() const;
+
         template <class T> [[nodiscard]] __host__ __device__ inline bool is() const {
             return type() == T::TYPE;
         }

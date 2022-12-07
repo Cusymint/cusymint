@@ -161,8 +161,10 @@ namespace Sym {
         std::vector<Symbol> new_expr(new_size);
         expr.data()->compress_to(*new_expr.data());
 
+        size_t offset = 0;
         for (size_t variable_indice : variable_indices) {
-            expression().copy_to(new_expr[variable_indice]);
+            expression().copy_to(new_expr[variable_indice + offset]);
+            offset += expression().size() - 1;
         }
 
         return new_expr;

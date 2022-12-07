@@ -73,7 +73,7 @@ namespace Sym {
      *
      * @return Good on success, error when `destination` doesn't have enough capacity
      */
-    [[nodiscard]] __device__ Util::BinaryResult integrate_by_substitution_with_derivative(
+    [[nodiscard]] __host__ __device__ Util::BinaryResult integrate_by_substitution_with_derivative(
         const Util::Pair<const Sym::Symbol*, const Sym::Symbol*>* const patterns,
         const size_t pattern_count, const Symbol& derivative, SymbolIterator& destination) const;
 

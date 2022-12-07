@@ -31,6 +31,8 @@ namespace Sym {
     END_DECLARE_SYMBOL(Solution)
 
     std::vector<Symbol> solution(const std::vector<Symbol>& arg);
+    std::vector<Symbol> solution(const std::vector<Symbol>& arg,
+                                 const std::vector<std::vector<Symbol>>& substitutions);
 }
 
 #endif

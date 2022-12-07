@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "Symbol.cuh"
+#include "Symbol/ReverseTreeIterator.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include "Utils/Meta.cuh"
 
@@ -422,18 +423,18 @@ namespace Sym {
 
         using Size = Unsized;
 
-        DEFINE_GET_SAME { return Inner::get_same(*dst.as<Solution>().expression()); }
+        DEFINE_GET_SAME { return Inner::get_same(dst.as<Solution>().expression()); }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             auto& integral = cuda::std::get<0>(args).get();
             auto* const solution = dst << Solution::builder();
-            Symbol::copy_symbol_sequence(Symbol::from(solution->first_substitution()),
-                                         Symbol::from(integral.first_substitution()),
+            Symbol::copy_symbol_sequence(solution->first_substitution().symbol(),
+                                         integral.first_substitution().symbol(),
                                          integral.substitutions_size());
             solution->seal_substitutions(integral.substitution_count,
                                          integral.substitutions_size());
 
-            Inner::init(*solution->expression(),
+            Inner::init(solution->expression(),
                         Util::slice_tuple<SOLUTION_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
 
             solution->seal();
@@ -447,12 +448,12 @@ namespace Sym {
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
-            return dst.is(Type::Solution) && Inner::match(*dst.as<Solution>().expression());
+            return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression());
         }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
             return dst.is(Type::Solution) &&
-                   Inner::match(*dst.as<Solution>().expression(), other_same);
+                   Inner::match(dst.as<Solution>().expression(), other_same);
         }
     };
 
@@ -602,6 +603,42 @@ namespace Sym {
     template <class I> using Sqrt = Pow<I, Inv<Integer<2>>>;
 
     /*
+     * @brief Helper structure used to split `AdditionalArgs` from operator `T` to arguments
+     * needed by symbols on the left and right of template argument. Useful for complex `T`
+     * constructions.
+     * Template argument `Arg` may happen only once in the definition of `T` (improvement possible).
+     */
+    template <template <class Arg> class T> struct TemplateArgs {
+      private:
+        struct MarkerArgType {};
+        struct Marker {
+            using AdditionalArgs = cuda::std::tuple<MarkerArgType>;
+            using Size = Unsized;
+            static constexpr bool HAS_SAME = false;
+            __host__ __device__ static void init(Symbol& /*dst*/,
+                                                 const AdditionalArgs& /*args*/ = {}) {
+                Util::crash("Cannot initialize Marker used to find template argument");
+            }
+        };
+        template <size_t I> struct ConstIndex {
+            static constexpr size_t INDEX = I;
+        };
+        template <class Tuple, size_t I = 0> struct FindMarkerArgType {
+            static constexpr size_t INDEX = std::conditional_t<
+                std::is_same_v<cuda::std::tuple_element_t<I, Tuple>, MarkerArgType>, ConstIndex<I>,
+                FindMarkerArgType<Tuple, I + 1>>::INDEX;
+        };
+        using MarkedArgs = typename T<Marker>::AdditionalArgs;
+        static constexpr size_t MARKED_ARGS_SIZE = cuda::std::tuple_size_v<MarkedArgs>;
+        static constexpr size_t SLICE_INDEX = FindMarkerArgType<MarkedArgs>::INDEX;
+
+      public:
+        using Left = Util::SliceTuple<0, SLICE_INDEX, MarkedArgs>;
+        using Right =
+            Util::SliceTuple<SLICE_INDEX + 1, MARKED_ARGS_SIZE - SLICE_INDEX - 1, MarkedArgs>;
+    };
+
+    /*
      * @brief Encapsulates procedure of creating `TwoArgOp` symbol tree from existing `SymbolTree`,
      * where every leaf of a tree (term of sum/factor of a product) is mapped by function of type
      * `OneArgOp`. Note that `TwoArgOp` and `SymbolTree` may be of different types.
@@ -609,26 +646,40 @@ namespace Sym {
     template <class SymbolTree> struct From {
         template <class TwoArgOp> struct Create {
             template <template <class Inner> class OneArgOp> struct WithMap {
-                using AdditionalArgs = cuda::std::tuple<
-                    cuda::std::tuple<cuda::std::reference_wrapper<SymbolTree>, size_t>>;
+                using ILAdditionalArgs = typename TemplateArgs<OneArgOp>::Left;
+                static constexpr size_t I_L_ADDITIONAL_ARGS_SIZE =
+                    cuda::std::tuple_size_v<ILAdditionalArgs>;
+
+                using IRAdditionalArgs = typename TemplateArgs<OneArgOp>::Right;
+                static constexpr size_t I_R_ADDITIONAL_ARGS_SIZE =
+                    cuda::std::tuple_size_v<IRAdditionalArgs>;
+
+                using TreeArgs = cuda::std::tuple<
+                    cuda::std::tuple<cuda::std::reference_wrapper<const SymbolTree>, const size_t>>;
+                static constexpr size_t TREE_ARGS_SIZE = cuda::std::tuple_size_v<TreeArgs>;
+
+                using AdditionalArgs = Util::TupleCat<TreeArgs, ILAdditionalArgs, IRAdditionalArgs>;
                 static constexpr bool HAS_SAME = false;
 
-                __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
-                    SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
-                    size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
-                    TreeIterator<SymbolTree> iterator(&tree);
+                using Size = Unsized;
 
-                    Symbol* destination_back = &dst + tree.size + count;
+                __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
+                    const SymbolTree& tree = cuda::std::get<0>(cuda::std::get<0>(args));
+                    const size_t count = cuda::std::get<1>(cuda::std::get<0>(args));
+
+                    ConstReverseTreeIterator<SymbolTree> iterator(&tree);
+
+                    Symbol* destination = &dst + count - 1;
+
                     while (iterator.is_valid()) {
-                        Symbol* const destination =
-                            destination_back - iterator.current()->size() - 1;
-                        OneArgOp<Copy>::init(*destination, {*iterator.current()});
-                        destination_back = destination;
+                        OneArgOp<Copy>::init(
+                            *destination,
+                            Util::skip_n_and_insert_in_tuple_at<TREE_ARGS_SIZE,
+                                                                I_L_ADDITIONAL_ARGS_SIZE>(
+                                args, *iterator.current()));
+                        destination += destination->size();
                         iterator.advance();
                     }
-
-                    Util::move_mem(&dst + count - 1, destination_back,
-                                   &dst + tree.size + count - destination_back);
 
                     for (ssize_t i = static_cast<ssize_t>(count) - 2; i >= 0; --i) {
                         TwoArgOp* const operator_ = &dst + i << TwoArgOp::builder();

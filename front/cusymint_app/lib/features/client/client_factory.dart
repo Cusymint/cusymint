@@ -18,7 +18,7 @@ class ClientFactory {
   Uri _uri = Uri.parse(_defaultUri);
 
   CusymintClient get client => _client;
-  CusymintClient _client = CusymintClientMock();
+  CusymintClient _client = const CusymintClientMock();
 
   static const _defaultUri = 'ws://localhost:8000/websocket';
   static const _clientUrlKey = 'clientUrl';
@@ -26,13 +26,13 @@ class ClientFactory {
   final _clientMatchers = <_ClientMatcher>[
     _ClientMatcher(
       match: (uri) => uri.host == '' && uri.path == 'mock',
-      create: (_) => CusymintClientMock(
+      create: (_) => const CusymintClientMock(
         fakeResponse: ResponseMockFactory.defaultResponse,
       ),
     ),
     _ClientMatcher(
       match: (uri) => uri.host == '' && uri.path == 'errors',
-      create: (_) => CusymintClientMock(
+      create: (_) => const CusymintClientMock(
         fakeResponse: ResponseMockFactory.validationErrors,
       ),
     ),
@@ -87,10 +87,4 @@ class _ClientMatcher {
 
   final bool Function(Uri uri) match;
   final CusymintClient Function(Uri uri) create;
-}
-
-extension on CusymintClient {
-  CusymintClient of(BuildContext context) {
-    return Provider.of<ClientFactory>(context, listen: false).client;
-  }
 }

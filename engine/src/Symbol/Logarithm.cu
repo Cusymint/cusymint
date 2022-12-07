@@ -22,12 +22,14 @@ namespace Sym {
             symbol().as<NumericConstant>() = NumericConstant::with_value(0);
             return true;
         }
+
         if (arg().is(Type::KnownConstant) &&
             arg().as<KnownConstant>().value == KnownConstantValue::E) {
             // ln(e) = 1
             symbol().as<NumericConstant>() = NumericConstant::with_value(1);
             return true;
         }
+
         if (arg().is(Type::Power)) {
             // Here we do the following transformation: ln(f(x)^g(x)) = ln(f(x))*g(x).
             // Structure in memory before operation: LN | ^  | f(x) | g(x)
@@ -35,11 +37,25 @@ namespace Sym {
             // Therefore, it is not necessary to do any copying, we only need to
             // change types of 2 first symbols, size of the second and add second_arg_offset
             // to new Product symbol.
-            arg().as<Power>().type = Type::Logarithm;
+            const auto offset = arg().power.second_arg_offset;
+            arg().power.type = Type::Logarithm;
             arg().as<Logarithm>().seal();
             type = Type::Product;
-            symbol().as<Product>().seal_arg1();
-            return true;
+            symbol().as<Product>().second_arg_offset =
+                offset + 1; // seal_arg_1 may not work in this case (e.g. size of f(x) changes)
+            return false;   // resulting Product is not sorted
+        }
+
+        if (arg().is(Type::Product)) {
+            const auto count = arg().as<Product>().tree_size();
+            if (size < arg().size() + count) {
+                additional_required_size = count - 1;
+                return false;
+            }
+            From<Product>::Create<Addition>::WithMap<Ln>::init(*help_space,
+                                                               {{arg().as<Product>(), count}});
+            help_space->copy_to(symbol());
+            return false;
         }
         return true;
     }

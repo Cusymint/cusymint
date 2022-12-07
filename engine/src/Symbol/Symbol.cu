@@ -1,7 +1,5 @@
 #include "Symbol.cuh"
 
-#include <cuda/std/utility>
-
 #include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/StaticStack.cuh"
@@ -13,6 +11,10 @@ namespace {
 namespace Sym {
     [[nodiscard]] __host__ __device__ bool Symbol::is(const double number) const {
         return is(Type::NumericConstant) && as<NumericConstant>().value == number;
+    }
+
+    [[nodiscard]] __host__ __device__ bool Symbol::is_integer() const {
+        return is(Type::NumericConstant) && as<NumericConstant>().value == floor(as<NumericConstant>().value);
     }
 
     __host__ __device__ void Symbol::copy_symbol_sequence(Symbol* const destination,

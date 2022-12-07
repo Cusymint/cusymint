@@ -4,8 +4,10 @@
 #include "Symbol.cuh"
 #include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
+#include "Symbol/SimplificationResult.cuh"
 #include "TreeIterator.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/Order.cuh"
 
 #include <fmt/core.h>
 
@@ -17,6 +19,11 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Addition) {
         simplify_structure(help_space);
+
+        if (!symbol()->is(Type::Addition)) {
+            return true;
+        }
+
         const auto result = simplify_pairs(help_space);
         eliminate_zeros();
         simplify_structure(help_space);
@@ -88,10 +95,72 @@ namespace Sym {
             return SimplificationResult::Success;
         }
 
-        // TODO: Dodawanie gdy to samo jest tylko przemnożone przez stałą
         // TODO: Jedynka hiperboliczna
 
         return SimplificationResult::NoAction;
+    }
+
+    DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Addition) {
+        double coef1;
+        double coef2;
+        const Symbol& base1 = extract_base_and_coefficient(*expr1, coef1);
+        const Symbol& base2 = extract_base_and_coefficient(*expr2, coef2);
+
+        const auto order = Symbol::compare_expressions(base1, base2, *destination);
+
+        if (base1.is(Type::NumericConstant) && base2.is(Type::NumericConstant)) {
+            destination->init_from(
+                NumericConstant::with_value(coef1 * base1.as<NumericConstant>().value +
+                                            coef2 * base2.as<NumericConstant>().value));
+            return Util::Order::Equal;
+        }
+
+        if constexpr (COMPARE_ONLY) {
+            return order;
+        }
+
+        if (order != Util::Order::Equal) {
+            return order;
+        }
+
+        const double sum = coef1 + coef2;
+        if (sum == 0) {
+            destination->init_from(NumericConstant::with_value(0));
+        }
+        else if (sum == 1) {
+            base1.copy_to(destination);
+        }
+        else if (sum == -1) {
+            Neg<Copy>::init(*destination, {base1});
+        }
+        else {
+            Mul<Num, Copy>::init(*destination, {coef1 + coef2, base1});
+        }
+        return Util::Order::Equal;
+    }
+
+    __host__ __device__ const Sym::Symbol&
+    Addition::extract_base_and_coefficient(const Sym::Symbol& symbol, double& coefficient) {
+        if (symbol.is(Sym::Type::Negation)) {
+            const Sym::Symbol& base = symbol.as<Sym::Negation>().arg();
+            if (Sym::Mul<Sym::Num, Sym::Any>::match(base)) {
+                coefficient = -base.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
+                return base.as<Sym::Product>().arg2();
+            }
+            coefficient = -1;
+            return base;
+        }
+        if (Sym::Mul<Sym::Num, Sym::Any>::match(symbol)) {
+            coefficient = symbol.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
+            const Sym::Symbol& base = symbol.as<Sym::Product>().arg2();
+            if (base.is(Sym::Type::Negation)) {
+                coefficient = -coefficient;
+                return base.as<Sym::Negation>().arg();
+            }
+            return base;
+        }
+        coefficient = 1;
+        return symbol;
     }
 
     __host__ __device__ void Addition::eliminate_zeros() {

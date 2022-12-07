@@ -90,6 +90,28 @@ class CommonAtoms extends StorybookPart {
           },
         ),
         Story(
+          name: 'Atoms/ShimmerRectangle',
+          builder: (context) {
+            final width = context.knobs.slider(
+              label: 'Width',
+              min: 50,
+              max: 500,
+              initial: 200,
+            );
+            final height = context.knobs.slider(
+              label: 'Height',
+              min: 5,
+              max: 500,
+              initial: 20,
+            );
+
+            return CuShimmerRectangle(
+              width: width,
+              height: height,
+            );
+          },
+        ),
+        Story(
           name: 'Atoms/Buttons/ElevatedButton',
           builder: (context) {
             final text = context.knobs.text(

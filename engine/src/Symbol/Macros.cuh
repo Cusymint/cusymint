@@ -411,84 +411,104 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ SimplificationResult simplify_pairs(Symbol* const help_space);        \
                                                                                               \
     /*                                                                                        \
-     * @brief Sprawdza, czy dwa drzewa można uprościć operatorem. Jeśli tak, to to robi   \
+     * @brief Checks if two expressions can be simplified with operator. Does so if yes.      \
      *                                                                                        \
-     * @param expr1 Pierwszy argument operatora                                               \
-     * @param expr2 Drugi argument operatora                                                  \
+     * @param expr1 First operator argument                                                   \
+     * @param expr2 Second operator argument                                                  \
      * @param help_space The help space                                                       \
      *                                                                                        \
-     * @return `Success` jeśli wykonano uproszczenie, `NoAction`, jeśli nie,                \
-     * `NeedsSpace`, jeśli potrzeba dodatkowego miejsca na uproszczenie.                     \
+     * @return `Success` if simplification happened, `NoAction`, if not,                      \
+     * `NeedsSpace`, if it is needed more space to perform a simplification.                  \
      */                                                                                       \
     __host__ __device__ static SimplificationResult try_fuse_symbols(                         \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space);                  \
+                                                                                              \
+    /*                                                                                        \
+     * @brief Compares `expr1` and `expr2` accurate to within their coefficients              \
+     * and checks if symbols can be merged by adding these coefficients. If yes, inserts      \
+     * fused symbol into `destination`.                                                       \
+     *                                                                                        \
+     * @param expr1 First operator argument                                                   \
+     * @param expr2 Second operator argument                                                  \
+     * @param help_space The help space                                                       \
+     *                                                                                        \
+     * @return `Util::Order::Less` if `expr1` comes before `expr2` in the expression          \
+     * order, `Util::Order::Greater` if `expr2` comes before `expr1`, and                     \
+     * `Util::Order::Equal`, if expressions are equal accurate to within their coefficients   \
+     */                                                                                       \
+    template <bool COMPARE_ONLY = false>                                                      \
+    __host__ __device__ static Util::Order compare_and_try_fuse_symbols(                      \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const destination);                 \
     /*                                                                                        \
      * @brief Counts symbols in simplified tree.                                              \
      *                                                                                        \
      * @return Count of symbols in the tree.                                                  \
      */                                                                                       \
-    __host__ __device__ size_t tree_size();
+    __host__ __device__ size_t tree_size() const;
 
 #define DEFINE_TRY_FUSE_SYMBOLS(_name)                                \
     __host__ __device__ SimplificationResult _name::try_fuse_symbols( \
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space)
 
-#define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                    \
-    DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                        \
-                                                                                                   \
-    __host__ __device__ const Symbol& _name::arg1() const { return symbol().child(); }             \
-                                                                                                   \
-    __host__ __device__ Symbol& _name::arg1() {                                                    \
-        return const_cast<Symbol&>(const_cast<_name*>(this)->arg1());                              \
-    }                                                                                              \
-                                                                                                   \
-    __host__ __device__ const Symbol& _name::arg2() const { return symbol()[second_arg_offset]; }; \
-                                                                                                   \
-    __host__ __device__ Symbol& _name::arg2() {                                                    \
-        return const_cast<Symbol&>(const_cast<_name*>(this)->arg2());                              \
-    };                                                                                             \
-                                                                                                   \
-    __host__ __device__ void _name::seal_arg1() { second_arg_offset = 1 + arg1().size(); }         \
-                                                                                                   \
-    __host__ __device__ void _name::seal() { size = 1 + arg1().size() + arg2().size(); }           \
-                                                                                                   \
-    __host__ __device__ void _name::swap_args(Symbol* const help_space) {                          \
-        arg1().copy_to(*help_space);                                                               \
-        arg2().copy_to(arg1());                                                                    \
-        seal_arg1();                                                                               \
-        help_space->copy_to(arg2());                                                               \
-        seal();                                                                                    \
-    }                                                                                              \
-                                                                                                   \
-    __host__ __device__ void _name::create(const Symbol* const arg1, const Symbol* const arg2,     \
-                                           Symbol* const destination) {                            \
-        _name* const two_arg_op = destination << _name::builder();                                 \
-        arg1->copy_to(two_arg_op->arg1());                                                         \
-        two_arg_op->seal_arg1();                                                                   \
-        arg2->copy_to(two_arg_op->arg2());                                                         \
-        two_arg_op->seal();                                                                        \
-    }                                                                                              \
-    DEFINE_PUSH_CHILDREN_ONTO_STACK(_name) {                                                       \
-        stack.push(&arg1());                                                                       \
-        stack.push(&arg2());                                                                       \
-    }                                                                                              \
-                                                                                                   \
-    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                     \
-        push_children_onto_stack(stack);                                                           \
-        arg2().additional_required_size() += additional_required_size;                             \
-    }                                                                                              \
-                                                                                                   \
-    __host__ __device__ _name* _name::create_reversed_at(Symbol* const destination) {              \
-        _name* const symbol = destination << _name::builder();                                     \
-        symbol->second_arg_offset = (destination - 1)->size() + 1;                                 \
-        symbol->size =                                                                             \
-            symbol->second_arg_offset + (destination - symbol->second_arg_offset)->size();         \
-        return symbol;                                                                             \
-    }                                                                                              \
-                                                                                                   \
-    DEFINE_SEAL_WHOLE(_name) {                                                                     \
-        seal_arg1();                                                                               \
-        seal();                                                                                    \
+#define DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(_name)                       \
+    template <bool COMPARE_ONLY>                                         \
+    __host__ __device__ Util::Order _name::compare_and_try_fuse_symbols( \
+        Symbol* const expr1, Symbol* const expr2, Symbol* const destination)
+
+#define DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                  \
+    DEFINE_INTO_DESTINATION_OPERATOR(_name)                                                      \
+                                                                                                 \
+    __host__ __device__ const Symbol& _name::arg1() const { return Symbol::from(this)[1]; }      \
+                                                                                                 \
+    __host__ __device__ Symbol& _name::arg1() { return Symbol::from(this)[1]; }                  \
+                                                                                                 \
+    __host__ __device__ const Symbol& _name::arg2() const {                                      \
+        return Symbol::from(this)[second_arg_offset];                                            \
+    };                                                                                           \
+                                                                                                 \
+    __host__ __device__ Symbol& _name::arg2() { return Symbol::from(this)[second_arg_offset]; }; \
+                                                                                                 \
+    __host__ __device__ void _name::seal_arg1() { second_arg_offset = 1 + arg1().size(); }       \
+                                                                                                 \
+    __host__ __device__ void _name::seal() { size = 1 + arg1().size() + arg2().size(); }         \
+                                                                                                 \
+    __host__ __device__ void _name::swap_args(Symbol* const help_space) {                        \
+        arg1().copy_to(help_space);                                                              \
+        arg2().copy_to(arg1());                                                                  \
+        seal_arg1();                                                                             \
+        help_space->copy_to(arg2());                                                             \
+        seal();                                                                                  \
+    }                                                                                            \
+                                                                                                 \
+    __host__ __device__ void _name::create(const Symbol* const arg1, const Symbol* const arg2,   \
+                                           Symbol* const destination) {                          \
+        _name* const two_arg_op = destination << _name::builder();                               \
+        arg1->copy_to(two_arg_op->arg1());                                                       \
+        two_arg_op->seal_arg1();                                                                 \
+        arg2->copy_to(two_arg_op->arg2());                                                       \
+        two_arg_op->seal();                                                                      \
+    }                                                                                            \
+    DEFINE_PUSH_CHILDREN_ONTO_STACK(_name) {                                                     \
+        stack.push(&arg1());                                                                     \
+        stack.push(&arg2());                                                                     \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_PUT_CHILDREN_AND_PROPAGATE_ADDITIONAL_SIZE(_name) {                                   \
+        push_children_onto_stack(stack);                                                         \
+        arg2().additional_required_size() += additional_required_size;                           \
+    }                                                                                            \
+                                                                                                 \
+    __host__ __device__ _name* _name::create_reversed_at(Symbol* const destination) {            \
+        _name* const symbol = destination << _name::builder();                                   \
+        symbol->second_arg_offset = (destination - 1)->size() + 1;                               \
+        symbol->size =                                                                           \
+            symbol->second_arg_offset + (destination - symbol->second_arg_offset)->size();       \
+        return symbol;                                                                           \
+    }                                                                                            \
+                                                                                                 \
+    DEFINE_SEAL_WHOLE(_name) {                                                                   \
+        seal_arg1();                                                                             \
+        seal();                                                                                  \
     }
 
 #define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
@@ -519,7 +539,7 @@ template <class T, class U> struct MacroType<T(U)> {
             arg1().is(_name::TYPE) ? arg1().as<_name>().tree_size() - 1 : 0;                               \
         const size_t arg2_height =                                                                         \
             arg2().is(_name::TYPE) ? arg2().as<_name>().tree_size() - 1 : 0;                               \
-        const size_t new_tree_size = 1 + arg1_height + arg2_height;                                        \
+        size_t new_tree_size = 1 + arg1_height + arg2_height;                                              \
                                                                                                            \
         /* Initialize a sufficient number of tree iterators */                                             \
         for (size_t i = 0; i < new_tree_size; ++i) {                                                       \
@@ -534,17 +554,25 @@ template <class T, class U> struct MacroType<T(U)> {
         Symbol* const help_space_back = help_space + size;                                                 \
         Symbol* current_dst_back = help_space_back;                                                        \
         while (left_tree_iter.is_valid() && right_tree_iter.is_valid()) {                                  \
-            const auto ordering = Symbol::compare_expressions(                                             \
-                *left_tree_iter.current(), *right_tree_iter.current(), *help_space_back);                  \
+            const auto ordering = _name::compare_and_try_fuse_symbols(                                     \
+                left_tree_iter.current(), right_tree_iter.current(), help_space_back);                     \
+            /*Symbol::compare_expressions(                                                                 \
+             *left_tree_iter.current(), *right_tree_iter.current(), *help_space_back); */                  \
             Symbol* current;                                                                               \
             if (ordering == Util::Order::Greater) {                                                        \
                                                                                                            \
                 current = left_tree_iter.current();                                                        \
                 left_tree_iter.advance();                                                                  \
             }                                                                                              \
-            else {                                                                                         \
+            else if (ordering == Util::Order::Less) {                                                      \
                 current = right_tree_iter.current();                                                       \
                 right_tree_iter.advance();                                                                 \
+            }                                                                                              \
+            else {                                                                                         \
+                current = help_space_back;                                                                 \
+                left_tree_iter.advance();                                                                  \
+                right_tree_iter.advance();                                                                 \
+                --new_tree_size;                                                                           \
             }                                                                                              \
                                                                                                            \
             Symbol* const current_dst = current_dst_back - current->size();                                \
@@ -581,8 +609,8 @@ template <class T, class U> struct MacroType<T(U)> {
         iterator.advance();                                                                                \
                                                                                                            \
         while (iterator.is_valid()) {                                                                      \
-            if (Symbol::compare_expressions(*last, *iterator.current(), help_space) ==                     \
-                Util::Order::Less) {                                                                       \
+            if (_name::compare_and_try_fuse_symbols<true>(last, iterator.current(),                        \
+                                                          &help_space) != Util::Order::Greater) {          \
                 return false;                                                                              \
             }                                                                                              \
                                                                                                            \
@@ -634,7 +662,7 @@ template <class T, class U> struct MacroType<T(U)> {
     /*                                                                                                     \
      * @brief Number of leaves in a two argument operator tree                                             \
      */                                                                                                    \
-    __host__ __device__ size_t _name::tree_size() {                                                        \
+    __host__ __device__ size_t _name::tree_size() const {                                                  \
         /* In every sum, number of terms is equal to number of operator signs plus 1.                      \
          * When an addition tree is simplified, all operator symbols are placed in a row,                  \
          * so it suffices to calculate address of the last operator symbol. The offset between             \

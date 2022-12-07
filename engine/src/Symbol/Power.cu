@@ -1,12 +1,16 @@
 #include "Power.cuh"
 
+#include <fmt/core.h>
+
 #include "MetaOperators.cuh"
 #include "Symbol.cuh"
+#include "Symbol/Addition.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/ExpanderPlaceholder.cuh"
+#include "Symbol/Product.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
-#include <fmt/core.h>
+#include "Utils/PascalTriangle.cuh"
 
 namespace {
     __host__ __device__ inline bool is_symbol_inverse_logarithm_of(const Sym::Symbol& symbol,
@@ -108,6 +112,80 @@ namespace Sym {
             }
             return true;
         }
+
+        // (a*b)^c = a^c*b^c
+        if (arg1().is(Type::Product) && !arg1().is_constant()) {
+
+            if (size < arg1().size() + 2 * arg2().size() + 2) {
+                additional_required_size = arg2().size() + 1;
+                return false;
+            }
+            const Product& product = arg1().as<Product>();
+            Mul<Pow<Copy, Copy>, Pow<Copy, Copy>>::init(
+                *help_space, {product.arg1(), arg2(), product.arg2(), arg2()});
+            help_space->copy_to(symbol());
+            return false; // maybe additional simplify required
+        }
+
+        // a^(b+c) = a^b*a^c
+        if (arg2().is(Type::Addition) && !arg2().is_constant()) {
+            if (size < 2 * arg1().size() + arg2().size() + 2) {
+                additional_required_size = arg1().size() + 1;
+                return false;
+            }
+            const Addition& addition = arg2().as<Addition>();
+            Mul<Pow<Copy, Copy>, Pow<Copy, Copy>>::init(
+                *help_space, {arg1(), addition.arg1(), arg1(), addition.arg2()});
+            help_space->copy_to(symbol());
+            return false; // maybe additional simplify required
+        }
+
+        // (a+b)^n = sum[i=0,...,n] binom(n,i)a^i b^(n-i)
+        if (arg1().is(Type::Addition) && arg2().is_integer()) {
+            const auto num = static_cast<ssize_t>(arg2().as<NumericConstant>().value);
+            if (num > 1) {
+                const Addition& addition = arg1().as<Addition>();
+                // TODO: handle expressions longer than EXPRESSION_MAX_SYMBOL_COUNT
+
+                const auto triangle =
+                    Util::PascalTriangle::generate(num, *reinterpret_cast<size_t*>(help_space));
+                Symbol* const help_space_back =
+                    reinterpret_cast<Symbol*>(triangle.data + triangle.occupied_size());
+
+                const size_t new_size = num * (7 + arg1().size()) - 3;
+                
+                if (size < new_size) {
+                    additional_required_size = new_size - arg1().size() - arg2().size() - 1;
+                    return false;
+                }
+
+                Symbol* terms = help_space_back + num;
+                Pow<Copy, Num>::init(*terms, {addition.arg1(), num});
+                terms += terms->size();
+                for (size_t i = 1; i < num; ++i) {
+                    Prod<Num, Pow<Copy, Num>, Pow<Copy, Num>>::init(
+                        *terms,
+                        {triangle.binom(num, i), addition.arg1(), num - i, addition.arg2(), i});
+                    terms += terms->size();
+                }
+                Pow<Copy, Num>::init(*terms, {addition.arg2(), num});
+
+                for (ssize_t i = num - 1; i >= 0; --i) {
+                    Addition* const addition = (help_space_back + i) << Addition::builder();
+                    addition->seal_arg1();
+                    addition->seal();
+                }
+
+                if constexpr (Consts::DEBUG) {
+                    if (help_space_back->size() != new_size) {
+                        Util::crash("After binomial expanding sizes do not match: expected %lu, got %lu", new_size, help_space_back->size());
+                    }
+                }
+
+                help_space_back->copy_to(symbol());
+                return false;
+            }
+        }
         return true;
     }
 
@@ -165,7 +243,7 @@ namespace Sym {
     }
 
     std::string Power::to_string() const {
-        return fmt::format("{}^{}", arg1().to_string(), arg2().to_string());
+        return fmt::format("({})^{}", arg1().to_string(), arg2().to_string());
     }
 
     std::string Power::to_tex() const {

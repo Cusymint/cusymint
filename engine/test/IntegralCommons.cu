@@ -13,6 +13,7 @@ namespace Test {
             const auto result = integrator.solve_integral(integral);
 
             auto expected_result = Parser::parse_function(expected_result_str);
+            expected_result.resize(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
             std::vector<Sym::Symbol> simplification_memory(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
             expected_result.data()->simplify(simplification_memory.data());
 

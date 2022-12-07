@@ -22,6 +22,7 @@ namespace Test {
 
             std::vector<Sym::Symbol> simplification_memory(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
             expression.data()->simplify(simplification_memory.data());
+
             expression.resize(expression.data()->size());
 
             return expression;
@@ -162,14 +163,16 @@ namespace Test {
     SIMPLIFY_TEST(LogarithmOfE, "ln(e)", "1")
     SIMPLIFY_TEST(LogarithmOfOne, "ln(1)", "0")
     SIMPLIFY_TEST(EToLogarithm, "e^ln(x)", "x")
-    SIMPLIFY_TEST(PowerInLogarithm, "ln(10^x)", "ln(10)*x")
+    SIMPLIFY_TEST(PowerInLogarithm, "ln(10^x)", "x*ln(10)")
     SIMPLIFY_TEST(PowerOfLogarithmReciprocal, "10^(1/ln(10))", "e")
     EQUALITY_TEST(PowerWithLogarithm, "e^(sin(x)*x*ln(10)*pi)", "10^(sin(x)*x*pi)")
     EQUALITY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
 
-    SIMPLIFY_TEST_NO_ACTION(NoActionPolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)")
-    SIMPLIFY_TEST_NO_ACTION(NoActionNumeratorRankLessThanDenominator,
-                            "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)")
+    SIMPLIFY_TEST(NoActionPolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)",
+                  "(2*x^2)/(3+x+5*x^2+10*x^3)+(x^3)/(3+x+5*x^2+10*x^3)+(9)/(3+x+5*x^2+10*x^3)");
+    SIMPLIFY_TEST(
+        NoActionNumeratorRankLessThanDenominator, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)",
+        "(2*x^2)/(3+x+5*x^2+10*x^3+x^6)+(x^3)/(3+x+5*x^2+10*x^3+x^6)+(9)/(3+x+5*x^2+10*x^3+x^6)")
     SIMPLIFY_TEST(DivisiblePolynomials, "(x^4-1)/(x^2+1)",
                   Sym::num(-1) + (Sym::var() ^ Sym::num(2)))
     SIMPLIFY_TEST(DivideMonomialByMonomial, "x^5/x", "x^4")
@@ -181,8 +184,45 @@ namespace Test {
                   Sym::num(-1) + Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2))) +
                       (Sym::var() ^ Sym::num(2)))
     SIMPLIFY_TEST(LongPolynomialsDivisibleWithRemainder, "(x^5+6*x^2+x+9)/(x^2+x+1)",
-                  Sym::num(7) +
-                      (Sym::num(2) + Sym::num(-6) * Sym::var()) /
-                          (Sym::num(1) + Sym::var() + (Sym::var() ^ Sym::num(2))) +
-                      Sym::num(-1) * (Sym::var() ^ Sym::num(2)) + (Sym::var() ^ Sym::num(3)))
+                  Sym::num(7) + (Sym::num(-6) * Sym::var()) / Parser::parse_function("1+x+x^2") +
+                      Parser::parse_function("2/(1+x+x^2)") +
+                      (Sym::num(-1) * (Sym::var() ^ Sym::num(2))) + (Sym::var() ^ Sym::num(3)))
+
+    SIMPLIFY_TEST(SameExpressionsAddition, "x+x", "2*x")
+    SIMPLIFY_TEST(SameExpressionsAdditionBeingSorted, "sin(x)+ln(x)+sin(x)", "2*sin(x)+ln(x)")
+    SIMPLIFY_TEST(SameExpressionsAdditionBeingSorted2, "ln(x)+sin(x)+ln(x)", "sin(x)+2*ln(x)")
+    SIMPLIFY_TEST(SameExpressionsAdditionLeftMultiplied, "3*c+c", "4*c")
+    SIMPLIFY_TEST(SameExpressionsAdditionRightMultiplied, "e^x+8*e^x", "9*e^x")
+    SIMPLIFY_TEST(SameExpressionsMultipliedByConstantAddition, "5*cos(x)+10*cos(x)", "15*cos(x)")
+    SIMPLIFY_TEST(ReducingSameExpressionsAddition, "x*y-x*y", "0")
+
+    SIMPLIFY_TEST(SameExpressionsMultiplication, "x*x", "x^2")
+    SIMPLIFY_TEST(SameExpressionsMultiplicationBeingSorted, "sin(x)*ln(x)*sin(x)", "sin(x)^2*ln(x)")
+    SIMPLIFY_TEST(SameExpressionsMultiplicationBeingSorted2, "ln(x)*sin(x)*ln(x)", "sin(x)*ln(x)^2")
+    SIMPLIFY_TEST(SameExpressionsMultiplicationLeftPowered, "c^3*c", "c^4")
+    SIMPLIFY_TEST(SameExpressionsMultiplicationRightPowered, "e^x*(e^x)^8", "e^(9*x)")
+    SIMPLIFY_TEST(SameExpressionsPoweredToConstantMultiplication, "cos(x)^5*cos(x)^10", "cos(x)^15")
+    SIMPLIFY_TEST(ReducingSameExpressionsMultiplication, "((x*v)^sin(x))/((x*v)^sin(x))", "1")
+
+    SIMPLIFY_TEST(PoweredProduct, "(sin(x+2)*ln(cos(x)))^(e^x)", "sin(2+x)^e^x*ln(cos(x))^e^x")
+    SIMPLIFY_TEST(PoweredToSum, "(x+1)^(x+c)", "(1+x)^c * (1+x)^x")
+    SIMPLIFY_TEST(PoweredLongProduct, "(x*cos(x)*sin(x)*ln(x)*d)^2",
+                  "d^2*x^2*(sin(x))^2*(cos(x))^2*ln(x)^2")
+    SIMPLIFY_TEST(PoweredToLongSum, "e^(1+c+x+cos(x))", "e^x*e^(1+c)*e^cos(x)")
+
+    SIMPLIFY_TEST(LogarithmOfProduct, "ln(x*ln(x))", "ln(x)+ln(ln(x))")
+    SIMPLIFY_TEST(SplitProductIntoSum, "(x+1)*(y+c)", "c+y+c*x+y*x")
+
+    SIMPLIFY_TEST(ExpandBinomial, "(x+1)^3", "1+3*x+3*x^2+x^3")
+    SIMPLIFY_TEST(
+        ExpandAdvancedExpression, "(tg(x)+x*y+cos(x)+3)^4",
+        "((((((((((((((((((((((((((((((((((81+((108*y)*x))+((54*y^2)*x^2))+(((36*y)*x)*cos(x)^2))+("
+        "((6*y^2)*x^2)*cos(x)^2))+(((36*y)*x)*tan(x)^2))+(((6*y^2)*x^2)*tan(x)^2))+((6*cos(x)^2)*"
+        "tan(x)^2))+((36*cos(x))*tan(x)^2))+((((12*y)*x)*cos(x))*tan(x)^2))+((12*y^3)*x^3))+(((4*y)"
+        "*x)*cos(x)^3))+(((4*y)*x)*tan(x)^3))+((4*cos(x))*tan(x)^3))+(y^4*x^4))+(((108*y)*x)*cos(x)"
+        "))+(((36*y^2)*x^2)*cos(x)))+(((4*y^3)*x^3)*cos(x)))+(((108*y)*x)*tan(x)))+(((36*y^2)*x^2)*"
+        "tan(x)))+((36*cos(x)^2)*tan(x)))+((((12*y)*x)*cos(x)^2)*tan(x)))+(((4*y^3)*x^3)*tan(x)))+("
+        "(4*cos(x)^3)*tan(x)))+((108*cos(x))*tan(x)))+((((72*y)*x)*cos(x))*tan(x)))+((((12*y^2)*x^"
+        "2)*cos(x))*tan(x)))+(54*cos(x)^2))+(54*tan(x)^2))+(12*cos(x)^3))+(12*tan(x)^3))+cos(x)^4)+"
+        "tan(x)^4)+(108*cos(x)))+(108*tan(x)))")
 }

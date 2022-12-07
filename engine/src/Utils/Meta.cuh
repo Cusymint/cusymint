@@ -91,6 +91,41 @@ namespace Util {
         return _slice_tuple<S>(tuple, std::make_index_sequence<N>{});
     }
 
+    template <size_t N, size_t S, class Tuple, class T, size_t... LIs, size_t... RIs>
+    __host__ __device__ constexpr auto
+    _skip_n_and_insert_in_tuple_at(const Tuple& tuple, T& element,
+                                   std::index_sequence<LIs...> /*left_indices*/,
+                                   std::index_sequence<RIs...> /*right_indices*/) {
+        return cuda::std::tie(cuda::std::get<LIs + N>(tuple)..., element,
+                                     cuda::std::get<RIs + S + N>(tuple)...);
+    }
+
+    /*
+     * @brief Skips N first elements in tuple, then inserts an element
+     * in new tuple at position S (when S is equal to tuple size,
+     * inserts the element at the end of a tuple).
+     *
+     * @tparam N Number of elements to skip in input tuple
+     * @tparam S Index of an element to be inserted
+     * @tparam Tuple Type of tuple to insert element to
+     * @tparam T Type of inserted element
+     *
+     * @param tuple Tuple to insert element to
+     * @param element Element to be inserted
+     *
+     * @return New tuple containing inserted element at S-th position.
+     */
+    template <size_t N, size_t S, class Tuple, class T>
+    __host__ __device__ constexpr auto skip_n_and_insert_in_tuple_at(const Tuple& tuple,
+                                                                     T& element) {
+        return _skip_n_and_insert_in_tuple_at<N, S>(
+            tuple, element, std::make_index_sequence<S>{},
+            std::make_index_sequence<cuda::std::tuple_size_v<Tuple> - N - S>{});
+    }
+
+    template <size_t S, size_t N, class Tuple>
+    using SliceTuple = typename std::invoke_result_t<decltype(slice_tuple<S, N, Tuple>), Tuple>;
+
     template <class... Tuples>
     using TupleCat =
         typename std::invoke_result_t<decltype(cuda::std::tuple_cat<Tuples...>), Tuples...>;

@@ -45,45 +45,6 @@ namespace Sym {
         Util::DeviceArray<EvaluationStatus> evaluation_statuses_2;
 
         /*
-         * @brief Replaces nth symbol in `expression` with `tree`, skipping the first element of
-         * `tree` and expanding substitutions if `Solution` is the second symbol in `tree`
-         *
-         * @param expression Expression to make the replacement in
-         * @param n Index of symbol to replace
-         * @param tree Expression to make replacement with. Its first symbol is skipped (assumed to
-         * be SubexpressionCandidate)
-         *
-         * @return Copy of `expression` with the replacement
-         */
-        std::vector<Sym::Symbol> replace_nth_with_tree(std::vector<Sym::Symbol> expression,
-                                                       const size_t n,
-                                                       const std::vector<Sym::Symbol>& tree);
-
-        /*
-         * @brief Collapses a tree of expressions with Solutions with Substitutions and
-         * interreferencing SubexpressionCandidates and SubexpressionVacancies to a single
-         * expression.
-         *
-         * @param tree Tree to collapse
-         * @param n Index of tree node serving as tree root
-         *
-         * @return Collapsed tree
-         */
-        std::vector<Sym::Symbol> collapse_nth(const std::vector<std::vector<Sym::Symbol>>& tree,
-                                              const size_t n);
-
-        /*
-         * @brief Collapses a tree of expressions with Solutions with Substitutions and
-         * interreferencing SubexpressionCandidates and SubexpressionVacancies to a single
-         * expression
-         *
-         * @param tree Tree to collapse
-         *
-         * @return Collapsed tree
-         */
-        std::vector<Sym::Symbol> collapse(const std::vector<std::vector<Sym::Symbol>>& tree);
-
-        /*
          * @brief Sets all evaluation statuses to `EvaluationStatus::Incomplete`
          */
         static void

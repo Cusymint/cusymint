@@ -16,6 +16,8 @@ set(SOLVER_DIR "${SRC_DIR}/Solver")
 set(TEST_DIR "test")
 set(TEST_PARSER_DIR "${TEST_DIR}/Parser")
 set(TEST_SYMBOL_DIR "${TEST_DIR}/Symbol")
+set(TEST_MATH_DIR "${TEST_DIR}/Math")
+set(TEST_EVALUATION_DIR "${TEST_DIR}/Evaluation")
 
 # Define build targets
 
@@ -40,6 +42,7 @@ add_library(
   ${SYMBOL_DIR}/Logarithm.cu
   ${SYMBOL_DIR}/SubexpressionCandidate.cu
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
+  ${EVALUATION_DIR}/Collapser.cu
   ${EVALUATION_DIR}/Integrator.cu
   ${EVALUATION_DIR}/IntegratorKernels.cu
   ${EVALUATION_DIR}/StaticFunctions.cu
@@ -70,7 +73,11 @@ add_executable(
   ${TEST_DIR}/Simplify.cu
   ${TEST_DIR}/Symbol.cu
   ${TEST_DIR}/Derivatives.cu
-  ${TEST_SYMBOL_DIR}/MetaOperators.cu)
+  ${TEST_SYMBOL_DIR}/MetaOperators.cu
+  ${TEST_MATH_DIR}/PascalTriangle.cu
+  ${TEST_EVALUATION_DIR}/IntegratorUtils.cu
+  ${TEST_EVALUATION_DIR}/Kernels.cu
+  ${TEST_EVALUATION_DIR}/Collapser.cu)
 
 add_executable(
   srvcusymint

@@ -24,5 +24,11 @@
    "aboutTextGithub": "GitHub",
    "madeBy": "Made by",
    "cancel": "Cancel",
-   "ok": "OK"
+   "ok": "OK",
+   "error": "Error",
+   "errorUnknown": "Unknown error",
+   "errorUnexpectedEndOfInput": "Unexpected end of input",
+   "errorUnexpectedToken": "Unexpected token {}",
+   "errorNoSolutionFound": "No solution found",
+   "errorInternal": "Internal error"
 }
