@@ -37,5 +37,7 @@ class InputHistoryState {
     required this.history,
   });
 
+  /// List of inputs that were used in the past.
+  /// The most recent input is at the end of the list.
   final List<String> history;
 }

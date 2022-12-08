@@ -37,6 +37,17 @@ class CommonMolecules extends StorybookPart {
           ),
         ),
         Story(
+          name: 'Molecules/HistoryItem',
+          builder: (context) {
+            final data = context.knobs.text(
+              label: 'Data',
+              initial: 'int x + 15x^2 - sin(x) dx',
+            );
+
+            return CuHistoryItem(data, onTap: () {});
+          },
+        ),
+        Story(
           name: 'Molecules/ScrollableHorizontalWrapper',
           builder: (context) => CuScrollableHorizontalWrapper(
             child: Placeholder(
