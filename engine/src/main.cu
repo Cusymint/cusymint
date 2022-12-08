@@ -50,15 +50,22 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("x^4/(1+x^2)"));
+    const auto integral = Sym::integral(Parser::parse_function("e^x*e^e^x*e^e^e^x+sin(x)+x^2+x"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
     Sym::Integrator integrator;
-    const auto solution = integrator.solve_integral(integral);
+    Sym::ComputationHistory history;
+    const auto solution = integrator.solve_integral(integral, history);
 
     if (solution.has_value()) {
         fmt::print("Success! Solution:\n{} + C\n", solution.value().data()->to_tex());
+
+        fmt::print("\nComputation steps:\n\n");
+
+        for (const auto& step: history.get_tex_history()) {
+            fmt::print("  {}\\\\\n\n", step);
+        }
     }
     else {
         fmt::print("No solution found\n");

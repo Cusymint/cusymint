@@ -2,24 +2,32 @@
 #define COMPUTATION_STEP_CUH
 
 #include <list>
+#include <string>
 #include <vector>
 
 #include "Symbol/Symbol.cuh"
 
 namespace Sym {
 
-    using ExprVector = std::vector<std::vector<Sym::Symbol>>;
+    using ExprVector = std::vector<std::vector<Symbol>>;
 
-    enum ComputationStepType { Simplify, Heuristic, Substitution, Solution };
+    enum ComputationStepType { Simplify, ApplyHeuristic, ApplySubstitution, SolutionFound };
 
-    struct ComputationStep {
-        ExprVector expressions;
-        ExprVector integrals;
+    const char* get_computation_step_text(ComputationStepType type);
+
+    class ComputationStep {
+        ExprVector expression_tree;
         ComputationStepType step_type;
+
+        public:
+        ComputationStep(const ExprVector& expressions, const ExprVector& integrals, const ComputationStepType step_type);
+        inline ComputationStepType get_step_type() const { return step_type; }
+        bool has_solution_path() const;
+        void copy_solution_path_from(const ComputationStep& other);
+        std::vector<Symbol> get_expression() const;
     };
 
     using ComputationStepCollection = std::list<ComputationStep>;
-    using StepPath = std::list<std::vector<size_t>>;
 
     class ComputationHistory {
         ComputationStepCollection computation_steps;
@@ -27,7 +35,7 @@ namespace Sym {
 
         bool is_solution_at_end_of_steps() {
             return !computation_steps.empty() &&
-                   computation_steps.back().step_type == ComputationStepType::Solution;
+                   computation_steps.back().get_step_type() == ComputationStepType::SolutionFound;
         }
 
       public:
@@ -35,13 +43,9 @@ namespace Sym {
 
         bool is_completed() const { return completed; }
 
-        void complete() {
-            if (!is_solution_at_end_of_steps()) {
-                Util::crash("ComputationHistory must have solution at the end to complete");
-            }
+        void complete();
 
-            const auto& last_step = computation_steps.back();
-        }
+        std::vector<std::string> get_tex_history() const;
     };
 }
 

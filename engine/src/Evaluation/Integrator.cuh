@@ -9,6 +9,8 @@
 #include "Heuristic/Heuristic.cuh"
 #include "KnownIntegral/KnownIntegral.cuh"
 
+#include "ComputationHistory.cuh"
+
 namespace Sym {
     /*
      * @brief Maximum number of symbols in a single expression
@@ -102,6 +104,9 @@ namespace Sym {
          */
         std::optional<std::vector<Sym::Symbol>>
         solve_integral(const std::vector<Sym::Symbol>& integral);
+
+        std::optional<std::vector<Sym::Symbol>>
+        solve_integral(const std::vector<Sym::Symbol>& integral, ComputationHistory& history);
     };
 }
 

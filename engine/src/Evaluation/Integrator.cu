@@ -3,9 +3,9 @@
 #include <thrust/execution_policy.h>
 #include <thrust/scan.h>
 
+#include "Collapser.cuh"
 #include "IntegratorKernels.cuh"
 #include "StaticFunctions.cuh"
-#include "Collapser.cuh"
 
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Meta.cuh"
@@ -166,6 +166,46 @@ namespace Sym {
 
             check_heuristics_applicability();
             apply_heuristics();
+
+            if (has_original_expression_failed()) {
+                return std::nullopt;
+            }
+
+            remove_failed_candidates();
+        }
+
+        return std::nullopt;
+    }
+
+    std::optional<std::vector<Symbol>>
+    Integrator::solve_integral(const std::vector<Symbol>& integral, ComputationHistory& history) {
+        expressions.load_from_vector({single_integral_vacancy()});
+        integrals.load_from_vector({first_expression_candidate(integral)});
+
+        for (size_t i = 0;; ++i) {
+            simplify_integrals();
+
+            history.add_step(
+                {expressions.to_vector(), integrals.to_vector(), ComputationStepType::Simplify});
+
+            check_for_known_integrals();
+            apply_known_integrals();
+
+            if (is_original_expression_solved()) {
+
+                history.add_step({expressions.to_vector(), integrals.to_vector(),
+                                  ComputationStepType::SolutionFound});
+                history.complete();
+                return Collapser::collapse(expressions.to_vector());
+            }
+
+            remove_unnecessary_candidates();
+
+            check_heuristics_applicability();
+            apply_heuristics();
+
+            history.add_step({expressions.to_vector(), integrals.to_vector(),
+                              ComputationStepType::ApplyHeuristic});
 
             if (has_original_expression_failed()) {
                 return std::nullopt;
