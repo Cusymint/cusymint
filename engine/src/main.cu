@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("e^x*e^e^x*e^e^e^x+sin(x)+x^2+x"));
+    const auto integral = Sym::integral(Parser::parse_function("e^x*e^e^x*e^e^e^x+x^2+sin(e^x)*e^x+x^2+x"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 

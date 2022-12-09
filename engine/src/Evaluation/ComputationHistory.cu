@@ -15,8 +15,8 @@ namespace Sym {
             return "Simplify expression:";
         case ApplyHeuristic:
             return "Apply heuristic:";
-        case ApplySubstitution:
-            return "Substitute:";
+        case ApplySolution:
+            return "Solve integral:";
         case SolutionFound:
             return "Solution:";
         default:
@@ -33,11 +33,10 @@ namespace Sym {
             auto& vacancy = expression_tree[candidate.vacancy_expression_idx][candidate.vacancy_idx]
                                 .as<SubexpressionVacancy>();
 
-            if (vacancy.is_solved == 1) {
-                continue;
+            if (vacancy.is_solved != 1) {
+                vacancy.is_solved = 1;
+                vacancy.solver_idx = expressions.size() + i;
             }
-            vacancy.is_solved = 1;
-            vacancy.solver_idx = expressions.size() + i;
 
             expression_tree.push_back(integrals[i]);
         }
@@ -49,7 +48,7 @@ namespace Sym {
     }
 
     void ComputationStep::copy_solution_path_from(const ComputationStep& other) {
-        if (other.step_type != ComputationStepType::SolutionFound) {
+        if (other.step_type != ComputationStepType::ApplySolution) {
             Util::crash("Trying to copy path from ComputationStep which is not Solution");
         }
 
@@ -95,13 +94,19 @@ namespace Sym {
         }
 
         std::vector<std::string> result;
+        std::string prev_str;
 
         for (const auto& step : computation_steps) {
             const auto expression = step.get_expression();
+            const auto expression_str = expression.data()->to_tex();
 
-            result.push_back(fmt::format(R"(\text{{ {} }} \quad {})",
-                                         get_computation_step_text(step.get_step_type()),
-                                         expression.data()->to_tex()));
+            if (prev_str != expression_str) {
+                result.push_back(fmt::format(R"(\text{{ {} }} \quad {})",
+                                             get_computation_step_text(step.get_step_type()),
+                                             expression.data()->to_tex()));
+            }
+
+            prev_str = expression_str;
         }
 
         return result;

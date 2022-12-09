@@ -11,7 +11,7 @@ namespace Sym {
 
     using ExprVector = std::vector<std::vector<Symbol>>;
 
-    enum ComputationStepType { Simplify, ApplyHeuristic, ApplySubstitution, SolutionFound };
+    enum ComputationStepType { Simplify, ApplyHeuristic, ApplySolution, SolutionFound };
 
     const char* get_computation_step_text(ComputationStepType type);
 
@@ -35,7 +35,7 @@ namespace Sym {
 
         bool is_solution_at_end_of_steps() {
             return !computation_steps.empty() &&
-                   computation_steps.back().get_step_type() == ComputationStepType::SolutionFound;
+                   computation_steps.back().get_step_type() == ComputationStepType::ApplySolution;
         }
 
       public:

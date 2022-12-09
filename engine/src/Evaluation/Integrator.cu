@@ -191,10 +191,10 @@ namespace Sym {
             check_for_known_integrals();
             apply_known_integrals();
 
-            if (is_original_expression_solved()) {
+            history.add_step({expressions.to_vector(), integrals.to_vector(),
+                                  ComputationStepType::ApplySolution});
 
-                history.add_step({expressions.to_vector(), integrals.to_vector(),
-                                  ComputationStepType::SolutionFound});
+            if (is_original_expression_solved()) {
                 history.complete();
                 return Collapser::collapse(expressions.to_vector());
             }
