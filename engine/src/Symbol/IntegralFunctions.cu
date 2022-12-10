@@ -28,7 +28,7 @@ namespace Sym {
         return fmt::format(R"(\text{{Si}}\left({}\right))", arg().to_tex());
     }
 
-    std::vector<Symbol> Si(const std::vector<Symbol>& arg) {
+    std::vector<Symbol> si(const std::vector<Symbol>& arg) {
         std::vector<Symbol> res(arg.size() + 1);
         SineIntegral::create(arg.data(), res.data());
         return res;
@@ -56,7 +56,7 @@ namespace Sym {
         return fmt::format(R"(\text{{Ci}}\left({}\right))", arg().to_tex());
     }
 
-    std::vector<Symbol> Ci(const std::vector<Symbol>& arg) {
+    std::vector<Symbol> ci(const std::vector<Symbol>& arg) {
         std::vector<Symbol> res(arg.size() + 1);
         CosineIntegral::create(arg.data(), res.data());
         return res;
@@ -84,7 +84,7 @@ namespace Sym {
         return fmt::format(R"(\text{{Ei}}\left({}\right))", arg().to_tex());
     }
 
-    std::vector<Symbol> Ei(const std::vector<Symbol>& arg) {
+    std::vector<Symbol> ei(const std::vector<Symbol>& arg) {
         std::vector<Symbol> res(arg.size() + 1);
         ExponentialIntegral::create(arg.data(), res.data());
         return res;

@@ -541,6 +541,11 @@ namespace Sym {
     template <class I> using Arccos = OneArgOperator<Arccosine, I>;
     template <class I> using Arctan = OneArgOperator<Arctangent, I>;
     template <class I> using Arccot = OneArgOperator<Arccotangent, I>;
+    template <class I> using Erf = OneArgOperator<ErrorFunction, I>;
+    template <class I> using Si = OneArgOperator<SineIntegral, I>;
+    template <class I> using Ci = OneArgOperator<CosineIntegral, I>;
+    template <class I> using Ei = OneArgOperator<ExponentialIntegral, I>;
+    template <class I> using Li = OneArgOperator<LogarithmicIntegral, I>;
 
     template <class I> using Ln = OneArgOperator<Logarithm, I>;
 

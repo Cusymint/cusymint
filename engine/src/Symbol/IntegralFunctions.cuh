@@ -34,9 +34,9 @@ namespace Sym {
     [[nodiscard]] std::string to_tex() const;
     END_DECLARE_SYMBOL(LogarithmicIntegral)
 
-    std::vector<Symbol> Si(const std::vector<Symbol>& arg);
-    std::vector<Symbol> Ci(const std::vector<Symbol>& arg);
-    std::vector<Symbol> Ei(const std::vector<Symbol>& arg);
+    std::vector<Symbol> si(const std::vector<Symbol>& arg);
+    std::vector<Symbol> ci(const std::vector<Symbol>& arg);
+    std::vector<Symbol> ei(const std::vector<Symbol>& arg);
     std::vector<Symbol> li(const std::vector<Symbol>& arg);
 }
 
