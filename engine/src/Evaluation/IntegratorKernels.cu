@@ -346,11 +346,6 @@ namespace Sym::Kernel {
                         expressions_destinations[expr_dst_idx + i]
                             .as<SubexpressionCandidate>()
                             .creator_uid = integrals[int_idx].uid;
-                        printf("%lu %lu\n", expressions_destinations[expr_dst_idx + i]
-                            .as<SubexpressionCandidate>()
-                            .uid,expressions_destinations[expr_dst_idx + i]
-                            .as<SubexpressionCandidate>()
-                            .creator_uid);
                     }
                 }
                 else {
@@ -367,10 +362,6 @@ namespace Sym::Kernel {
                     integrals_destinations[int_dst_idx + i]
                         .as<SubexpressionCandidate>()
                         .creator_uid = integrals[int_idx].uid;
-                    printf("%lu %lu\n", integrals_destinations[int_dst_idx + i].as<SubexpressionCandidate>().uid,
-                    integrals_destinations[int_dst_idx + i]
-                        .as<SubexpressionCandidate>()
-                        .creator_uid);
                 }
             }
         }

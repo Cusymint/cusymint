@@ -35,11 +35,6 @@ namespace Sym {
             auto& vacancy = expression_tree[candidate.vacancy_expression_idx][candidate.vacancy_idx]
                                 .as<SubexpressionVacancy>();
 
-            // if (vacancy.is_solved != 1) {
-            //     vacancy.is_solved = 1;
-            //     vacancy.solver_idx = expressions.size() + i;
-            // }
-
             expression_tree.push_back(integrals[i]);
         }
     }
@@ -135,21 +130,6 @@ namespace Sym {
             ++this_it;
             ++other_it;
         }
-        print_step();
-        // for (size_t i = 0; i < expression_tree.size(); ++i) {
-        //     for (size_t j = 0; j < expression_tree[i].size(); ++j) {
-        //         expression_tree[i][j].if_is_do<SubexpressionVacancy>(
-        //             [&other_vacancy = other.expression_tree[i][j]](SubexpressionVacancy& vacancy)
-        //             {
-        //                 if (other_vacancy.as<SubexpressionVacancy>().is_solved == 1 &&
-        //                     vacancy.is_solved != 1) {
-        //                     vacancy.is_solved = 1;
-        //                     vacancy.solver_idx =
-        //                         other_vacancy.as<SubexpressionVacancy>().solver_idx;
-        //                 }
-        //             });
-        //     }
-        // }
     }
 
     std::vector<Symbol> ComputationStep::get_expression() const {
@@ -160,8 +140,13 @@ namespace Sym {
         return Collapser::collapse(expression_tree);
     }
 
-    OperationList ComputationStep::get_operations(const ComputationStep& previous_step) {
-        OperationList list;
+    TransformationList ComputationStep::get_operations(const ComputationStep& previous_step) {
+        TransformationList list;
+
+        if (step_type == ComputationStepType::Simplify) {
+            list.push_back(SimplifyExpression());
+            return list;
+        }
 
         auto this_it = expression_tree.cbegin();
         auto prev_step_it = previous_step.expression_tree.cbegin();
@@ -194,10 +179,6 @@ namespace Sym {
             Util::crash("ComputationHistory must have solution at the end to complete");
         }
 
-        // const auto last_step_it = std::prev(computation_steps.end());
-        // for (auto it = computation_steps.begin(); it != last_step_it; ++it) {
-        //     it->copy_solution_path_from(*last_step_it);
-        // }
         for (auto it = std::next(computation_steps.rbegin()); it != computation_steps.rend();
              ++it) {
             it->copy_solution_path_from(*std::prev(it));

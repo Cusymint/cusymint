@@ -7,14 +7,14 @@
 #include <vector>
 
 #include "Symbol/Symbol.cuh"
+#include "TransformationType.cuh"
 
 namespace Sym {
-
-    using TransformationIdx = size_t;
+    
     using ExprVector = std::vector<std::vector<Symbol>>;
-    using OperationList = std::list<std::tuple<TransformationIdx, std::vector<Symbol>, std::vector<Symbol>>>;
+    using TransformationList = std::list<TransformationType>;
 
-    enum ComputationStepType { Simplify, ApplyHeuristic, ApplySolution, SolutionFound };
+    enum ComputationStepType { Simplify, ApplyHeuristic, ApplySolution };
 
     const char* get_computation_step_text(ComputationStepType type);
 
@@ -29,7 +29,7 @@ namespace Sym {
         ssize_t find_index_in_tree_by_uid(size_t uid);
         void copy_solution_path_from(const ComputationStep& other);
         std::vector<Symbol> get_expression() const;
-        OperationList get_operations(const ComputationStep& previous_step);
+        TransformationList get_operations(const ComputationStep& previous_step);
         void print_step() const;
     };
 

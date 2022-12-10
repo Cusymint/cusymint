@@ -27,7 +27,6 @@ namespace Sym {
         const size_t increment = scan_array_1.to_cpu(scan_array_1.size() - 1) +
                            scan_array_2.to_cpu(scan_array_2.size() - 1);
         candidates_created += increment;
-        printf("+=%lu\n", increment);
     }
 
     void Integrator::simplify_integrals() {
@@ -206,7 +205,6 @@ namespace Sym {
                               ComputationStepType::ApplySolution});
 
             if (is_original_expression_solved()) {
-                history.print_history();
                 history.complete();
                 return Collapser::collapse(expressions.to_vector());
             }
