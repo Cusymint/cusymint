@@ -306,7 +306,7 @@ namespace Sym {
         return coefficients[0];
     }
 
-    __host__ __device__ size_t Symbol::derivative_to(Symbol* const destination) {
+    __host__ __device__ size_t Symbol::derivative_to(Symbol* const destination) const {
         Symbol* current_dst = destination;
         for (auto i = static_cast<ssize_t>(size() - 1); i >= 0; --i) {
             const ssize_t offset = VIRTUAL_CALL(*at(i), insert_reversed_derivative_at, current_dst);

@@ -2,6 +2,7 @@
 #define COMPUTATION_STEP_CUH
 
 #include <list>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -12,7 +13,7 @@
 namespace Sym {
     
     using ExprVector = std::vector<std::vector<Symbol>>;
-    using TransformationList = std::list<TransformationType>;
+    using TransformationList = std::list<std::unique_ptr<TransformationType>>;
 
     enum ComputationStepType { Simplify, ApplyHeuristic, ApplySolution };
 
@@ -26,10 +27,11 @@ namespace Sym {
         ComputationStep(const ExprVector& expressions, const ExprVector& integrals, const ComputationStepType step_type);
         inline ComputationStepType get_step_type() const { return step_type; }
         bool has_solution_path() const;
-        ssize_t find_index_in_tree_by_uid(size_t uid);
+        ssize_t find_index_in_tree_by_uid(size_t uid) const;
+        const std::vector<Symbol>& find_by_uid(size_t uid) const;
         void copy_solution_path_from(const ComputationStep& other);
         std::vector<Symbol> get_expression() const;
-        TransformationList get_operations(const ComputationStep& previous_step);
+        TransformationList get_operations(const ComputationStep& previous_step) const;
         void print_step() const;
     };
 

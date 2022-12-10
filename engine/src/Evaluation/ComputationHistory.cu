@@ -1,5 +1,7 @@
 #include "ComputationHistory.cuh"
 #include "Evaluation/Collapser.cuh"
+#include "Evaluation/IntegratorKernels.cuh"
+#include "Symbol/MetaOperators.cuh"
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/Symbol.cuh"
@@ -7,6 +9,7 @@
 #include <exception>
 #include <fmt/core.h>
 #include <iterator>
+#include <memory>
 #include <sys/types.h>
 #include <vector>
 
@@ -14,13 +17,11 @@ namespace Sym {
     const char* get_computation_step_text(ComputationStepType type) {
         switch (type) {
         case Simplify:
-            return "Simplify expression:";
+            return "Simplify expression";
         case ApplyHeuristic:
-            return "Apply heuristic:";
+            return "Apply heuristic";
         case ApplySolution:
-            return "Solve integral:";
-        case SolutionFound:
-            return "Solution:";
+            return "Solve integral";
         default:
             return "(invalid operation)";
         }
@@ -44,7 +45,7 @@ namespace Sym {
                expression_tree[0][0].as<SubexpressionVacancy>().is_solved == 1;
     }
 
-    ssize_t ComputationStep::find_index_in_tree_by_uid(size_t uid) {
+    ssize_t ComputationStep::find_index_in_tree_by_uid(size_t uid) const {
         for (ssize_t i = 0; i < expression_tree.size(); ++i) {
             if (expression_tree[i][0].is(Type::SubexpressionCandidate) &&
                 expression_tree[i][0].as<SubexpressionCandidate>().uid == uid) {
@@ -52,6 +53,15 @@ namespace Sym {
             }
         }
         return -1;
+    }
+
+    const std::vector<Symbol>& ComputationStep::find_by_uid(size_t uid) const {
+        const ssize_t idx = find_index_in_tree_by_uid(uid);
+        if (idx < 0) {
+            Util::crash("No expression of uid=%lu in ComputationStep tree", uid);
+        }
+
+        return expression_tree[idx];
     }
 
     void ComputationStep::copy_solution_path_from(const ComputationStep& other) {
@@ -108,7 +118,8 @@ namespace Sym {
             for (int i = 0; i < this_cand.size; ++i) {
                 this_cand.symbol()->at(i)->if_is_do<SubexpressionVacancy>(
                     [&other, other_cand_symbol = other_cand.symbol(), this, i](auto& vacancy) {
-                        const auto& other_vacancy = other_cand_symbol->at(i)->as<SubexpressionVacancy>();
+                        const auto& other_vacancy =
+                            other_cand_symbol->at(i)->as<SubexpressionVacancy>();
                         if (other_vacancy.is_solved == 1 && vacancy.is_solved != 1) {
                             const auto& candidate =
                                 other.expression_tree[other_vacancy.solver_idx][0]
@@ -140,26 +151,72 @@ namespace Sym {
         return Collapser::collapse(expression_tree);
     }
 
-    TransformationList ComputationStep::get_operations(const ComputationStep& previous_step) {
+    TransformationList ComputationStep::get_operations(const ComputationStep& previous_step) const {
         TransformationList list;
 
         if (step_type == ComputationStepType::Simplify) {
-            list.push_back(SimplifyExpression());
+            list.push_back(std::make_unique<SimplifyExpression>());
             return list;
         }
 
-        auto this_it = expression_tree.cbegin();
-        auto prev_step_it = previous_step.expression_tree.cbegin();
+        size_t max_prev_uid = 0;
 
-        while (prev_step_it != previous_step.expression_tree.cend()) {
-            if (Symbol::are_expressions_equal(*this_it->data(), *prev_step_it->data())) {
-                ++this_it;
+        for (const auto& expression : previous_step.expression_tree) {
+            if (!expression[0].is(Type::SubexpressionCandidate)) {
+                continue;
             }
-            ++prev_step_it;
+
+            const auto& candidate = expression[0].as<SubexpressionCandidate>();
+
+            if (candidate.uid > max_prev_uid) {
+                max_prev_uid = candidate.uid;
+            }
         }
 
-        while (this_it != expression_tree.cend()) {
-            const auto& candidate = this_it->data()->as<SubexpressionCandidate>();
+        for (const auto& expression : expression_tree) {
+            if (!expression[0].is(Type::SubexpressionCandidate)) {
+                continue;
+            }
+
+            const auto& candidate = expression[0].as<SubexpressionCandidate>();
+
+            if (candidate.uid <= max_prev_uid) {
+                continue;
+            }
+
+            const auto& creator_integral = previous_step.find_by_uid(candidate.creator_uid)
+                                               .data()
+                                               ->as<SubexpressionCandidate>()
+                                               .arg()
+                                               .as<Integral>();
+
+            if (candidate.arg().is(Type::Integral)) {
+                const auto& integral = candidate.arg().as<Integral>();
+                if (integral.substitution_count > creator_integral.substitution_count) {
+                    // substitution happened
+                    std::vector<Symbol> substitution(
+                        integral.first_substitution()->expression()->size());
+                    std::vector<Symbol> derivative(MAX_EXPRESSION_COUNT);
+                    integral.first_substitution()->expression()->copy_to(substitution.data());
+                    integral.first_substitution()->expression()->derivative_to(derivative.data());
+                    derivative.resize(derivative.data()->size());
+
+                    list.push_back(std::make_unique<Substitute>(substitution, derivative,
+                                                                integral.substitution_count));
+                }
+            }
+
+            if (candidate.arg().is(Type::Solution)) {
+                // solution happened
+                const auto& solution_arg = candidate.arg().as<Solution>().expression();
+                std::vector<Symbol> integrand(creator_integral.integrand()->size());
+                std::vector<Symbol> solution(solution_arg->size());
+
+                solution_arg->copy_to(solution.data());
+                creator_integral.integrand()->copy_to(integrand.data());
+
+                list.push_back(std::make_unique<SolveIntegral>(integral(integrand), solution, creator_integral.substitution_count));
+            }
         }
 
         return list;
@@ -192,20 +249,27 @@ namespace Sym {
             Util::crash("Trying to get history from uncompleted ComputationHistory");
         }
 
+        const ComputationStep empty_step({}, {}, ComputationStepType::Simplify);
+
         std::vector<std::string> result;
         std::string prev_str;
+        const ComputationStep* prev_step = &empty_step;
 
         for (const auto& step : computation_steps) {
             const auto expression = step.get_expression();
             const auto expression_str = expression.data()->to_tex();
 
             if (prev_str != expression_str) {
-                result.push_back(fmt::format(R"(\text{{ {} }} \quad {})",
-                                             get_computation_step_text(step.get_step_type()),
-                                             expression.data()->to_tex()));
+                //result.push_back(fmt::format("\\text{{ {}: }}",
+                //                             get_computation_step_text(step.get_step_type())));
+                for (const auto& trans : step.get_operations(*prev_step)) {
+                    result.push_back(fmt::format(R"(\quad {}:)", trans->get_description()));
+                }
+                result.push_back(fmt::format(R"(=\qquad {})", expression.data()->to_tex()));
             }
 
             prev_str = expression_str;
+            prev_step = &step;
         }
 
         return result;

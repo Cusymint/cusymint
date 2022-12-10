@@ -58,6 +58,8 @@ int main() {
     Sym::ComputationHistory history;
     const auto solution = integrator.solve_integral(integral, history);
 
+    history.print_history();
+
     if (solution.has_value()) {
         fmt::print("Success! Solution:\n{} + C\n", solution.value().data()->to_tex());
 

@@ -332,7 +332,7 @@ namespace Sym::Kernel {
                 const auto candidates_in_expressions =
                     get_value_from_scan(appl_idx, new_expressions_indices);
 
-                if (new_expressions_indices[appl_idx] != 0) {
+                //if (new_expressions_indices[appl_idx] != 0) {
                     const size_t expr_dst_idx = expressions_destinations.size() +
                                                 index_from_scan(new_expressions_indices, appl_idx);
                     Heuristic::APPLICATIONS[trans_idx](
@@ -347,12 +347,12 @@ namespace Sym::Kernel {
                             .as<SubexpressionCandidate>()
                             .creator_uid = integrals[int_idx].uid;
                     }
-                }
-                else {
-                    Heuristic::APPLICATIONS[trans_idx](
-                        integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
-                        ExpressionArray<>::Iterator::null(), help_spaces[int_dst_idx]);
-                }
+                //}
+                // else {
+                //     Heuristic::APPLICATIONS[trans_idx](
+                //         integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
+                //         ExpressionArray<>::Iterator::null(), help_spaces[int_dst_idx]);
+                // }
 
                 const size_t all_expressions_created = new_expressions_indices[new_expressions_indices.size() - 1];
                 for (size_t i = 0; i < Sym::get_value_from_scan(appl_idx, new_integrals_indices);
