@@ -225,4 +225,7 @@ namespace Test {
         "(4*cos(x)^3)*tan(x)))+((108*cos(x))*tan(x)))+((((72*y)*x)*cos(x))*tan(x)))+((((12*y^2)*x^"
         "2)*cos(x))*tan(x)))+(54*cos(x)^2))+(54*tan(x)^2))+(12*cos(x)^3))+(12*tan(x)^3))+cos(x)^4)+"
         "tan(x)^4)+(108*cos(x)))+(108*tan(x)))")
+
+    SIMPLIFY_TEST(ExponentialIntegralOfLogarithm, "1+Ei(ln(x+2))", "1+li(2+x)")
+    SIMPLIFY_TEST(LogarithmicIntegralOfExponential, "5*li(e^(pi*x))", "5*Ei(pi*x)")
 }

@@ -74,7 +74,15 @@ namespace Sym {
         }
         return Mul<Frac<Pow<E, Copy>, Copy>, None>::init_reverse(*destination, {arg(), arg()});
     }
-    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(ExponentialIntegral)
+    
+    DEFINE_SIMPLIFY_IN_PLACE(ExponentialIntegral) {
+        if (arg().is(Type::Logarithm)) {
+            arg().as<Logarithm>().arg().move_to(&arg());
+            type = Type::LogarithmicIntegral;
+            seal();
+        }
+        return true;
+    }
 
     [[nodiscard]] std::string ExponentialIntegral::to_string() const {
         return fmt::format("Ei({})", arg().to_string());
@@ -96,7 +104,15 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(LogarithmicIntegral)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(LogarithmicIntegral)
     DEFINE_ONE_ARG_OP_DERIVATIVE(LogarithmicIntegral, Inv<Ln<Copy>>)
-    DEFINE_NO_OP_SIMPLIFY_IN_PLACE(LogarithmicIntegral)
+    
+    DEFINE_SIMPLIFY_IN_PLACE(LogarithmicIntegral) {
+        if (Pow<E, Any>::match(arg())) {
+            arg().as<Power>().arg2().move_to(&arg());
+            type = Type::ExponentialIntegral;
+            seal();
+        }
+        return true;
+    }
 
     [[nodiscard]] std::string LogarithmicIntegral::to_string() const {
         return fmt::format("li({})", arg().to_string());
