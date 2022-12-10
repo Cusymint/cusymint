@@ -42,6 +42,8 @@ add_library(
   ${SYMBOL_DIR}/Logarithm.cu
   ${SYMBOL_DIR}/SubexpressionCandidate.cu
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
+  ${SYMBOL_DIR}/ErrorFunction.cu
+  ${SYMBOL_DIR}/IntegralFunctions.cu
   ${EVALUATION_DIR}/Collapser.cu
   ${EVALUATION_DIR}/Integrator.cu
   ${EVALUATION_DIR}/IntegratorKernels.cu

@@ -7,9 +7,11 @@
 
 #include "Addition.cuh"
 #include "Constants.cuh"
+#include "ErrorFunction.cuh"
 #include "ExpanderPlaceholder.cuh"
 #include "Hyperbolic.cuh"
 #include "Integral.cuh"
+#include "IntegralFunctions.cuh"
 #include "InverseTrigonometric.cuh"
 #include "Logarithm.cuh"
 #include "Polynomial.cuh"
@@ -86,6 +88,16 @@
             return (_instance).logarithm._member_function(__VA_ARGS__);                    \
         case Type::Polynomial:                                                             \
             return (_instance).polynomial._member_function(__VA_ARGS__);                   \
+        case Type::ErrorFunction:                                                          \
+            return (_instance).error_function._member_function(__VA_ARGS__);               \
+        case Type::SineIntegral:                                                           \
+            return (_instance).sine_integral._member_function(__VA_ARGS__);               \
+        case Type::CosineIntegral:                                                         \
+            return (_instance).cosine_integral._member_function(__VA_ARGS__);               \
+        case Type::ExponentialIntegral:                                                    \
+            return (_instance).exponential_integral._member_function(__VA_ARGS__);               \
+        case Type::LogarithmicIntegral:                                                    \
+            return (_instance).logarithmic_integral._member_function(__VA_ARGS__);               \
         case Type::Unknown:                                                                \
             return (_instance).unknown._member_function(__VA_ARGS__);                      \
         }                                                                                  \
@@ -124,6 +136,11 @@ namespace Sym {
         Arccotangent arccotangent;
         Logarithm logarithm;
         Polynomial polynomial;
+        ErrorFunction error_function;
+        SineIntegral sine_integral;
+        CosineIntegral cosine_integral;
+        ExponentialIntegral exponential_integral;
+        LogarithmicIntegral logarithmic_integral;
 
         constexpr static Sym::Type TYPE = Sym::Type::Symbol;
 
@@ -491,8 +508,8 @@ namespace Sym {
          *
          * @return `true` if expressions have the same structure, `false` otherwise
          */
-        [[nodiscard]] __host__ __device__ static bool
-        are_expressions_equal(const Symbol& expr1, const Symbol& expr2);
+        [[nodiscard]] __host__ __device__ static bool are_expressions_equal(const Symbol& expr1,
+                                                                            const Symbol& expr2);
 
         /*
          * @brief Compares two expressions. Size fields in expressions do not need to be valid,

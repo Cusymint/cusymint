@@ -32,4 +32,10 @@ namespace Test {
 
     KNOWN_INTEGRAL_TEST(PowerWithSimpleConstantBase, "2^x", "2^x/ln(2)")
     KNOWN_INTEGRAL_TEST(PowerWithAdvancedConstantBase, "(cos(pi)*e^c+1)^x", "(cos(pi)*e^c+1)^x/ln(cos(pi)*e^c+1)")
+
+    KNOWN_INTEGRAL_TEST(ErrorFunction, "e^(-x^2)", "2/sqrt(pi)*erf(x)")
+    KNOWN_INTEGRAL_TEST(SineIntegral, "sin(x)/x", "Si(x)")
+    KNOWN_INTEGRAL_TEST(CosineIntegral, "cos(x)/x", "Ci(x)")
+    KNOWN_INTEGRAL_TEST(LogarithmicIntegral, "1/ln(x)", "li(x)")
+    KNOWN_INTEGRAL_TEST(ExponentialIntegral, "e^x/x", "Ei(x)")
 };
