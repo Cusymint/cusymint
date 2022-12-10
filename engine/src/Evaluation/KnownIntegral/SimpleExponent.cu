@@ -13,4 +13,15 @@ namespace Sym::KnownIntegral {
                                               Symbol& /*help_space*/) {
         SolutionOfIntegral<Copy>::init(destination, {integral, Static::e_to_x()});
     }
+
+    __device__ size_t is_power_with_constant_base(const Integral& integral) {
+        return Pow<AllOf<Not<E>, Const>, Var>::match(*integral.integrand()) ? 1 : 0;
+    }
+    __device__ void integrate_power_with_constant_base(const Integral& integral,
+                                                       Symbol& destination,
+                                                       Symbol& /*help_space*/) {
+        const auto& constant = integral.integrand()->as<Power>().arg1();
+        SolutionOfIntegral<Frac<Pow<Copy, Var>, Ln<Copy>>>::init(destination,
+                                                                 {integral, constant, constant});
+    }
 }

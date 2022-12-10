@@ -13,4 +13,13 @@ namespace Sym::KnownIntegral {
         SolutionOfIntegral<Mul<Inv<Add<Copy, Num>>, Pow<Var, Add<Copy, Num>>>>::init(
             destination, {integral, exponent, 1.0, exponent, 1.0});
     }
+
+    __device__ size_t is_reciprocal(const Integral& integral) {
+        return AnyOf<Inv<Var>, Pow<Var, Integer<-1>>>::match(*integral.integrand()) ? 1 : 0;
+    }
+
+    __device__ void integrate_reciprocal(const Integral& integral, Symbol& destination,
+                                         Symbol& /*help_space*/) {
+        SolutionOfIntegral<Ln<Var>>::init(destination, {integral});
+    }
 }

@@ -7,6 +7,10 @@ namespace Sym::KnownIntegral {
     __device__ size_t is_simple_exponent(const Integral& integral);
     __device__ void integrate_simple_exponent(const Integral& integral, Symbol& destination,
                                               Symbol& /*help_space*/);
+
+    __device__ size_t is_power_with_constant_base(const Integral& integral);
+    __device__ void integrate_power_with_constant_base(const Integral& integral,
+                                                       Symbol& destination, Symbol& /*help_space*/);
 }
 
 #endif
