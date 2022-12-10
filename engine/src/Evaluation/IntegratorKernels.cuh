@@ -16,6 +16,17 @@ namespace Sym {
      */
     __device__ bool is_nonzero(const size_t index,
                                const Util::DeviceArray<uint32_t>& inclusive_scan);
+
+    /*
+     * @brief Gets element signaled by inclusive_scan[index]
+     *
+     * @param index Index to check
+     * @param inclusive_scan Array of element sizes on which inclusive_scan has been run
+     *
+     * @return Value of the element before inclusive_scan was run
+     */
+    __device__ uint32_t get_value_from_scan(const size_t index,
+                               const Util::DeviceArray<uint32_t>& inclusive_scan);
 }
 
 namespace Sym::Kernel {
@@ -53,11 +64,14 @@ namespace Sym::Kernel {
      * @param help_spaces Help space used in applying known integrals
      * @param applicability Result of `inclusive_scan` on `check_for_known_integrals()`
      * applicability array
+     * @param candidates_created Number of `SubexpressionCandidates` already created
+     * in integration process
      */
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                                           ExpressionArray<> expressions,
                                           ExpressionArray<> help_spaces,
-                                          const Util::DeviceArray<uint32_t> applicability);
+                                          const Util::DeviceArray<uint32_t> applicability,
+                                          const size_t candidates_created);
 
     /*
      * @brief Marks SubexpressionsVacancies as solved (sets `is_solved` and `solver_id`)
@@ -186,13 +200,16 @@ namespace Sym::Kernel {
      * (specified in `check_heuristics_applicability()`) haven't found any solution.
      * `new_integrals_indices[0]` will override `1` to `0`.
      * @param new_expressions_indices Analogical to `new_integrals_indices` for `expressions`
+     * @param candidates_created Number of `SubexpressionCandidates` already created
+     * in integration process
      */
     __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
                                      ExpressionArray<> integrals_destinations,
                                      ExpressionArray<> expressions_destinations,
                                      ExpressionArray<> help_spaces,
                                      const Util::DeviceArray<uint32_t> new_integrals_indices,
-                                     const Util::DeviceArray<uint32_t> new_expressions_indices);
+                                     const Util::DeviceArray<uint32_t> new_expressions_indices,
+                                     const size_t candidates_created);
 
     /*
      * @brief Propagates information about failed SubexpressionVacancy upwards to parent

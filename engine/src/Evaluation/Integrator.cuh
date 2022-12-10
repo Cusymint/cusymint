@@ -32,6 +32,13 @@ namespace Sym {
         Util::DeviceArray<uint32_t> scan_array_1;
         Util::DeviceArray<uint32_t> scan_array_2;
 
+        size_t candidates_created = 1;
+
+        /*
+         * @brief Increments `candidates_created` by value read from GPU
+         */
+        void increment_counter_from_device();
+
         /*
          * @brief Simplifies integrals `integrals`
          */

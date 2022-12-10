@@ -3,13 +3,16 @@
 
 #include <list>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "Symbol/Symbol.cuh"
 
 namespace Sym {
 
+    using TransformationIdx = size_t;
     using ExprVector = std::vector<std::vector<Symbol>>;
+    using OperationList = std::list<std::tuple<TransformationIdx, std::vector<Symbol>, std::vector<Symbol>>>;
 
     enum ComputationStepType { Simplify, ApplyHeuristic, ApplySolution, SolutionFound };
 
@@ -23,8 +26,11 @@ namespace Sym {
         ComputationStep(const ExprVector& expressions, const ExprVector& integrals, const ComputationStepType step_type);
         inline ComputationStepType get_step_type() const { return step_type; }
         bool has_solution_path() const;
+        ssize_t find_index_in_tree_by_uid(size_t uid);
         void copy_solution_path_from(const ComputationStep& other);
         std::vector<Symbol> get_expression() const;
+        OperationList get_operations(const ComputationStep& previous_step);
+        void print_step() const;
     };
 
     using ComputationStepCollection = std::list<ComputationStep>;
@@ -46,6 +52,8 @@ namespace Sym {
         void complete();
 
         std::vector<std::string> get_tex_history() const;
+
+        void print_history() const;
     };
 }
 

@@ -10,6 +10,12 @@ namespace Sym {
         return index == 0 && inclusive_scan[index] != 0 ||
                index != 0 && inclusive_scan[index - 1] != inclusive_scan[index];
     }
+
+    __device__ uint32_t get_value_from_scan(const size_t index,
+                                            const Util::DeviceArray<uint32_t>& inclusive_scan) {
+        return index == 0 ? inclusive_scan[index]
+                          : (inclusive_scan[index] - inclusive_scan[index - 1]);
+    }
 }
 
 namespace Sym::Kernel {
@@ -120,7 +126,8 @@ namespace Sym::Kernel {
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                                           ExpressionArray<> expressions,
                                           ExpressionArray<> help_spaces,
-                                          const Util::DeviceArray<uint32_t> applicability) {
+                                          const Util::DeviceArray<uint32_t> applicability,
+                                          const size_t candidates_created) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -145,6 +152,8 @@ namespace Sym::Kernel {
                 KnownIntegral::APPLICATIONS[trans_idx](integrals[int_idx].arg().as<Integral>(),
                                                        subexpr_candidate->arg(),
                                                        help_spaces[dest_idx]);
+                subexpr_candidate->uid = dest_idx - expressions.size() + candidates_created;
+                subexpr_candidate->creator_uid = integrals[int_idx].uid;
                 subexpr_candidate->seal();
 
                 try_set_solver_idx(expressions, dest_idx);
@@ -303,7 +312,8 @@ namespace Sym::Kernel {
                                      ExpressionArray<> expressions_destinations,
                                      ExpressionArray<> help_spaces,
                                      const Util::DeviceArray<uint32_t> new_integrals_indices,
-                                     const Util::DeviceArray<uint32_t> new_expressions_indices) {
+                                     const Util::DeviceArray<uint32_t> new_expressions_indices,
+                                     const size_t candidates_created) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -319,6 +329,8 @@ namespace Sym::Kernel {
                 }
 
                 const size_t int_dst_idx = index_from_scan(new_integrals_indices, appl_idx);
+                const auto candidates_in_expressions =
+                    get_value_from_scan(appl_idx, new_expressions_indices);
 
                 if (new_expressions_indices[appl_idx] != 0) {
                     const size_t expr_dst_idx = expressions_destinations.size() +
@@ -326,11 +338,39 @@ namespace Sym::Kernel {
                     Heuristic::APPLICATIONS[trans_idx](
                         integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
                         expressions_destinations.iterator(expr_dst_idx), help_spaces[int_dst_idx]);
+
+                    for (size_t i = 0; i < candidates_in_expressions; ++i) {
+                        expressions_destinations[expr_dst_idx + i]
+                            .as<SubexpressionCandidate>()
+                            .uid = expr_dst_idx - expressions_destinations.size() + candidates_created + i;
+                        expressions_destinations[expr_dst_idx + i]
+                            .as<SubexpressionCandidate>()
+                            .creator_uid = integrals[int_idx].uid;
+                        printf("%lu %lu\n", expressions_destinations[expr_dst_idx + i]
+                            .as<SubexpressionCandidate>()
+                            .uid,expressions_destinations[expr_dst_idx + i]
+                            .as<SubexpressionCandidate>()
+                            .creator_uid);
+                    }
                 }
                 else {
                     Heuristic::APPLICATIONS[trans_idx](
                         integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
                         ExpressionArray<>::Iterator::null(), help_spaces[int_dst_idx]);
+                }
+
+                const size_t all_expressions_created = new_expressions_indices[new_expressions_indices.size() - 1];
+                for (size_t i = 0; i < Sym::get_value_from_scan(appl_idx, new_integrals_indices);
+                     ++i) {
+                    integrals_destinations[int_dst_idx + i].as<SubexpressionCandidate>().uid =
+                        all_expressions_created + int_dst_idx + candidates_created + i;
+                    integrals_destinations[int_dst_idx + i]
+                        .as<SubexpressionCandidate>()
+                        .creator_uid = integrals[int_idx].uid;
+                    printf("%lu %lu\n", integrals_destinations[int_dst_idx + i].as<SubexpressionCandidate>().uid,
+                    integrals_destinations[int_dst_idx + i]
+                        .as<SubexpressionCandidate>()
+                        .creator_uid);
                 }
             }
         }

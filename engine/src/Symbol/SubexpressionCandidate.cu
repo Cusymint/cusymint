@@ -27,8 +27,8 @@ namespace Sym {
     }
 
     [[nodiscard]] std::string SubexpressionCandidate::to_string() const {
-        return fmt::format("SubexpressionCandidate{{({}, {}, {}), ({})}}", vacancy_expression_idx,
-                           vacancy_idx, subexpressions_left, arg().to_string());
+        return fmt::format("SubexpressionCandidate{{uid={}, created_by={} ,({}, {}, {}), ({})}}",
+                           uid, creator_uid, vacancy_expression_idx, vacancy_idx, subexpressions_left, arg().to_string());
     }
 
     [[nodiscard]] std::string SubexpressionCandidate::to_tex() const {

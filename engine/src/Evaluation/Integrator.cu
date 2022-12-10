@@ -23,6 +23,13 @@ namespace Sym {
         scan_array_1(SCAN_ARRAY_SIZE, true),
         scan_array_2(SCAN_ARRAY_SIZE, true) {}
 
+    void Integrator::increment_counter_from_device() {
+        const size_t increment = scan_array_1.to_cpu(scan_array_1.size() - 1) +
+                           scan_array_2.to_cpu(scan_array_2.size() - 1);
+        candidates_created += increment;
+        printf("+=%lu\n", increment);
+    }
+
     void Integrator::simplify_integrals() {
         integrals_swap.resize(integrals.size());
         Kernel::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_spaces);
@@ -41,9 +48,11 @@ namespace Sym {
 
     void Integrator::apply_known_integrals() {
         Kernel::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, expressions,
-                                                                   help_spaces, scan_array_1);
+                                                                   help_spaces, scan_array_1, candidates_created);
         cudaDeviceSynchronize();
         expressions.increment_size_from_device(scan_array_1.last());
+
+        increment_counter_from_device();
 
         Kernel::propagate_solved_subexpressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions);
         cudaDeviceSynchronize();
@@ -97,12 +106,14 @@ namespace Sym {
 
     void Integrator::apply_heuristics() {
         Kernel::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(
-            integrals, integrals_swap, expressions, help_spaces, scan_array_1, scan_array_2);
+            integrals, integrals_swap, expressions, help_spaces, scan_array_1, scan_array_2, candidates_created);
         cudaDeviceSynchronize();
 
         std::swap(integrals, integrals_swap);
         integrals.resize_from_device(scan_array_1.last());
         expressions.increment_size_from_device(scan_array_2.last());
+
+        increment_counter_from_device();
 
         scan_array_1.set_mem(1);
         Kernel::propagate_failures_upwards<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1);
@@ -192,9 +203,10 @@ namespace Sym {
             apply_known_integrals();
 
             history.add_step({expressions.to_vector(), integrals.to_vector(),
-                                  ComputationStepType::ApplySolution});
+                              ComputationStepType::ApplySolution});
 
             if (is_original_expression_solved()) {
+                history.print_history();
                 history.complete();
                 return Collapser::collapse(expressions.to_vector());
             }
