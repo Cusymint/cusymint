@@ -12,6 +12,9 @@ namespace Sym::Static {
         // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables, cert-err58-cpp)
         __device__ Symbol IDENTITY[Var::Size::get_value()];
 
+        using Inverse = Inv<Var>;
+        __device__ Symbol INVERSE[Inverse::Size::get_value()];
+
         using SinX = Sin<Var>;
         __device__ Symbol SIN_X[SinX::Size::get_value()];
         using CosX = Cos<Var>;
@@ -43,24 +46,59 @@ namespace Sym::Static {
 
         using EToX = Pow<E, Var>;
         __device__ Symbol E_TO_X[EToX::Size::get_value()];
+
+        using PythagoreanSinCos = Sqrt<Sub<Integer<1>, Pow<Var, Integer<2>>>>;
+        __device__ Symbol PYTHAGOREAN_SIN_COS[PythagoreanSinCos::Size::get_value()];
+
+        using NegPythagoreanSinCos = Mul<Integer<-1>, PythagoreanSinCos>;
+        __device__ Symbol NEG_PYTHAGOREAN_SIN_COS[NegPythagoreanSinCos::Size::get_value()];
+
+        using TangentAsSine = Frac<Var, PythagoreanSinCos>;
+        __device__ Symbol TANGENT_AS_SINE[TangentAsSine::Size::get_value()];
+
+        using CotangentAsSine = Frac<PythagoreanSinCos, Var>;
+        __device__ Symbol COTANGENT_AS_SINE[TangentAsSine::Size::get_value()];
+
         // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables, cert-err58-cpp)
 
         __device__ Symbol* const STATIC_FUNCTIONS[] = {
-            IDENTITY,        SIN_X,
-            COS_X,           TAN_X,
-            COT_X,           UNIVERSAL_SIN_X,
-            UNIVERSAL_COS_X, UNIVERSAL_TAN_X,
-            UNIVERSAL_COT_X, UNIVERSAL_DERIVATIVE,
-            TAN_X_OVER_2,    E_TO_X,
+            IDENTITY,
+            INVERSE,
+            SIN_X,
+            COS_X,
+            TAN_X,
+            COT_X,
+            UNIVERSAL_SIN_X,
+            UNIVERSAL_COS_X,
+            UNIVERSAL_TAN_X,
+            UNIVERSAL_COT_X,
+            UNIVERSAL_DERIVATIVE,
+            TAN_X_OVER_2,
+            E_TO_X,
+            PYTHAGOREAN_SIN_COS,
+            NEG_PYTHAGOREAN_SIN_COS,
+            TANGENT_AS_SINE,
+            COTANGENT_AS_SINE,
         };
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
-            Var::init,           SinX::init,
-            CosX::init,          TanX::init,
-            CotX::init,          UniversalSinX::init,
-            UniversalCosX::init, UniversalTanX::init,
-            UniversalCotX::init, UniversalDerivative::init,
-            init_tan_x_over_2,   EToX::init,
+            Var::init,
+            Inverse::init,
+            SinX::init,
+            CosX::init,
+            TanX::init,
+            CotX::init,
+            UniversalSinX::init,
+            UniversalCosX::init,
+            UniversalTanX::init,
+            UniversalCotX::init,
+            UniversalDerivative::init,
+            init_tan_x_over_2,
+            EToX::init,
+            PythagoreanSinCos::init,
+            NegPythagoreanSinCos::init,
+            TangentAsSine::init,
+            CotangentAsSine::init,
         };
 
         constexpr size_t STATIC_FUNCTION_COUNT =
@@ -78,6 +116,7 @@ namespace Sym::Static {
     };
 
     __device__ const Symbol& identity() { return *IDENTITY; }
+    __device__ const Symbol& inverse() { return *INVERSE; }
     __device__ const Symbol& sin_x() { return *SIN_X; }
     __device__ const Symbol& cos_x() { return *COS_X; }
     __device__ const Symbol& tan_x() { return *TAN_X; }
@@ -91,6 +130,11 @@ namespace Sym::Static {
     __device__ const Symbol& tan_x_over_2() { return *TAN_X_OVER_2; }
 
     __device__ const Symbol& e_to_x() { return *E_TO_X; }
+
+    __device__ const Symbol& pythagorean_sin_cos() { return *PYTHAGOREAN_SIN_COS; }
+    __device__ const Symbol& neg_pythagorean_sin_cos() { return *NEG_PYTHAGOREAN_SIN_COS; }
+    __device__ const Symbol& tangent_as_sine() { return *TANGENT_AS_SINE; }
+    __device__ const Symbol& cotangent_as_sine() { return *COTANGENT_AS_SINE; }
 
     void init_functions() {
         static constexpr size_t BLOCK_SIZE = 1024;
