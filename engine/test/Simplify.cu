@@ -226,4 +226,7 @@ namespace Test {
         "(4*cos(x)^3)*tan(x)))+((108*cos(x))*tan(x)))+((((72*y)*x)*cos(x))*tan(x)))+((((12*y^2)*x^"
         "2)*cos(x))*tan(x)))+(54*cos(x)^2))+(54*tan(x)^2))+(12*cos(x)^3))+(12*tan(x)^3))+cos(x)^4)+"
         "tan(x)^4)+(108*cos(x)))+(108*tan(x)))")
+
+    SIMPLIFY_TEST(SplitReciprocal, "1/(e*x*sin^2(x))",
+                  Sym::inv(Sym::e()) / Sym::var() / (Sym::sin(Sym::var()) ^ Sym::num(2)))
 }

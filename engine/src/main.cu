@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("x^4/(1+x^2)"));
+    const auto integral = Sym::integral(Parser::parse_function("1/(cos^2(x)(1+tg^2(x)))"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
