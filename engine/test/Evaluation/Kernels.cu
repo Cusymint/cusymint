@@ -325,12 +325,13 @@ namespace Test {
         ExprVector expressions_vector = {vacancy(0, 0), vacancy(0, 0), vacancy(0, 0),
                                          vacancy(0, 0), vacancy(0, 0), vacancy(0, 0)};
 
-        std::vector<HeuristicPairVector> expected_heuristics = {{{1, {2, 1}}, {2, {1, 0}}},
-                                                                {{0, {1, 0}}},
-                                                                {{3, {1, 1}}},
-                                                                {{1, {2, 1}}},
-                                                                {{2, {1, 0}}, {3, {1, 1}}},
-                                                                {}};
+        std::vector<HeuristicPairVector> expected_heuristics = {
+            {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}},
+            {{0, {1, 0}}},
+            {{3, {1, 1}}},
+            {{1, {2, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}},
+            {}};
 
         ExprVector expected_expressions_vector =
             get_expected_expression_vector(expected_heuristics);
@@ -361,12 +362,13 @@ namespace Test {
         ExprVector expressions_vector = {vacancy(0, 0), vacancy(0, 0), vacancy(0, 0),
                                          vacancy(0, 0), vacancy(0, 0), vacancy(0, 0)};
 
-        std::vector<HeuristicPairVector> expected_heuristics = {{{1, {2, 1}}, {2, {1, 0}}},
-                                                                {{0, {1, 0}}},
-                                                                {{3, {1, 1}}},
-                                                                {{1, {2, 1}}},
-                                                                {{2, {1, 0}}, {3, {1, 1}}},
-                                                                {}};
+        std::vector<HeuristicPairVector> expected_heuristics = {
+            {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}},
+            {{0, {1, 0}}},
+            {{3, {1, 1}}},
+            {{1, {2, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}},
+            {}};
 
         ExprVector expected_expression_vector = get_expected_expression_vector(expected_heuristics);
 
