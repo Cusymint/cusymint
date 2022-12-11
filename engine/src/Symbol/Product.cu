@@ -236,7 +236,9 @@ namespace Sym {
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol& expr1,
                                                                const Symbol& expr2) {
         using Matcher = PatternPair<Inv<Same>, Same>;
-        return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1);
+        using TrigMatcher = PatternPair<Tan<Same>, Cot<Same>>;
+        return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1)
+            || TrigMatcher::match_pair(expr1, expr2) || TrigMatcher::match_pair(expr2, expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {

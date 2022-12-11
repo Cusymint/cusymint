@@ -159,6 +159,7 @@ namespace Test {
     SIMPLIFY_TEST(CotangentOfArccotangent, "cot(arccot(5^x))", "5^x")
     SIMPLIFY_TEST(PythagoreanTrigIdentity, "cos(x+e^cos(x))^2+sin(x+e^cos(x))^2", "1")
     SIMPLIFY_TEST(AdvancedPythagoreanTrigIdentity, "cos(2)^2+sin(1+cos(x)^2+sin(x)^2)^2", "1")
+    SIMPLIFY_TEST(TangentCotangentProduct, "tg(tan(x)cot(x)x^2)ctg(x^2)", "1")
 
     SIMPLIFY_TEST(LogarithmOfE, "ln(e)", "1")
     SIMPLIFY_TEST(LogarithmOfOne, "ln(1)", "0")
