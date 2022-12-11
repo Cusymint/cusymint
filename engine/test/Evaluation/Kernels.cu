@@ -3,6 +3,8 @@
 #include <thrust/scan.h>
 
 #include "IntegratorUtils.cuh"
+#include "Parser/Parser.cuh"
+#include "Symbol/Integral.cuh"
 
 #define KERNEL_TEST(_name) TEST(Kernels, _name)
 
@@ -440,6 +442,27 @@ namespace Test {
             nth_expression_candidate(4, trig2_with_subs),
             nth_expression_candidate(8, Sym::integral(Sym::var()), 3),
             nth_expression_candidate(9, Sym::integral(Sym::tan(Sym::num(0.5) * Sym::var())), 2),
+            nth_expression_candidate(
+                0, Sym::integral(Sym::inv((Sym::num(1) - (Sym::var() ^ Sym::num(2))) ^
+                                          Sym::inv(Sym::num(2))) *
+                                     (Sym::var() + ((Sym::num(1) - (Sym::var() ^ Sym::num(2))) ^
+                                                    Sym::inv(Sym::num(2)))),
+                                 {Sym::sin(Sym::var())})),
+            nth_expression_candidate(
+                0, Sym::integral(
+                       Sym::inv(Sym::num(-1) * ((Sym::num(1) - (Sym::var() ^ Sym::num(2))) ^
+                                                Sym::inv(Sym::num(2)))) *
+                           (((Sym::num(1) - (Sym::var() ^ Sym::num(2))) ^ Sym::inv(Sym::num(2))) +
+                            Sym::var()),
+                       {Sym::cos(Sym::var())})),
+            nth_expression_candidate(
+                0, Sym::integral(Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2))) *
+                                     ((((Sym::var() ^ Sym::num(2)) /
+                                        (Sym::num(1) + (Sym::var() ^ Sym::num(2)))) ^
+                                       Sym::inv(Sym::num(2))) +
+                                      ((Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2)))) ^
+                                       Sym::inv(Sym::num(2)))),
+                                 {Sym::tan(Sym::var())})),
         };
 
         auto integrals = from_vector<Sym::SubexpressionCandidate>(h_integrals);

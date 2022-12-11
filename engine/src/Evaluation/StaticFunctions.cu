@@ -62,7 +62,7 @@ namespace Sym::Static {
         using SineAsTangent = Sqrt<Frac<Pow<Var, Integer<2>>, Add<Integer<1>, Pow<Var, Integer<2>>>>>;
         __device__ Symbol SINE_AS_TANGENT[SineAsTangent::Size::get_value()];
 
-        using CosineAsTangent = Sqrt<Frac<Integer<1>, Add<Integer<1>, Pow<Var, Integer<2>>>>>;
+        using CosineAsTangent = Sqrt<Inv<Add<Integer<1>, Pow<Var, Integer<2>>>>>;
         __device__ Symbol COSINE_AS_TANGENT[CosineAsTangent::Size::get_value()];
 
         using TangentDerivative = Add<Integer<1>, Pow<Var, Integer<2>>>;
