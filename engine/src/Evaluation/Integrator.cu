@@ -155,8 +155,6 @@ namespace Sym {
         for (size_t i = 0;; ++i) {
             simplify_integrals();
 
-            printf("SIMPLIFY:\n\n%s\n", integrals.to_string().c_str());
-
             check_for_known_integrals();
             apply_known_integrals();
 
@@ -168,8 +166,6 @@ namespace Sym {
 
             check_heuristics_applicability();
             apply_heuristics();
-
-            printf("HEURISTICS:\n\n%s\n", integrals.to_string().c_str());
 
             if (has_original_expression_failed()) {
                 return std::nullopt;

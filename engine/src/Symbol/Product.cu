@@ -411,6 +411,17 @@ namespace Sym {
             return true;
         }
 
+        if (arg().is(Type::Product)) {
+            const auto count = arg().as<Product>().tree_size();
+            if (size < arg().size() + count) {
+                additional_required_size = count - 1;
+                return false;
+            }
+            From<Product>::Create<Product>::WithMap<Inv>::init(*help_space, {{arg().as<Product>(), count}});
+            help_space->copy_to(symbol());
+            return false;
+        }
+
         return true;
     }
 
