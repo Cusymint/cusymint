@@ -19,7 +19,7 @@ namespace Sym {
     }
 
     [[nodiscard]] std::string ErrorFunction::to_tex() const {
-        return fmt::format(R"(\erf\left({}\right))", arg().to_tex());
+        return fmt::format(R"(\text{{erf}}\left({}\right))", arg().to_tex());
     }
 
     std::vector<Symbol> erf(const std::vector<Symbol>& arg) {
