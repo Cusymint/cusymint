@@ -20,6 +20,7 @@ namespace Test {
 
     HEURISTIC_TEST(SineSubstitution, "cos(x)*e^sin(x)", "e^sin(x)")
     HEURISTIC_TEST(CosineSubstitution, "5cos^4(x)sin(x)", "-1*cos^5(x)")
+    HEURISTIC_TEST(TangentSubstitution, "sin(tg(x))/cos^2(x)", "-cos(tg(x))")
 
     // TODO: Universal substitution when simplification is powerful enough
 };

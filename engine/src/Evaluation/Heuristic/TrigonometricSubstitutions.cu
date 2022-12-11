@@ -52,24 +52,24 @@ namespace Sym::Heuristic {
         new_candidate->seal();
     }
 
-    // __device__ void substitute_tangent(const SubexpressionCandidate& integral,
-    //                                 const ExpressionArray<>::Iterator& integral_dst,
-    //                                 const ExpressionArray<>::Iterator& /*expression_dst*/,
-    //                                 Symbol& help_space) {
-    //     const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
-    //         Util::Pair(&Static::tan_x(), &Static::identity()),
-    //         Util::Pair(&Static::cot_x(), &Static::inverse()),
-    //         Util::Pair(&Static::sin_x(), &Static::tangent_as_sine()),
-    //         Util::Pair(&Static::cos_x(), &Static::cotangent_as_sine()),
-    //     };
+    __device__ void substitute_tangent(const SubexpressionCandidate& integral,
+                                    const ExpressionArray<>::Iterator& integral_dst,
+                                    const ExpressionArray<>::Iterator& /*expression_dst*/,
+                                    Symbol& help_space) {
+        const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
+            Util::Pair(&Static::tan_x(), &Static::identity()),
+            Util::Pair(&Static::cot_x(), &Static::inverse()),
+            Util::Pair(&Static::sin_x(), &Static::sine_as_tangent()),
+            Util::Pair(&Static::cos_x(), &Static::cosine_as_tangent()),
+        };
 
-    //     SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
-    //     new_candidate->copy_metadata_from(integral);
+        SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
+        new_candidate->copy_metadata_from(integral);
 
-    //     integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-    //         substitution_pairs, Util::array_len(substitution_pairs), Static::pythagorean_sin_cos(),
-    //         new_candidate->arg());
+        integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
+            substitution_pairs, Util::array_len(substitution_pairs), Static::tangent_derivative(),
+            new_candidate->arg());
 
-    //     new_candidate->seal();
-    // }
+        new_candidate->seal();
+    }
 }

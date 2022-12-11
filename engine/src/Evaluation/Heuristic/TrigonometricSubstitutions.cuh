@@ -13,10 +13,10 @@ namespace Sym::Heuristic {
                                       const ExpressionArray<>::Iterator& integral_dst,
                                       const ExpressionArray<>::Iterator& /*expression_dst*/,
                                       Symbol& help_space);
-    // __device__ void substitute_tangent(const SubexpressionCandidate& integral,
-    //                                    const ExpressionArray<>::Iterator& integral_dst,
-    //                                    const ExpressionArray<>::Iterator& /*expression_dst*/,
-    //                                    Symbol& help_space);
+    __device__ void substitute_tangent(const SubexpressionCandidate& integral,
+                                       const ExpressionArray<>::Iterator& integral_dst,
+                                       const ExpressionArray<>::Iterator& /*expression_dst*/,
+                                       Symbol& help_space);
 }
 
 #endif

@@ -33,6 +33,10 @@ namespace Sym::Static {
     // sqrt(1-x^2)/x
     __device__ const Symbol& cotangent_as_sine();
 
+    __device__ const Symbol& sine_as_tangent();
+    __device__ const Symbol& cosine_as_tangent();
+    __device__ const Symbol& tangent_derivative();
+
     /*
      * @brief Initializes static functions used by Cusymint. Has to be called before any integration
      * takes place.

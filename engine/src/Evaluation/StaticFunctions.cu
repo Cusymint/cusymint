@@ -59,6 +59,15 @@ namespace Sym::Static {
         using CotangentAsSine = Frac<PythagoreanSinCos, Var>;
         __device__ Symbol COTANGENT_AS_SINE[TangentAsSine::Size::get_value()];
 
+        using SineAsTangent = Sqrt<Frac<Pow<Var, Integer<2>>, Add<Integer<1>, Pow<Var, Integer<2>>>>>;
+        __device__ Symbol SINE_AS_TANGENT[SineAsTangent::Size::get_value()];
+
+        using CosineAsTangent = Sqrt<Frac<Integer<1>, Add<Integer<1>, Pow<Var, Integer<2>>>>>;
+        __device__ Symbol COSINE_AS_TANGENT[CosineAsTangent::Size::get_value()];
+
+        using TangentDerivative = Add<Integer<1>, Pow<Var, Integer<2>>>;
+        __device__ Symbol TANGENT_DERIVATIVE[TangentDerivative::Size::get_value()];
+
         // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables, cert-err58-cpp)
 
         __device__ Symbol* const STATIC_FUNCTIONS[] = {
@@ -79,6 +88,9 @@ namespace Sym::Static {
             NEG_PYTHAGOREAN_SIN_COS,
             TANGENT_AS_SINE,
             COTANGENT_AS_SINE,
+            SINE_AS_TANGENT,
+            COSINE_AS_TANGENT,
+            TANGENT_DERIVATIVE,
         };
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
@@ -99,6 +111,9 @@ namespace Sym::Static {
             NegPythagoreanSinCos::init,
             TangentAsSine::init,
             CotangentAsSine::init,
+            SineAsTangent::init,
+            CosineAsTangent::init,
+            TangentDerivative::init,
         };
 
         constexpr size_t STATIC_FUNCTION_COUNT =
@@ -135,6 +150,10 @@ namespace Sym::Static {
     __device__ const Symbol& neg_pythagorean_sin_cos() { return *NEG_PYTHAGOREAN_SIN_COS; }
     __device__ const Symbol& tangent_as_sine() { return *TANGENT_AS_SINE; }
     __device__ const Symbol& cotangent_as_sine() { return *COTANGENT_AS_SINE; }
+
+    __device__ const Symbol& sine_as_tangent() { return *SINE_AS_TANGENT; }
+    __device__ const Symbol& cosine_as_tangent() { return *COSINE_AS_TANGENT; }
+    __device__ const Symbol& tangent_derivative() { return *TANGENT_DERIVATIVE; }
 
     void init_functions() {
         static constexpr size_t BLOCK_SIZE = 1024;
