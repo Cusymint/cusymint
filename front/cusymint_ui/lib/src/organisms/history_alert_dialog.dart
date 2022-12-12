@@ -15,10 +15,17 @@ class CuHistoryAlertDialog extends StatelessWidget {
     return CuAlertDialog(
       // TODO: add to strings
       title: const CuText.med24('History'),
-      content: ListView(
-        shrinkWrap: true,
-        reverse: true,
-        children: historyItems,
+      content: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        width: double.maxFinite,
+        child: ListView.builder(
+          shrinkWrap: true,
+          reverse: true,
+          itemCount: historyItems.length,
+          itemBuilder: (context, index) {
+            return historyItems[index];
+          },
+        ),
       ),
       actions: [
         CuTextButton(
