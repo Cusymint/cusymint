@@ -1,3 +1,4 @@
+import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 
 class CuHistoryAlertDialog extends StatelessWidget {
@@ -13,25 +14,27 @@ class CuHistoryAlertDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CuAlertDialog(
-      // TODO: add to strings
-      title: const CuText.med24('History'),
+      title: CuText.med24(Strings.history.tr()),
       content: Container(
         constraints: const BoxConstraints(maxWidth: 400),
         width: double.maxFinite,
-        child: ListView.builder(
-          shrinkWrap: true,
-          reverse: true,
-          itemCount: historyItems.length,
-          itemBuilder: (context, index) {
-            return historyItems[index];
-          },
-        ),
+        child: historyItems.isNotEmpty
+            ? ListView.builder(
+                shrinkWrap: true,
+                reverse: true,
+                itemCount: historyItems.length,
+                itemBuilder: (context, index) {
+                  return historyItems[index];
+                },
+              )
+            : CuText.med14(Strings.historyEmpty.tr()),
       ),
       actions: [
-        CuTextButton(
-          text: 'Clear history',
-          onPressed: onClearHistoryPressed,
-        )
+        if (historyItems.isNotEmpty)
+          CuTextButton(
+            text: Strings.clearHistory.tr(),
+            onPressed: onClearHistoryPressed,
+          )
       ],
     );
   }
