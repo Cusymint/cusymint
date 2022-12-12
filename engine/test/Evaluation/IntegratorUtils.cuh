@@ -13,9 +13,11 @@
 #include "Evaluation/KnownIntegral/SimpleExponent.cuh"
 #include "Evaluation/KnownIntegral/SimpleSineCosine.cuh"
 #include "Evaluation/KnownIntegral/SimpleVariable.cuh"
+#include "Evaluation/Status.cuh"
 #include "Parser/Parser.cuh"
 #include "Symbol/ExpressionArray.cuh"
 #include "Symbol/Integral.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/Solution.cuh"
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/SubexpressionVacancy.cuh"
@@ -33,11 +35,15 @@ namespace Test {
     using IndexVector = std::vector<int>;
     using HeuristicPairVector = std::vector<Util::Pair<uint32_t, Sym::Heuristic::CheckResult>>;
     using ScanVector = std::vector<uint32_t>;
+    using EvalStatusVector = std::vector<Sym::EvaluationStatus>;
+
+    Sym::SymbolIterator iterator_from_vector(SymVector& vector);
 
     std::string get_different_fields(ScanVector vec1, ScanVector vec2);
 
     void test_known_integrals_correctly_checked(Util::DeviceArray<uint32_t> result,
-                                                std::vector<IndexVector> index_vectors);
+                                                std::vector<IndexVector> index_vectors,
+                                                size_t integral_count);
 
     void test_heuristics_correctly_checked(Util::DeviceArray<uint32_t> integral_result,
                                            Util::DeviceArray<uint32_t> expression_result,
@@ -50,6 +56,8 @@ namespace Test {
     std::string failure_message(const ExprVector& vec1, const ExprVector& vec2);
 
     testing::AssertionResult are_expr_vectors_equal(const ExprVector& vec1, const ExprVector& vec2);
+
+    testing::AssertionResult are_expr_vectors_equal_with_statuses(const ExprVector& vec1, const EvalStatusVector& statuses1, const ExprVector& vec2, const EvalStatusVector& statuses2);
 
     Sym::ExpressionArray<Sym::SubexpressionCandidate>
     from_string_vector_with_candidate(StringVector vector);

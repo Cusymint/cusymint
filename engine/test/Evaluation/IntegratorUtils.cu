@@ -1,7 +1,13 @@
+#include "Evaluation/Status.cuh"
 #include "IntegratorUtils.cuh"
+#include "Symbol/Macros.cuh"
 
 namespace Test {
     using namespace Sym;
+
+    Sym::SymbolIterator iterator_from_vector(SymVector& vector) {
+        return Sym::SymbolIterator::from_at(*vector.data(), 0, vector.size()).good();
+    }
 
     std::string get_different_fields(ScanVector vec1, ScanVector vec2) {
         if (vec1.size() != vec2.size()) {
@@ -18,14 +24,15 @@ namespace Test {
     }
 
     void test_known_integrals_correctly_checked(Util::DeviceArray<uint32_t> result,
-                                                std::vector<IndexVector> index_vectors) {
+                                                std::vector<IndexVector> index_vectors,
+                                                size_t integral_count) {
         auto result_vector = result.to_vector();
         ScanVector expected_result(result.size());
         for (int i = 0; i < KnownIntegral::COUNT; ++i) {
             for (int j = 0; j < index_vectors.size(); ++j) {
                 for (auto index : index_vectors[j]) {
                     if (i == index) {
-                        expected_result[i * MAX_EXPRESSION_COUNT + j] = 1;
+                        expected_result[i * integral_count + j] = 1;
                     }
                 }
             }
@@ -47,9 +54,9 @@ namespace Test {
             for (int j = 0; j < heuristics.size(); ++j) {
                 for (auto heuristic : heuristics[j]) {
                     if (i == heuristic.first) {
-                        expected_integral_result[i * MAX_EXPRESSION_COUNT + j] +=
+                        expected_integral_result[i * heuristics.size() + j] +=
                             heuristic.second.new_integrals;
-                        expected_expression_result[i * MAX_EXPRESSION_COUNT + j] +=
+                        expected_expression_result[i * heuristics.size() + j] +=
                             heuristic.second.new_expressions;
                     }
                 }
@@ -85,9 +92,39 @@ namespace Test {
         return result + "]";
     }
 
+    std::string to_string_with_tab_statuses(const EvalStatusVector& statuses) {
+        std::string result = "[\n";
+        for (const auto& status : statuses) {
+            result += "\t";
+            switch (status) {
+            case Sym::EvaluationStatus::Incomplete:
+                result += "Incomplete";
+                break;
+            case Sym::EvaluationStatus::Done:
+                result += "Done";
+                break;
+            case Sym::EvaluationStatus::ReallocationRequest:
+                result += "ReallocationRequest";
+                break;
+            }
+            result += ",\n";
+        }
+
+        return result + "]";
+    }
+
     std::string failure_message(const ExprVector& vec1, const ExprVector& vec2) {
         return fmt::format("Unexpected result:\n{} <- got,\n{} <- expected",
                            to_string_with_tab(vec1), to_string_with_tab(vec2));
+    }
+
+    std::string failure_message(const ExprVector& vec1, const ExprVector& vec2,
+                                const EvalStatusVector& statuses1,
+                                const EvalStatusVector& statuses2) {
+        return fmt::format("Unexpected result:\nExpressions:\n{},\nStatuses:\n{} <- "
+                           "got,\nExpressions:\n{},\nStatuses:\n{} <- expected",
+                           to_string_with_tab(vec1), to_string_with_tab_statuses(statuses1),
+                           to_string_with_tab(vec2), to_string_with_tab_statuses(statuses2));
     }
 
     testing::AssertionResult are_expr_vectors_equal(const ExprVector& vec1,
@@ -108,13 +145,39 @@ namespace Test {
         return testing::AssertionSuccess();
     }
 
+    testing::AssertionResult
+    are_expr_vectors_equal_with_statuses(const ExprVector& vec1, const EvalStatusVector& statuses1,
+                                         const ExprVector& vec2,
+                                         const EvalStatusVector& statuses2) {
+        if (vec1.size() != vec2.size() || statuses1.size() != statuses2.size()) {
+            return testing::AssertionFailure() << failure_message(vec1, vec2, statuses1, statuses2);
+        }
+        for (int i = 0; i < statuses1.size(); ++i) {
+            if (statuses1[i] != statuses2[i]) {
+                return testing::AssertionFailure()
+                       << failure_message(vec1, vec2, statuses1, statuses2);
+            }
+        }
+        for (int i = 0; i < vec1.size(); ++i) {
+            if (vec1[i].empty() && vec2[i].empty()) {
+                continue;
+            }
+            if (vec1[i].empty() || vec2[i].empty() ||
+                !Symbol::are_expressions_equal(*vec1[i].data(), *vec2[i].data())) {
+                return testing::AssertionFailure() << failure_message(vec1, vec2);
+            }
+        }
+
+        return testing::AssertionSuccess();
+    }
+
     ExpressionArray<SubexpressionCandidate> from_string_vector_with_candidate(StringVector vector) {
         auto cand_vector = parse_strings_with_map(vector, first_expression_candidate);
         for (int i = 0; i < cand_vector.size(); ++i) {
             cand_vector[i].data()->as<SubexpressionCandidate>().vacancy_expression_idx = i;
         }
 
-        return from_vector<SubexpressionCandidate>(cand_vector);
+        return ExpressionArray<SubexpressionCandidate>(cand_vector);
     }
 
     ExpressionArray<SubexpressionCandidate> with_count(const size_t count) {

@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <vector>
+
+#include "Simplify.cuh"
 #include "Evaluation/Integrator.cuh"
 #include "Parser/Parser.cuh"
 #include "Symbol/Constants.cuh"
@@ -17,13 +20,29 @@
 namespace Test {
     namespace {
         std::vector<Sym::Symbol> simplify(std::vector<Sym::Symbol> expression) {
-            // Sometimes simplified expressions take more space than before, so this is necessary
-            expression.resize(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+            
+            // while (true) {
+            //     std::vector<Sym::Symbol>expr_copy(expression);
+            //     std::vector<Sym::Symbol> simplification_memory(Sym::Integrator::REALLOC_MULTIPLIER *
+            //                                                    expr_copy.size());
 
-            std::vector<Sym::Symbol> simplification_memory(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
-            expression.data()->simplify(simplification_memory.data());
+            //     auto help_space_it =
+            //         Sym::SymbolIterator::from_at(*simplification_memory.data(), 0,
+            //                                      simplification_memory.size()).good();
+            //     const auto result = expr_copy.data()->simplify(help_space_it);
 
-            expression.resize(expression.data()->size());
+            //     if (result.is_good()) {
+            //         expr_copy.data()->copy_to(*expression.data());
+            //         break;
+            //     }
+
+            //     // Sometimes simplified expressions take more space than before, so this is
+            //     // necessary
+            //     expression.resize(Sym::Integrator::REALLOC_MULTIPLIER * expression.size());
+            // }
+            // expression.resize(expression.data()->size());
+
+            simplify_vector(expression);
 
             return expression;
         }
