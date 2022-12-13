@@ -50,24 +50,40 @@ class HomeBody extends StatefulWidget {
 
 class _HomeBodyState extends State<HomeBody> {
   final _fToast = FToast();
+  final _controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fToast.init(context);
+    _controller.text = widget.mainPageBloc.initialExpression ?? '';
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return CuScaffold(
       drawer: WiredDrawer(context: context),
-      appBar: CuAppBar(),
+      appBar: CuAppBar(
+        actions: [
+          _HistoryIconButton(
+            controller: _controller,
+            mainPageBloc: widget.mainPageBloc,
+          ),
+        ],
+      ),
       body: Center(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.max,
           children: [
             _MainPageInput(
+              controller: _controller,
               mainPageBloc: widget.mainPageBloc,
               isTextSelected: widget.isTextSelected,
             ),
@@ -137,34 +153,44 @@ class _HomeBodyState extends State<HomeBody> {
   }
 }
 
-class _MainPageInput extends StatefulWidget {
+class _HistoryIconButton extends StatelessWidget {
+  const _HistoryIconButton({
+    Key? key,
+    required this.mainPageBloc,
+    required this.controller,
+  }) : super(key: key);
+
+  final MainPageBloc mainPageBloc;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        showDialog(
+          context: context,
+          builder: (context) => CuHistoryAlertDialog(
+            onClearHistoryPressed: () {},
+            historyItems: [],
+          ),
+        );
+      },
+      icon: const Icon(Icons.history),
+    );
+  }
+}
+
+class _MainPageInput extends StatelessWidget {
   const _MainPageInput({
     Key? key,
     required this.mainPageBloc,
+    required this.controller,
     required this.isTextSelected,
   }) : super(key: key);
 
   final MainPageBloc mainPageBloc;
+  final TextEditingController controller;
   final bool isTextSelected;
-
-  @override
-  State<_MainPageInput> createState() => _MainPageInputState();
-}
-
-class _MainPageInputState extends State<_MainPageInput> {
-  final _controller = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.text = widget.mainPageBloc.initialExpression ?? '';
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -178,24 +204,24 @@ class _MainPageInputState extends State<_MainPageInput> {
             children: [
               CuText.med14(Strings.enterIntegral.tr()),
               CuTextField(
-                autofocus: widget.isTextSelected,
+                autofocus: isTextSelected,
                 onSubmitted: (submittedText) {
                   if (submittedText.isNotEmpty) {
-                    widget.mainPageBloc.add(
+                    mainPageBloc.add(
                       SolveRequested(submittedText),
                     );
                   }
                 },
                 onChanged: (newText) {
-                  widget.mainPageBloc.add(
+                  mainPageBloc.add(
                     InputChanged(newText),
                   );
                 },
                 prefixIcon: IconButton(
                   onPressed: () {
-                    if (_controller.text.isNotEmpty) {
-                      _controller.clear();
-                      widget.mainPageBloc.add(
+                    if (controller.text.isNotEmpty) {
+                      controller.clear();
+                      mainPageBloc.add(
                         const ClearRequested(),
                       );
                       return;
@@ -210,9 +236,9 @@ class _MainPageInputState extends State<_MainPageInput> {
                 ),
                 suffixIcon: IconButton(
                   onPressed: () {
-                    if (_controller.text.isNotEmpty) {
-                      widget.mainPageBloc.add(
-                        SolveRequested(_controller.text),
+                    if (controller.text.isNotEmpty) {
+                      mainPageBloc.add(
+                        SolveRequested(controller.text),
                       );
                     }
                   },
@@ -221,7 +247,7 @@ class _MainPageInputState extends State<_MainPageInput> {
                     color: CuColors.of(context).mintDark,
                   ),
                 ),
-                controller: _controller,
+                controller: controller,
               ),
             ],
           ),

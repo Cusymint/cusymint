@@ -74,16 +74,7 @@ class CommonMolecules extends StorybookPart {
               initial: true,
             );
 
-            final displayMenuButton = context.knobs.boolean(
-              label: 'Display menu button',
-              initial: true,
-            );
-
-            final appBar = displayAppBar
-                ? CuAppBar(
-                    onMenuPressed: displayMenuButton ? () {} : null,
-                  )
-                : null;
+            final appBar = displayAppBar ? CuAppBar() : null;
 
             return CuScaffold(
               appBar: appBar,
