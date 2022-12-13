@@ -48,20 +48,10 @@ namespace Sym {
 
         // (a^b)^c -> a^(b*c)
         if (arg1().is(Type::Power)) {
-            Symbol::from(this)->copy_to(*help_space);
-            Power* const this_copy = &help_space->as<Power>();
-
-            *this = Power::create();
-            this_copy->arg1().as<Power>().arg1().copy_to(arg1());
-            seal_arg1();
-
-            Product* const product = &arg2() << Product::create();
-            this_copy->arg1().as<Power>().arg2().copy_to(product->arg1());
-            product->seal_arg1();
-            this_copy->arg2().copy_to(product->arg2());
-            product->seal();
-
-            seal();
+            const auto& lower_power = arg1().as<Power>();
+            Pow<Copy, Mul<Copy, Copy>>::init(*help_space,
+                                             {lower_power.arg1(), lower_power.arg2(), arg2()});
+            help_space->copy_to(symbol());
 
             return false; // b and c may be simplified
         }

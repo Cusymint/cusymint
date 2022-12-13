@@ -19,14 +19,14 @@ namespace Sym {
     DEFINE_SIMPLIFY_IN_PLACE(Logarithm) { // NOLINT(misc-unused-parameters)
         if (arg().is(Type::NumericConstant) && arg().as<NumericConstant>().value == 1) {
             // ln(1) = 0
-            symbol().as<NumericConstant>() = NumericConstant::with_value(0);
+            symbol().init_from(NumericConstant::with_value(0));
             return true;
         }
 
         if (arg().is(Type::KnownConstant) &&
             arg().as<KnownConstant>().value == KnownConstantValue::E) {
             // ln(e) = 1
-            symbol().as<NumericConstant>() = NumericConstant::with_value(1);
+            symbol().init_from(NumericConstant::with_value(1));
             return true;
         }
 

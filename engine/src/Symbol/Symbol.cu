@@ -1,5 +1,6 @@
 #include "Symbol.cuh"
 
+#include "Evaluation/Integrator.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/StaticStack.cuh"
@@ -36,7 +37,7 @@ namespace Sym {
                                                                       const Symbol& source,
                                                                       const size_t symbol_count) {
         for (size_t i = 0; i < symbol_count; ++i) {
-            (&source)[symbol_count - i - 1].copy_single_to(destination[i]);
+            (&source)[symbol_count - i - 1].copy_single_to(*destination.at_unchecked(i));
         }
     }
 
@@ -105,13 +106,13 @@ namespace Sym {
         expr.size() = BUILDER_SIZE;
 
         for (size_t i = size; i > 0; --i) {
+            expr[i - 1].size() = BUILDER_SIZE;
             VIRTUAL_CALL(expr[i - 1], seal_whole);
         }
     }
 
     __host__ __device__ Util::SimpleResult<size_t>
     Symbol::compress_reverse_to(SymbolIterator destination) {
-        printf("destination index: %lu\n", destination.index());
         const size_t original_destination_idx = destination.index();
         mark_to_be_copied_and_propagate_additional_size(&destination.current());
 
@@ -133,11 +134,6 @@ namespace Sym {
 
         // Corrects the size of copied `this` (if additional demanded)
         Symbol* const last_copied_symbol = &destination.current() - 1;
-
-        if (!destination.can_offset_by(last_copied_symbol->additional_required_size())) {
-            return Util::SimpleResult<size_t>::make_error();
-        }
-
         last_copied_symbol->size() += last_copied_symbol->additional_required_size();
         last_copied_symbol->additional_required_size() = 0;
 
@@ -167,8 +163,9 @@ namespace Sym {
     }
 
     __host__ __device__ Util::BinaryResult Symbol::simplify(SymbolIterator& help_space) {
-        bool success = false;
+        const size_t this_capacity = help_space.capacity() / Integrator::HELP_SPACE_MULTIPLIER;
 
+        bool success = false;
         while (!success) {
             success = true;
 
@@ -177,6 +174,11 @@ namespace Sym {
             }
 
             const size_t new_size = TRY_PASS(Util::Empty, compress_reverse_to(help_space));
+
+            if (this_capacity < new_size) {
+                return Util::BinaryResult::make_error();
+            }
+
             copy_and_reverse_symbol_sequence(*this, *help_space, new_size);
         }
 

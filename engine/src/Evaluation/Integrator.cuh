@@ -115,7 +115,7 @@ namespace Sym {
         static constexpr size_t HELP_SPACE_MULTIPLIER = 2;
 
         /*
-         * @brief Sizes of `scan_array_X` and `evaluation_statuses` are multiplied by this value on
+         * @brief Sizes of `scan_array_X` and `evaluation_statuses_X` are multiplied by this value on
          * reallocation
          */
         static constexpr size_t REALLOC_MULTIPLIER = 2;

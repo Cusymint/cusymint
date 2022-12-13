@@ -25,22 +25,21 @@
         if (result != EvaluationStatus::Done) {  \
             return result;                       \
         }                                        \
-                                                 \
-        _call;                                   \
     })
 
 /*
  * @brief Checks if the result of `_call` is a good result. If yes, does
  * nothing. If not, returns `EvaluationStatus::ReallocationRequest`.
  */
-#define TRY_EVALUATE_RESULT(_call)                                          \
-    ({                                                                      \
-        const EvaluationStatus result = result_to_evaluation_status(_call); \
-        if (result != EvaluationStatus::Done) {                             \
-            return result;                                                  \
-        }                                                                   \
-                                                                            \
-        (_call).good();                                                     \
+#define TRY_EVALUATE_RESULT(_call)                                                \
+    ({                                                                            \
+        auto call_result = (_call);                                               \
+        const EvaluationStatus result = result_to_evaluation_status(call_result); \
+        if (result != EvaluationStatus::Done) {                                   \
+            return result;                                                        \
+        }                                                                         \
+                                                                                  \
+        call_result.good();                                                       \
     })
 
 namespace Sym {

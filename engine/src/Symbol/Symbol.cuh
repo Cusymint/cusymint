@@ -188,6 +188,21 @@ namespace Sym {
         }
 
         /*
+         * @brief Pointer to the `idx`th element after `this`, without bounds checking in debug
+         */
+        [[nodiscard]] __host__ __device__ inline const Symbol*
+        at_unchecked(const size_t idx) const {
+            return this + idx;
+        }
+
+        /*
+         * @brief Pointer to the `idx`th element after `this`, without bounds checking in debug
+         */
+        [[nodiscard]] __host__ __device__ inline Symbol* at_unchecked(const size_t idx) {
+            return const_cast<Symbol*>(const_cast<const Symbol*>(this)->at_unchecked(idx));
+        }
+
+        /*
          * @brief Pointer to the `idx`th element after `this`.
          */
         [[nodiscard]] __host__ __device__ inline const Symbol* at(const size_t idx) const {
@@ -202,7 +217,7 @@ namespace Sym {
                 }
             }
 
-            return this + idx;
+            return at_unchecked(idx);
         }
 
         /*
@@ -251,8 +266,8 @@ namespace Sym {
                                                              const Symbol* const source, size_t n);
 
         /*
-         * @brief Moves symbol sequence from `source` to `destination`. Source and destination can
-         * alias.
+         * @brief Moves symbol sequence from `source` to `destination`. Source and destination
+         * can alias.
          *
          * @param seq Symbol sequence to copy. Doesn't need to be semantically correct.
          * @param n number of symbols to copy
@@ -371,8 +386,8 @@ namespace Sym {
          *
          * @param destination Location to which the tree is going to be copied
          *
-         * @return New size of the symbol tree when the comppression was successfull, an error when
-         * the destination's capacity is too small
+         * @return New size of the symbol tree when the comppression was successfull, an error
+         * when the destination's capacity is too small
          */
         [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
         compress_reverse_to(SymbolIterator destination);
@@ -385,7 +400,8 @@ namespace Sym {
          *
          * @return New size of the symbol tree
          */
-        __host__ __device__ Util::SimpleResult<size_t> compress_to(SymbolIterator& destination);
+        [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
+        compress_to(SymbolIterator& destination);
 
         __host__ __device__ void
         mark_to_be_copied_and_propagate_additional_size(Symbol* const help_space);
@@ -397,7 +413,8 @@ namespace Sym {
          * @param
          *
          * @return A good result when the simplification succeds, an error result when the
-         * help_space is too small or when the simplification result would be larger than `capacity`
+         * help_space is too small or when the simplification result would be larger than
+         * `capacity`
          */
         [[nodiscard]] __host__ __device__ Util::BinaryResult simplify(SymbolIterator& help_space);
 
@@ -412,8 +429,8 @@ namespace Sym {
         [[nodiscard]] __host__ __device__ bool simplify_in_place(SymbolIterator& help_space);
 
         /*
-         * @brief Recalculates sizes and argument offsets in the given expression. There cannot be
-         * any holes in the expression.
+         * @brief Recalculates sizes and argument offsets in the given expression. There cannot
+         * be any holes in the expression.
          *
          * @param expr Expression to seal
          * @param size Total size of the expression
@@ -504,7 +521,8 @@ namespace Sym {
         is_polynomial(Symbol* const help_space) const;
 
         /*
-         * @brief If `this` is a monomial, returns its coefficient. Otherwise, returns `empty_num`.
+         * @brief If `this` is a monomial, returns its coefficient. Otherwise, returns
+         * `empty_num`.
          */
         __host__ __device__ Util::OptionalNumber<double>
         get_monomial_coefficient(Symbol* const help_space) const;
@@ -560,7 +578,7 @@ namespace Sym {
          * @return Good with the iterator on success, error when the given index is past the
          * allocated space of the parent
          */
-        __host__ __device__ static Util::SimpleResult<GenericSymbolIterator>
+        [[nodiscard]] __host__ __device__ static Util::SimpleResult<GenericSymbolIterator>
         from_at(S& parent, const size_t index, const size_t capacity) {
             GenericSymbolIterator iterator;
             iterator.parent = &parent;
@@ -585,8 +603,8 @@ namespace Sym {
         [[nodiscard]] __host__ __device__ size_t total_capacity() const { return capacity_; }
 
         /*
-         * @brief How many `Symbol`s are within bounds starting from the current symbol (e.g. if the
-         * current symbol is the last one, returns 1).
+         * @brief How many `Symbol`s are within bounds starting from the current symbol (e.g. if
+         * the current symbol is the last one, returns 1).
          *
          */
         [[nodiscard]] __host__ __device__ size_t capacity() const { return capacity_ - index_; }

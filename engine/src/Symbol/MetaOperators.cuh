@@ -430,7 +430,7 @@ namespace Sym {
             auto* const solution = dst << Solution::builder();
 
             if (integral.substitutions_size() != 0) {
-                Symbol::copy_symbol_sequence(&solution->first_substitution().symbol(),
+                Symbol::copy_symbol_sequence(&solution->symbol().child(),
                                              &integral.first_substitution().symbol(),
                                              integral.substitutions_size());
             }

@@ -102,6 +102,7 @@ string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
 if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
   target_compile_options(libcusymint PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -g -G >)
+  target_compile_options(cusymint PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -g -G >)
   add_compile_definitions(__DEBUG__)
 endif()
 

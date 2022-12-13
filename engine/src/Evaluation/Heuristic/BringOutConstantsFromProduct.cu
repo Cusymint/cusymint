@@ -127,7 +127,7 @@ namespace Sym::Heuristic {
         auto& integrand_dst = integral_candidate->arg().as<Integral>().integrand();
 
         // As many products as constants, because one additional product for the vacancy is needed
-        TRY_EVALUATE_RESULT(integral_guard += constant_count);
+        TRY_EVALUATE_RESULT(expression_guard += constant_count);
         create_product_builders(expression_candidate->arg(), constant_count);
 
         // One product between every non-constant
@@ -138,9 +138,10 @@ namespace Sym::Heuristic {
         expression_candidate->arg()[constant_count].init_from(
             SubexpressionVacancy::for_single_integral());
 
-        copy_constants_and_functions(expression_candidate->arg()[constant_count + 1],
-                                     integrand_dst[function_count - 1], product_tree,
-                                     expression_guard, integral_guard);
+        const auto copy_res = copy_constants_and_functions(
+            expression_candidate->arg()[constant_count + 1], integrand_dst[function_count - 1],
+            product_tree, expression_guard, integral_guard);
+        TRY_EVALUATE_RESULT(copy_res);
 
         seal_product_builders(expression_candidate->arg(), constant_count);
         seal_product_builders(integrand_dst, function_count - 1);

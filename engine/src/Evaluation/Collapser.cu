@@ -6,8 +6,9 @@ namespace Sym::Collapser {
                                               const std::vector<Symbol>& tree) {
         if constexpr (Consts::DEBUG) {
             if (!tree[0].is(Type::SubexpressionCandidate)) {
-                Util::crash("Invalid first symbol of tree: %s, should be SubexpressionCandidate",
-                            type_name(tree[0].type()));
+                Util::crash("Invalid first symbol of tree: %s, should be SubexpressionCandidate. "
+                            "Whole tree:\n%s\n",
+                            type_name(tree[0].type()), tree.data()->to_string().c_str());
             }
         }
 
@@ -23,13 +24,17 @@ namespace Sym::Collapser {
 
         expression[n].init_from(ExpanderPlaceholder::with_size(tree_content.size()));
 
-        std::vector<Symbol> new_tree(expression.size() + tree_content.size() - 1);
+        // This is 1 more than needed, but `compress_to`s implementation expects this
+        std::vector<Symbol> new_tree(expression.size() + tree_content.size());
         auto new_tree_iterator =
             SymbolIterator::from_at(*new_tree.data(), 0, new_tree.size()).good();
-        expression.data()->compress_to(new_tree_iterator);
+        expression.data()->compress_to(new_tree_iterator).unwrap();
 
         std::copy(tree_content.begin(), tree_content.end(),
                   new_tree.begin() + static_cast<int64_t>(n));
+
+        // Resize to what is actually necessary
+        new_tree.resize(new_tree.size() - 1);
 
         return new_tree;
     }
@@ -85,6 +90,7 @@ namespace Sym::Collapser {
             success = collapsed_simplified.data()->simplify(help_space_iterator).is_good();
 
             if (!success) {
+                collapsed.resize(collapsed.size() * Integrator::REALLOC_MULTIPLIER);
                 help_space.resize(help_space.size() * Integrator::REALLOC_MULTIPLIER);
             }
         }

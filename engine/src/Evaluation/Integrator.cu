@@ -67,16 +67,6 @@ namespace Sym {
 
         bool success = false;
         while (!success) {
-            printf("About to launch simplification kernel, integrals.size(): %lu\n",
-                   integrals.size());
-            printf("help_space.size(): %lu\n", help_space.size());
-            printf("help_space.expression_capacity(0): %lu\n", help_space.expression_capacity(0));
-            printf("help_space.symbols_capacity(): %lu\n", help_space.symbols_capacity());
-            printf("integrals_swap.size(): %lu\n", integrals_swap.size());
-            printf("integrals_swap.expression_capacity(0): %lu\n",
-                   integrals_swap.expression_capacity(0));
-            printf("integrals_swap.symbols_capacity(): %lu\n", integrals_swap.symbols_capacity());
-            printf("evaluation_statuses_1.size(): %lu\n", evaluation_statuses_1.size());
             Kernel::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_space,
                                                           evaluation_statuses_1);
             cudaDeviceSynchronize();
@@ -205,7 +195,7 @@ namespace Sym {
         const size_t new_expression_count = old_expression_count + expression_count_diff;
 
         // No applications possible
-        if (old_expression_count == new_expression_count) {
+        if (new_integral_count == 0) {
             return;
         }
 
@@ -214,17 +204,24 @@ namespace Sym {
         resize_evaluation_statuses(evaluation_statuses_2, expression_count_diff);
         reset_evaluation_statuses(evaluation_statuses_2);
 
-        const auto new_integrals = integrals_swap.iterator();
-        const auto new_expressions = expressions.iterator(old_expression_count);
-
         expressions.resize(new_expression_count, INITIAL_EXPRESSIONS_CAPACITY);
         integrals_swap.resize(new_integral_count, INITIAL_EXPRESSIONS_CAPACITY);
+
+        // If old_expression_count == new_expression_count, then there wont be any new expressions,
+        // and so we don't need to allocate space for them. We do however still have to create a
+        // valid iterator, so we just create an iterator to the first expression in this case
+        const size_t new_expressions_offset =
+            old_expression_count == new_expression_count ? 0 : old_expression_count;
+
+        const auto new_integrals = integrals_swap.iterator();
+        const auto new_expressions = expressions.iterator(new_expressions_offset);
+
         help_space.reoffset_like<SubexpressionCandidate>(new_integrals, HELP_SPACE_MULTIPLIER);
 
         bool success = false;
         while (!success) {
             Kernel::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(
-                integrals, integrals_swap, expressions, new_expressions.index(), help_space,
+                integrals, integrals_swap, expressions, new_expressions_offset, help_space,
                 scan_array_1, scan_array_2, evaluation_statuses_1, evaluation_statuses_2);
             cudaDeviceSynchronize();
 
@@ -295,11 +292,7 @@ namespace Sym {
         integrals.load_from_vector({first_expression_candidate(integral)});
 
         for (size_t i = 0;; ++i) {
-            printf("loop %lu\n", i);
-            fmt::print("integrals: {}\n", integrals.to_string());
-            fmt::print("expressions: {}\n", expressions.to_string());
             simplify_integrals();
-            fmt::print("integrals after simplify: {}\n", integrals.to_string());
 
             check_for_known_integrals();
             apply_known_integrals();

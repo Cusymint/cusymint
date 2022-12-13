@@ -356,6 +356,11 @@ namespace Sym::Kernel {
                 }
 
                 const size_t idx = index_from_scan(new_integrals_indices, appl_idx);
+
+                if (integral_statuses[idx] == EvaluationStatus::Done) {
+                    continue;
+                }
+
                 const size_t new_integral_count =
                     new_integrals_indices[appl_idx] -
                     (appl_idx == 0 ? 0 : new_integrals_indices[appl_idx - 1]);
@@ -363,12 +368,13 @@ namespace Sym::Kernel {
                     new_expressions_indices[appl_idx] -
                     (appl_idx == 0 ? 0 : new_expressions_indices[appl_idx - 1]);
 
-                if (integral_statuses[idx] == EvaluationStatus::Done) {
-                    continue;
-                }
-
+                const size_t expr_idx = index_from_scan(new_expressions_indices, appl_idx);
+                // If there are no new expressions, we set the destination idx to 0 so that we don't
+                // create an iterator past the available memory (we wouldn't use it anyways, but
+                // the iterator wouldn't allow this)
                 const size_t expr_dst_idx =
-                    expressions_dst_offset + index_from_scan(new_expressions_indices, appl_idx);
+                    new_expression_count == 0 ? 0 : expressions_dst_offset + expr_idx;
+
                 integral_statuses[idx] = Heuristic::APPLICATIONS[trans_idx](
                     integrals[int_idx], integrals_dst.iterator(idx),
                     expressions_dst.iterator(expr_dst_idx), help_spaces.iterator(idx));
@@ -378,7 +384,7 @@ namespace Sym::Kernel {
                 }
 
                 for (size_t status_idx = 0; status_idx < new_expression_count; ++status_idx) {
-                    expression_statuses[idx + status_idx] = expression_statuses[idx];
+                    expression_statuses[expr_idx + status_idx] = integral_statuses[idx];
                 }
             }
         }

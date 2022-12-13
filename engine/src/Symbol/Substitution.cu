@@ -148,10 +148,12 @@ namespace Sym {
         }
 
         const size_t new_size = expr.size() + variable_indices.size() * (expression().size() - 1);
-        std::vector<Symbol> new_expr(new_size);
+        // + 1 because compress_to requires that
+        std::vector<Symbol> new_expr(new_size + 1);
         auto new_expr_iterator =
             SymbolIterator::from_at(*new_expr.data(), 0, new_expr.size()).good();
-        expr.data()->compress_to(new_expr_iterator);
+        expr.data()->compress_to(new_expr_iterator).unwrap();
+        new_expr.resize(new_expr.size() - 1);
 
         size_t offset = 0;
         for (size_t variable_indice : variable_indices) {

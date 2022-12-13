@@ -78,13 +78,19 @@ namespace Util {
          * an error.
          */
         [[nodiscard]] __host__ __device__ T good() const {
+            unwrap();
+            return value.good;
+        }
+
+        /*
+         * @brief Ignores the warning about unused result, crashes if it is an error
+         */
+        __host__ __device__ void unwrap() const {
             if constexpr (Consts::DEBUG) {
                 if (is_error()) {
                     Util::crash("Trying to get a good value out of an error");
                 }
             }
-
-            return value.good;
         }
 
         /*
