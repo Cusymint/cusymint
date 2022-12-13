@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:cusymint_app/features/client/client_factory.dart';
+import 'package:cusymint_app/features/home/blocs/input_history_cubit.dart';
 import 'package:cusymint_app/features/home/blocs/main_page_bloc.dart';
 import 'package:cusymint_app/features/home/utils/client_error_translator.dart';
 import 'package:cusymint_app/features/navigation/navigation.dart';
@@ -27,8 +28,11 @@ class HomePage extends StatelessWidget {
       initialExpression: initialExpression,
     );
 
+    final historyCubit = InputHistoryCubit();
+
     return HomeBody(
       mainPageBloc: mainPageBloc,
+      historyCubit: historyCubit,
       isTextSelected: isTextSelected,
     );
   }
@@ -39,10 +43,12 @@ class HomeBody extends StatefulWidget {
     super.key,
     required this.mainPageBloc,
     required this.isTextSelected,
+    required this.historyCubit,
   });
 
   final bool isTextSelected;
   final MainPageBloc mainPageBloc;
+  final InputHistoryCubit historyCubit;
 
   @override
   State<HomeBody> createState() => _HomeBodyState();
@@ -72,8 +78,9 @@ class _HomeBodyState extends State<HomeBody> {
       appBar: CuAppBar(
         actions: [
           _HistoryIconButton(
-            controller: _controller,
+            historyCubit: widget.historyCubit,
             mainPageBloc: widget.mainPageBloc,
+            controller: _controller,
           ),
         ],
       ),
@@ -85,6 +92,7 @@ class _HomeBodyState extends State<HomeBody> {
             _MainPageInput(
               controller: _controller,
               mainPageBloc: widget.mainPageBloc,
+              historyCubit: widget.historyCubit,
               isTextSelected: widget.isTextSelected,
             ),
             BlocBuilder<MainPageBloc, MainPageState>(
@@ -156,10 +164,12 @@ class _HomeBodyState extends State<HomeBody> {
 class _HistoryIconButton extends StatelessWidget {
   const _HistoryIconButton({
     Key? key,
-    required this.mainPageBloc,
     required this.controller,
+    required this.historyCubit,
+    required this.mainPageBloc,
   }) : super(key: key);
 
+  final InputHistoryCubit historyCubit;
   final MainPageBloc mainPageBloc;
   final TextEditingController controller;
 
@@ -169,10 +179,25 @@ class _HistoryIconButton extends StatelessWidget {
       onPressed: () {
         showDialog(
           context: context,
-          builder: (context) => CuHistoryAlertDialog(
-            onClearHistoryPressed: () {},
-            historyItems: [],
-          ),
+          builder: (context) {
+            return BlocBuilder<InputHistoryCubit, InputHistoryState>(
+              bloc: historyCubit,
+              builder: (context, state) => CuHistoryAlertDialog(
+                onClearHistoryPressed: () => historyCubit.clearHistory(),
+                historyItems: [
+                  for (final item in state.history)
+                    CuHistoryItem(
+                      item,
+                      onTap: () {
+                        controller.text = item;
+                        mainPageBloc.add(InputChanged(item));
+                        Navigator.of(context).pop();
+                      },
+                    )
+                ],
+              ),
+            );
+          },
         );
       },
       icon: const Icon(Icons.history),
@@ -184,11 +209,13 @@ class _MainPageInput extends StatelessWidget {
   const _MainPageInput({
     Key? key,
     required this.mainPageBloc,
+    required this.historyCubit,
     required this.controller,
     required this.isTextSelected,
   }) : super(key: key);
 
   final MainPageBloc mainPageBloc;
+  final InputHistoryCubit historyCubit;
   final TextEditingController controller;
   final bool isTextSelected;
 
@@ -205,43 +232,19 @@ class _MainPageInput extends StatelessWidget {
               CuText.med14(Strings.enterIntegral.tr()),
               CuTextField(
                 autofocus: isTextSelected,
-                onSubmitted: (submittedText) {
-                  if (submittedText.isNotEmpty) {
-                    mainPageBloc.add(
-                      SolveRequested(submittedText),
-                    );
-                  }
-                },
+                onSubmitted: (_) => _submit(),
                 onChanged: (newText) {
-                  mainPageBloc.add(
-                    InputChanged(newText),
-                  );
+                  mainPageBloc.add(InputChanged(newText));
                 },
                 prefixIcon: IconButton(
-                  onPressed: () {
-                    if (controller.text.isNotEmpty) {
-                      controller.clear();
-                      mainPageBloc.add(
-                        const ClearRequested(),
-                      );
-                      return;
-                    }
-
-                    context.router.popUntilRoot();
-                  },
+                  onPressed: () => _clearOrPop(context),
                   icon: Icon(
                     Icons.clear,
                     color: CuColors.of(context).mintDark,
                   ),
                 ),
                 suffixIcon: IconButton(
-                  onPressed: () {
-                    if (controller.text.isNotEmpty) {
-                      mainPageBloc.add(
-                        SolveRequested(controller.text),
-                      );
-                    }
-                  },
+                  onPressed: () => _submit(),
                   icon: Icon(
                     Icons.send,
                     color: CuColors.of(context).mintDark,
@@ -254,5 +257,24 @@ class _MainPageInput extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _submit() {
+    if (controller.text.isNotEmpty) {
+      final input = controller.text;
+
+      historyCubit.addInput(input);
+      mainPageBloc.add(SolveRequested(input));
+    }
+  }
+
+  void _clearOrPop(BuildContext context) {
+    if (controller.text.isNotEmpty) {
+      controller.clear();
+      mainPageBloc.add(const ClearRequested());
+      return;
+    }
+
+    context.router.popUntilRoot();
   }
 }
