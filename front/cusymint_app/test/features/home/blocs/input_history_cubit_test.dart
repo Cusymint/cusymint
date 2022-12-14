@@ -41,6 +41,20 @@ void main() {
   );
 
   blocTest(
+    'Doesn\'t emit when last value is repeated',
+    build: () => InputHistoryCubit(),
+    act: (InputHistoryCubit cubit) {
+      cubit.addInput('1');
+      cubit.addInput('2');
+      cubit.addInput('2');
+    },
+    expect: () => [
+      _isAInputHistoryState(['1']),
+      _isAInputHistoryState(['1', '2']),
+    ],
+  );
+
+  blocTest(
     'Can add to history after clearing',
     build: () => InputHistoryCubit(),
     act: (InputHistoryCubit cubit) {

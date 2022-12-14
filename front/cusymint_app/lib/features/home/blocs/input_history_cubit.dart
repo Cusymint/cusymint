@@ -12,6 +12,9 @@ class InputHistoryCubit extends Cubit<InputHistoryState> {
 
   void addInput(String input) async {
     final history = state.history;
+    if (history.isNotEmpty && history.last == input) {
+      return;
+    }
     final newHistory = [...history, input];
     _updateStoredHistory(newHistory);
     emit(InputHistoryState(history: newHistory));
