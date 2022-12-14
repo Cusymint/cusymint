@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,7 +7,8 @@ class InputHistoryCubit extends Cubit<InputHistoryState> {
     _loadAndEmitHistory();
   }
 
-  static const String _historyKey = 'history_key';
+  @visibleForTesting
+  static const String historyKey = 'history_key';
 
   void addInput(String input) async {
     final history = state.history;
@@ -22,12 +24,12 @@ class InputHistoryCubit extends Cubit<InputHistoryState> {
 
   void _updateStoredHistory(List<String> history) async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setStringList(_historyKey, history);
+    prefs.setStringList(historyKey, history);
   }
 
   void _loadAndEmitHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    final history = prefs.getStringList(_historyKey);
+    final history = prefs.getStringList(historyKey);
 
     if (history != null && history.isNotEmpty) {
       emit(InputHistoryState(history: history));

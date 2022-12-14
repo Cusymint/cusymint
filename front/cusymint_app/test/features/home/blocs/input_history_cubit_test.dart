@@ -4,8 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  const String historyKey = 'history_key';
-
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
@@ -67,7 +65,7 @@ void main() {
     'Emits stored history on load',
     setUp: () async {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(historyKey, ['1', 'abcdef']);
+      await prefs.setStringList(InputHistoryCubit.historyKey, ['1', 'abcdef']);
     },
     build: () => InputHistoryCubit(),
     expect: () => [
