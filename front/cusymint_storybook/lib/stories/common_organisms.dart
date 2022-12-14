@@ -123,7 +123,7 @@ class CommonOrganisms extends StorybookPart {
           },
         ),
         Story(
-          name: 'Organisms/HistoryAlertDialog',
+          name: 'Organisms/HistoryDialog',
           builder: (context) {
             final random = Random(123);
             final exampleInputs = [
@@ -147,8 +147,9 @@ class CommonOrganisms extends StorybookPart {
                 )
             ];
 
-            return CuHistoryAlertDialog(
+            return CuHistoryDialog(
               historyItems: historyItems,
+              onCancelPressed: () {},
               onClearHistoryPressed: () {},
             );
           },

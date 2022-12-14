@@ -10,9 +10,9 @@ class InputHistoryCubit extends Cubit<InputHistoryState> {
 
   void addInput(String input) async {
     final history = state.history;
-    history.add(input);
-    _updateStoredHistory(history);
-    emit(InputHistoryState(history: history));
+    final newHistory = [...history, input];
+    _updateStoredHistory(newHistory);
+    emit(InputHistoryState(history: newHistory));
   }
 
   void clearHistory() {
@@ -27,8 +27,11 @@ class InputHistoryCubit extends Cubit<InputHistoryState> {
 
   void _loadAndEmitHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    final history = prefs.getStringList(_historyKey) ?? [];
-    emit(InputHistoryState(history: history));
+    final history = prefs.getStringList(_historyKey);
+
+    if (history != null && history.isNotEmpty) {
+      emit(InputHistoryState(history: history));
+    }
   }
 }
 

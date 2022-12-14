@@ -182,8 +182,9 @@ class _HistoryIconButton extends StatelessWidget {
           builder: (context) {
             return BlocBuilder<InputHistoryCubit, InputHistoryState>(
               bloc: historyCubit,
-              builder: (context, state) => CuHistoryAlertDialog(
+              builder: (context, state) => CuHistoryDialog(
                 onClearHistoryPressed: () => historyCubit.clearHistory(),
+                onCancelPressed: () => Navigator.of(context).pop(),
                 historyItems: [
                   for (final item in state.history)
                     CuHistoryItem(
