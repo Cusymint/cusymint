@@ -240,62 +240,49 @@ class _MainPageInput extends StatelessWidget {
               child: Column(
                 children: [
                   CuText.med14(Strings.enterIntegral.tr()),
-                  Shortcuts(
-                    shortcuts: <ShortcutActivator, Intent>{
-                      LogicalKeySet(LogicalKeyboardKey.arrowUp):
-                          const _NextIntent(),
-                      LogicalKeySet(LogicalKeyboardKey.arrowDown):
-                          const _PreviousIntent(),
+                  _ActionsDetector(
+                    onDownPressed: () {
+                      listCubit.previous();
                     },
-                    child: Actions(
-                      actions: <Type, Action<Intent>>{
-                        _NextIntent: CallbackAction<_NextIntent>(
-                          onInvoke: (intent) {
-                            listCubit.next();
-                            return true;
-                          },
-                        ),
-                        _PreviousIntent: CallbackAction<_PreviousIntent>(
-                          onInvoke: (intent) {
-                            listCubit.previous();
-                            return true;
-                          },
-                        ),
+                    onUpPressed: () {
+                      listCubit.next();
+                    },
+                    onEscapePressed: () {
+                      _clearOrPop(context, listCubit);
+                    },
+                    child: BlocListener<InputHistoryScrollCubit,
+                        InputHistoryScrollState>(
+                      bloc: listCubit,
+                      listenWhen: (previous, current) =>
+                          previous.currentIndex != current.currentIndex,
+                      listener: (context, state) {
+                        controller.text = state.current;
+                        controller.selection = TextSelection.fromPosition(
+                          TextPosition(offset: state.current.length),
+                        );
                       },
-                      child: BlocListener<InputHistoryScrollCubit,
-                          InputHistoryScrollState>(
-                        bloc: listCubit,
-                        listenWhen: (previous, current) =>
-                            previous.currentIndex != current.currentIndex,
-                        listener: (context, state) {
-                          controller.text = state.current;
-                          controller.selection = TextSelection.fromPosition(
-                            TextPosition(offset: state.current.length),
-                          );
+                      child: CuTextField(
+                        autofocus: isTextSelected,
+                        onSubmitted: (_) => _submit(),
+                        onChanged: (newText) {
+                          listCubit.updateCurrentValue(newText);
+                          mainPageBloc.add(InputChanged(newText));
                         },
-                        child: CuTextField(
-                          autofocus: isTextSelected,
-                          onSubmitted: (_) => _submit(),
-                          onChanged: (newText) {
-                            listCubit.updateCurrentValue(newText);
-                            mainPageBloc.add(InputChanged(newText));
-                          },
-                          prefixIcon: IconButton(
-                            onPressed: () => _clearOrPop(context),
-                            icon: Icon(
-                              Icons.clear,
-                              color: CuColors.of(context).mintDark,
-                            ),
+                        prefixIcon: IconButton(
+                          onPressed: () => _clearOrPop(context, listCubit),
+                          icon: Icon(
+                            Icons.clear,
+                            color: CuColors.of(context).mintDark,
                           ),
-                          suffixIcon: IconButton(
-                            onPressed: () => _submit(),
-                            icon: Icon(
-                              Icons.send,
-                              color: CuColors.of(context).mintDark,
-                            ),
-                          ),
-                          controller: controller,
                         ),
+                        suffixIcon: IconButton(
+                          onPressed: _submit,
+                          icon: Icon(
+                            Icons.send,
+                            color: CuColors.of(context).mintDark,
+                          ),
+                        ),
+                        controller: controller,
                       ),
                     ),
                   ),
@@ -317,10 +304,11 @@ class _MainPageInput extends StatelessWidget {
     }
   }
 
-  void _clearOrPop(BuildContext context) {
+  void _clearOrPop(BuildContext context, InputHistoryScrollCubit listCubit) {
     if (controller.text.isNotEmpty) {
       controller.clear();
       mainPageBloc.add(const ClearRequested());
+      listCubit.updateCurrentValue('');
       return;
     }
 
@@ -328,10 +316,53 @@ class _MainPageInput extends StatelessWidget {
   }
 }
 
-class _NextIntent extends Intent {
-  const _NextIntent();
+class _ActionsDetector extends StatelessWidget {
+  const _ActionsDetector({
+    required this.child,
+    required this.onUpPressed,
+    required this.onDownPressed,
+    required this.onEscapePressed,
+  });
+
+  final Widget child;
+  final VoidCallback onUpPressed;
+  final VoidCallback onDownPressed;
+  final VoidCallback onEscapePressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Shortcuts(
+      shortcuts: <ShortcutActivator, Intent>{
+        LogicalKeySet(LogicalKeyboardKey.arrowUp): const _UpIntent(),
+        LogicalKeySet(LogicalKeyboardKey.arrowDown): const _DownIntent(),
+        LogicalKeySet(LogicalKeyboardKey.escape): const _EscapeIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _UpIntent: CallbackAction<_UpIntent>(
+            onInvoke: (intent) => onUpPressed(),
+          ),
+          _DownIntent: CallbackAction<_DownIntent>(
+            onInvoke: (intent) => onDownPressed(),
+          ),
+          _EscapeIntent: CallbackAction<_EscapeIntent>(
+            onInvoke: (intent) => onEscapePressed(),
+          ),
+        },
+        child: child,
+      ),
+    );
+  }
 }
 
-class _PreviousIntent extends Intent {
-  const _PreviousIntent();
+class _EscapeIntent extends Intent {
+  const _EscapeIntent();
+}
+
+class _UpIntent extends Intent {
+  const _UpIntent();
+}
+
+class _DownIntent extends Intent {
+  const _DownIntent();
 }
