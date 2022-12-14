@@ -1,7 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:cusymint_app/features/client/client_factory.dart';
 import 'package:cusymint_app/features/home/blocs/input_history_cubit.dart';
-import 'package:cusymint_app/features/home/blocs/list_values_scroll_cubit.dart';
+import 'package:cusymint_app/features/home/blocs/input_history_scroll_cubit.dart';
 import 'package:cusymint_app/features/home/blocs/main_page_bloc.dart';
 import 'package:cusymint_app/features/home/utils/client_error_translator.dart';
 import 'package:cusymint_app/features/navigation/navigation.dart';
@@ -223,86 +223,88 @@ class _MainPageInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reversedHistory = historyCubit.state.history;
+    return BlocBuilder<InputHistoryCubit, InputHistoryState>(
+      bloc: historyCubit,
+      builder: (context, state) {
+        final listCubit = InputHistoryScrollCubit(
+          history: historyCubit.state.history,
+          current: controller.text,
+        );
 
-    final reversedHistoryWithEmpty = [
-      '',
-      'abc',
-      ...reversedHistory,
-    ];
-    final listCubit = ListValuesScrollCubit(values: reversedHistoryWithEmpty);
-
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: SizedBox(
-        width: 400,
-        child: Hero(
-          tag: 'input',
-          child: Column(
-            children: [
-              CuText.med14(Strings.enterIntegral.tr()),
-              Shortcuts(
-                shortcuts: <ShortcutActivator, Intent>{
-                  LogicalKeySet(LogicalKeyboardKey.arrowUp):
-                      const _NextIntent(),
-                  LogicalKeySet(LogicalKeyboardKey.arrowDown):
-                      const _PreviousIntent(),
-                },
-                child: Actions(
-                  actions: <Type, Action<Intent>>{
-                    _NextIntent: CallbackAction<_NextIntent>(
-                      onInvoke: (intent) {
-                        listCubit.nextOverlap();
-                        return true;
-                      },
-                    ),
-                    _PreviousIntent: CallbackAction<_PreviousIntent>(
-                      onInvoke: (intent) {
-                        listCubit.previous();
-                        return true;
-                      },
-                    ),
-                  },
-                  child: BlocListener<ListValuesScrollCubit<String>,
-                      ListValuesScrollState<String>>(
-                    bloc: listCubit,
-                    listener: (context, state) {
-                      if (state.current != null) {
-                        controller.text = state.current!;
-                        controller.selection = TextSelection.fromPosition(
-                          TextPosition(offset: state.current!.length),
-                        );
-                      }
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            width: 400,
+            child: Hero(
+              tag: 'input',
+              child: Column(
+                children: [
+                  CuText.med14(Strings.enterIntegral.tr()),
+                  Shortcuts(
+                    shortcuts: <ShortcutActivator, Intent>{
+                      LogicalKeySet(LogicalKeyboardKey.arrowUp):
+                          const _NextIntent(),
+                      LogicalKeySet(LogicalKeyboardKey.arrowDown):
+                          const _PreviousIntent(),
                     },
-                    child: CuTextField(
-                      autofocus: isTextSelected,
-                      onSubmitted: (_) => _submit(),
-                      onChanged: (newText) {
-                        mainPageBloc.add(InputChanged(newText));
+                    child: Actions(
+                      actions: <Type, Action<Intent>>{
+                        _NextIntent: CallbackAction<_NextIntent>(
+                          onInvoke: (intent) {
+                            listCubit.next();
+                            return true;
+                          },
+                        ),
+                        _PreviousIntent: CallbackAction<_PreviousIntent>(
+                          onInvoke: (intent) {
+                            listCubit.previous();
+                            return true;
+                          },
+                        ),
                       },
-                      prefixIcon: IconButton(
-                        onPressed: () => _clearOrPop(context),
-                        icon: Icon(
-                          Icons.clear,
-                          color: CuColors.of(context).mintDark,
+                      child: BlocListener<InputHistoryScrollCubit,
+                          InputHistoryScrollState>(
+                        bloc: listCubit,
+                        listenWhen: (previous, current) =>
+                            previous.currentIndex != current.currentIndex,
+                        listener: (context, state) {
+                          controller.text = state.current;
+                          controller.selection = TextSelection.fromPosition(
+                            TextPosition(offset: state.current.length),
+                          );
+                        },
+                        child: CuTextField(
+                          autofocus: isTextSelected,
+                          onSubmitted: (_) => _submit(),
+                          onChanged: (newText) {
+                            listCubit.updateCurrentValue(newText);
+                            mainPageBloc.add(InputChanged(newText));
+                          },
+                          prefixIcon: IconButton(
+                            onPressed: () => _clearOrPop(context),
+                            icon: Icon(
+                              Icons.clear,
+                              color: CuColors.of(context).mintDark,
+                            ),
+                          ),
+                          suffixIcon: IconButton(
+                            onPressed: () => _submit(),
+                            icon: Icon(
+                              Icons.send,
+                              color: CuColors.of(context).mintDark,
+                            ),
+                          ),
+                          controller: controller,
                         ),
                       ),
-                      suffixIcon: IconButton(
-                        onPressed: () => _submit(),
-                        icon: Icon(
-                          Icons.send,
-                          color: CuColors.of(context).mintDark,
-                        ),
-                      ),
-                      controller: controller,
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
