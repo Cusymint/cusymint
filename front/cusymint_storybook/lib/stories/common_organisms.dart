@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cusymint_storybook/storybook_part.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 import 'package:storybook_flutter/storybook_flutter.dart';
@@ -117,6 +119,38 @@ class CommonOrganisms extends StorybookPart {
                   title: const CuText('Licenses'),
                 ),
               ],
+            );
+          },
+        ),
+        Story(
+          name: 'Organisms/HistoryDialog',
+          builder: (context) {
+            final random = Random(123);
+            final exampleInputs = [
+              'int 15sin(x) + cos(x) dx',
+              'int 15x + 5 dx',
+              'int 15x^2 + 5x + 1 dx',
+              'e^x+ 5x + 1',
+            ];
+            final itemsCount = context.knobs.sliderInt(
+              label: 'Items count',
+              initial: 4,
+              min: 0,
+              max: 40,
+            );
+
+            final historyItems = <CuHistoryItem>[
+              for (var i = 0; i < itemsCount; ++i)
+                CuHistoryItem(
+                  exampleInputs[random.nextInt(exampleInputs.length)],
+                  onTap: () {},
+                )
+            ];
+
+            return CuHistoryDialog(
+              historyItems: historyItems,
+              onCancelPressed: () {},
+              onClearHistoryPressed: () {},
             );
           },
         ),
