@@ -27,7 +27,6 @@ class CuHistoryDialog extends StatelessWidget {
             child: historyItems.isNotEmpty
                 ? ListView.builder(
                     shrinkWrap: true,
-                    reverse: true,
                     itemCount: historyItems.length,
                     itemBuilder: (context, index) {
                       return historyItems[index];

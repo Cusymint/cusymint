@@ -21,7 +21,7 @@ void main() {
     },
     expect: () => [
       _isAInputHistoryState(['1']),
-      _isAInputHistoryState(['1', 'abc']),
+      _isAInputHistoryState(['abc', '1']),
     ],
   );
 
@@ -35,7 +35,7 @@ void main() {
     },
     expect: () => [
       _isAInputHistoryState(['1']),
-      _isAInputHistoryState(['1', '2']),
+      _isAInputHistoryState(['2', '1']),
       _isAInputHistoryState([]),
     ],
   );
@@ -50,7 +50,7 @@ void main() {
     },
     expect: () => [
       _isAInputHistoryState(['1']),
-      _isAInputHistoryState(['1', '2']),
+      _isAInputHistoryState(['2', '1']),
     ],
   );
 

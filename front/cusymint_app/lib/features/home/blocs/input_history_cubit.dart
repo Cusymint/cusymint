@@ -12,10 +12,10 @@ class InputHistoryCubit extends Cubit<InputHistoryState> {
 
   void addInput(String input) async {
     final history = state.history;
-    if (history.isNotEmpty && history.last == input) {
+    if (history.isNotEmpty && history.first == input) {
       return;
     }
-    final newHistory = [...history, input];
+    final newHistory = [input, ...history];
     _updateStoredHistory(newHistory);
     emit(InputHistoryState(history: newHistory));
   }
@@ -46,6 +46,6 @@ class InputHistoryState {
   });
 
   /// List of inputs that were used in the past.
-  /// The most recent input is at the end of the list.
+  /// The most recent input is at the beginning of the list.
   final List<String> history;
 }
