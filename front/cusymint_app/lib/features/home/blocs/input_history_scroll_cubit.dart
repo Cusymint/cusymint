@@ -1,5 +1,4 @@
 import 'package:cusymint_app/features/home/blocs/list_values_scroll_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class InputHistoryScrollCubit extends Cubit<InputHistoryScrollState> {
@@ -16,7 +15,10 @@ class InputHistoryScrollCubit extends Cubit<InputHistoryScrollState> {
   ListValuesScrollCubit<String> _listValuesScrollCubit;
 
   void next() {
-    _listValuesScrollCubit.nextOverlap();
+    _listValuesScrollCubit.next();
+    if (_listValuesScrollCubit.state.currentIndex == state.currentIndex) {
+      return;
+    }
     emit(InputHistoryScrollState(
       history: _listValuesScrollCubit.state.values,
       currentIndex: _listValuesScrollCubit.state.currentIndex,
@@ -24,7 +26,10 @@ class InputHistoryScrollCubit extends Cubit<InputHistoryScrollState> {
   }
 
   void previous() {
-    _listValuesScrollCubit.previousOverlap();
+    _listValuesScrollCubit.previous();
+    if (_listValuesScrollCubit.state.currentIndex == state.currentIndex) {
+      return;
+    }
     emit(InputHistoryScrollState(
       history: _listValuesScrollCubit.state.values,
       currentIndex: _listValuesScrollCubit.state.currentIndex,

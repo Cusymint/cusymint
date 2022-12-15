@@ -38,28 +38,24 @@ void main() {
       _isAInputHistoryScrollStateWithCurrentItem('c'),
       _isAInputHistoryScrollStateWithCurrentItem('d'),
       _isAInputHistoryScrollStateWithCurrentItem('e'),
-      _isAInputHistoryScrollStateWithCurrentItem('x'),
-      _isAInputHistoryScrollStateWithCurrentItem('a'),
-      _isAInputHistoryScrollStateWithCurrentItem('b'),
     ],
   );
 
   blocTest(
-    'Emits InputHistoryScrollState'
-    'with last history item when previous is called',
+    'Doesn\'t emit InputHistoryScrollState'
+    'with last history item when previous is called on first item',
     build: () => InputHistoryScrollCubit(
       history: history,
       current: textFieldValue,
     ),
     act: (cubit) => cubit.previous(),
-    expect: () => [
-      _isAInputHistoryScrollStateWithCurrentItem('e'),
-    ],
+    expect: () => [],
   );
 
   blocTest(
-    'Emits InputHistoryScrollStates'
-    'with previous history items when multiple previous are called',
+    'Doesn\'t emit InputHistoryScrollState'
+    'with last history item when previous is called multiple times'
+    'on first item',
     build: () => InputHistoryScrollCubit(
       history: history,
       current: textFieldValue,
@@ -70,16 +66,7 @@ void main() {
         cubit.previous();
       }
     },
-    expect: () => [
-      _isAInputHistoryScrollStateWithCurrentItem('e'),
-      _isAInputHistoryScrollStateWithCurrentItem('d'),
-      _isAInputHistoryScrollStateWithCurrentItem('c'),
-      _isAInputHistoryScrollStateWithCurrentItem('b'),
-      _isAInputHistoryScrollStateWithCurrentItem('a'),
-      _isAInputHistoryScrollStateWithCurrentItem('x'),
-      _isAInputHistoryScrollStateWithCurrentItem('e'),
-      _isAInputHistoryScrollStateWithCurrentItem('d'),
-    ],
+    expect: () => [],
   );
 
   blocTest(
@@ -112,6 +99,8 @@ void main() {
       cubit.updateCurrentValue('def');
       // check that the second item is still 'abc'
       cubit.next();
+      // check that the last item is in fact 'abc' and don't move
+      cubit.next();
       // check that the first item is now 'def'
       cubit.previous();
       // check that the list contains only two elements
@@ -123,7 +112,6 @@ void main() {
       _isAInputHistoryScrollStateWithCurrentItem('def'),
       _isAInputHistoryScrollStateWithCurrentItem('abc'),
       _isAInputHistoryScrollStateWithCurrentItem('def'),
-      _isAInputHistoryScrollStateWithCurrentItem('abc'),
     ],
   );
 }
