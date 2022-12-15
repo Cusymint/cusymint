@@ -56,7 +56,7 @@ namespace Sym {
             }
 
             if (current_op != root) {
-                current_op = (current_op->symbol() - 1)->template as_ptr<T>();
+                current_op = (&current_op->symbol() - 1)->template as_ptr<T>();
                 current_symbol = &current_op->arg2();
                 return true;
             }

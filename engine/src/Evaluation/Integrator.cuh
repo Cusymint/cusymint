@@ -1,5 +1,5 @@
-#ifndef INTEGRATE_CUH
-#define INTEGRATE_CUH
+#ifndef INTEGRATOR_CUH
+#define INTEGRATOR_CUH
 
 #include <optional>
 
@@ -8,16 +8,11 @@
 
 #include "Heuristic/Heuristic.cuh"
 #include "KnownIntegral/KnownIntegral.cuh"
+#include "Status.cuh"
 
 namespace Sym {
-    /*
-     * @brief Maximum number of symbols in a single expression
-     */
-    static constexpr size_t EXPRESSION_MAX_SYMBOL_COUNT = 512;
-
     class Integrator {
-        const size_t MAX_CHECK_COUNT;
-        const size_t SCAN_ARRAY_SIZE;
+        const size_t CHECK_COUNT;
 
         ExpressionArray<> expressions;
         ExpressionArray<> expressions_swap;
@@ -25,10 +20,44 @@ namespace Sym {
         ExpressionArray<SubexpressionCandidate> integrals;
         ExpressionArray<SubexpressionCandidate> integrals_swap;
 
-        ExpressionArray<> help_spaces;
+        ExpressionArray<> help_space;
 
+        // Scan arrays used in various algorithms. Their size can be larger than the actually used
+        // part.
         Util::DeviceArray<uint32_t> scan_array_1;
         Util::DeviceArray<uint32_t> scan_array_2;
+
+        // EvaluationStatus arrays used for checking reallocation requests. Their size can be larger
+        // than the actually used part.
+        Util::DeviceArray<EvaluationStatus> evaluation_statuses_1;
+        Util::DeviceArray<EvaluationStatus> evaluation_statuses_2;
+
+        /*
+         * @brief Sets all evaluation statuses to `EvaluationStatus::Incomplete`
+         */
+        static void
+        reset_evaluation_statuses(Util::DeviceArray<EvaluationStatus>& evaluation_statuses);
+
+        /*
+         * @brief Resizes `evaluation_statuses` to at least `size` if its size is smaller than
+         * `size`, does nothing if its size is already at least `size`
+         */
+        static void
+        resize_evaluation_statuses(Util::DeviceArray<EvaluationStatus>& evaluation_statuses,
+                                   const size_t size);
+
+        /*
+         * @brief Checks if the first `count` statuses are equal to `EvaluationStatus::Done`
+         */
+        static bool
+        are_evaluation_statuses_done(const Util::DeviceArray<EvaluationStatus>& evaluation_statuses,
+                                     const size_t count);
+
+        /*
+         * @brief Resizes `scan_array_1` and `scan_array_2` to at least `size` if their size is
+         * smaller than `size`, does nothing if their size is already at least `size`
+         */
+        void resize_scan_arrays(const size_t size);
 
         /*
          * @brief Simplifies integrals `integrals`
@@ -80,14 +109,43 @@ namespace Sym {
 
       public:
         /*
+         * @brief How many times larger a help space expression is than the expression it
+         * corresponds to
+         */
+        static constexpr size_t HELP_SPACE_MULTIPLIER = 2;
+
+        /*
+         * @brief Sizes of `scan_array_X` and `evaluation_statuses_X` are multiplied by this value on
+         * reallocation
+         */
+        static constexpr size_t REALLOC_MULTIPLIER = 2;
+
+        /*
          * @brief Block size of CUDA kernels used by `solve_integral`
          */
-        static constexpr size_t BLOCK_SIZE = 512;
+        static constexpr size_t BLOCK_SIZE = 256;
 
         /*
          * @brief Block count of CUDA kernels used by `solve_integral`
          */
         static constexpr size_t BLOCK_COUNT = 32;
+
+        /*
+         * @brief How many symbols can an expression hold initially
+         */
+        static constexpr size_t INITIAL_EXPRESSIONS_CAPACITY = 128;
+
+        /*
+         * @brief How many expressions of size `INITIAL_EXPRESSION_CAPACITIES` can an array hold
+         * initially
+         */
+        static constexpr size_t INITIAL_ARRAYS_EXPRESSIONS_CAPACITY = 64;
+
+        /*
+         * @brief How many symbols should new arrays contain
+         */
+        static constexpr size_t INITIAL_ARRAYS_SYMBOLS_CAPACITY =
+            INITIAL_ARRAYS_EXPRESSIONS_CAPACITY * INITIAL_EXPRESSIONS_CAPACITY;
 
         Integrator();
 
