@@ -2,9 +2,11 @@
 
 #include <thrust/scan.h>
 
+#include "Evaluation/Integrator.cuh"
 #include "IntegratorUtils.cuh"
-#include "Parser/Parser.cuh"
-#include "Symbol/Integral.cuh"
+#include "Symbol/ExpressionArray.cuh"
+#include "Symbol/Macros.cuh"
+#include "Utils/DeviceArray.cuh"
 
 #define KERNEL_TEST(_name) TEST(Kernels, _name)
 
@@ -18,31 +20,41 @@ namespace Test {
             "1/(1/(1/(1/(x))))",
             "2*5*7*x^5/(--(14*x^2))",
             "3*(2*x+4*(10*x+2)+5)+1",
+            "(x+1)^20",
         };
         StringVector solutions_vector = {
-            "1",
-            "e^(pi*x*sin(x))",
-            "2*x^2/(3+x+5*x^2+10*x^3+x^6)+x^3/(3+x+5*x^2+10*x^3+x^6)+9/(3+x+5*x^2+10*x^3+x^6)",
-            "x",
-            "5*x^3",
-            "40+126*x",
+            "1",        "e^(pi*x*sin(x))", "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)", "x", "5*x^3",
+            "40+126*x", "(1+x)^20",
         };
+
+        std::vector<Sym::EvaluationStatus> expected_statuses = {
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::ReallocationRequest,
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::ReallocationRequest,
+        };
+
         Sym::ExpressionArray<Sym::SubexpressionCandidate> expressions =
             from_string_vector_with_candidate(expressions_vector);
         Sym::ExpressionArray<Sym::SubexpressionCandidate> destination =
             with_count(expressions.size());
         Sym::ExpressionArray<Sym::SubexpressionCandidate> help_spaces =
             with_count(expressions.size());
+        Util::DeviceArray<Sym::EvaluationStatus> statuses(expressions.size(), true);
 
         Sym::Kernel::simplify<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
-            expressions, destination, help_spaces);
+            expressions, destination, help_spaces, statuses);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
         ExprVector result = destination.to_vector();
 
-        EXPECT_TRUE(are_expr_vectors_equal(
-            result, from_string_vector_with_candidate(solutions_vector).to_vector()));
+        EXPECT_TRUE(are_expr_vectors_equal_with_statuses(
+            result, statuses.to_vector(),
+            from_string_vector_with_candidate(solutions_vector).to_vector(), expected_statuses));
     }
 
     KERNEL_TEST(CheckForKnownIntegrals) {
@@ -52,7 +64,7 @@ namespace Test {
         std::vector<IndexVector> check_vectors = {{3}, {2}, {0}, {}};
 
         auto integrals = from_string_vector_with_candidate(integrals_vector);
-        Util::DeviceArray<uint32_t> applicability(COUNT * Sym::MAX_EXPRESSION_COUNT);
+        Util::DeviceArray<uint32_t> applicability(COUNT * integrals_vector.size());
 
         Sym::Kernel::check_for_known_integrals<<<Sym::Integrator::BLOCK_COUNT,
                                                  Sym::Integrator::BLOCK_SIZE>>>(integrals,
@@ -60,7 +72,8 @@ namespace Test {
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
-        test_known_integrals_correctly_checked(applicability, check_vectors);
+        test_known_integrals_correctly_checked(applicability, check_vectors,
+                                               integrals_vector.size());
     }
 
     KERNEL_TEST(ApplyKnownIntegrals) {
@@ -76,9 +89,15 @@ namespace Test {
             nth_expression_candidate(1, Sym::solution(Sym::e() ^ Sym::var())),
             nth_expression_candidate(0, Sym::solution(-Sym::cos(Sym::var())))};
 
+        std::vector<Sym::EvaluationStatus> expected_statuses = {
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done,
+        };
+
         auto integrals = from_string_vector_with_candidate(integrals_vector);
 
-        Util::DeviceArray<uint32_t> applicability(COUNT * Sym::MAX_EXPRESSION_COUNT);
+        Util::DeviceArray<uint32_t> applicability(COUNT * integrals_vector.size());
 
         Sym::Kernel::check_for_known_integrals<<<Sym::Integrator::BLOCK_COUNT,
                                                  Sym::Integrator::BLOCK_SIZE>>>(integrals,
@@ -93,19 +112,24 @@ namespace Test {
         cudaDeviceSynchronize();
 
         auto expressions =
-            from_vector({Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
-                         Sym::single_integral_vacancy(), Sym::single_integral_vacancy()});
+            Sym::ExpressionArray({Sym::single_integral_vacancy(), Sym::single_integral_vacancy(),
+                                  Sym::single_integral_vacancy(), Sym::single_integral_vacancy()});
         auto help_spaces = with_count(integrals.size());
+
+        const size_t dst_offset = expressions.size();
+        Util::DeviceArray<Sym::EvaluationStatus> statuses(applicability.last_cpu(), true);
+
+        expressions.resize(expressions.size() + applicability.last_cpu(),
+                           Sym::Integrator::INITIAL_EXPRESSIONS_CAPACITY);
 
         Sym::Kernel::
             apply_known_integrals<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
-                integrals, expressions, help_spaces, applicability);
+                integrals, expressions, dst_offset, help_spaces, applicability, statuses);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
-        expressions.increment_size_from_device(applicability.last());
-
-        EXPECT_TRUE(are_expr_vectors_equal(expressions.to_vector(), expected_results));
+        EXPECT_TRUE(are_expr_vectors_equal_with_statuses(
+            expressions.to_vector(), statuses.to_vector(), expected_results, expected_statuses));
     }
 
     KERNEL_TEST(PropagateSolvedSubexpressions) {
@@ -139,7 +163,7 @@ namespace Test {
             nth_expression_candidate(5, vacancy_solved_by(10) + vacancy_solved_by(7), 2),
             nth_expression_candidate(6, vacancy_solved_by(9) * vacancy_solved_by(8), 3)};
 
-        auto expressions = from_vector(vacancy_tree);
+        auto expressions = Sym::ExpressionArray(vacancy_tree);
 
         Sym::Kernel::propagate_solved_subexpressions<<<Sym::Integrator::BLOCK_COUNT,
                                                        Sym::Integrator::BLOCK_SIZE>>>(expressions);
@@ -165,7 +189,7 @@ namespace Test {
 
         Sym::Kernel::find_redundand_expressions<<<Sym::Integrator::BLOCK_COUNT,
                                                   Sym::Integrator::BLOCK_SIZE>>>(
-            from_vector(vacancy_tree), removability);
+            Sym::ExpressionArray(vacancy_tree), removability);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
@@ -194,14 +218,14 @@ namespace Test {
 
         Sym::Kernel::find_redundand_expressions<<<Sym::Integrator::BLOCK_COUNT,
                                                   Sym::Integrator::BLOCK_SIZE>>>(
-            from_vector(vacancy_tree), removability);
+            Sym::ExpressionArray(vacancy_tree), removability);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
         Sym::Kernel::
             find_redundand_integrals<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
-                from_vector(integrals_tree), from_vector(vacancy_tree), removability,
-                integral_removability);
+                Sym::ExpressionArray(integrals_tree), Sym::ExpressionArray(vacancy_tree),
+                removability, integral_removability);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
@@ -243,7 +267,7 @@ namespace Test {
             .candidate_integral_count = 0;
 
         Util::DeviceArray<uint32_t> removability(vacancy_tree.size(), true);
-        auto expressions = from_vector(vacancy_tree);
+        auto expressions = Sym::ExpressionArray(vacancy_tree);
         auto result = with_count(expressions.size());
         auto result_zeroed = with_count(expressions.size());
 
@@ -268,8 +292,8 @@ namespace Test {
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
-        result.resize(removability.to_cpu(removability.size() - 1));
-        result_zeroed.resize(removability.to_cpu(removability.size() - 1));
+        result.resize(removability.to_cpu(removability.size() - 1), 0);
+        result_zeroed.resize(removability.to_cpu(removability.size() - 1), 0);
 
         EXPECT_TRUE(are_expr_vectors_equal(result.to_vector(), expected_result));
         EXPECT_TRUE(are_expr_vectors_equal(result_zeroed.to_vector(), expected_result_zeroed));
@@ -306,13 +330,13 @@ namespace Test {
 
         Sym::Kernel::
             remove_integrals<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
-                from_vector<Sym::SubexpressionCandidate>(integral_vector),
+                Sym::ExpressionArray<Sym::SubexpressionCandidate>(integral_vector),
                 integral_removability_scan, expressions_removability_scan, result);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
         result.resize(
-            integral_removability_scan_vector[integral_removability_scan_vector.size() - 1]);
+            integral_removability_scan_vector[integral_removability_scan_vector.size() - 1], 0);
 
         EXPECT_TRUE(are_expr_vectors_equal(result.to_vector(), expected_result));
     }
@@ -338,9 +362,9 @@ namespace Test {
         ExprVector expected_expressions_vector =
             get_expected_expression_vector(expected_heuristics);
 
-        auto expressions = from_vector(expressions_vector);
-        Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
-        Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
+        auto expressions = Sym::ExpressionArray(expressions_vector);
+        Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * integrals_vector.size());
+        Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * expressions_vector.size());
 
         Sym::Kernel::check_heuristics_applicability<<<Sym::Integrator::BLOCK_COUNT,
                                                       Sym::Integrator::BLOCK_SIZE>>>(
@@ -386,9 +410,15 @@ namespace Test {
         SymVector int_with_subs(e_tower_integral.size() * 2);
         SymVector e_to_x = Sym::e() ^ Sym::var();
         SymVector var = Sym::var();
+        auto int_with_subs_iterator = iterator_from_vector(int_with_subs);
         Util::Pair<const Sym::Symbol*, const Sym::Symbol*> pairs[] = {{e_to_x.data(), var.data()}};
-        e_tower_integral.data()->as<Sym::Integral>().integrate_by_substitution_with_derivative(
-            pairs, 1, *Sym::var().data(), *int_with_subs.data());
+
+        const auto result1 =
+            e_tower_integral.data()->as<Sym::Integral>().integrate_by_substitution_with_derivative(
+                pairs, 1, *Sym::var().data(), int_with_subs_iterator);
+
+        ASSERT_TRUE(result1.is_good());
+
         int_with_subs.resize(int_with_subs.data()->size());
 
         // trigs with substitution
@@ -405,18 +435,27 @@ namespace Test {
             {trig_substitutions[8].data(), trig_substitutions[9].data()}};
         SymVector trig1_with_subs(integrals_vector[0].size() * 6);
         SymVector trig2_with_subs(integrals_vector[4].size() * 6);
-        h_integrals[0]
-            .data()
-            ->child()
-            ->as<Sym::Integral>()
-            .integrate_by_substitution_with_derivative(
-                trig_pairs, 5, *trig_substitutions[10].data(), *trig1_with_subs.data());
-        h_integrals[4]
-            .data()
-            ->child()
-            ->as<Sym::Integral>()
-            .integrate_by_substitution_with_derivative(
-                trig_pairs, 5, *trig_substitutions[10].data(), *trig2_with_subs.data());
+        auto trig1_iterator = iterator_from_vector(trig1_with_subs);
+        auto trig2_itetator = iterator_from_vector(trig2_with_subs);
+
+        const auto result2 = h_integrals[0]
+                                 .data()
+                                 ->child()
+                                 .as<Sym::Integral>()
+                                 .integrate_by_substitution_with_derivative(
+                                     trig_pairs, 5, *trig_substitutions[10].data(), trig1_iterator);
+
+        ASSERT_TRUE(result2.is_good());
+
+        const auto result3 = h_integrals[4]
+                                 .data()
+                                 ->child()
+                                 .as<Sym::Integral>()
+                                 .integrate_by_substitution_with_derivative(
+                                     trig_pairs, 5, *trig_substitutions[10].data(), trig2_itetator);
+
+        ASSERT_TRUE(result3.is_good());
+
         trig1_with_subs.resize(trig1_with_subs.data()->size());
         trig2_with_subs.resize(trig2_with_subs.data()->size());
 
@@ -465,11 +504,24 @@ namespace Test {
                                  {Sym::tan(Sym::var())})),
         };
 
-        auto integrals = from_vector<Sym::SubexpressionCandidate>(h_integrals);
-        auto expressions = from_vector(expressions_vector);
+        EvalStatusVector expected_integral_statuses = {
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
+        };
 
-        Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
-        Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * Sym::MAX_EXPRESSION_COUNT);
+        EvalStatusVector expected_expression_statuses = {
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done,
+        };
+
+        auto integrals = Sym::ExpressionArray<Sym::SubexpressionCandidate>(h_integrals);
+        auto expressions = Sym::ExpressionArray(expressions_vector);
+
+        Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * integrals_vector.size());
+        Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * expressions_vector.size());
 
         Sym::Kernel::check_heuristics_applicability<<<Sym::Integrator::BLOCK_COUNT,
                                                       Sym::Integrator::BLOCK_SIZE>>>(
@@ -483,23 +535,36 @@ namespace Test {
                                new_expressions_flags.end(), new_expressions_flags.data());
         cudaDeviceSynchronize();
 
-        auto integrals_destinations = with_count(2 * integrals_vector.size());
-        auto help_spaces = with_count(2 * integrals_vector.size());
+        const size_t new_integral_count =
+            new_integrals_flags.to_cpu(new_integrals_flags.size() - 1);
+        const size_t new_expression_count =
+            expressions.size() + new_expressions_flags.to_cpu(new_expressions_flags.size() - 1);
+        const size_t expressions_dst_offset = expressions.size();
+
+        auto integrals_destinations = with_count(new_integral_count);
+        auto help_spaces = with_count(new_integral_count);
+
+        integrals_destinations.resize(new_integral_count,
+                                      Sym::Integrator::INITIAL_EXPRESSIONS_CAPACITY);
+        expressions.resize(new_expression_count, Sym::Integrator::INITIAL_EXPRESSIONS_CAPACITY);
+
+        Util::DeviceArray<Sym::EvaluationStatus> expression_statuses(
+            new_expression_count - expressions_dst_offset, true);
+        Util::DeviceArray<Sym::EvaluationStatus> integral_statuses(new_integral_count, true);
 
         Sym::Kernel::
             apply_heuristics<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
-                integrals, integrals_destinations, expressions, help_spaces, new_integrals_flags,
-                new_expressions_flags);
-
-        integrals_destinations.resize(new_integrals_flags.to_cpu(new_integrals_flags.size() - 1));
-        expressions.resize(expressions.size() +
-                           new_expressions_flags.to_cpu(new_expressions_flags.size() - 1));
+                integrals, integrals_destinations, expressions, expressions_dst_offset, help_spaces,
+                new_integrals_flags, new_expressions_flags, integral_statuses, expression_statuses);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
-        EXPECT_TRUE(
-            are_expr_vectors_equal(integrals_destinations.to_vector(), expected_integral_vector));
-        EXPECT_TRUE(are_expr_vectors_equal(expressions.to_vector(), expected_expression_vector));
+        EXPECT_TRUE(are_expr_vectors_equal_with_statuses(
+            integrals_destinations.to_vector(), integral_statuses.to_vector(),
+            expected_integral_vector, expected_integral_statuses));
+        EXPECT_TRUE(are_expr_vectors_equal_with_statuses(
+            expressions.to_vector(), expression_statuses.to_vector(), expected_expression_vector,
+            expected_expression_statuses));
     }
 
     KERNEL_TEST(PropagateFailuresUpwards) {
@@ -539,7 +604,7 @@ namespace Test {
 
         ScanVector expected_failures_vector = {1, 0, 1, 1, 1, 0, 0, 0, 1, 0};
 
-        auto expressions = from_vector(vacancy_tree);
+        auto expressions = Sym::ExpressionArray(vacancy_tree);
         Util::DeviceArray<uint32_t> failures(vacancy_tree.size());
         failures.set_mem(1);
 
@@ -571,7 +636,7 @@ namespace Test {
         ScanVector expected_failures_vector = {1, 0, 0, 0, 0, 0, 1, 1};
 
         Util::DeviceArray<uint32_t> failures(failures_vector);
-        auto expressions = from_vector(vacancy_tree);
+        auto expressions = Sym::ExpressionArray(vacancy_tree);
 
         Sym::Kernel::propagate_failures_downwards<<<Sym::Integrator::BLOCK_COUNT,
                                                     Sym::Integrator::BLOCK_SIZE>>>(expressions,

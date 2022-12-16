@@ -1,6 +1,7 @@
 export 'alert_dialog.dart';
 export 'app_bar.dart';
 export 'carousel.dart';
+export 'history_item.dart';
 export 'scrollable_horizontal_wrapper.dart';
 export 'scaffold.dart';
 export 'setting_tile.dart';
