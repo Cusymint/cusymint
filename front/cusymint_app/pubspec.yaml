@@ -75,3 +75,4 @@ msix_config:
   identity_name: "cusymint.app"
   logo_path: "../cusymint_assets/assets/icons/app_icon_curved_edges.png"
   capabilities: "internetClient"
+  languages: "en-US, pl-PL"
