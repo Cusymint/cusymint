@@ -60,6 +60,7 @@ add_library(
   ${EVALUATION_DIR}/KnownIntegral/SimpleExponent.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleVariable.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleArctan.cu
+  ${EVALUATION_DIR}/KnownIntegral/XInverse.cu
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
 
