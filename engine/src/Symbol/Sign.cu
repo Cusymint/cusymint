@@ -14,7 +14,31 @@ namespace Sym {
         return 1;
     }
 
-    DEFINE_SIMPLIFY_IN_PLACE(Sign) { // NOLINT(misc-unused-parameters)
+    DEFINE_SIMPLIFY_IN_PLACE(Sign) {
+        if (arg().is(Type::Negation)) {
+            arg().as<Negation>().type = Type::Sign;
+            type = Type::Negation;
+        }
+
+        if (arg().is(Type::Product)) {
+            // This is done under assumptions that the product tree contains at most one
+            // NumericConstant (because `arg()`  is simplified)
+            for (TreeIterator<Product> iterator(&arg()); iterator.is_valid(); iterator.advance()) {
+                if (!iterator.current()->is(Type::NumericConstant)) {
+                    continue;
+                }
+
+                if (iterator.current()->as<NumericConstant>().value < 0) {
+                    iterator.current()->as<NumericConstant>().value *= -1;
+
+                    Neg<Copy>::init(*help_space, {symbol()});
+                    help_space->copy_to(symbol());
+                }
+
+                break;
+            }
+        }
+
         if (arg().is(Type::NumericConstant)) {
             double value = 0.0;
 
@@ -54,7 +78,7 @@ namespace Sym {
     std::string Sign::to_string() const { return fmt::format("sgn({})", arg().to_string()); }
 
     std::string Sign::to_tex() const {
-        return fmt::format(R"(\text{sgn}\left({}\right))", arg().to_tex());
+        return fmt::format(R"(\text{{sgn}}\left({}\right))", arg().to_tex());
     }
 
     std::vector<Symbol> sgn(const std::vector<Symbol>& arg) {

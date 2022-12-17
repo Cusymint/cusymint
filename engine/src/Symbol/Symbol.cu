@@ -92,6 +92,9 @@ namespace Sym {
             if (this[i].is(Type::Sign)) {
                 i += this[i].size() - 1;
             }
+            else if (this[i].is(Type::Power) && this[i].as<Power>().arg1().is<Sign>()) {
+                i += this[i].size() - 1;
+            }
             else if (this[i].is(Type::Variable)) {
                 return false;
             }

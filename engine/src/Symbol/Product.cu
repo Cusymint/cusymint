@@ -409,6 +409,11 @@ namespace Sym {
             return true;
         }
 
+        if (arg().is(Type::Sign)) {
+            arg().copy_to(symbol());
+            return true;
+        }
+
         if (arg().is(Type::NumericConstant)) {
             symbol().init_from(
                 NumericConstant::with_value(1.0 / arg().as<NumericConstant>().value));

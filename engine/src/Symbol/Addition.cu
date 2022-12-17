@@ -150,6 +150,7 @@ namespace Sym {
             coefficient = -1;
             return base;
         }
+
         if (Sym::Mul<Sym::Num, Sym::Any>::match(symbol)) {
             coefficient = symbol.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
             const Sym::Symbol& base = symbol.as<Sym::Product>().arg2();
@@ -159,6 +160,7 @@ namespace Sym {
             }
             return base;
         }
+
         coefficient = 1;
         return symbol;
     }

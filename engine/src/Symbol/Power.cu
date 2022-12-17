@@ -27,7 +27,22 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(Power)
     DEFINE_TWO_ARGUMENT_OP_COMPRESS_REVERSE_TO(Power)
 
+    __host__ __device__ void Power::simplify_sign_power() {
+        if (arg1().is(Type::Sign) && arg2().is(Type::NumericConstant)) {
+            double& exponent = arg2().as<NumericConstant>().value;
+
+            if (static_cast<int64_t>(floor(exponent)) % 2 == 0) {
+                arg1().init_from(NumericConstant::with_value(1.0));
+            }
+            else {
+                exponent += -floor(exponent) + 1;
+            }
+        }
+    }
+
     DEFINE_SIMPLIFY_IN_PLACE(Power) {
+        simplify_sign_power();
+
         if (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value == 0) {
             symbol().init_from(NumericConstant::with_value(1));
             return true;
@@ -190,6 +205,7 @@ namespace Sym {
                 return false;
             }
         }
+
         return true;
     }
 

@@ -9,8 +9,10 @@ namespace Sym {
     DECLARE_SYMBOL(Power, false)
     TWO_ARGUMENT_OP_SYMBOL
 
-    std::string to_string() const;
-    std::string to_tex() const;
+    __host__ __device__ void simplify_sign_power();
+
+    [[nodiscard]] std::string to_string() const;
+    [[nodiscard]] std::string to_tex() const;
 
     END_DECLARE_SYMBOL(Power)
 
