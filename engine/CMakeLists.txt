@@ -32,6 +32,7 @@ add_library(
   ${SYMBOL_DIR}/Addition.cu
   ${SYMBOL_DIR}/Product.cu
   ${SYMBOL_DIR}/Power.cu
+  ${SYMBOL_DIR}/Sign.cu
   ${SYMBOL_DIR}/Trigonometric.cu
   ${SYMBOL_DIR}/Integral.cu
   ${SYMBOL_DIR}/Substitution.cu

@@ -593,6 +593,8 @@ namespace Sym {
 
     template <class L, class R> using Pow = TwoArgOperator<Power, L, R>;
 
+    template <class I> using Sgn = OneArgOperator<Sign, I>;
+
     template <class I> using Sin = OneArgOperator<Sine, I>;
     template <class I> using Cos = OneArgOperator<Cosine, I>;
     template <class I> using Tan = OneArgOperator<Tangent, I>;

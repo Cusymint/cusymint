@@ -24,6 +24,7 @@ namespace Sym {
         Product,
         Reciprocal,
         Power,
+        Sign,
         // Trigonometric functions
         Sine,
         Cosine,
@@ -108,6 +109,8 @@ namespace Sym {
             return "Logarithm";
         case Type::Polynomial:
             return "Polynomial";
+        case Type::Sign:
+            return "Sign";
         }
 
         return "Invalid type";

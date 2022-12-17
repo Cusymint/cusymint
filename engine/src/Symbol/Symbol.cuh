@@ -15,6 +15,7 @@
 #include "Polynomial.cuh"
 #include "Power.cuh"
 #include "Product.cuh"
+#include "Sign.cuh"
 #include "Solution.cuh"
 #include "SubexpressionCandidate.cuh"
 #include "SubexpressionVacancy.cuh"
@@ -58,6 +59,7 @@
             VC_CASE(Product, _instance, _member_function, __VA_ARGS__)                     \
             VC_CASE(Reciprocal, _instance, _member_function, __VA_ARGS__)                  \
             VC_CASE(Power, _instance, _member_function, __VA_ARGS__)                       \
+            VC_CASE(Sign, _instance, _member_function, __VA_ARGS__)                        \
             VC_CASE(Sine, _instance, _member_function, __VA_ARGS__)                        \
             VC_CASE(Cosine, _instance, _member_function, __VA_ARGS__)                      \
             VC_CASE(Tangent, _instance, _member_function, __VA_ARGS__)                     \
@@ -95,6 +97,7 @@ namespace Sym {
         Product product;
         Reciprocal reciprocal;
         Power power;
+        Sign sign;
         Sine sine;
         Cosine cosine;
         Tangent tangent;
