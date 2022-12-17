@@ -1,10 +1,35 @@
-#include "Evaluation/Status.cuh"
 #include "TrigonometricSubstitutions.cuh"
 
 #include "Evaluation/StaticFunctions.cuh"
+#include "Evaluation/Status.cuh"
 #include "Utils/Meta.cuh"
 
 namespace Sym::Heuristic {
+    namespace {
+        __device__ EvaluationStatus substitute_simple_trig(
+            const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
+            const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[],
+            const size_t substitution_count, const Symbol& derivative) {
+            SymbolIterator iterator = TRY_EVALUATE_RESULT(
+                SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
+
+            SubexpressionCandidate* new_candidate = *iterator << SubexpressionCandidate::builder();
+            new_candidate->copy_metadata_from(integral);
+
+            TRY_EVALUATE_RESULT(iterator += 1);
+
+            const auto substitution_result =
+                integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
+                    substitution_pairs, substitution_count, derivative, iterator);
+
+            TRY_EVALUATE(result_to_evaluation_status(substitution_result));
+
+            new_candidate->seal();
+
+            return EvaluationStatus::Done;
+        }
+    }
+
     __device__ CheckResult is_function_of_simple_trigs(const Integral& integral) {
         const bool is_function_of_simple_trigs = integral.integrand().is_function_of(
             Static::sin_x(), Static::cos_x(), Static::tan_x(), Static::cot_x());
@@ -24,24 +49,9 @@ namespace Sym::Heuristic {
                                                      &Static::cotangent_as_sine()),
         };
 
-        SymbolIterator iterator =
-            TRY_EVALUATE_RESULT(SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
-
-        SubexpressionCandidate* new_candidate = *iterator << SubexpressionCandidate::builder();
-        new_candidate->copy_metadata_from(integral);
-
-        TRY_EVALUATE_RESULT(iterator += 1);
-
-        const auto substitution_result =
-            integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-                substitution_pairs, Util::array_len(substitution_pairs),
-                Static::pythagorean_sin_cos(), iterator);
-
-        TRY_EVALUATE(result_to_evaluation_status(substitution_result));
-
-        new_candidate->seal();
-
-        return EvaluationStatus::Done;
+        return substitute_simple_trig(integral, integral_dst, substitution_pairs,
+                                      Util::array_len(substitution_pairs),
+                                      Static::pythagorean_sin_cos());
     }
 
     __device__ EvaluationStatus substitute_cosine(
@@ -57,24 +67,9 @@ namespace Sym::Heuristic {
                                                      &Static::cotangent_as_sine()),
         };
 
-        SymbolIterator iterator =
-            TRY_EVALUATE_RESULT(SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
-
-        SubexpressionCandidate* new_candidate = *iterator << SubexpressionCandidate::builder();
-        new_candidate->copy_metadata_from(integral);
-
-        TRY_EVALUATE_RESULT(iterator += 1);
-
-        const auto substitution_result =
-            integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-                substitution_pairs, Util::array_len(substitution_pairs),
-                Static::neg_pythagorean_sin_cos(), iterator);
-
-        TRY_EVALUATE(result_to_evaluation_status(substitution_result));
-
-        new_candidate->seal();
-
-        return EvaluationStatus::Done;
+        return substitute_simple_trig(integral, integral_dst, substitution_pairs,
+                                      Util::array_len(substitution_pairs),
+                                      Static::neg_pythagorean_sin_cos());
     }
 
     __device__ EvaluationStatus substitute_tangent(
@@ -89,23 +84,8 @@ namespace Sym::Heuristic {
                                                      &Static::cosine_as_tangent()),
         };
 
-        SymbolIterator iterator =
-            TRY_EVALUATE_RESULT(SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
-
-        SubexpressionCandidate* new_candidate = *iterator << SubexpressionCandidate::builder();
-        new_candidate->copy_metadata_from(integral);
-
-        TRY_EVALUATE_RESULT(iterator += 1);
-
-        const auto substitution_result =
-            integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-                substitution_pairs, Util::array_len(substitution_pairs),
-                Static::tangent_derivative(), iterator);
-
-        TRY_EVALUATE(result_to_evaluation_status(substitution_result));
-
-        new_candidate->seal();
-
-        return EvaluationStatus::Done;
+        return substitute_simple_trig(integral, integral_dst, substitution_pairs,
+                                      Util::array_len(substitution_pairs),
+                                      Static::tangent_derivative());
     }
 }

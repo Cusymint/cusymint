@@ -88,7 +88,7 @@ namespace Sym {
     Integral::copy_substitutions_with_an_additional_one(const Symbol& substitution_expr,
                                                         SymbolIterator& destination) const {
         const size_t required_space = integrand_offset + 1 + substitution_expr.size();
-        if (destination.capacity() < required_space) {
+        if (!destination.can_offset_by(required_space)) {
             return Util::SimpleResult<size_t>::make_error();
         }
 
@@ -153,8 +153,12 @@ namespace Sym {
                     continue;
                 }
 
+                if (!destination.can_offset_by(patterns[pattern_idx].second->size())) {
+                    return Util::BinaryResult::make_error();
+                }
+
                 patterns[pattern_idx].second->copy_to(destination.current());
-                TRY(destination += destination.current().size());
+                TRY(destination += patterns[pattern_idx].second->size());
                 // -1 because +1 is going to be added by loop control
                 symbol_idx += integrand()[symbol_idx].size() - 1;
                 found_match = true;
