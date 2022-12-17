@@ -1,3 +1,4 @@
+#include "Evaluation/Status.cuh"
 #include "TrigonometricSubstitutions.cuh"
 
 #include "Evaluation/StaticFunctions.cuh"
@@ -5,71 +6,106 @@
 
 namespace Sym::Heuristic {
     __device__ CheckResult is_function_of_simple_trigs(const Integral& integral) {
-        const bool is_function_of_simple_trigs = integral.integrand()->is_function_of(
+        const bool is_function_of_simple_trigs = integral.integrand().is_function_of(
             Static::sin_x(), Static::cos_x(), Static::tan_x(), Static::cot_x());
         return {is_function_of_simple_trigs ? 1UL : 0UL, 0UL};
     }
 
-    __device__ void substitute_sine(const SubexpressionCandidate& integral,
-                                    const ExpressionArray<>::Iterator& integral_dst,
-                                    const ExpressionArray<>::Iterator& /*expression_dst*/,
-                                    Symbol& help_space) {
+    __device__ EvaluationStatus substitute_sine(
+        const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
+        const ExpressionArray<>::Iterator& /*expression_dst*/,
+        const ExpressionArray<>::Iterator& /*help_space*/) {
         const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
-            Util::Pair(&Static::sin_x(), &Static::identity()),
-            Util::Pair(&Static::cos_x(), &Static::pythagorean_sin_cos()),
-            Util::Pair(&Static::tan_x(), &Static::tangent_as_sine()),
-            Util::Pair(&Static::cot_x(), &Static::cotangent_as_sine()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::sin_x(), &Static::identity()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::cos_x(),
+                                                     &Static::pythagorean_sin_cos()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::tan_x(), &Static::tangent_as_sine()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::cot_x(),
+                                                     &Static::cotangent_as_sine()),
         };
 
-        SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
+        SymbolIterator iterator =
+            TRY_EVALUATE_RESULT(SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
+
+        SubexpressionCandidate* new_candidate = *iterator << SubexpressionCandidate::builder();
         new_candidate->copy_metadata_from(integral);
 
-        integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-            substitution_pairs, Util::array_len(substitution_pairs), Static::pythagorean_sin_cos(),
-            new_candidate->arg());
+        TRY_EVALUATE_RESULT(iterator += 1);
+
+        const auto substitution_result =
+            integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
+                substitution_pairs, Util::array_len(substitution_pairs),
+                Static::pythagorean_sin_cos(), iterator);
+
+        TRY_EVALUATE(result_to_evaluation_status(substitution_result));
 
         new_candidate->seal();
+
+        return EvaluationStatus::Done;
     }
 
-    __device__ void substitute_cosine(const SubexpressionCandidate& integral,
-                                    const ExpressionArray<>::Iterator& integral_dst,
-                                    const ExpressionArray<>::Iterator& /*expression_dst*/,
-                                    Symbol& help_space) {
+    __device__ EvaluationStatus substitute_cosine(
+        const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
+        const ExpressionArray<>::Iterator& /*expression_dst*/,
+        const ExpressionArray<>::Iterator& /*help_space*/) {
         const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
-            Util::Pair(&Static::cos_x(), &Static::identity()),
-            Util::Pair(&Static::sin_x(), &Static::pythagorean_sin_cos()),
-            Util::Pair(&Static::cot_x(), &Static::tangent_as_sine()),
-            Util::Pair(&Static::tan_x(), &Static::cotangent_as_sine()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::cos_x(), &Static::identity()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::sin_x(),
+                                                     &Static::pythagorean_sin_cos()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::cot_x(), &Static::tangent_as_sine()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::tan_x(),
+                                                     &Static::cotangent_as_sine()),
         };
 
-        SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
+        SymbolIterator iterator =
+            TRY_EVALUATE_RESULT(SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
+
+        SubexpressionCandidate* new_candidate = *iterator << SubexpressionCandidate::builder();
         new_candidate->copy_metadata_from(integral);
 
-        integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-            substitution_pairs, Util::array_len(substitution_pairs), Static::neg_pythagorean_sin_cos(),
-            new_candidate->arg());
+        TRY_EVALUATE_RESULT(iterator += 1);
+
+        const auto substitution_result =
+            integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
+                substitution_pairs, Util::array_len(substitution_pairs),
+                Static::neg_pythagorean_sin_cos(), iterator);
+
+        TRY_EVALUATE(result_to_evaluation_status(substitution_result));
 
         new_candidate->seal();
+
+        return EvaluationStatus::Done;
     }
 
-    __device__ void substitute_tangent(const SubexpressionCandidate& integral,
-                                    const ExpressionArray<>::Iterator& integral_dst,
-                                    const ExpressionArray<>::Iterator& /*expression_dst*/,
-                                    Symbol& help_space) {
+    __device__ EvaluationStatus substitute_tangent(
+        const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
+        const ExpressionArray<>::Iterator& /*expression_dst*/,
+        const ExpressionArray<>::Iterator& /*help_space*/) {
         const Util::Pair<const Symbol*, const Symbol*> substitution_pairs[] = {
-            Util::Pair(&Static::tan_x(), &Static::identity()),
-            Util::Pair(&Static::cot_x(), &Static::inverse()),
-            Util::Pair(&Static::sin_x(), &Static::sine_as_tangent()),
-            Util::Pair(&Static::cos_x(), &Static::cosine_as_tangent()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::tan_x(), &Static::identity()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::cot_x(), &Static::inverse()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::sin_x(), &Static::sine_as_tangent()),
+            Util::Pair<const Symbol*, const Symbol*>(&Static::cos_x(),
+                                                     &Static::cosine_as_tangent()),
         };
 
-        SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
+        SymbolIterator iterator =
+            TRY_EVALUATE_RESULT(SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
+
+        SubexpressionCandidate* new_candidate = *iterator << SubexpressionCandidate::builder();
         new_candidate->copy_metadata_from(integral);
 
-        integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-            substitution_pairs, Util::array_len(substitution_pairs), Static::tangent_derivative(),
-            new_candidate->arg());
+        TRY_EVALUATE_RESULT(iterator += 1);
+
+        const auto substitution_result =
+            integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
+                substitution_pairs, Util::array_len(substitution_pairs),
+                Static::tangent_derivative(), iterator);
+
+        TRY_EVALUATE(result_to_evaluation_status(substitution_result));
 
         new_candidate->seal();
+
+        return EvaluationStatus::Done;
     }
 }

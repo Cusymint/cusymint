@@ -379,6 +379,8 @@ namespace Sym::Kernel {
                     integrals[int_idx], integrals_dst.iterator(idx),
                     expressions_dst.iterator(expr_dst_idx), help_spaces.iterator(idx));
 
+                printf("%s\n", type_name(integrals_dst[idx].type()));
+
                 for (size_t status_idx = 1; status_idx < new_integral_count; ++status_idx) {
                     integral_statuses[idx + status_idx] = integral_statuses[idx];
                 }

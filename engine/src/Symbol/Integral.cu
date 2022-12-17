@@ -242,12 +242,12 @@ namespace Sym {
         }
         std::vector<Symbol> res(res_size);
         Integral* const integral = res.data() << Integral::builder();
-        Symbol* current_dst = res.data()->child();
+        Symbol* current_dst = &res.data()->child();
         for (size_t i = 0; i < substitutions.size(); ++i) {
             Substitution::create(substitutions[i].data(), current_dst, i);
             current_dst += current_dst->size();
         }
-        integral->seal_substitutions(substitutions.size(), current_dst - res.data()->child());
+        integral->seal_substitutions(substitutions.size(), current_dst - &res.data()->child());
         arg.data()->copy_to(integral->integrand());
         integral->seal();
 
