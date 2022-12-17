@@ -4,7 +4,7 @@
 
 namespace Sym::KnownIntegral {
     __device__ size_t is_constant_integral(const Integral& integral) {
-        return integral.integrand().is_constant() ? 1 : 0;
+        return integral.integrand().is_almost_constant() ? 1 : 0;
     }
 
     __device__ EvaluationStatus
