@@ -87,6 +87,19 @@ namespace Sym {
         return true;
     }
 
+    __host__ __device__ bool Symbol::is_almost_constant() const {
+        for (size_t i = 0; i < size(); ++i) {
+            if (this[i].is(Type::Sign)) {
+                i += this[i].size() - 1;
+            }
+            else if (this[i].is(Type::Variable)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     __host__ __device__ ssize_t Symbol::first_var_occurence() const {
         for (ssize_t i = 0; i < size(); ++i) {
             if (this[i].is(Type::Variable)) {

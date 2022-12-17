@@ -346,6 +346,14 @@ namespace Sym {
         [[nodiscard]] __host__ __device__ bool is_constant() const;
 
         /*
+         * @brief Checks if `this` is an expression composed only of constants or functions that are
+         * constant on all intervals
+         *
+         * @return `true` if `this` is almost constant, `false` otherwise
+         */
+        [[nodiscard]] __host__ __device__ bool is_almost_constant() const;
+
+        /*
          * @brief Returns offset of first occurence of variable in this symbol sequence
          *
          * @return Offset of first variable symbol. If there is none, then -1.
