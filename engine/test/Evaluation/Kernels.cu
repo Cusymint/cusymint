@@ -508,6 +508,7 @@ namespace Test {
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
         };
 
         EvalStatusVector expected_expression_statuses = {
