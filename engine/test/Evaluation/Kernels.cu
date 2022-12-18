@@ -351,12 +351,13 @@ namespace Test {
         ExprVector expressions_vector = {vacancy(0, 0), vacancy(0, 0), vacancy(0, 0),
                                          vacancy(0, 0), vacancy(0, 0), vacancy(0, 0)};
 
-        std::vector<HeuristicPairVector> expected_heuristics = {{{1, {2, 1}}, {2, {1, 0}}},
-                                                                {{0, {1, 0}}},
-                                                                {{3, {1, 1}}},
-                                                                {{1, {2, 1}}},
-                                                                {{2, {1, 0}}, {3, {1, 1}}},
-                                                                {}};
+        std::vector<HeuristicPairVector> expected_heuristics = {
+            {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}, {6, {1, 0}}},
+            {{0, {1, 0}}},
+            {{3, {1, 1}}},
+            {{1, {2, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}},
+            {}};
 
         ExprVector expected_expressions_vector =
             get_expected_expression_vector(expected_heuristics);
@@ -387,12 +388,13 @@ namespace Test {
         ExprVector expressions_vector = {vacancy(0, 0), vacancy(0, 0), vacancy(0, 0),
                                          vacancy(0, 0), vacancy(0, 0), vacancy(0, 0)};
 
-        std::vector<HeuristicPairVector> expected_heuristics = {{{1, {2, 1}}, {2, {1, 0}}},
-                                                                {{0, {1, 0}}},
-                                                                {{3, {1, 1}}},
-                                                                {{1, {2, 1}}},
-                                                                {{2, {1, 0}}, {3, {1, 1}}},
-                                                                {}};
+        std::vector<HeuristicPairVector> expected_heuristics = {
+            {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}, {6, {1, 0}}},
+            {{0, {1, 0}}},
+            {{3, {1, 1}}},
+            {{1, {2, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}},
+            {}};
 
         ExprVector expected_expression_vector = get_expected_expression_vector(expected_heuristics);
 
@@ -479,9 +481,31 @@ namespace Test {
             nth_expression_candidate(4, trig2_with_subs),
             nth_expression_candidate(8, Sym::integral(Sym::var()), 3),
             nth_expression_candidate(9, Sym::integral(Sym::tan(Sym::num(0.5) * Sym::var())), 2),
+            nth_expression_candidate(
+                0, Sym::integral(Sym::inv((Sym::num(1) - (Sym::var() ^ Sym::num(2))) ^
+                                          Sym::inv(Sym::num(2))) *
+                                     (Sym::var() + ((Sym::num(1) - (Sym::var() ^ Sym::num(2))) ^
+                                                    Sym::inv(Sym::num(2)))),
+                                 {Sym::sin(Sym::var())})),
+            nth_expression_candidate(
+                0, Sym::integral(
+                       Sym::inv(Sym::num(-1) * ((Sym::num(1) - (Sym::var() ^ Sym::num(2))) ^
+                                                Sym::inv(Sym::num(2)))) *
+                           (((Sym::num(1) - (Sym::var() ^ Sym::num(2))) ^ Sym::inv(Sym::num(2))) +
+                            Sym::var()),
+                       {Sym::cos(Sym::var())})),
+            nth_expression_candidate(
+                0, Sym::integral(Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2))) *
+                                     ((((Sym::var() ^ Sym::num(2)) /
+                                        (Sym::num(1) + (Sym::var() ^ Sym::num(2)))) ^
+                                       Sym::inv(Sym::num(2))) +
+                                      ((Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2)))) ^
+                                       Sym::inv(Sym::num(2)))),
+                                 {Sym::tan(Sym::var())})),
         };
 
         EvalStatusVector expected_integral_statuses = {
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,

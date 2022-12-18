@@ -88,7 +88,7 @@ namespace Sym {
     Integral::copy_substitutions_with_an_additional_one(const Symbol& substitution_expr,
                                                         SymbolIterator& destination) const {
         const size_t required_space = integrand_offset + 1 + substitution_expr.size();
-        if (destination.capacity() < required_space) {
+        if (!destination.can_offset_by(required_space)) {
             return Util::SimpleResult<size_t>::make_error();
         }
 
@@ -153,8 +153,12 @@ namespace Sym {
                     continue;
                 }
 
+                if (!destination.can_offset_by(patterns[pattern_idx].second->size())) {
+                    return Util::BinaryResult::make_error();
+                }
+
                 patterns[pattern_idx].second->copy_to(destination.current());
-                TRY(destination += destination.current().size());
+                TRY(destination += patterns[pattern_idx].second->size());
                 // -1 because +1 is going to be added by loop control
                 symbol_idx += integrand()[symbol_idx].size() - 1;
                 found_match = true;
@@ -228,6 +232,26 @@ namespace Sym {
 
         Integral* const integral = res.data() << Integral::builder();
         integral->seal_no_substitutions();
+        arg.data()->copy_to(integral->integrand());
+        integral->seal();
+
+        return res;
+    }
+
+    std::vector<Symbol> integral(const std::vector<Symbol>& arg,
+                                 const std::vector<std::vector<Symbol>>& substitutions) {
+        size_t res_size = arg.size() + 1;
+        for (const auto& sub : substitutions) {
+            res_size += sub.size() + 1;
+        }
+        std::vector<Symbol> res(res_size);
+        Integral* const integral = res.data() << Integral::builder();
+        Symbol* current_dst = &res.data()->child();
+        for (size_t i = 0; i < substitutions.size(); ++i) {
+            Substitution::create(substitutions[i].data(), current_dst, i);
+            current_dst += current_dst->size();
+        }
+        integral->seal_substitutions(substitutions.size(), current_dst - &res.data()->child());
         arg.data()->copy_to(integral->integrand());
         integral->seal();
 

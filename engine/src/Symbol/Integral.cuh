@@ -92,6 +92,8 @@ namespace Sym {
     END_DECLARE_SYMBOL(Integral)
 
     std::vector<Symbol> integral(const std::vector<Symbol>& arg);
+    std::vector<Symbol> integral(const std::vector<Symbol>& arg,
+                                 const std::vector<std::vector<Symbol>>& substitutions);
 }
 
 #endif

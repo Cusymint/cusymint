@@ -178,6 +178,7 @@ namespace Test {
     SIMPLIFY_TEST(CotangentOfArccotangent, "cot(arccot(5^x))", "5^x")
     SIMPLIFY_TEST(PythagoreanTrigIdentity, "cos(x+e^cos(x))^2+sin(x+e^cos(x))^2", "1")
     SIMPLIFY_TEST(AdvancedPythagoreanTrigIdentity, "cos(2)^2+sin(1+cos(x)^2+sin(x)^2)^2", "1")
+    SIMPLIFY_TEST(TangentCotangentProduct, "tg(tan(x)cot(x)x^2)ctg(x^2)", "1")
 
     SIMPLIFY_TEST(LogarithmOfE, "ln(e)", "1")
     SIMPLIFY_TEST(LogarithmOfOne, "ln(1)", "0")
@@ -244,4 +245,7 @@ namespace Test {
         "(4*cos(x)^3)*tan(x)))+((108*cos(x))*tan(x)))+((((72*y)*x)*cos(x))*tan(x)))+((((12*y^2)*x^"
         "2)*cos(x))*tan(x)))+(54*cos(x)^2))+(54*tan(x)^2))+(12*cos(x)^3))+(12*tan(x)^3))+cos(x)^4)+"
         "tan(x)^4)+(108*cos(x)))+(108*tan(x)))")
+
+    SIMPLIFY_TEST(SplitReciprocal, "1/(e*x*sin^2(x))",
+                  Sym::inv(Sym::e()) / Sym::var() / (Sym::sin(Sym::var()) ^ Sym::num(2)))
 }

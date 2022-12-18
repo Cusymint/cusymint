@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("(x^10)^pi"));
+    const auto integral = Sym::integral(Parser::parse_function("cos(x)e^sin(x)"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
