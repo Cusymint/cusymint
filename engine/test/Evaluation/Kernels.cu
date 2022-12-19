@@ -3,6 +3,7 @@
 #include <thrust/scan.h>
 
 #include "Evaluation/Integrator.cuh"
+#include "Evaluation/Status.cuh"
 #include "IntegratorUtils.cuh"
 #include "Symbol/ExpressionArray.cuh"
 #include "Symbol/Integral.cuh"
@@ -516,6 +517,7 @@ namespace Test {
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
         };
 
         EvalStatusVector expected_expression_statuses = {

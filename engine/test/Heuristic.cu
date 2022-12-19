@@ -18,15 +18,13 @@ namespace Test {
     HEURISTIC_TEST(LongSumIntegral, "1+cos(x)+sin(x)+1/(1+x^2)+pi+e",
                    "sin(x)-cos(x)+arctan(x)+x*(pi+e+1)")
 
-<<<<<<< HEAD
-    HEURISTIC_TEST(LinearSubstitutionAxB, "sin(2*x+1)", "-cos(2*x+1)/2")
-    HEURISTIC_TEST(LinearSubstitutionNoFreeTerm, "(e^x)^2", "0.5e^(2x)")
-    HEURISTIC_TEST(LinearSubstitutionNoCoefficient, "cos(x+c+pi)", "sin(x+c+pi)")
-=======
     HEURISTIC_TEST(SineSubstitution, "cos(x)*e^sin(x)", "e^sin(x)")
     HEURISTIC_TEST(CosineSubstitution, "5cos^4(x)sin(x)", "-1*cos^5(x)")
     HEURISTIC_TEST(TangentSubstitution, "sin(tg(x))/cos^2(x)", "-cos(tg(x))")
->>>>>>> master
+
+    HEURISTIC_TEST(LinearSubstitutionAxB, "sin(2*x+1)", "-0.5*cos(2*x+1)")
+    HEURISTIC_TEST(LinearSubstitutionNoFreeTerm, "(e^x)^2", "0.5e^(2x)")
+    HEURISTIC_TEST(LinearSubstitutionNoCoefficient, "cos(x+c+pi)", "sin(x+c+pi)")
 
     // TODO: Universal substitution when simplification is powerful enough
 };
