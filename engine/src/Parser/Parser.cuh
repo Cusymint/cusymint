@@ -24,7 +24,7 @@ namespace Parser {
     // function_power -> function | function ^ factor
     // function -> log '_' power_arg | arcsin | arccos | arctg | arctan | arcctg |
     //             arccot | cos | ctg | cot | cosh | ctgh | coth | sin | sinh | 
-    //             sqrt | tg | tan | tgh | tanh | ln
+    //             sqrt | tg | tan | tgh | tanh | ln | erf | Si | Ci | Ei | li
     //
     class Parser {
       private:
