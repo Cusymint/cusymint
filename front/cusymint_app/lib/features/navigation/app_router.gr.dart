@@ -40,6 +40,7 @@ class AppRouter extends _i5.RootStackRouter {
         child: _i2.HomePage(
           key: args.key,
           isTextSelected: args.isTextSelected,
+          initialExpression: args.initialExpression,
         ),
       );
     },
@@ -98,12 +99,14 @@ class HomeRoute extends _i5.PageRouteInfo<HomeRouteArgs> {
   HomeRoute({
     _i7.Key? key,
     bool isTextSelected = false,
+    String? initialExpression,
   }) : super(
           HomeRoute.name,
           path: '/home-page',
           args: HomeRouteArgs(
             key: key,
             isTextSelected: isTextSelected,
+            initialExpression: initialExpression,
           ),
         );
 
@@ -114,15 +117,18 @@ class HomeRouteArgs {
   const HomeRouteArgs({
     this.key,
     this.isTextSelected = false,
+    this.initialExpression,
   });
 
   final _i7.Key? key;
 
   final bool isTextSelected;
 
+  final String? initialExpression;
+
   @override
   String toString() {
-    return 'HomeRouteArgs{key: $key, isTextSelected: $isTextSelected}';
+    return 'HomeRouteArgs{key: $key, isTextSelected: $isTextSelected, initialExpression: $initialExpression}';
   }
 }
 

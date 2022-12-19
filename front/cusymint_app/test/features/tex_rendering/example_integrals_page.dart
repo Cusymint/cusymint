@@ -1,5 +1,4 @@
-import 'package:cusymint_app/features/tex_rendering/tex_rendering.dart';
-import 'package:flutter/material.dart';
+import 'package:cusymint_ui/cusymint_ui.dart';
 
 class ExampleIntegralsPage extends StatelessWidget {
   const ExampleIntegralsPage({super.key});

@@ -7,7 +7,7 @@
 
 namespace Sym::Heuristic {
     __device__ CheckResult is_function_of_linear_function(const Integral& integral) {
-        const auto& integrand = *integral.integrand();
+        const auto& integrand = integral.integrand();
 
         if (integrand.size() == 1) {
             return {0, 0};
@@ -30,10 +30,15 @@ namespace Sym::Heuristic {
         return {0, 0};
     }
 
-    __device__ void substitute_linear_function(
+    __device__ EvaluationStatus substitute_linear_function(
         const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
-        const ExpressionArray<>::Iterator& /*expression_dst*/, Symbol& help_space) {
-        const auto& integrand = *integral.arg().as<Integral>().integrand();
+        const ExpressionArray<>::Iterator& /*expression_dst*/,
+        const ExpressionArray<>::Iterator& /*help_space*/) {
+
+        SymbolIterator iterator =
+            TRY_EVALUATE_RESULT(SymbolIterator::from_at(*integral_dst, 0, integral_dst.capacity()));
+
+        const auto& integrand = integral.arg().as<Integral>().integrand();
 
         const Symbol* linear_expr = nullptr;
         const Symbol* linear_coef = nullptr;
@@ -58,10 +63,15 @@ namespace Sym::Heuristic {
 
         SubexpressionCandidate* new_candidate = *integral_dst << SubexpressionCandidate::builder();
         new_candidate->copy_metadata_from(integral);
+        TRY_EVALUATE_RESULT(iterator += 1);
 
-        integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
-            *linear_expr, *linear_coef, new_candidate->arg());
+        const auto substitution_result =integral.arg().as<Integral>().integrate_by_substitution_with_derivative(
+            *linear_expr, *linear_coef, iterator);
+
+        TRY_EVALUATE_RESULT(substitution_result);
 
         new_candidate->seal();
+
+        return EvaluationStatus::Done;
     }
 }

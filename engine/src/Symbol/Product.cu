@@ -12,49 +12,50 @@
 #include "Symbol/TreeIterator.cuh"
 #include "Utils/Order.cuh"
 
-namespace {
-    std::string fraction_to_tex(const Sym::Symbol& numerator, const Sym::Symbol& denominator) {
-        if (numerator.is(Sym::Type::Logarithm) && denominator.is(Sym::Type::Logarithm)) {
-            return fmt::format(R"(\log_{{ {} }}\left({}\right))",
-                               denominator.logarithm.arg().to_tex(),
-                               numerator.logarithm.arg().to_tex());
-        }
-        return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(), denominator.to_tex());
-    }
-
-    __host__ __device__ void extract_base_exponent_and_coefficient(const Sym::Symbol& symbol,
-                                                                   const Sym::Symbol*& base,
-                                                                   const Sym::Symbol*& exponent,
-                                                                   double& coefficient) {
-        const Sym::Symbol* inner = &symbol;
-        double reciprocal_coefficient = 1;
-
-        if (inner->is(Sym::Type::Reciprocal)) {
-            inner = &inner->as<Sym::Reciprocal>().arg();
-            reciprocal_coefficient = -1;
-        }
-
-        if (!inner->is(Sym::Type::Power)) {
-            base = inner;
-            // we do not assign to exponent as it has default value
-            coefficient = reciprocal_coefficient;
-            return;
-        }
-
-        base = &inner->as<Sym::Power>().arg1();
-
-        exponent = &Sym::Addition::extract_base_and_coefficient(inner->as<Sym::Power>().arg2(),
-                                                                coefficient);
-
-        if (base->is(Sym::Type::Reciprocal)) {
-            base = &base->as<Sym::Reciprocal>().arg();
-            coefficient = -coefficient;
-        }
-        coefficient *= reciprocal_coefficient;
-    }
-}
-
 namespace Sym {
+    namespace {
+        std::string fraction_to_tex(const Symbol& numerator, const Symbol& denominator) {
+            if (numerator.is(Type::Logarithm) && denominator.is(Type::Logarithm)) {
+                return fmt::format(R"(\log_{{ {} }}\left({}\right))",
+                                   denominator.as<Logarithm>().arg().to_tex(),
+                                   numerator.as<Logarithm>().arg().to_tex());
+            }
+            return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(),
+                               denominator.to_tex());
+        }
+
+        __host__ __device__ void extract_base_exponent_and_coefficient(const Sym::Symbol& symbol,
+                                                                       const Sym::Symbol*& base,
+                                                                       const Sym::Symbol*& exponent,
+                                                                       double& coefficient) {
+            const Sym::Symbol* inner = &symbol;
+            double reciprocal_coefficient = 1;
+
+            if (inner->is(Sym::Type::Reciprocal)) {
+                inner = &inner->as<Sym::Reciprocal>().arg();
+                reciprocal_coefficient = -1;
+            }
+
+            if (!inner->is(Sym::Type::Power)) {
+                base = inner;
+                // we do not assign to exponent as it has default value
+                coefficient = reciprocal_coefficient;
+                return;
+            }
+
+            base = &inner->as<Sym::Power>().arg1();
+
+            exponent = &Sym::Addition::extract_base_and_coefficient(inner->as<Sym::Power>().arg2(),
+                                                                    coefficient);
+
+            if (base->is(Sym::Type::Reciprocal)) {
+                base = &base->as<Sym::Reciprocal>().arg();
+                coefficient = -coefficient;
+            }
+            coefficient *= reciprocal_coefficient;
+        }
+    }
+
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Product)
     DEFINE_SIMPLE_TWO_ARGUMENT_OP_ARE_EQUAL(Product)
     DEFINE_IDENTICAL_COMPARE_TO(Product)
@@ -63,14 +64,14 @@ namespace Sym {
     DEFINE_SIMPLIFY_IN_PLACE(Product) {
         simplify_structure(help_space);
 
-        if (!symbol()->is(Type::Product)) {
+        if (!symbol().is(Type::Product)) {
             return true;
         }
 
         auto result = simplify_pairs(help_space);
 
         if (arg1().is(0) || arg2().is(0)) {
-            symbol()->init_from(NumericConstant::with_value(0));
+            symbol().init_from(NumericConstant::with_value(0));
             return true;
         }
 
@@ -182,11 +183,13 @@ namespace Sym {
 
     template <typename T> using LeftMul = Mul<T, Copy>;
     template <typename T> using RightMul = Mul<Copy, T>;
-     __host__ __device__ SimplificationResult Product::try_split_into_sum(Symbol* const expr1, Symbol* const expr2, Symbol* const help_space) {
-        Addition* sum;
-        Symbol* second_arg;
+    __host__ __device__ SimplificationResult Product::try_split_into_sum(Symbol* const expr1,
+                                                                         Symbol* const expr2,
+                                                                         Symbol* const help_space) {
+        Addition* sum = nullptr;
+        Symbol* second_arg = nullptr;
 
-         if (!expr1->is(Type::Addition) && !expr2->is(Type::Addition)) {
+        if (!expr1->is(Type::Addition) && !expr2->is(Type::Addition)) {
             return SimplificationResult::NoAction;
         }
 
@@ -206,7 +209,8 @@ namespace Sym {
             return SimplificationResult::NeedsSpace;
         }
 
-        From<Addition>::Create<Addition>::WithMap<LeftMul>::init(*help_space, {{*sum, count}, *second_arg});
+        From<Addition>::Create<Addition>::WithMap<LeftMul>::init(*help_space,
+                                                                 {{*sum, count}, *second_arg});
         second_arg->init_from(NumericConstant::with_value(1));
 
         help_space->copy_to(sum->symbol());
@@ -236,7 +240,9 @@ namespace Sym {
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol& expr1,
                                                                const Symbol& expr2) {
         using Matcher = PatternPair<Inv<Same>, Same>;
-        return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1);
+        using TrigMatcher = PatternPair<Tan<Same>, Cot<Same>>;
+        return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1)
+            || TrigMatcher::match_pair(expr1, expr2) || TrigMatcher::match_pair(expr2, expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {
@@ -267,7 +273,7 @@ namespace Sym {
             return split_result;
         }
 
-        // TODO: Jakieś tożsamości trygonometryczne
+        // TODO: Some trigonometric identities
 
         return SimplificationResult::NoAction;
     }
@@ -275,12 +281,12 @@ namespace Sym {
     DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Product) {
         NumericConstant one = NumericConstant::with_value(1);
 
-        const Symbol* base1;
-        const Symbol* base2;
-        const Symbol* exponent1 = one.symbol();
-        const Symbol* exponent2 = one.symbol();
-        double coef1;
-        double coef2;
+        const Symbol* base1 = nullptr;
+        const Symbol* base2 = nullptr;
+        const Symbol* exponent1 = &one.symbol();
+        const Symbol* exponent2 = &one.symbol();
+        double coef1 = 0.0;
+        double coef2 = 0.0;
 
         extract_base_exponent_and_coefficient(*expr1, base1, exponent1, coef1);
         extract_base_exponent_and_coefficient(*expr2, base2, exponent2, coef2);
@@ -299,7 +305,7 @@ namespace Sym {
                 return Util::Order::Equal;
             }
             if (exp_sum == 1) {
-                base1->copy_to(destination);
+                base1->copy_to(*destination);
                 return Util::Order::Equal;
             }
             if (base1->is(Type::NumericConstant)) {
@@ -311,7 +317,7 @@ namespace Sym {
                 Inv<Copy>::init(*destination, {*base1});
                 return Util::Order::Equal;
             }
-            
+
             Pow<Copy, Num>::init(*destination, {*base1, exp_sum});
             return Util::Order::Equal;
         }
@@ -348,11 +354,11 @@ namespace Sym {
 
     std::string Product::to_tex() const {
         if (arg1().is(Type::Reciprocal)) {
-            return fraction_to_tex(arg2(), arg1().reciprocal.arg());
+            return fraction_to_tex(arg2(), arg1().as<Reciprocal>().arg());
         }
 
         if (arg2().is(Type::Reciprocal)) {
-            return fraction_to_tex(arg1(), arg2().reciprocal.arg());
+            return fraction_to_tex(arg1(), arg2().as<Reciprocal>().arg());
         }
 
         std::string arg1_pattern = "{}";
@@ -372,15 +378,15 @@ namespace Sym {
 
     __host__ __device__ void Product::eliminate_ones() {
         for (auto* last = last_in_tree(); last >= this;
-             last = (last->symbol() - 1)->as_ptr<Product>()) {
+             last = (&last->symbol() - 1)->as_ptr<Product>()) {
             if (last->arg2().is(Type::NumericConstant) &&
-                last->arg2().numeric_constant.value == 1.0) {
+                last->arg2().as<NumericConstant>().value == 1.0) {
                 last->arg1().move_to(last->symbol());
                 continue;
             }
 
             if (last->arg1().is(Type::NumericConstant) &&
-                last->arg1().numeric_constant.value == 1.0) {
+                last->arg1().as<NumericConstant>().value == 1.0) {
                 last->arg2().move_to(last->symbol());
             }
         }
@@ -399,16 +405,27 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
     DEFINE_ONE_ARG_OP_DERIVATIVE(Reciprocal, (Neg<Inv<Pow<Copy, Integer<2>>>>))
 
-    DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) {
+    DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) { // NOLINT(misc-unused-parameters)
         if (arg().is(Type::Reciprocal)) {
             arg().as<Reciprocal>().arg().copy_to(symbol());
             return true;
         }
 
         if (arg().is(Type::NumericConstant)) {
-            symbol()->init_from(
+            symbol().init_from(
                 NumericConstant::with_value(1.0 / arg().as<NumericConstant>().value));
             return true;
+        }
+
+        if (arg().is(Type::Product)) {
+            const auto count = arg().as<Product>().tree_size();
+            if (size < arg().size() + count) {
+                additional_required_size = count - 1;
+                return false;
+            }
+            From<Product>::Create<Product>::WithMap<Inv>::init(*help_space, {{arg().as<Product>(), count}});
+            help_space->copy_to(symbol());
+            return false;
         }
 
         return true;
