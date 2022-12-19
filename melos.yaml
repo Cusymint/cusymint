@@ -49,6 +49,14 @@ scripts:
   format-check:
     run: melos exec flutter format . --set-exit-if-changed
 
+  build:web:
+    run: melos exec --fail-fast -- \
+      "flutter build web"
+    select-package:
+      dir-exists:
+        - web
+      scope: 'cusymint_app'
+
 command:
   bootstrap:
     usePubspecOverrides: true
