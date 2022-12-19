@@ -1,5 +1,6 @@
 export 'blackboard_decoration.dart';
 export 'card.dart';
+export 'copy_tex_icon_button.dart';
 export 'elevated_button.dart';
 export 'logo.dart';
 export 'shimmer_rectangle.dart';
