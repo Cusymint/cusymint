@@ -77,7 +77,7 @@ namespace Sym {
     
     DEFINE_SIMPLIFY_IN_PLACE(ExponentialIntegral) {
         if (arg().is(Type::Logarithm)) {
-            arg().as<Logarithm>().arg().move_to(&arg());
+            arg().as<Logarithm>().arg().move_to(arg());
             type = Type::LogarithmicIntegral;
             seal();
         }
@@ -107,7 +107,7 @@ namespace Sym {
     
     DEFINE_SIMPLIFY_IN_PLACE(LogarithmicIntegral) {
         if (Pow<E, Any>::match(arg())) {
-            arg().as<Power>().arg2().move_to(&arg());
+            arg().as<Power>().arg2().move_to(arg());
             type = Type::ExponentialIntegral;
             seal();
         }

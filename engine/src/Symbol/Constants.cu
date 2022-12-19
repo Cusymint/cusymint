@@ -35,7 +35,7 @@ namespace Sym {
     DEFINE_SIMPLE_SEAL_WHOLE(UnknownConstant)
 
     DEFINE_ARE_EQUAL(NumericConstant) {
-        return BASE_ARE_EQUAL(NumericConstant) && symbol->numeric_constant.value == value;
+        return BASE_ARE_EQUAL(NumericConstant) && symbol->as<NumericConstant>().value == value;
     }
 
     DEFINE_COMPARE_TO(NumericConstant) {
@@ -44,7 +44,7 @@ namespace Sym {
 
     DEFINE_ARE_EQUAL(UnknownConstant) {
         return BASE_ARE_EQUAL(UnknownConstant) &&
-               Util::compare_str(symbol->unknown_constant.name, name, NAME_LEN);
+               Util::compare_str(symbol->as<UnknownConstant>().name, name, NAME_LEN);
     }
 
     DEFINE_COMPARE_TO(UnknownConstant) {
@@ -70,7 +70,7 @@ namespace Sym {
     }
 
     DEFINE_ARE_EQUAL(KnownConstant) {
-        return BASE_ARE_EQUAL(KnownConstant) && symbol->known_constant.value == value;
+        return BASE_ARE_EQUAL(KnownConstant) && symbol->as<KnownConstant>().value == value;
     }
 
     DEFINE_COMPARE_TO(KnownConstant) {
@@ -130,9 +130,7 @@ namespace Sym {
         }
     }
 
-    std::string NumericConstant::to_string() const {
-        return fmt::format("{:g}", value);
-    }
+    std::string NumericConstant::to_string() const { return fmt::format("{:g}", value); }
 
     std::string NumericConstant::to_tex() const {
         if (value < 0) {
@@ -153,8 +151,7 @@ namespace Sym {
 
     std::vector<Symbol> known_constant(KnownConstantValue value) {
         std::vector<Symbol> symbol_vec(1);
-        symbol_vec[0].known_constant = KnownConstant::create();
-        symbol_vec[0].known_constant.value = value;
+        symbol_vec[0].init_from(KnownConstant::with_value(value));
         return symbol_vec;
     }
 
@@ -164,15 +161,14 @@ namespace Sym {
 
     std::vector<Symbol> cnst(const char name[UnknownConstant::NAME_LEN]) {
         std::vector<Symbol> symbol_vec(1);
-        symbol_vec[0].unknown_constant = UnknownConstant::create();
-        std::copy(name, name + UnknownConstant::NAME_LEN, symbol_vec[0].unknown_constant.name);
+        symbol_vec[0].init_from(UnknownConstant::create());
+        std::copy(name, name + UnknownConstant::NAME_LEN, symbol_vec[0].as<UnknownConstant>().name);
         return symbol_vec;
     }
 
     std::vector<Symbol> num(double value) {
         std::vector<Symbol> symbol_vec(1);
-        symbol_vec[0].numeric_constant = NumericConstant::create();
-        symbol_vec[0].numeric_constant.value = value;
+        symbol_vec[0].init_from(NumericConstant::with_value(value));
         return symbol_vec;
     }
 }

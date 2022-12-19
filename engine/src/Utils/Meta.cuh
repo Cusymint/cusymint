@@ -1,9 +1,17 @@
 #ifndef META_CUH
 #define META_CUH
 
+#include <type_traits>
+#include <utility>
+
 #include <cuda/std/tuple>
 
 namespace Util {
+    /*
+     * @brief An empty structure
+     */
+    struct Empty {};
+
     template <class... Optionals> struct MetaOptionalsSum;
 
     /*
@@ -19,7 +27,7 @@ namespace Util {
       public:
         static constexpr bool HAS_VALUE = H;
 
-        static constexpr ValueType get_value() {
+        __host__ __device__ static constexpr ValueType get_value() {
             static_assert(HAS_VALUE, "This MetaOptional is empty");
             return VALUE;
         };
@@ -92,7 +100,7 @@ namespace Util {
                                    std::index_sequence<LIs...> /*left_indices*/,
                                    std::index_sequence<RIs...> /*right_indices*/) {
         return cuda::std::tie(cuda::std::get<LIs + N>(tuple)..., element,
-                                     cuda::std::get<RIs + S + N>(tuple)...);
+                              cuda::std::get<RIs + S + N>(tuple)...);
     }
 
     /*

@@ -30,5 +30,8 @@
    "errorUnexpectedEndOfInput": "Nieoczekiwany koniec wejścia",
    "errorUnexpectedToken": "Nieznany token {}",
    "errorNoSolutionFound": "Nie znaleziono rozwiązania",
-   "errorInternal": "Błąd wewnętrzny"
+   "errorInternal": "Błąd wewnętrzny",
+   "history": "Historia",
+   "historyEmpty": "Historia jest pusta",
+   "clearHistory": "Wyczyść"
 }

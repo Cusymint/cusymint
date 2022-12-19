@@ -5,11 +5,11 @@
 
 namespace Sym::KnownIntegral {
     __device__ size_t is_simple_arctan(const Integral& integral);
-    __device__ void integrate_simple_arctan(const Integral& integral, Symbol& destination,
-                                            Symbol& /*help_space*/);
+    __device__ EvaluationStatus integrate_simple_arctan(const Integral& integral, SymbolIterator& destination,
+                             const ExpressionArray<>::Iterator& /*help_space*/);
     __device__ size_t is_simple_arcsine(const Integral& integral);
-    __device__ void integrate_simple_arcsine(const Integral& integral, Symbol& destination,
-                                            Symbol& /*help_space*/);
+    __device__ EvaluationStatus integrate_simple_arcsine(const Integral& integral, SymbolIterator& destination,
+                             const ExpressionArray<>::Iterator& /*help_space*/);
 }
 
 #endif
