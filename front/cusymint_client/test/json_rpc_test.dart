@@ -44,8 +44,7 @@ void main() {
         allOf(
           isNotEmpty,
           contains(
-            isA<UnexpectedTokenError>()
-                .having((err) => err.token, 'End token', '<end>'),
+            isA<UnexpectedEndOfInputError>(),
           ),
         ),
       );
@@ -70,8 +69,7 @@ void main() {
         allOf(
           isNotEmpty,
           contains(
-            isA<UnexpectedTokenError>()
-                .having((err) => err.token, 'End token', '<end>'),
+            isA<UnexpectedEndOfInputError>(),
           ),
         ),
       );
@@ -130,7 +128,7 @@ void main() {
         ]),
       );
     });
-  }, skip: true);
+  });
 
   group('json_rpc error parsing', () {
     group('Unexpected Tokens', () {
@@ -154,6 +152,12 @@ void main() {
             ),
           );
         });
+      });
+
+      final endOfLineErrorMessage = 'Unexpected token: <end>';
+      test('UnexpectedEndOfInput', () {
+        final error = CusymintClientJsonRpc.parseError(endOfLineErrorMessage);
+        expect(error, isA<UnexpectedEndOfInputError>());
       });
 
       final incorrectErrorMessages = [

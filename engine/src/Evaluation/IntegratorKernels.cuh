@@ -1,11 +1,11 @@
 #ifndef INTEGRATE_KERNELS_CUH
 #define INTEGRATE_KERNELS_CUH
 
+#include "Evaluation/Status.cuh"
+
 #include "Symbol/ExpressionArray.cuh"
 
 namespace Sym {
-    constexpr size_t MAX_EXPRESSION_COUNT = 128;
-
     /*
      * @brief Checks if inclusive_scan[index] is signaling a zero-sized element
      *
@@ -26,7 +26,7 @@ namespace Sym {
      * @return Value of the element before inclusive_scan was run
      */
     __device__ uint32_t get_value_from_scan(const size_t index,
-                               const Util::DeviceArray<uint32_t>& inclusive_scan);
+                                            const Util::DeviceArray<uint32_t>& inclusive_scan);
 }
 
 namespace Sym::Kernel {
@@ -36,9 +36,11 @@ namespace Sym::Kernel {
      * @param expressions Expressions to simplify
      * @param destination Destination to save the simplified expressions
      * @param help_spaces Help space required for some simplifications
+     * @param statuses Evaluation statuses used for reporting reallocation requests
      */
     __global__ void simplify(const ExpressionArray<> expressions, ExpressionArray<> destination,
-                             ExpressionArray<> help_spaces);
+                             ExpressionArray<> help_spaces,
+                             Util::DeviceArray<EvaluationStatus> statuses);
 
     /*
      * @brief Checks whether `integrals` have known solutions
@@ -54,23 +56,27 @@ namespace Sym::Kernel {
                               Util::DeviceArray<uint32_t> applicability);
 
     /*
-     * @brief Solves integrals in place using the `applicability` information from
-     * `check_for_known_integrals`
+     * @brief Solves integrals using the `applicability` information from
+     * `check_for_known_integrals` and sets `SubexpressionCandidates` in `expressions` as solved
+     * by a corresponding `SubexpressionVacancy`
      *
      * @param integrals Integrals with potentially known solutions
-     * @param expressions Expressions containing SubexpressionVacancies.
-     * Solutions are written after the last expression in `expressions`.
-     *
+     * @param expressions Expressions containing SubexpressionVacancies, and also where results will
+     * be saved.
+     * @param dst_offset Starting index at which results will be saved.
      * @param help_spaces Help space used in applying known integrals
      * @param applicability Result of `inclusive_scan` on `check_for_known_integrals()`
      * applicability array
+     * @param candidates_created Evaluation statuses for all created integrals that are set
+     * according to the result of applications
      * @param candidates_created Number of `SubexpressionCandidates` already created
      * in integration process
      */
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
-                                          ExpressionArray<> expressions,
+                                          ExpressionArray<> expressions, const size_t dst_offset,
                                           ExpressionArray<> help_spaces,
                                           const Util::DeviceArray<uint32_t> applicability,
+                                          Util::DeviceArray<EvaluationStatus> statuses,
                                           const size_t candidates_created);
 
     /*
@@ -133,7 +139,7 @@ namespace Sym::Kernel {
             }
 
             Symbol& destination = destinations[removability[expr_idx] - 1];
-            expressions[expr_idx].copy_to(&destination);
+            expressions[expr_idx].copy_to(destination);
 
             destination.if_is_do<SubexpressionCandidate>([&removability](auto& dst) {
                 dst.vacancy_expression_idx = removability[dst.vacancy_expression_idx] - 1;
@@ -190,26 +196,32 @@ namespace Sym::Kernel {
     /*
      * @brief Applies heuristics to integrals
      *
-     * @param integrals Integrals on which heuristics will be applied
-     * @param integrals_destinations Solutions destination
-     * @param expressions_destinations Destination for new expressions.
-     * New expressions will be appended to already existing ones.
+     * @param integrals Integrals to which heuristics will be applied
+     * @param integrals_dst Destinations of transformed integrals. Has to contain
+     * enough expressions to contain all results.
+     * @param expressions_dst Destination for new expressions. Has to contain enough
+     * expressions to contain all results.
+     * @param expressions_dst_offset Starting index at which result expressions will be saved
      * @param help_spaces Help space for transformations
      * @param new_integrals_indices Indices of new integrals incremented by 1.
      * If given index is equal to its predecessor, then its integral and heuristic
      * (specified in `check_heuristics_applicability()`) haven't found any solution.
      * `new_integrals_indices[0]` will override `1` to `0`.
      * @param new_expressions_indices Analogical to `new_integrals_indices` for `expressions`
+     * @param integral_statuses Evaluation statuses for all created integrals that are set
+     * according to the result of applications
+     * @param expression_statuses Evaluation statuses for all created expressions that are set
+     * according to the result of applications
      * @param candidates_created Number of `SubexpressionCandidates` already created
      * in integration process
      */
-    __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
-                                     ExpressionArray<> integrals_destinations,
-                                     ExpressionArray<> expressions_destinations,
-                                     ExpressionArray<> help_spaces,
-                                     const Util::DeviceArray<uint32_t> new_integrals_indices,
-                                     const Util::DeviceArray<uint32_t> new_expressions_indices,
-                                     const size_t candidates_created);
+    __global__ void apply_heuristics(
+        const ExpressionArray<SubexpressionCandidate> integrals, ExpressionArray<> integrals_dst,
+        ExpressionArray<> expressions_dst, const size_t expressions_dst_offset,
+        ExpressionArray<> help_spaces, const Util::DeviceArray<uint32_t> new_integrals_indices,
+        const Util::DeviceArray<uint32_t> new_expressions_indices,
+        Util::DeviceArray<EvaluationStatus> integral_statuses,
+        Util::DeviceArray<EvaluationStatus> expression_statuses, const size_t candidates_created);
 
     /*
      * @brief Propagates information about failed SubexpressionVacancy upwards to parent
@@ -226,7 +238,7 @@ namespace Sym::Kernel {
      * @brief Propagates information about failed SubexpressionCandidate downwards
      *
      * @param expression Expressions to update
-     * @param failurs Arrays that should point out already failed expressions, all descendands
+     * @param failures Arrays that should point out already failed expressions, all descendands
      * of which are going to be failed (failures[i] == 0 iff failed, 1 otherwise)
      */
     __global__ void propagate_failures_downwards(ExpressionArray<> expressions,
@@ -245,7 +257,6 @@ namespace Sym::Kernel {
     find_redundand_integrals(const ExpressionArray<> integrals,
                              const Util::DeviceArray<uint32_t> expressions_removability,
                              Util::DeviceArray<uint32_t> integrals_removability);
-
 }
 
 #endif

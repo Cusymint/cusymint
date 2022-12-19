@@ -11,7 +11,7 @@
 #include "TransformationType.cuh"
 
 namespace Sym {
-    
+
     using ExprVector = std::vector<std::vector<Symbol>>;
     using TransformationList = std::list<std::unique_ptr<TransformationType>>;
 
@@ -20,6 +20,9 @@ namespace Sym {
     const char* get_computation_step_text(ComputationStepType type);
 
     class ComputationStep {
+        // Space assumed to be not exceeded by the derivative of substitution or integration by parts (improvement possible)
+        static constexpr size_t DERIVATIVE_SIZE = 1024; 
+
         ExprVector expression_tree;
         ComputationStepType step_type;
 

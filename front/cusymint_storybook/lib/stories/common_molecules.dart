@@ -37,6 +37,36 @@ class CommonMolecules extends StorybookPart {
           ),
         ),
         Story(
+          name: 'Molecules/HistoryItem',
+          builder: (context) {
+            final data = context.knobs.text(
+              label: 'Data',
+              initial: 'int x + 15x^2 - sin(x) dx',
+            );
+
+            return CuHistoryItem(data, onTap: () {});
+          },
+        ),
+        Story(
+          name: 'Molecules/ScrollableHorizontalWrapper',
+          builder: (context) => CuScrollableHorizontalWrapper(
+            child: Placeholder(
+              fallbackHeight: context.knobs.slider(
+                label: 'Height',
+                initial: 10,
+                max: 100,
+                min: 0,
+              ),
+              fallbackWidth: context.knobs.slider(
+                label: 'Width',
+                initial: 100,
+                max: 1000,
+                min: 10,
+              ),
+            ),
+          ),
+        ),
+        Story(
           name: 'Molecules/Scaffold',
           builder: (context) {
             final displayAppBar = context.knobs.boolean(
@@ -44,16 +74,7 @@ class CommonMolecules extends StorybookPart {
               initial: true,
             );
 
-            final displayMenuButton = context.knobs.boolean(
-              label: 'Display menu button',
-              initial: true,
-            );
-
-            final appBar = displayAppBar
-                ? CuAppBar(
-                    onMenuPressed: displayMenuButton ? () {} : null,
-                  )
-                : null;
+            final appBar = displayAppBar ? CuAppBar() : null;
 
             return CuScaffold(
               appBar: appBar,

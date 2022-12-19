@@ -19,16 +19,17 @@ namespace Sym {
         return {
             .type = Sym::Type::ExpanderPlaceholder,
             .size = 1,
-            .simplified = true,
             .additional_required_size = size - 1,
+            .simplified = true,
         };
     }
 
     std::string ExpanderPlaceholder::to_string() const {
-        return fmt::format("ExpanderPlaceholder({})", size);
+        return fmt::format("ExpanderPlaceholder(+{})", additional_required_size);
     }
 
     std::string ExpanderPlaceholder::to_tex() const {
-        return fmt::format(R"((\cdot)_{{ size={} }})", size);
+        return fmt::format(R"((\cdot)_{{ additional_required_size={} }})",
+                           additional_required_size);
     }
 }

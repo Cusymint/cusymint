@@ -116,10 +116,10 @@ namespace Sym {
             }
 
             for (int i = 0; i < this_cand.size; ++i) {
-                this_cand.symbol()->at(i)->if_is_do<SubexpressionVacancy>(
-                    [&other, other_cand_symbol = other_cand.symbol(), this, i](auto& vacancy) {
+                this_cand.symbol().at(i)->if_is_do<SubexpressionVacancy>(
+                    [&other, &other_cand_symbol = other_cand.symbol(), this, i](auto& vacancy) {
                         const auto& other_vacancy =
-                            other_cand_symbol->at(i)->as<SubexpressionVacancy>();
+                            other_cand_symbol.at(i)->as<SubexpressionVacancy>();
                         if (other_vacancy.is_solved == 1 && vacancy.is_solved != 1) {
                             const auto& candidate =
                                 other.expression_tree[other_vacancy.solver_idx][0]
@@ -195,10 +195,10 @@ namespace Sym {
                 if (integral.substitution_count > creator_integral.substitution_count) {
                     // substitution happened
                     std::vector<Symbol> substitution(
-                        integral.first_substitution()->expression()->size());
-                    std::vector<Symbol> derivative(MAX_EXPRESSION_COUNT);
-                    integral.first_substitution()->expression()->copy_to(substitution.data());
-                    integral.first_substitution()->expression()->derivative_to(derivative.data());
+                        integral.first_substitution().expression().size());
+                    std::vector<Symbol> derivative(DERIVATIVE_SIZE);
+                    integral.first_substitution().expression().copy_to(*substitution.data());
+                    integral.first_substitution().expression().derivative_to(derivative.data());
                     derivative.resize(derivative.data()->size());
 
                     list.push_back(std::make_unique<Substitute>(substitution, derivative,
@@ -209,11 +209,11 @@ namespace Sym {
             if (candidate.arg().is(Type::Solution)) {
                 // solution happened
                 const auto& solution_arg = candidate.arg().as<Solution>().expression();
-                std::vector<Symbol> integrand(creator_integral.integrand()->size());
-                std::vector<Symbol> solution(solution_arg->size());
+                std::vector<Symbol> integrand(creator_integral.integrand().size());
+                std::vector<Symbol> solution(solution_arg.size());
 
-                solution_arg->copy_to(solution.data());
-                creator_integral.integrand()->copy_to(integrand.data());
+                solution_arg.copy_to(*solution.data());
+                creator_integral.integrand().copy_to(*integrand.data());
 
                 list.push_back(std::make_unique<SolveIntegral>(integral(integrand), solution, creator_integral.substitution_count));
             }
