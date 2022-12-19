@@ -215,7 +215,8 @@ namespace Sym {
                 solution_arg.copy_to(*solution.data());
                 creator_integral.integrand().copy_to(*integrand.data());
 
-                list.push_back(std::make_unique<SolveIntegral>(integral(integrand), solution, creator_integral.substitution_count));
+                list.push_back(std::make_unique<SolveIntegral>(
+                    integral(integrand), solution, creator_integral.substitution_count));
             }
         }
 
@@ -260,8 +261,8 @@ namespace Sym {
             const auto expression_str = expression.data()->to_tex();
 
             if (prev_str != expression_str) {
-                //result.push_back(fmt::format("\\text{{ {}: }}",
-                //                             get_computation_step_text(step.get_step_type())));
+                // result.push_back(fmt::format("\\text{{ {}: }}",
+                //                              get_computation_step_text(step.get_step_type())));
                 for (const auto& trans : step.get_operations(*prev_step)) {
                     result.push_back(fmt::format(R"(\quad {}:)", trans->get_description()));
                 }

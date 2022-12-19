@@ -51,4 +51,10 @@ namespace Sym {
         candidate.subexpressions_left = 0;
         return candidate_vec;
     }
+
+    std::vector<Symbol> first_expression_candidate_with_uid(size_t uid, const std::vector<Symbol> &child) {
+        auto result = first_expression_candidate(child);
+        result[0].as<SubexpressionCandidate>().uid = uid;
+        return result;
+    }
 }

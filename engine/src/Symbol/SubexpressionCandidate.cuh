@@ -24,6 +24,7 @@ namespace Sym {
     END_DECLARE_SYMBOL(SubexpressionCandidate)
 
     std::vector<Symbol> first_expression_candidate(const std::vector<Symbol>& child);
+    std::vector<Symbol> first_expression_candidate_with_uid(size_t uid, const std::vector<Symbol> &child);
 }
 
 #endif

@@ -59,6 +59,8 @@ namespace Sym {
         std::vector<std::string> get_tex_history() const;
 
         void print_history() const;
+
+        const ComputationStepCollection& get_steps() const { return computation_steps; } 
     };
 }
 

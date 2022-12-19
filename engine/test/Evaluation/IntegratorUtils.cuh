@@ -76,6 +76,10 @@ namespace Test {
 
     SymVector nth_expression_candidate(size_t n, const std::string& child, size_t vacancy_idx = 0);
 
+    SymVector nth_expression_candidate_with_uid(size_t uid, size_t n, const SymVector& child, size_t vacancy_idx = 0);
+
+    SymVector nth_expression_candidate_with_uid(size_t uid, size_t n, const std::string& child, size_t vacancy_idx = 0);
+
     ExprVector get_expected_expression_vector(std::vector<HeuristicPairVector> heuristics_vector);
 }
 
