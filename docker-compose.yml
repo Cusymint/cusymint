@@ -13,7 +13,7 @@ services:
             - capabilities: ["gpu"]
               count: 1
 
-  web_app:
+  webapp:
     build:
       context: .
       dockerfile: front/cusymint_app/Dockerfile
