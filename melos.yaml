@@ -35,10 +35,10 @@ scripts:
   analyze:
     run: melos exec -c 1 -- "dart analyze . --fatal-infos"
 
-  test:all:
-    run: melos run test --no-select
+  test:unit:all:
+    run: melos run test:unit --no-select
 
-  test:
+  test:unit:
     run: |
       melos exec -c 6 --fail-fast -- \
         "flutter test --no-pub"
@@ -46,6 +46,14 @@ scripts:
       dir-exists:
         - test
   
+  test:integration:
+    run: |
+      melos exec -c 6 --fail-fast -- \
+        "dart test integration_test"
+    select-package:
+      dir-exists:
+        - integration_test
+
   format-check:
     run: melos exec flutter format . --set-exit-if-changed
 

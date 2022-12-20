@@ -28,5 +28,5 @@ jobs:
         run: melos bootstrap
 
       - name: Run tests
-        run: melos test:all
+        run: melos test:unit:all
       
