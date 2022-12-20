@@ -173,7 +173,10 @@ namespace Sym {
             }
         }
 
+        ssize_t idx = -1;
         for (const auto& expression : expression_tree) {
+            ++idx;
+
             if (!expression[0].is(Type::SubexpressionCandidate)) {
                 continue;
             }
@@ -181,6 +184,12 @@ namespace Sym {
             const auto& candidate = expression[0].as<SubexpressionCandidate>();
 
             if (candidate.uid <= max_prev_uid) {
+                continue;
+            }
+
+            if (expression_tree[candidate.vacancy_expression_idx][candidate.vacancy_idx]
+                    .as<SubexpressionVacancy>()
+                    .solver_idx != idx) {
                 continue;
             }
 

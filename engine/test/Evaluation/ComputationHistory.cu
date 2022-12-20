@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include <memory>
 #include <vector>
 
 #include "Evaluation/ComputationHistory.cuh"
+#include "Evaluation/TransformationType.cuh"
 #include "IntegratorUtils.cuh"
 #include "Parser/Parser.cuh"
 #include "Symbol/Integral.cuh"
@@ -26,6 +28,7 @@ namespace Test {
     using Sym::ComputationHistory;
     using Sym::ComputationStep;
     using Sym::ComputationStepType;
+    using Sym::TransformationList;
     using ExprVector = std::vector<std::vector<Sym::Symbol>>;
     using StringVector = std::vector<std::string>;
     namespace {
@@ -46,19 +49,27 @@ namespace Test {
             EXPECT_EXPR_EQ(result, expected_result);
         }
 
+        std::string to_string_with_tab(const TransformationList& list) {
+            std::string result = "[\n";
+            for (const auto& elem : list) {
+                result += "\t" + elem->get_description() + ",\n";
+            }
+            return result + "]";
+        }
+
         const ExprVector expressions = {
             Sym::single_integral_vacancy(),
             nth_expression_candidate_with_uid(1, 0, Sym::e() ^ Sym::single_integral_vacancy()),
-            nth_expression_candidate_with_uid(5, 1, Sym::integral(Sym::var()), 3),
-            nth_expression_candidate_with_uid(7, 0, Sym::integral(Sym::e())),
+            nth_expression_candidate_with_uids(5, 1, 1, Sym::integral(Sym::var()), 3),
+            nth_expression_candidate_with_uids(7, 1, 0, Sym::integral(Sym::e())),
         };
 
         const ExprVector solved_expressions = {
             vacancy_solved_by(1),
             nth_expression_candidate_with_uid(1, 0, Sym::e() ^ vacancy_solved_by(2)),
-            nth_expression_candidate_with_uid(
-                5, 1, Sym::solution(Sym::num(0.5) * (Sym::var() ^ Sym::num(2))), 3),
-            nth_expression_candidate_with_uid(7, 0, Sym::solution(Sym::var() * Sym::e())),
+            nth_expression_candidate_with_uids(
+                8, 5, 1, Sym::solution(Sym::num(0.5) * (Sym::var() ^ Sym::num(2))), 3),
+            nth_expression_candidate_with_uids(9, 7, 0, Sym::solution(Sym::var() * Sym::e())),
         };
     }
 
@@ -86,8 +97,6 @@ namespace Test {
                                      Sym::e() ^ Sym::integral(Sym::var()));
     }
 
-    // TODO: ComputationStep::get_operations
-
     TEST(ComputationHistory, Complete) {
         ComputationHistory history;
         history.add_step({expressions, {}, ComputationStepType::Simplify});
@@ -113,4 +122,31 @@ namespace Test {
             ++expected_steps_it;
         }
     }
+
+    TEST(ComputationStep, GetOperations) {
+        ComputationStep step(expressions, {}, ComputationStepType::Simplify);
+        ComputationStep solved_step(solved_expressions, {}, ComputationStepType::ApplySolution);
+
+        step.copy_solution_path_from(solved_step);
+        const auto result = solved_step.get_operations(step);
+
+        TransformationList expected_list;
+
+        expected_list.push_back(std::make_unique<Sym::SolveIntegral>(
+            Sym::integral(Sym::var()), Sym::num(0.5) * (Sym::var() ^ Sym::num(2)), 0));
+
+        ASSERT_EQ(result.size(), expected_list.size())
+            << "Unexpected result:\n"
+            << to_string_with_tab(result) << " <- got,\n"
+            << to_string_with_tab(expected_list) << " <- expected";
+
+        for (auto it = result.cbegin(), expected_it = expected_list.cbegin(); it != result.cend();
+             ++it, ++expected_it) {
+            ASSERT_TRUE(it->get()->equals(*expected_it->get()))
+                << "Unexpected result:\n"
+                << to_string_with_tab(result) << " <- got,\n"
+                << to_string_with_tab(expected_list) << " <- expected";
+        }
+    }
+
 }

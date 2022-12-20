@@ -15,6 +15,7 @@ namespace Sym {
       public:
         virtual ~TransformationType() = default;
         virtual std::string get_description() const = 0;
+        virtual bool equals(const TransformationType& other) const = 0;
     };
 
     class Substitute : public TransformationType {
@@ -39,6 +40,13 @@ namespace Sym {
                                substitution.data()->to_tex(), substitution_name,
                                derivative.data()->to_tex());
         }
+
+        bool equals(const TransformationType& other) const override {
+            const auto* other_sub = dynamic_cast<const Substitute*>(&other);
+            return other_sub != nullptr && substitution == other_sub->substitution &&
+                   derivative == other_sub->derivative &&
+                   substitution_name == other_sub->substitution_name;
+        }
     };
 
     class SplitSum : public TransformationType {
@@ -50,6 +58,12 @@ namespace Sym {
             first_term(first_term), second_term(second_term) {}
 
         std::string get_description() const override { return "\\text{Split sum}"; }
+
+        bool equals(const TransformationType& other) const override {
+            const auto* other_split = dynamic_cast<const SplitSum*>(&other);
+            return other_split != nullptr && first_term == other_split->first_term &&
+                   second_term == other_split->second_term;
+        }
     };
 
     class IntegrateByParts : public TransformationType {
@@ -57,6 +71,11 @@ namespace Sym {
 
       public:
         std::string get_description() const override { return "\\text{Integrate by parts}"; }
+
+        bool equals(const TransformationType& other) const override {
+            const auto* other_int = dynamic_cast<const IntegrateByParts*>(&other);
+            return other_int != nullptr && first_factor == other_int->first_factor;
+        }
     };
 
     class SolveIntegral : public TransformationType {
@@ -79,6 +98,12 @@ namespace Sym {
             return fmt::format("\\text{{Solve integral:}} {} = {}", integral.data()->to_tex(),
                                solution.data()->to_tex());
         }
+
+        bool equals(const TransformationType& other) const override {
+            const auto* other_solve = dynamic_cast<const SolveIntegral*>(&other);
+            return other_solve != nullptr && integral == other_solve->integral &&
+                   solution == other_solve->solution;
+        }
     };
 
     class BringOutConstant : public TransformationType {
@@ -87,11 +112,21 @@ namespace Sym {
 
       public:
         std::string get_description() const override { return "\\text{Bring out constant}"; }
+
+        bool equals(const TransformationType& other) const override {
+            const auto* other_bring = dynamic_cast<const BringOutConstant*>(&other);
+            return other_bring != nullptr && integral_before == other_bring->integral_before &&
+                   integral_after == other_bring->integral_after;
+        }
     };
 
     class SimplifyExpression : public TransformationType {
       public:
         std::string get_description() const override { return "\\text{Simplify expression}"; }
+
+        bool equals(const TransformationType &other) const override {
+          return dynamic_cast<const SimplifyExpression*>(&other) != nullptr;
+        }
     };
 }
 
