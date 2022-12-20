@@ -50,6 +50,11 @@ namespace Util {
 
       public:
         /*
+         * @brief Creates an empty `DeviceArray`
+         */
+        DeviceArray() : is_data_owner(true) {}
+
+        /*
          * @brief Allocates an array of size `size`
          *
          * @param zero_mem If `true`, the allocated memory is zeroed
@@ -123,9 +128,10 @@ namespace Util {
          */
         void resize(const size_t new_size) {
             if (!is_data_owner) {
-                throw std::logic_error("Resizing unowned array");
+                throw std::logic_error("Resizing an unowned array");
             }
 
+            // Everything works also when `data_ptr == nullptr`
             T* const old_data_ptr = data_ptr;
             const size_t old_size = data_size;
 
@@ -274,6 +280,11 @@ namespace Util {
          * @brief Pointer to the last element of the array
          */
         inline T* last() { return at(data_size - 1); }
+
+        /*
+         * @brief Value of the last element of the array moved to the CPU
+         */
+        inline T last_cpu() const { return to_cpu(data_size - 1); }
 
         ~DeviceArray() { free_data(); }
     };

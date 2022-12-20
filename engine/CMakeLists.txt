@@ -42,6 +42,9 @@ add_library(
   ${SYMBOL_DIR}/Logarithm.cu
   ${SYMBOL_DIR}/SubexpressionCandidate.cu
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
+  ${SYMBOL_DIR}/ErrorFunction.cu
+  ${SYMBOL_DIR}/IntegralFunctions.cu
+  ${SYMBOL_DIR}/ExpressionArray.cu
   ${EVALUATION_DIR}/Collapser.cu
   ${EVALUATION_DIR}/Integrator.cu
   ${EVALUATION_DIR}/IntegratorKernels.cu
@@ -51,13 +54,16 @@ add_library(
   ${EVALUATION_DIR}/Heuristic/SubstituteEToX.cu
   ${EVALUATION_DIR}/Heuristic/UniversalSubstitution.cu
   ${EVALUATION_DIR}/Heuristic/BringOutConstantsFromProduct.cu
+  ${EVALUATION_DIR}/Heuristic/TrigonometricSubstitutions.cu
   ${EVALUATION_DIR}/KnownIntegral/KnownIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/ConstantIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/PowerFunction.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleSineCosine.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleExponent.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleVariable.cu
-  ${EVALUATION_DIR}/KnownIntegral/SimpleArctan.cu
+  ${EVALUATION_DIR}/KnownIntegral/SimpleArctanArcsine.cu
+  ${EVALUATION_DIR}/KnownIntegral/SimpleTangentCotangent.cu
+  ${EVALUATION_DIR}/KnownIntegral/NonElementary.cu
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
 
@@ -81,10 +87,14 @@ add_executable(
 
 add_executable(
   srvcusymint
-  ${SRC_DIR}/main_server.cu ${SERVER_DIR}/ResponseBuilder.cu
-  ${SERVER_DIR}/Server.cu ${SOLVER_DIR}/CachedParser.cu
-  ${SOLVER_DIR}/Expression.cu ${SOLVER_DIR}/Solver.cu
-  ${SERVER_DIR}/SolverProcessManager.cu ${SERVER_DIR}/JsonSolver.cu
+  ${SRC_DIR}/main_server.cu
+  ${SERVER_DIR}/ResponseBuilder.cu
+  ${SERVER_DIR}/Server.cu
+  ${SOLVER_DIR}/CachedParser.cu
+  ${SOLVER_DIR}/Expression.cu
+  ${SOLVER_DIR}/Solver.cu
+  ${SERVER_DIR}/SolverProcessManager.cu
+  ${SERVER_DIR}/JsonSolver.cu
   ${SERVER_DIR}/Logger.cu)
 
 # Debug build related things
@@ -97,9 +107,8 @@ string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
 if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
   target_compile_options(libcusymint PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -g -G >)
+  target_compile_options(cusymint PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -g -G >)
   add_compile_definitions(__DEBUG__)
-else()
-  target_compile_options(libcusymint PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:>)
 endif()
 
 # Compilation options

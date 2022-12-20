@@ -38,7 +38,12 @@ namespace Parser {
         Tan,
         Tanh,
         Ln,
-        Log
+        Erf,
+        Si,
+        Ci,
+        Ei,
+        Li,
+        Log,
     };
 
     bool isFunction(Token tok);
