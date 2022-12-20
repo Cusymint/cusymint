@@ -3,6 +3,7 @@
 #include <fmt/core.h>
 
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/MetaOperators.cuh"
 
 namespace Sym {
@@ -11,8 +12,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(SineIntegral)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(SineIntegral)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(SineIntegral)
-    __host__ __device__ ssize_t
-    SineIntegral::insert_reversed_derivative_at(Symbol* const destination) {
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(SineIntegral) {
         if ((destination - 1)->is(0)) {
             return 0;
         }
@@ -39,8 +39,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(CosineIntegral)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(CosineIntegral)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(CosineIntegral)
-    __host__ __device__ ssize_t
-    CosineIntegral::insert_reversed_derivative_at(Symbol* const destination) {
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(CosineIntegral) {
         if ((destination - 1)->is(0)) {
             return 0;
         }
@@ -67,8 +66,7 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(ExponentialIntegral)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(ExponentialIntegral)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(ExponentialIntegral)
-    __host__ __device__ ssize_t
-    ExponentialIntegral::insert_reversed_derivative_at(Symbol* const destination) {
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(ExponentialIntegral){
         if ((destination - 1)->is(0)) {
             return 0;
         }
