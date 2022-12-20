@@ -7,9 +7,11 @@
 
 #include "Addition.cuh"
 #include "Constants.cuh"
+#include "ErrorFunction.cuh"
 #include "ExpanderPlaceholder.cuh"
 #include "Hyperbolic.cuh"
 #include "Integral.cuh"
+#include "IntegralFunctions.cuh"
 #include "InverseTrigonometric.cuh"
 #include "Logarithm.cuh"
 #include "Polynomial.cuh"
@@ -68,6 +70,11 @@
             VC_CASE(Arccotangent, _instance, _member_function, __VA_ARGS__)                \
             VC_CASE(Logarithm, _instance, _member_function, __VA_ARGS__)                   \
             VC_CASE(Polynomial, _instance, _member_function, __VA_ARGS__)                  \
+            VC_CASE(ErrorFunction, _instance, _member_function, __VA_ARGS__)               \
+            VC_CASE(SineIntegral, _instance, _member_function, __VA_ARGS__)                \
+            VC_CASE(CosineIntegral, _instance, _member_function, __VA_ARGS__)              \
+            VC_CASE(ExponentialIntegral, _instance, _member_function, __VA_ARGS__)         \
+            VC_CASE(LogarithmicIntegral, _instance, _member_function, __VA_ARGS__)         \
             VC_CASE(Unknown, _instance, _member_function, __VA_ARGS__)                     \
         }                                                                                  \
                                                                                            \
@@ -105,6 +112,11 @@ namespace Sym {
         Arccotangent arccotangent;
         Logarithm logarithm;
         Polynomial polynomial;
+        ErrorFunction error_function;
+        SineIntegral sine_integral;
+        CosineIntegral cosine_integral;
+        ExponentialIntegral exponential_integral;
+        LogarithmicIntegral logarithmic_integral;
 
         constexpr static Sym::Type TYPE = Sym::Type::Symbol;
 

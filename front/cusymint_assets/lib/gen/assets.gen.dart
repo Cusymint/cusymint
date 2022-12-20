@@ -85,6 +85,9 @@ class $AssetsImagesGen {
 class $AssetsSvgGen {
   const $AssetsSvgGen();
 
+  /// File path: assets/svg/copy_tex.svg
+  SvgGenImage get copyTex => const SvgGenImage('assets/svg/copy_tex.svg');
+
   /// File path: assets/svg/integral_icon.svg
   SvgGenImage get integralIcon =>
       const SvgGenImage('assets/svg/integral_icon.svg');
@@ -93,7 +96,7 @@ class $AssetsSvgGen {
   SvgGenImage get logoWide => const SvgGenImage('assets/svg/logo_wide.svg');
 
   /// List of all assets
-  List<SvgGenImage> get values => [integralIcon, logoWide];
+  List<SvgGenImage> get values => [copyTex, integralIcon, logoWide];
 }
 
 class CuAssets {
