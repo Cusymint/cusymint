@@ -16,17 +16,20 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Logarithm)
     DEFINE_ONE_ARG_OP_DERIVATIVE(Logarithm, Inv<Copy>)
 
-    DEFINE_SIMPLIFY_IN_PLACE(Logarithm) {
-        if (arg().is(Type::NumericConstant) && arg().numeric_constant.value == 1) {
+    DEFINE_SIMPLIFY_IN_PLACE(Logarithm) { // NOLINT(misc-unused-parameters)
+        if (arg().is(Type::NumericConstant) && arg().as<NumericConstant>().value == 1) {
             // ln(1) = 0
-            *(this->as<NumericConstant>()) = NumericConstant::with_value(0);
+            symbol().init_from(NumericConstant::with_value(0));
             return true;
         }
-        if (arg().is(Type::KnownConstant) && arg().known_constant.value == KnownConstantValue::E) {
+
+        if (arg().is(Type::KnownConstant) &&
+            arg().as<KnownConstant>().value == KnownConstantValue::E) {
             // ln(e) = 1
-            *(this->as<NumericConstant>()) = NumericConstant::with_value(1);
+            symbol().init_from(NumericConstant::with_value(1));
             return true;
         }
+
         if (arg().is(Type::Power)) {
             // Here we do the following transformation: ln(f(x)^g(x)) = ln(f(x))*g(x).
             // Structure in memory before operation: LN | ^  | f(x) | g(x)
@@ -38,7 +41,7 @@ namespace Sym {
             arg().power.type = Type::Logarithm;
             arg().as<Logarithm>().seal();
             type = Type::Product;
-            as<Product>()->second_arg_offset =
+            symbol().as<Product>().second_arg_offset =
                 offset + 1; // seal_arg_1 may not work in this case (e.g. size of f(x) changes)
             return false;   // resulting Product is not sorted
         }
@@ -49,7 +52,8 @@ namespace Sym {
                 additional_required_size = count - 1;
                 return false;
             }
-            From<Product>::Create<Addition>::WithMap<Ln>::init(*help_space, {{arg().as<Product>(), count}});
+            From<Product>::Create<Addition>::WithMap<Ln>::init(*help_space,
+                                                               {{arg().as<Product>(), count}});
             help_space->copy_to(symbol());
             return false;
         }

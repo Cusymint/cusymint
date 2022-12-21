@@ -30,5 +30,8 @@
    "errorUnexpectedEndOfInput": "Unexpected end of input",
    "errorUnexpectedToken": "Unexpected token {}",
    "errorNoSolutionFound": "No solution found",
-   "errorInternal": "Internal error"
+   "errorInternal": "Internal error",
+   "history": "History",
+   "historyEmpty": "History is empty",
+   "clearHistory": "Clear history"
 }

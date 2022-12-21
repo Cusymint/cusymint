@@ -90,7 +90,8 @@ namespace Test {
 
         template <class T, class... Args>
         void test_meta_init(const std::vector<Symbol>& expected_expression, const Args&... args) {
-            std::vector<Symbol> expression(EXPRESSION_MAX_SYMBOL_COUNT);
+            static const size_t SAFETY_MULTIPLIER = 5;
+            std::vector<Symbol> expression(SAFETY_MULTIPLIER * expected_expression.size());
             T::init(*expression.data(), {args...});
             expression.resize(expression[0].size());
             EXPECT_TRUE(
@@ -151,7 +152,7 @@ namespace Test {
                                    "arcsin(cos(sin(x)))*arcsin(2*u)");
 
         size_t const count = expression.data()->as<Addition>().tree_size();
-        std::vector<Symbol> destination(EXPRESSION_MAX_SYMBOL_COUNT);
+        std::vector<Symbol> destination(expression.size() + count * Arcsin<Var>::Size::get_value());
 
         From<Addition>::Create<Product>::WithMap<Arcsin>::init(
             *destination.data(), {{expression.data()->as<Addition>(), count}});
@@ -173,7 +174,7 @@ namespace Test {
                                    "(2^cos(sin(x))+3)*(2^(2*u)+3)");
 
         size_t const count = expression.data()->as<Addition>().tree_size();
-        std::vector<Symbol> destination(EXPRESSION_MAX_SYMBOL_COUNT);
+        std::vector<Symbol> destination(expression.size() + count * Map<Var>::Size::get_value());
 
         From<Addition>::Create<Product>::WithMap<Map>::init(
             *destination.data(), {{expression.data()->as<Addition>(), count}, 2, 3});
@@ -188,17 +189,18 @@ namespace Test {
 
     template <class T> using Map2 = Pow<T, Copy>;
     TEST(MetaOperatorsInitTest, FromCreateWithComplexMapWithCopy) {
-
         auto expression = Parser::parse_function("x+sin(x)");
         auto to_be_copied = Parser::parse_function("cos(e^x)");
-        auto expected_expression =
-            Parser::parse_function("x^cos(e^x)*sin(x)^cos(e^x)");
+        auto expected_expression = Parser::parse_function("x^cos(e^x)*sin(x)^cos(e^x)");
+
+        const size_t map2_size = to_be_copied.size() + Pow<Var, Var>::Size::get_value();
 
         size_t const count = expression.data()->as<Addition>().tree_size();
-        std::vector<Symbol> destination(EXPRESSION_MAX_SYMBOL_COUNT);
+        std::vector<Symbol> destination(expression.size() + count * map2_size);
 
         From<Addition>::Create<Product>::WithMap<Map2>::init(
-            *destination.data(), {{expression.data()->as<Addition>(), count}, *to_be_copied.data()});
+            *destination.data(),
+            {{expression.data()->as<Addition>(), count}, *to_be_copied.data()});
 
         destination.resize(destination.data()->size());
 

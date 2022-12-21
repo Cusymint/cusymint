@@ -20,6 +20,18 @@ class CommonAtoms extends StorybookPart {
           ),
         ),
         Story(
+            name: 'Atoms/CopyTexIconButton',
+            builder: (context) {
+              return Row(
+                children: [
+                  IconButton(onPressed: () {}, icon: Icon(Icons.copy)),
+                  CuCopyTexIconButton(
+                    onPressed: () {},
+                  ),
+                ],
+              );
+            }),
+        Story(
           name: 'Atoms/Logo',
           builder: (context) => CuLogo(
             color: context.knobs.options(

@@ -33,4 +33,7 @@ class Strings {
   static const String errorUnexpectedToken = 'errorUnexpectedToken';
   static const String errorNoSolutionFound = 'errorNoSolutionFound';
   static const String errorInternal = 'errorInternal';
+  static const String history = 'history';
+  static const String historyEmpty = 'historyEmpty';
+  static const String clearHistory = 'clearHistory';
 }

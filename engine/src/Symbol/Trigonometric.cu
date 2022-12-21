@@ -17,7 +17,7 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Sine) {
         if (arg().is(Type::Arcsine)) {
-            arg().as<Arcsine>().arg().copy_to(help_space);
+            arg().as<Arcsine>().arg().copy_to(*help_space);
             help_space->copy_to(symbol());
         }
         return true;
@@ -32,7 +32,7 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Cosine) {
         if (arg().is(Type::Arccosine)) {
-            arg().as<Arccosine>().arg().copy_to(help_space);
+            arg().as<Arccosine>().arg().copy_to(*help_space);
             help_space->copy_to(symbol());
         }
         return true;
@@ -47,7 +47,7 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Tangent) {
         if (arg().is(Type::Arctangent)) {
-            arg().as<Arctangent>().arg().copy_to(help_space);
+            arg().as<Arctangent>().arg().copy_to(*help_space);
             help_space->copy_to(symbol());
         }
         return true;
@@ -62,7 +62,7 @@ namespace Sym {
 
     DEFINE_SIMPLIFY_IN_PLACE(Cotangent) {
         if (arg().is(Type::Arccotangent)) {
-            arg().as<Arccotangent>().arg().copy_to(help_space);
+            arg().as<Arccotangent>().arg().copy_to(*help_space);
             help_space->copy_to(symbol());
         }
         return true;

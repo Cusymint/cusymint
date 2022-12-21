@@ -21,8 +21,7 @@ namespace Sym::Kernel {
      * @brief Try to set `expressions[potential_solver_idx]` (SubexpressionCandidate)
      * as a solution to its SubexpressionVacancy
      *
-     * @param expressions Expressions array with a candidate to solve and a missing
-     * subexpression
+     * @param expressions Expressions array with a candidate to solve and a missing subexpression
      * @param potential_solver_idx Index of the potential solver
      *
      * @return `false` when haven't managed to set chosen candidate as a solution to
@@ -32,14 +31,15 @@ namespace Sym::Kernel {
      */
     __device__ bool try_set_solver_idx(Sym::ExpressionArray<>& expressions,
                                        const size_t potential_solver_idx) {
+        const auto potential_solver = expressions.iterator(potential_solver_idx);
+
         const size_t& vacancy_expr_idx =
-            expressions[potential_solver_idx].subexpression_candidate.vacancy_expression_idx;
+            potential_solver->as<SubexpressionCandidate>().vacancy_expression_idx;
+        const auto vacancy_expr = expressions.iterator(vacancy_expr_idx);
 
-        const size_t& vacancy_idx =
-            expressions[potential_solver_idx].subexpression_candidate.vacancy_idx;
+        const size_t& vacancy_idx = potential_solver->as<SubexpressionCandidate>().vacancy_idx;
 
-        Sym::SubexpressionVacancy& subexpr_vacancy =
-            expressions[vacancy_expr_idx][vacancy_idx].subexpression_vacancy;
+        auto& subexpr_vacancy = vacancy_expr[vacancy_idx].as<SubexpressionVacancy>();
 
         const bool solver_lock_acquired = atomicCAS(&subexpr_vacancy.is_solved, 0, 1) == 0;
 
@@ -49,14 +49,12 @@ namespace Sym::Kernel {
 
         subexpr_vacancy.solver_idx = potential_solver_idx;
 
-        if (!expressions[vacancy_expr_idx].is(Sym::Type::SubexpressionCandidate)) {
+        if (!vacancy_expr->is(Sym::Type::SubexpressionCandidate)) {
             return true;
         }
 
         unsigned int subexpressions_left =
-            atomicSub(&expressions[vacancy_expr_idx].subexpression_candidate.subexpressions_left,
-                      1) -
-            1;
+            atomicSub(&vacancy_expr->as<SubexpressionCandidate>().subexpressions_left, 1) - 1;
 
         return subexpressions_left == 0;
     }
@@ -87,14 +85,29 @@ namespace Sym::Kernel {
     }
 
     __global__ void simplify(const ExpressionArray<> expressions, ExpressionArray<> destination,
-                             ExpressionArray<> help_spaces) {
+                             ExpressionArray<> help_spaces,
+                             Util::DeviceArray<EvaluationStatus> statuses) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
         for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
              expr_idx += thread_count) {
-            expressions[expr_idx].copy_to(&destination[expr_idx]);
-            destination[expr_idx].simplify(help_spaces.at(expr_idx));
+            if (statuses[expr_idx] == EvaluationStatus::Done) {
+                continue;
+            }
+
+            expressions[expr_idx].copy_to(destination[expr_idx]);
+            auto help_space_iterator = SymbolIterator::from_at(
+                help_spaces[expr_idx], 0, help_spaces.expression_capacity(expr_idx));
+
+            if (help_space_iterator.is_error()) {
+                statuses[expr_idx] = EvaluationStatus::ReallocationRequest;
+                continue;
+            }
+
+            auto good_iterator = help_space_iterator.good();
+            const auto result = destination[expr_idx].simplify(good_iterator);
+            statuses[expr_idx] = result_to_evaluation_status(result);
         }
     }
 
@@ -110,7 +123,7 @@ namespace Sym::Kernel {
              check_idx += check_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
+                size_t appl_idx = integrals.size() * check_idx + int_idx;
                 applicability[appl_idx] =
                     KnownIntegral::CHECKS[check_idx](integrals[int_idx].arg().as<Integral>());
             }
@@ -118,9 +131,10 @@ namespace Sym::Kernel {
     }
 
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
-                                          ExpressionArray<> expressions,
+                                          ExpressionArray<> expressions, const size_t dst_offset,
                                           ExpressionArray<> help_spaces,
-                                          const Util::DeviceArray<uint32_t> applicability) {
+                                          const Util::DeviceArray<uint32_t> applicability,
+                                          Util::DeviceArray<EvaluationStatus> statuses) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -130,24 +144,40 @@ namespace Sym::Kernel {
              trans_idx += trans_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                const size_t appl_idx = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
+                const size_t appl_idx = integrals.size() * trans_idx + int_idx;
 
                 if (!is_nonzero(appl_idx, applicability)) {
                     continue;
                 }
 
-                const size_t dest_idx =
-                    expressions.size() + index_from_scan(applicability, appl_idx);
+                const size_t idx = index_from_scan(applicability, appl_idx);
 
-                auto* const subexpr_candidate = expressions.at(dest_idx)
-                                                << SubexpressionCandidate::builder();
+                if (statuses[idx] == EvaluationStatus::Done) {
+                    continue;
+                }
+
+                const ExpressionArray<>::Iterator destination =
+                    expressions.iterator(idx + dst_offset);
+
+                auto* const subexpr_candidate = *destination << SubexpressionCandidate::builder();
                 subexpr_candidate->copy_metadata_from(integrals[int_idx]);
-                KnownIntegral::APPLICATIONS[trans_idx](integrals[int_idx].arg().as<Integral>(),
-                                                       subexpr_candidate->arg(),
-                                                       help_spaces[dest_idx]);
+
+                auto dst_iterator_res = SymbolIterator::from_at(subexpr_candidate->arg(), 0,
+                                                                destination.capacity() - 1);
+
+                if (dst_iterator_res.is_error()) {
+                    statuses[idx] = EvaluationStatus::ReallocationRequest;
+                    continue;
+                }
+
+                auto dst_iterator = dst_iterator_res.good();
+
+                statuses[idx] =
+                    KnownIntegral::APPLICATIONS[trans_idx](integrals[int_idx].arg().as<Integral>(),
+                                                           dst_iterator, help_spaces.iterator(idx));
                 subexpr_candidate->seal();
 
-                try_set_solver_idx(expressions, dest_idx);
+                try_set_solver_idx(expressions, destination.index());
             }
         }
     }
@@ -168,8 +198,9 @@ namespace Sym::Kernel {
              expr_idx += thread_count) {
             size_t current_expr_idx = expr_idx;
             while (current_expr_idx != 0) {
-                if (expressions[current_expr_idx].subexpression_candidate.subexpressions_left !=
-                    0) {
+                if (expressions[current_expr_idx]
+                        .as<SubexpressionCandidate>()
+                        .subexpressions_left != 0) {
                     break;
                 }
 
@@ -177,13 +208,14 @@ namespace Sym::Kernel {
                     break;
                 }
 
-                // We iterate tree upwards.
-                // It may seem that there is a possibility of race condition
-                // when we will reach the same node, as the thread which has started the loop.
-                // However, since `try_set_solver_idx` is atomic, only one thread would be able
-                // to set `solver_idx` on the next parent and continue its journey upwards.
-                current_expr_idx =
-                    expressions[current_expr_idx].subexpression_candidate.vacancy_expression_idx;
+                // We iterate up the tree.
+                // It may seem as if there was a possibility of a race condition
+                // when we reach the same node as the thread which has started the loop.
+                // However, since `try_set_solver_idx` is atomic, only one thread will be able
+                // to set `solver_idx` of their parent and continue its journey upwards.
+                current_expr_idx = expressions[current_expr_idx]
+                                       .as<SubexpressionCandidate>()
+                                       .vacancy_expression_idx;
             }
         }
     }
@@ -194,19 +226,20 @@ namespace Sym::Kernel {
         const size_t thread_idx = Util::thread_idx();
 
         // Look further and further in the dependency tree and check whether we are not trying
-        // to solve something that has been solved already
+        // to solve something that has been solved already.
         for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
              expr_idx += thread_count) {
             removability[expr_idx] = 1;
             size_t current_expr_idx = expr_idx;
 
             while (expressions[current_expr_idx].is(Sym::Type::SubexpressionCandidate)) {
-                const size_t& parent_idx =
-                    expressions[current_expr_idx].subexpression_candidate.vacancy_expression_idx;
+                const size_t& parent_idx = expressions[current_expr_idx]
+                                               .as<SubexpressionCandidate>()
+                                               .vacancy_expression_idx;
                 const size_t& parent_vacancy_idx =
-                    expressions[current_expr_idx].subexpression_candidate.vacancy_idx;
-                const SubexpressionVacancy& parent_vacancy =
-                    expressions[parent_idx][parent_vacancy_idx].subexpression_vacancy;
+                    expressions[current_expr_idx].as<SubexpressionCandidate>().vacancy_idx;
+                const auto& parent_vacancy =
+                    expressions[parent_idx][parent_vacancy_idx].as<SubexpressionVacancy>();
 
                 if (parent_vacancy.is_solved == 1 &&
                     parent_vacancy.solver_idx != current_expr_idx) {
@@ -228,12 +261,13 @@ namespace Sym::Kernel {
 
         for (size_t int_idx = thread_idx; int_idx < integrals.size(); int_idx += thread_count) {
             const size_t& vacancy_expr_idx =
-                integrals[int_idx].subexpression_candidate.vacancy_expression_idx;
-            const size_t& vacancy_idx = integrals[int_idx].subexpression_candidate.vacancy_idx;
+                integrals[int_idx].as<SubexpressionCandidate>().vacancy_expression_idx;
+            const size_t& vacancy_idx = integrals[int_idx].as<SubexpressionCandidate>().vacancy_idx;
 
             const bool parent_expr_failed = expressions_removability[vacancy_expr_idx] == 0;
             const bool parent_vacancy_solved =
-                expressions[vacancy_expr_idx][vacancy_idx].subexpression_vacancy.is_solved == 1;
+                expressions[vacancy_expr_idx][vacancy_idx].as<SubexpressionVacancy>().is_solved ==
+                1;
 
             integrals_removability[int_idx] = parent_expr_failed || parent_vacancy_solved ? 0 : 1;
         }
@@ -252,7 +286,7 @@ namespace Sym::Kernel {
             }
 
             Symbol& destination = destinations[integrals_removability[int_idx] - 1];
-            integrals[int_idx].symbol()->copy_to(&destination);
+            integrals[int_idx].symbol().copy_to(destination);
 
             size_t& vacancy_expr_idx =
                 destination.as<SubexpressionCandidate>().vacancy_expression_idx;
@@ -262,8 +296,7 @@ namespace Sym::Kernel {
 
     __global__ void
     check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
-                                   ExpressionArray<> expressions,
-                                   ExpressionArray<> help_spaces,
+                                   ExpressionArray<> expressions, ExpressionArray<> help_spaces,
                                    Util::DeviceArray<uint32_t> new_integrals_flags,
                                    Util::DeviceArray<uint32_t> new_expressions_flags) {
         const size_t thread_count = Util::thread_count();
@@ -275,17 +308,17 @@ namespace Sym::Kernel {
              check_idx += check_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                const size_t appl_idx = MAX_EXPRESSION_COUNT * check_idx + int_idx;
-                const size_t help_space_idx = integrals.size() * check_idx + int_idx;
-                const Heuristic::CheckResult result =
-                    Heuristic::CHECKS[check_idx](integrals[int_idx].arg().as<Integral>(), help_spaces[help_space_idx]);
+                size_t appl_idx = integrals.size() * check_idx + int_idx;
+
+                Heuristic::CheckResult result = Heuristic::CHECKS[check_idx](
+                    integrals[int_idx].arg().as<Integral>(), help_spaces[appl_idx]);
                 new_integrals_flags[appl_idx] = result.new_integrals;
                 new_expressions_flags[appl_idx] = result.new_expressions;
 
                 const size_t& vacancy_expr_idx = integrals[int_idx].vacancy_expression_idx;
                 const size_t& vacancy_idx = integrals[int_idx].vacancy_idx;
-                SubexpressionVacancy& parent_vacancy =
-                    expressions[vacancy_expr_idx][vacancy_idx].subexpression_vacancy;
+                auto& parent_vacancy =
+                    expressions[vacancy_expr_idx][vacancy_idx].as<SubexpressionVacancy>();
 
                 if (result.new_expressions == 0) {
                     // Assume new integrals are direct children of the vacancy
@@ -301,11 +334,14 @@ namespace Sym::Kernel {
     }
 
     __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
-                                     ExpressionArray<> integrals_destinations,
-                                     ExpressionArray<> expressions_destinations,
+                                     ExpressionArray<> integrals_dst,
+                                     ExpressionArray<> expressions_dst,
+                                     const size_t expressions_dst_offset,
                                      ExpressionArray<> help_spaces,
                                      const Util::DeviceArray<uint32_t> new_integrals_indices,
-                                     const Util::DeviceArray<uint32_t> new_expressions_indices) {
+                                     const Util::DeviceArray<uint32_t> new_expressions_indices,
+                                     Util::DeviceArray<EvaluationStatus> integral_statuses,
+                                     Util::DeviceArray<EvaluationStatus> expression_statuses) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -315,24 +351,41 @@ namespace Sym::Kernel {
              trans_idx += trans_step) {
             for (size_t int_idx = thread_idx % TRANSFORM_GROUP_SIZE; int_idx < integrals.size();
                  int_idx += TRANSFORM_GROUP_SIZE) {
-                const size_t appl_idx = MAX_EXPRESSION_COUNT * trans_idx + int_idx;
+                const size_t appl_idx = integrals.size() * trans_idx + int_idx;
                 if (!is_nonzero(appl_idx, new_integrals_indices)) {
                     continue;
                 }
 
-                const size_t int_dst_idx = index_from_scan(new_integrals_indices, appl_idx);
+                const size_t idx = index_from_scan(new_integrals_indices, appl_idx);
 
-                if (new_expressions_indices[appl_idx] != 0) {
-                    const size_t expr_dst_idx = expressions_destinations.size() +
-                                                index_from_scan(new_expressions_indices, appl_idx);
-                    Heuristic::APPLICATIONS[trans_idx](
-                        integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
-                        expressions_destinations.iterator(expr_dst_idx), help_spaces[int_dst_idx]);
+                if (integral_statuses[idx] == EvaluationStatus::Done) {
+                    continue;
                 }
-                else {
-                    Heuristic::APPLICATIONS[trans_idx](
-                        integrals[int_idx], integrals_destinations.iterator(int_dst_idx),
-                        ExpressionArray<>::Iterator::null(), help_spaces[int_dst_idx]);
+
+                const size_t new_integral_count =
+                    new_integrals_indices[appl_idx] -
+                    (appl_idx == 0 ? 0 : new_integrals_indices[appl_idx - 1]);
+                const size_t new_expression_count =
+                    new_expressions_indices[appl_idx] -
+                    (appl_idx == 0 ? 0 : new_expressions_indices[appl_idx - 1]);
+
+                const size_t expr_idx = index_from_scan(new_expressions_indices, appl_idx);
+                // If there are no new expressions, we set the destination idx to 0 so that we don't
+                // create an iterator past the available memory (we wouldn't use it anyways, but
+                // the iterator wouldn't allow this)
+                const size_t expr_dst_idx =
+                    new_expression_count == 0 ? 0 : expressions_dst_offset + expr_idx;
+
+                integral_statuses[idx] = Heuristic::APPLICATIONS[trans_idx](
+                    integrals[int_idx], integrals_dst.iterator(idx),
+                    expressions_dst.iterator(expr_dst_idx), help_spaces.iterator(idx));
+
+                for (size_t status_idx = 1; status_idx < new_integral_count; ++status_idx) {
+                    integral_statuses[idx + status_idx] = integral_statuses[idx];
+                }
+
+                for (size_t status_idx = 0; status_idx < new_expression_count; ++status_idx) {
+                    expression_statuses[expr_idx + status_idx] = integral_statuses[idx];
                 }
             }
         }
@@ -345,7 +398,6 @@ namespace Sym::Kernel {
 
         for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
              expr_idx += thread_count) {
-
             // Some other thread was here already, as `failures` starts with 1 everywhere
             if (failures[expr_idx] == 0) {
                 continue;
@@ -360,8 +412,7 @@ namespace Sym::Kernel {
                     continue;
                 }
 
-                SubexpressionVacancy& vacancy =
-                    expressions[expr_idx][sym_idx].subexpression_vacancy;
+                auto& vacancy = expressions[expr_idx][sym_idx].as<SubexpressionVacancy>();
 
                 if (vacancy.candidate_integral_count == 0 &&
                     vacancy.candidate_expression_count == 0 && vacancy.is_solved == 0) {
@@ -376,12 +427,13 @@ namespace Sym::Kernel {
 
             size_t current_expr_idx = expr_idx;
             while (current_expr_idx != 0) {
-                const size_t& parent_idx =
-                    expressions[current_expr_idx].subexpression_candidate.vacancy_expression_idx;
+                const size_t& parent_idx = expressions[current_expr_idx]
+                                               .as<SubexpressionCandidate>()
+                                               .vacancy_expression_idx;
                 const size_t& vacancy_idx =
-                    expressions[current_expr_idx].subexpression_candidate.vacancy_idx;
-                SubexpressionVacancy& parent_vacancy =
-                    expressions[parent_idx][vacancy_idx].subexpression_vacancy;
+                    expressions[current_expr_idx].as<SubexpressionCandidate>().vacancy_idx;
+                auto& parent_vacancy =
+                    expressions[parent_idx][vacancy_idx].as<SubexpressionVacancy>();
 
                 if (parent_vacancy.is_solved == 1) {
                     break;
@@ -412,8 +464,9 @@ namespace Sym::Kernel {
             size_t current_expr_idx = expr_idx;
 
             while (current_expr_idx != 0) {
-                const size_t& parent_idx =
-                    expressions[current_expr_idx].subexpression_candidate.vacancy_expression_idx;
+                const size_t& parent_idx = expressions[current_expr_idx]
+                                               .as<SubexpressionCandidate>()
+                                               .vacancy_expression_idx;
 
                 if (failures[parent_idx] == 0) {
                     failures[expr_idx] = 0;
@@ -434,7 +487,7 @@ namespace Sym::Kernel {
 
         for (size_t int_idx = thread_idx; int_idx < integrals.size(); int_idx += thread_count) {
             const size_t& parent_idx =
-                integrals[int_idx].subexpression_candidate.vacancy_expression_idx;
+                integrals[int_idx].as<SubexpressionCandidate>().vacancy_expression_idx;
 
             integrals_removability[int_idx] = expressions_removability[parent_idx];
         }

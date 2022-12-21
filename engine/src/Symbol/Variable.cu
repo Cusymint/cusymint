@@ -29,7 +29,7 @@ namespace Sym {
 
     std::vector<Symbol> var() {
         std::vector<Symbol> var(1);
-        var[0].variable = Variable::create();
+        var[0].init_from(Variable::create());
         return var;
     }
 }
