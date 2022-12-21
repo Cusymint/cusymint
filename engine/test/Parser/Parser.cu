@@ -85,6 +85,9 @@ namespace Test {
     PARSER_TEST(Cotangent, "cot(x)", Sym::cot(Sym::var()))
     PARSER_TEST(Ctg, "ctg(x)", Sym::cot(Sym::var()))
 
+    PARSER_TEST(Sign, "sgn(x)", Sym::sgn(Sym::var()))
+    PARSER_TEST(Absolute, "abs(x)", Sym::abs(Sym::var()))
+
     PARSER_TEST(MultiplicationOverAddition, "x+4*pi", Sym::var() + (Sym::num(4) * Sym::pi()))
     PARSER_TEST(MultiplicationOverSubtraction, "x-4*pi", Sym::var() - (Sym::num(4) * Sym::pi()))
     PARSER_TEST(DivisionOverAddition, "x+4/pi", Sym::var() + (Sym::num(4) / Sym::pi()))

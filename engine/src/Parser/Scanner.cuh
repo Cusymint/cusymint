@@ -24,6 +24,7 @@ namespace Parser {
         Underscore,
         E,
         Pi,
+        Abs,
         Asin,
         Acos,
         Atan,
@@ -32,6 +33,7 @@ namespace Parser {
         Cot,
         Cosh,
         Coth,
+        Sgn,
         Sin,
         Sinh,
         Sqrt,
@@ -50,10 +52,10 @@ namespace Parser {
 
         void read_letter_sequence(std::string& read_text);
         Token read_after_start(Token& state, std::string& read_text);
-        Token try_read_inverse_trig(std::string& read_text);
+        Token try_read_abs_inverse_trig(std::string& read_text);
         Token try_read_cosine_cotangent(std::string& read_text);
         Token try_read_log(std::string& read_text);
-        Token try_read_sine_sqrt(std::string& read_text);
+        Token try_read_sign_sine_sqrt(std::string& read_text);
         Token try_read_tangent(std::string& read_text);
         Token try_read_integral(std::string& read_text);
         Token check_if_no_letter_ahead(std::string& read_text, Token return_on_success);

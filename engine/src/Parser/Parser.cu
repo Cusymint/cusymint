@@ -44,6 +44,20 @@ namespace Parser {
         return sum;
     }
 
+    std::vector<Sym::Symbol> Parser::braced_expr() {
+        std::vector<Sym::Symbol> expression;
+        switch (tok) {
+        case Token::OpenBrace:
+            next_token(); // (
+            expression = expr();
+            match_and_get_next_token(Token::CloseBrace); // )
+            return expression;
+        default:
+            throw_error();
+        }
+        return {};
+    }
+
     std::vector<Sym::Symbol> Parser::term() {
         std::vector<Sym::Symbol> product = factor();
         while (tok != Token::Plus && tok != Token::Minus && tok != Token::End &&
@@ -100,10 +114,7 @@ namespace Parser {
             next_token();
             return Sym::pi();
         case Token::OpenBrace:
-            next_token(); // (
-            internal_expression = expr();
-            match_and_get_next_token(Token::CloseBrace); // )
-            return internal_expression;
+            return braced_expr();
         case Token::Log:
             next_token();                                // log
             match_and_get_next_token(Token::Underscore); // _
@@ -113,9 +124,7 @@ namespace Parser {
                 power_expression = factor();
                 has_power = true;
             }
-            match_and_get_next_token(Token::OpenBrace); // (
-            internal_expression = expr();
-            match_and_get_next_token(Token::CloseBrace); // )
+            internal_expression = braced_expr();
             return has_power ? (Sym::log(base_expression, internal_expression) ^ power_expression)
                              : Sym::log(base_expression, internal_expression);
         default:
@@ -126,9 +135,7 @@ namespace Parser {
                     power_expression = factor();
                     has_power = true;
                 }
-                match_and_get_next_token(Token::OpenBrace); // (
-                internal_expression = expr();
-                match_and_get_next_token(Token::CloseBrace); // )
+                internal_expression = braced_expr();
                 return has_power ? (func(internal_expression) ^ power_expression)
                                  : func(internal_expression);
             }
@@ -142,11 +149,12 @@ namespace Parser {
 
     SymbolicFunction Parser::function() {
         static constexpr SymbolicFunction functions[] = {
-            Sym::arcsin, Sym::arccos, Sym::arctan, Sym::arccot, Sym::cos, Sym::cot,  Sym::cosh,
-            Sym::coth,   Sym::sin,    Sym::sinh,   Sym::sqrt,   Sym::tan, Sym::tanh, Sym::ln};
+            Sym::abs,  Sym::arcsin, Sym::arccos, Sym::arctan, Sym::arccot, Sym::cos,
+            Sym::cot,  Sym::cosh,   Sym::coth,   Sym::sgn,    Sym::sin,    Sym::sinh,
+            Sym::sqrt, Sym::tan,    Sym::tanh,   Sym::ln};
         const Token prev = tok;
         next_token();
-        return functions[static_cast<int>(prev) - static_cast<int>(Token::Asin)];
+        return functions[static_cast<int>(prev) - static_cast<int>(Token::Abs)];
     }
 
     std::vector<Sym::Symbol> Parser::parse() {
