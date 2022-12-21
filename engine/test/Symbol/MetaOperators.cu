@@ -111,7 +111,7 @@ namespace Test {
             std::vector<Sym::Symbol> result;
             auto unknown = Unknown::create();
             unknown.size = size;
-            result.push_back(*unknown.symbol());
+            result.push_back(unknown.symbol());
             return result;
         }
     }

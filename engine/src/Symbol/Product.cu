@@ -83,24 +83,42 @@ namespace Sym {
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Product) {
         // Multiplication by constant
-        const size_t d_arg1_size = (destination - 1)->size();
-        Symbol* const rev_arg2 = destination - 1 - d_arg1_size;
-        if ((destination - 1)->is(0)) { // arg1() is constant
-            if (rev_arg2->is(0)) {      // arg2() is constant
+        const size_t d_arg1_size = (&destination - 1)->size();
+        Symbol* const rev_arg2 = &destination - 1 - d_arg1_size;
+        if ((&destination - 1)->is(0)) { // arg1() is constant
+            if (rev_arg2->is(0)) {       // arg2() is constant
                 return -1;
             }
-            return Mul<Copy, None>::init_reverse(*(destination - 1), {arg1()}) - 1;
+            return Mul<Copy, None>::init_reverse(*(&destination - 1), {arg1()}) - 1;
         }
         if (rev_arg2->is(0)) { // arg2() is constant
             Symbol::move_symbol_sequence(rev_arg2, rev_arg2 + 1,
                                          d_arg1_size); // move derivative of arg1() one index back
-            return Mul<Copy, None>::init_reverse(*(destination - 1), {arg2()}) - 1;
+            return Mul<Copy, None>::init_reverse(*(&destination - 1), {arg2()}) - 1;
         }
         // General case: (expr2') (expr1) * (expr1') (expr2) * +
         Symbol* const second_term_dst = rev_arg2 + arg1().size() + 2;
         Symbol::move_symbol_sequence(second_term_dst, rev_arg2 + 1, d_arg1_size); // copy (expr1')
         return Add<Mul<Copy, Skip>, Mul<Copy, None>>::init_reverse(*(rev_arg2 + 1),
                                                                    {arg2(), d_arg1_size, arg1()}) -
+               d_arg1_size;
+    }
+
+    DEFINE_DERIVATIVE_SIZE(Product) {
+        // Multiplication by constant
+        const size_t d_arg1_size = (&destination - 1)->size();
+        const Symbol* const rev_arg2 = &destination - 1 - d_arg1_size;
+        if ((&destination - 1)->is(0)) { // arg1() is constant
+            if (rev_arg2->is(0)) {       // arg2() is constant
+                return -1;
+            }
+            return Mul<Copy, None>::size_with({arg1()}) - 1;
+        }
+        if (rev_arg2->is(0)) { // arg2() is constant
+            return Mul<Copy, None>::size_with({arg2()}) - 1;
+        }
+        // General case: (expr2') (expr1) * (expr1') (expr2) * +
+        return Add<Mul<Copy, Skip>, Mul<Copy, None>>::size_with({arg2(), d_arg1_size, arg1()}) -
                d_arg1_size;
     }
 
@@ -241,8 +259,8 @@ namespace Sym {
                                                                const Symbol& expr2) {
         using Matcher = PatternPair<Inv<Same>, Same>;
         using TrigMatcher = PatternPair<Tan<Same>, Cot<Same>>;
-        return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1)
-            || TrigMatcher::match_pair(expr1, expr2) || TrigMatcher::match_pair(expr2, expr1);
+        return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1) ||
+               TrigMatcher::match_pair(expr1, expr2) || TrigMatcher::match_pair(expr2, expr1);
     }
 
     DEFINE_TRY_FUSE_SYMBOLS(Product) {
@@ -423,7 +441,8 @@ namespace Sym {
                 additional_required_size = count - 1;
                 return false;
             }
-            From<Product>::Create<Product>::WithMap<Inv>::init(*help_space, {{arg().as<Product>(), count}});
+            From<Product>::Create<Product>::WithMap<Inv>::init(*help_space,
+                                                               {{arg().as<Product>(), count}});
             help_space->copy_to(symbol());
             return false;
         }

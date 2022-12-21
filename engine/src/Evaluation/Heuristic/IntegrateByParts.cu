@@ -1,10 +1,11 @@
+#include "Evaluation/Status.cuh"
 #include "IntegrateByParts.cuh"
 
 #include "Evaluation/StaticFunctions.cuh"
 #include "Symbol/MetaOperators.cuh"
-#include "Symbol/TreeIterator.cuh"
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Symbol/TreeIterator.cuh"
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Order.cuh"
 
@@ -14,7 +15,7 @@ namespace Sym::Heuristic {
                                                        const Symbol& first_factor,
                                                        Symbol& destination, Symbol& help_space) {
             if (first_factor.is(1)) {
-                product.copy_to(&destination);
+                product.copy_to(destination);
                 return;
             }
 
@@ -36,14 +37,15 @@ namespace Sym::Heuristic {
                     first_factor_it.advance();
                     break;
                 case Util::Order::Greater:
-                    Symbol::copy_and_reverse_symbol_sequence(current_dst, product_it.current(),
+                    Symbol::copy_and_reverse_symbol_sequence(*current_dst, *product_it.current(),
                                                              product_it.current()->size());
                     current_dst += current_dst->size();
                     ++expressions_copied;
                     product_it.advance();
                     break;
                 case Util::Order::Less:
-                    Symbol::copy_and_reverse_symbol_sequence(current_dst, first_factor_it.current(),
+                    Symbol::copy_and_reverse_symbol_sequence(*current_dst,
+                                                             *first_factor_it.current(),
                                                              first_factor_it.current()->size());
                     current_dst += current_dst->size();
                     ++expressions_copied;
@@ -54,7 +56,7 @@ namespace Sym::Heuristic {
 
             auto* const valid_it = product_it.is_valid() ? &product_it : &first_factor_it;
             while (valid_it->is_valid()) {
-                Symbol::copy_and_reverse_symbol_sequence(current_dst, valid_it->current(),
+                Symbol::copy_and_reverse_symbol_sequence(*current_dst, *valid_it->current(),
                                                          valid_it->current()->size());
                 current_dst += current_dst->size();
                 ++expressions_copied;
@@ -73,27 +75,30 @@ namespace Sym::Heuristic {
     }
 
     __device__ CheckResult is_simple_function(const Integral& integral) {
-        if (integral.integrand()->size() == 2) {
+        if (integral.integrand().size() == 2) {
             return {1, 1};
         }
 
         return {0, 0};
     }
 
-    __device__ void integrate_simple_function_by_parts(
+    __device__ EvaluationStatus integrate_simple_function_by_parts(
         const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
-        const ExpressionArray<>::Iterator& expression_dst, Symbol& help_space) {
-        integrate_by_parts(integral, Static::one(), Static::identity(), integral_dst,
-                           expression_dst, help_space);
+        const ExpressionArray<>::Iterator& expression_dst,
+        const ExpressionArray<>::Iterator& help_space) {
+        return integrate_by_parts(integral, Static::one(), Static::identity(), integral_dst,
+                                  expression_dst, help_space);
     }
 
-    __device__ void integrate_by_parts(const SubexpressionCandidate& integral,
-                                       const Symbol& first_function_derivative,
-                                       const Symbol& first_function,
-                                       const ExpressionArray<>::Iterator& integral_dst,
-                                       const ExpressionArray<>::Iterator& expression_dst,
-                                       Symbol& help_space) {
-        const auto& integrand = *integral.arg().as<Integral>().integrand();
+    __device__ EvaluationStatus integrate_by_parts(
+        const SubexpressionCandidate& integral, const Symbol& first_function_derivative,
+        const Symbol& first_function, const ExpressionArray<>::Iterator& integral_dst,
+        const ExpressionArray<>::Iterator& expression_dst,
+        const ExpressionArray<>::Iterator& help_space) {
+        const auto& integrand = integral.arg().as<Integral>().integrand();
+
+        using ExpressionType = Candidate<Add<Neg<SingleIntegralVacancy>, Mul<Copy, Skip>>>;
+        using IntegralType = Candidate<Int<Mul<Copy, Copy>>>;
 
         size_t second_factor_size;
         if (first_function_derivative.is(1)) {
@@ -109,10 +114,12 @@ namespace Sym::Heuristic {
             second_factor_size = integrand.size() - first_function_derivative.size() - 1;
         }
 
-        Candidate<Add<Neg<SingleIntegralVacancy>, Mul<Copy, Skip>>>::init(
-            *expression_dst, {{integral.vacancy_expression_idx, integral.vacancy_idx, 1},
-                              first_function,
-                              second_factor_size});
+#define EXPRESSION_ARGS \
+    {{integral.vacancy_expression_idx, integral.vacancy_idx, 1}, first_function, second_factor_size}
+
+        ENSURE_ENOUGH_SPACE(ExpressionType::size_with(EXPRESSION_ARGS), expression_dst);
+
+        ExpressionType::init(*expression_dst, EXPRESSION_ARGS);
 
         Symbol& second_factor_dst = (*expression_dst)
                                         .as<SubexpressionCandidate>()
@@ -122,7 +129,9 @@ namespace Sym::Heuristic {
                                         .as<Product>()
                                         .arg2();
 
-        extract_second_factor(integrand, first_function_derivative, second_factor_dst, help_space);
+        ENSURE_ENOUGH_SPACE(integrand.size(), help_space);
+
+        extract_second_factor(integrand, first_function_derivative, second_factor_dst, *help_space);
 
         if constexpr (Consts::DEBUG) {
             if (second_factor_dst.size() != second_factor_size) {
@@ -135,12 +144,19 @@ namespace Sym::Heuristic {
             }
         }
 
-        second_factor_dst.derivative_to(help_space);
+        SymbolIterator help_iterator =
+            TRY_EVALUATE_RESULT(SymbolIterator::from_at(*help_space, 0, help_space.capacity()));
+        TRY_EVALUATE_RESULT(second_factor_dst.derivative_to(help_iterator));
 
         const auto& original_integral = integral.arg().as<Integral>();
 
-        Candidate<Int<Mul<Copy, Copy>>>::init(
-            *integral_dst,
-            {{expression_dst.index(), 3, 0}, original_integral, first_function, help_space});
+#define INTEGRAL_ARGS \
+    {{expression_dst.index(), 3, 0}, original_integral, first_function, *help_iterator}
+
+        ENSURE_ENOUGH_SPACE(IntegralType::size_with(INTEGRAL_ARGS), integral_dst);
+
+        IntegralType::init(*integral_dst, INTEGRAL_ARGS);
+
+        return EvaluationStatus::Done;
     }
 }
