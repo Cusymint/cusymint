@@ -56,7 +56,7 @@ int main() {
 
     Sym::Integrator integrator;
     Sym::ComputationHistory history;
-    const auto solution = integrator.solve_integral(integral, history);
+    const auto solution = integrator.solve_integral_with_history(integral, history);
 
     history.print_history();
 
