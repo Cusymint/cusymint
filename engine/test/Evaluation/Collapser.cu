@@ -51,9 +51,9 @@ namespace Test {
             auto result = Sym::Collapser::collapse_nth(tree, n);
             EXPECT_TRUE(
                 Sym::Symbol::are_expressions_equal(*result.data(), *expected_expression.data()))
-                << "Unexpected result for collapsing tree with (" << n << ") as root: " << to_string_with_tab(tree) << ":\n "
-                << result.data()->to_string() << " <- got,\n "
-                << expected_expression.data()->to_string() << " <- expected";
+                << "Unexpected result for collapsing tree with (" << n
+                << ") as root: " << to_string_with_tab(tree) << ":\n " << result.data()->to_string()
+                << " <- got,\n " << expected_expression.data()->to_string() << " <- expected";
         }
 
         void test_collapse_nth(const ExprVector& tree, const size_t n,
@@ -74,7 +74,7 @@ namespace Test {
             test_collapse(tree, Parser::parse_function(expected_expression));
         }
 
-        static ExprVector tree_to_collapse = {
+        ExprVector tree_to_collapse = {
             vacancy_solved_by(3),
             vacancy_solved_by(2),
             nth_expression_candidate(1, "e^x+1"),
@@ -112,5 +112,6 @@ namespace Test {
     COLLAPSE_NTH_TEST(CollapseWholeTree, tree_to_collapse, 0,
                       "sin((2*(e+ln(x)))*arctan(x*(1/x))^pi)+x^2")
 
-    COLLAPSE_TEST(CollapseAndSimplifyTree, tree_to_collapse, "x^2+sin(2*e*arctan(1)^pi+2*arctan(1)^pi*ln(x))")
+    COLLAPSE_TEST(CollapseAndSimplifyTree, tree_to_collapse,
+                  "x^2+sin(2*e*arctan(1)^pi+2*arctan(1)^pi*ln(x))")
 }

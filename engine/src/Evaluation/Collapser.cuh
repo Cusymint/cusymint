@@ -17,9 +17,8 @@ namespace Sym::Collapser {
      *
      * @return Copy of `expression` with the replacement
      */
-    std::vector<Symbol> replace_nth_with_tree(std::vector<Symbol> expression,
-                                                   const size_t n,
-                                                   const std::vector<Symbol>& tree);
+    std::vector<Symbol> replace_nth_with_tree(std::vector<Symbol> expression, const size_t n,
+                                              const std::vector<Symbol>& tree);
 
     /*
      * @brief Collapses a tree of expressions with Solutions with Substitutions and
@@ -31,8 +30,7 @@ namespace Sym::Collapser {
      *
      * @return Collapsed tree
      */
-    std::vector<Symbol> collapse_nth(const std::vector<std::vector<Symbol>>& tree,
-                                          const size_t n);
+    std::vector<Symbol> collapse_nth(const std::vector<std::vector<Symbol>>& tree, const size_t n);
 
     /*
      * @brief Collapses a tree of expressions with Solutions with Substitutions and

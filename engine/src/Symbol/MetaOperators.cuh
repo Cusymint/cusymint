@@ -1,11 +1,11 @@
 #ifndef META_OPERATORS_CUH
 #define META_OPERATORS_CUH
 
-#include "Symbol.cuh"
-
 #include <type_traits>
 
+#include "Symbol.cuh"
 #include "Symbol/ReverseTreeIterator.cuh"
+#include "Symbol/TreeIterator.cuh"
 #include "Utils/Meta.cuh"
 
 #define DEFINE_GET_SAME                                                    \
@@ -26,12 +26,17 @@ namespace Sym {
         static constexpr bool HAS_SAME = false;
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
-            cuda::std::get<0>(args).get().copy_to(&dst);
+            cuda::std::get<0>(args).get().copy_to(dst);
         };
+
+        __host__ __device__ static size_t size_with(const AdditionalArgs& args) {
+            const Symbol& source = cuda::std::get<0>(args).get();
+            return source.size();
+        }
 
         __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args) {
             const Symbol& source = cuda::std::get<0>(args).get();
-            Symbol::copy_and_reverse_symbol_sequence(&dst, &source, source.size());
+            Symbol::copy_and_reverse_symbol_sequence(dst, source, source.size());
             return source.size();
         }
     };
@@ -40,8 +45,15 @@ namespace Sym {
         using AdditionalArgs = cuda::std::tuple<>;
         using Size = Unsized;
         static constexpr bool HAS_SAME = false;
-        __host__ __device__ static size_t init_reverse(Symbol& dst,
-                                                       const AdditionalArgs& args = {}) {
+
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}){};
+
+        __host__ __device__ static size_t size_with(const AdditionalArgs& /*args*/ = {}) {
+            return 0;
+        }
+
+        __host__ __device__ static size_t init_reverse(Symbol& /*dst*/,
+                                                       const AdditionalArgs& /*args*/ = {}) {
             return 0;
         }
     };
@@ -49,8 +61,15 @@ namespace Sym {
     struct Skip {
         using AdditionalArgs = cuda::std::tuple<size_t>;
         using Size = Unsized;
+
         static constexpr bool HAS_SAME = false;
-        __host__ __device__ static size_t init_reverse(Symbol& dst, const AdditionalArgs& args) {
+
+        __host__ __device__ static size_t size_with(const AdditionalArgs& args) {
+            return cuda::std::get<0>(args);
+        }
+
+        __host__ __device__ static size_t init_reverse(Symbol& /*dst*/,
+                                                       const AdditionalArgs& args) {
             return cuda::std::get<0>(args);
         }
         
@@ -80,7 +99,7 @@ namespace Sym {
 
         __host__ __device__ static const Symbol& get_same(const Symbol& dst) { return dst; }
 
-        __host__ __device__ static bool match(const Symbol&) { return true; }
+        __host__ __device__ static bool match(const Symbol& /*dst*/) { return true; }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
             return Symbol::are_expressions_equal(dst, other_same);
@@ -146,7 +165,7 @@ namespace Sym {
         static constexpr bool HAS_SAME = false;
 
         __host__ __device__ static bool match(const Symbol& /*dst*/) { return true; };
-        __host__ __device__ static bool match(const Symbol& /*dst*/, const Symbol&) {
+        __host__ __device__ static bool match(const Symbol& /*dst*/, const Symbol& /*other_same*/) {
             return true;
         };
     };
@@ -159,9 +178,9 @@ namespace Sym {
 
         DEFINE_GET_SAME { return Inner::get_same(dst.as<Op>().arg()); }
 
-        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& additional_args) {
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             Op* const operator_ = dst << Op::builder();
-            Inner::init(operator_->arg(), additional_args);
+            Inner::init(operator_->arg(), args);
             operator_->seal();
         };
 
@@ -171,6 +190,10 @@ namespace Sym {
         __host__ __device__ static void init(Symbol& dst) {
             init(dst, {});
         };
+
+        __host__ __device__ static size_t size_with(const AdditionalArgs& args) {
+            return 1 + Inner::size_with(args);
+        }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
             return dst.is(Op::TYPE) && Inner::match(dst.as<Op>().arg(), other_same);
@@ -226,6 +249,12 @@ namespace Sym {
             init(dst, {});
         };
 
+        __host__ __device__ static size_t size_with(const AdditionalArgs& args) {
+            return 1 + LInner::size_with(Util::slice_tuple<0, L_ADDITIONAL_ARGS_SIZE>(args)) +
+                   RInner::size_with(
+                       Util::slice_tuple<L_ADDITIONAL_ARGS_SIZE, R_ADDITIONAL_ARGS_SIZE>(args));
+        }
+
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
             return dst.is(Op::TYPE) && LInner::match(dst.as<Op>().arg1(), other_same) &&
                    RInner::match(dst.as<Op>().arg2(), other_same);
@@ -269,9 +298,11 @@ namespace Sym {
 
         __host__ __device__ static void init(Symbol& dst) { dst.init_from(Variable::create()); };
 
+        __host__ __device__ static size_t size_with(const AdditionalArgs& /*args*/) { return 1; }
+
         __host__ __device__ static bool match(const Symbol& dst) { return dst.is(Type::Variable); }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& /*other_same*/) {
             return match(dst);
         }
 
@@ -292,10 +323,12 @@ namespace Sym {
             dst.init_from(NumericConstant::with_value(cuda::std::get<0>(args)));
         };
 
+        __host__ __device__ static size_t size_with(const AdditionalArgs& /*args*/) { return 1; }
+
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::NumericConstant);
         }
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& /*other_same*/) {
             return match(dst);
         }
 
@@ -312,7 +345,7 @@ namespace Sym {
         static constexpr bool HAS_SAME = false;
 
         __host__ __device__ static bool match(const Symbol& dst) { return dst.is_constant(); }
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& /*other_same*/) {
             return match(dst);
         }
     };
@@ -332,11 +365,13 @@ namespace Sym {
             dst.init_from(NumericConstant::with_value(V));
         };
 
+        __host__ __device__ static size_t size_with(const AdditionalArgs& /*args*/) { return 1; }
+
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::NumericConstant) && dst.as<NumericConstant>().value == V;
         }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& /*other_same*/) {
             return match(dst);
         }
 
@@ -361,11 +396,13 @@ namespace Sym {
             dst.init_from(KnownConstant::with_value(V));
         };
 
+        __host__ __device__ static size_t size_with(const AdditionalArgs& /*args*/) { return 1; }
+
         __host__ __device__ static bool match(const Symbol& dst) {
             return dst.is(Type::KnownConstant) && dst.as<KnownConstant>().value == V;
         }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& /*other_same*/) {
             return match(dst);
         }
 
@@ -391,30 +428,41 @@ namespace Sym {
 
         using Size = Unsized;
 
-        DEFINE_GET_SAME { return Inner::get_same(*dst.as<Solution>().expression()); }
+        DEFINE_GET_SAME { return Inner::get_same(dst.as<Solution>().expression()); }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             auto& integral = cuda::std::get<0>(args).get();
             auto* const solution = dst << Solution::builder();
-            Symbol::copy_symbol_sequence(Symbol::from(solution->first_substitution()),
-                                         Symbol::from(integral.first_substitution()),
-                                         integral.substitutions_size());
+
+            if (integral.substitutions_size() != 0) {
+                Symbol::copy_symbol_sequence(&solution->symbol().child(),
+                                             &integral.first_substitution().symbol(),
+                                             integral.substitutions_size());
+            }
+
             solution->seal_substitutions(integral.substitution_count,
                                          integral.substitutions_size());
 
-            Inner::init(*solution->expression(),
+            Inner::init(solution->expression(),
                         Util::slice_tuple<SOLUTION_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
 
             solution->seal();
         }
 
+        __host__ __device__ static size_t size_with(const AdditionalArgs& args) {
+            const auto& integral = cuda::std::get<0>(args).get();
+            return 1 + integral.substitutions_size() +
+                   Inner::size_with(
+                       Util::slice_tuple<SOLUTION_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
+        }
+
         __host__ __device__ static bool match(const Symbol& dst) {
-            return dst.is(Type::Solution) && Inner::match(*dst.as<Solution>().expression());
+            return dst.is(Type::Solution) && Inner::match(dst.as<Solution>().expression());
         }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
             return dst.is(Type::Solution) &&
-                   Inner::match(*dst.as<Solution>().expression(), other_same);
+                   Inner::match(dst.as<Solution>().expression(), other_same);
         }
     };
 
@@ -444,6 +492,11 @@ namespace Sym {
             candidate->seal();
         }
 
+        __host__ __device__ static size_t size_with(const AdditionalArgs& args) {
+            return 1 + Inner::size_with(
+                           Util::slice_tuple<CANDIDATE_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
+        }
+
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
             return dst.is(Type::SubexpressionCandidate) &&
                    Inner::match(dst.as<SubexpressionCandidate>().arg(), other_same);
@@ -467,24 +520,29 @@ namespace Sym {
 
         using Size = Unsized;
 
-        DEFINE_GET_SAME { return Inner::get_same(*dst.as<Integral>().integrand()); }
+        DEFINE_GET_SAME { return Inner::get_same(dst.as<Integral>().integrand()); }
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
             cuda::std::get<0>(args).get().copy_without_integrand_to(&dst);
             auto& dst_integral = dst.as<Integral>();
 
-            Inner::init(*dst_integral.integrand(),
+            Inner::init(dst_integral.integrand(),
                         Util::slice_tuple<INTEGRAL_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
             dst_integral.seal();
         }
 
+        __host__ __device__ static size_t size_with(const AdditionalArgs& args) {
+            return 1 + cuda::std::get<0>(args).get().substitutions_size() +
+                   Inner::init(Util::slice_tuple<INTEGRAL_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
+        }
+
         __host__ __device__ static bool match(const Symbol& dst) {
-            return dst.is(Type::Integral) && Inner::match(*dst.as<Integral>().integrand());
+            return dst.is(Type::Integral) && Inner::match(dst.as<Integral>().integrand());
         }
 
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& other_same) {
             return dst.is(Type::Integral) &&
-                   Inner::match(*dst.as<Integral>().integrand(), other_same);
+                   Inner::match(dst.as<Integral>().integrand(), other_same);
         }
     };
 
@@ -501,6 +559,8 @@ namespace Sym {
             vacancy.candidate_integral_count = cuda::std::get<1>(args);
             vacancy.is_solved = cuda::std::get<2>(args);
         }
+
+        __host__ __device__ static size_t size_with(const AdditionalArgs& /*args*/) { return 1; }
     };
 
     struct SingleIntegralVacancy {
@@ -517,7 +577,7 @@ namespace Sym {
             return dst.is(Type::SubexpressionVacancy);
         }
 
-        __host__ __device__ static bool match(const Symbol& dst, const Symbol&) {
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& /*other_same*/) {
             return match(dst);
         }
     };
@@ -546,6 +606,11 @@ namespace Sym {
     template <class I> using Arccos = OneArgOperator<Arccosine, I>;
     template <class I> using Arctan = OneArgOperator<Arctangent, I>;
     template <class I> using Arccot = OneArgOperator<Arccotangent, I>;
+    template <class I> using Erf = OneArgOperator<ErrorFunction, I>;
+    template <class I> using Si = OneArgOperator<SineIntegral, I>;
+    template <class I> using Ci = OneArgOperator<CosineIntegral, I>;
+    template <class I> using Ei = OneArgOperator<ExponentialIntegral, I>;
+    template <class I> using Li = OneArgOperator<LogarithmicIntegral, I>;
 
     template <class I> using Ln = OneArgOperator<Logarithm, I>;
 
@@ -564,7 +629,8 @@ namespace Sym {
             using AdditionalArgs = cuda::std::tuple<MarkerArgType>;
             using Size = Unsized;
             static constexpr bool HAS_SAME = false;
-            __host__ __device__ static void init(Symbol&, const AdditionalArgs& = {}) {
+            __host__ __device__ static void init(Symbol& /*dst*/,
+                                                 const AdditionalArgs& /*args*/ = {}) {
                 Util::crash("Cannot initialize Marker used to find template argument");
             }
         };

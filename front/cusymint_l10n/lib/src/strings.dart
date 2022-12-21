@@ -27,4 +27,13 @@ class Strings {
   static const String madeBy = 'madeBy';
   static const String cancel = 'cancel';
   static const String ok = 'ok';
+  static const String error = 'error';
+  static const String errorUnknown = 'errorUnknown';
+  static const String errorUnexpectedEndOfInput = 'errorUnexpectedEndOfInput';
+  static const String errorUnexpectedToken = 'errorUnexpectedToken';
+  static const String errorNoSolutionFound = 'errorNoSolutionFound';
+  static const String errorInternal = 'errorInternal';
+  static const String history = 'history';
+  static const String historyEmpty = 'historyEmpty';
+  static const String clearHistory = 'clearHistory';
 }

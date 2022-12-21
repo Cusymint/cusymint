@@ -8,9 +8,11 @@
 
 namespace Test {
     class SymbolCompare : public ::testing::Test {
+        static const size_t HELP_SPACE_SIZE = 512;
+
       protected:
         std::vector<Sym::Symbol> help_space;
-        SymbolCompare() : help_space(Sym::EXPRESSION_MAX_SYMBOL_COUNT) {}
+        SymbolCompare() : help_space(HELP_SPACE_SIZE) {}
     };
 
     TEST_F(SymbolCompare, EqualExpressionsEqual) {

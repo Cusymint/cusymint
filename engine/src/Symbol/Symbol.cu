@@ -1,14 +1,17 @@
 #include "Symbol.cuh"
 
+#include "Evaluation/Integrator.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/StaticStack.cuh"
 
-namespace {
-    __host__ __device__ bool is_nonnegative_integer(double d) { return d >= 0 && floor(d) == d; }
-}
-
 namespace Sym {
+    namespace {
+        [[nodiscard]] __host__ __device__ bool is_nonnegative_integer(double value) {
+            return value >= 0 && floor(value) == value;
+        }
+    }
+
     [[nodiscard]] __host__ __device__ bool Symbol::is(const double number) const {
         return is(Type::NumericConstant) && as<NumericConstant>().value == number;
     }
@@ -30,11 +33,11 @@ namespace Sym {
         Util::move_mem(destination, source, symbol_count * sizeof(Symbol));
     }
 
-    __host__ __device__ void Symbol::copy_and_reverse_symbol_sequence(Symbol* const destination,
-                                                                      const Symbol* const source,
-                                                                      size_t symbol_count) {
+    __host__ __device__ void Symbol::copy_and_reverse_symbol_sequence(Symbol& destination,
+                                                                      const Symbol& source,
+                                                                      const size_t symbol_count) {
         for (size_t i = 0; i < symbol_count; ++i) {
-            source[symbol_count - i - 1].copy_single_to(destination + i);
+            (&source)[symbol_count - i - 1].copy_single_to(*destination.at_unchecked(i));
         }
     }
 
@@ -62,16 +65,16 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ void Symbol::copy_single_to(Symbol* const destination) const {
-        Util::copy_mem(destination, this, sizeof(Symbol));
+    __host__ __device__ void Symbol::copy_single_to(Symbol& destination) const {
+        Util::copy_mem(&destination, this, sizeof(Symbol));
     }
 
-    __host__ __device__ void Symbol::copy_to(Symbol* const destination) const {
-        copy_symbol_sequence(destination, this, size());
+    __host__ __device__ void Symbol::copy_to(Symbol& destination) const {
+        copy_symbol_sequence(&destination, this, size());
     }
 
-    __host__ __device__ void Symbol::move_to(Symbol* const destination) {
-        move_symbol_sequence(destination, this, size());
+    __host__ __device__ void Symbol::move_to(Symbol& destination) {
+        move_symbol_sequence(&destination, this, size());
     }
 
     __host__ __device__ bool Symbol::is_constant() const {
@@ -103,30 +106,39 @@ namespace Sym {
         expr.size() = BUILDER_SIZE;
 
         for (size_t i = size; i > 0; --i) {
+            expr[i - 1].size() = BUILDER_SIZE;
             VIRTUAL_CALL(expr[i - 1], seal_whole);
         }
     }
 
-    __host__ __device__ size_t Symbol::compress_reverse_to(Symbol* const destination) {
-        mark_to_be_copied_and_propagate_additional_size(destination);
+    __host__ __device__ Util::SimpleResult<size_t>
+    Symbol::compress_reverse_to(SymbolIterator destination) {
+        const size_t original_destination_idx = destination.index();
+        mark_to_be_copied_and_propagate_additional_size(&destination.current());
 
-        Symbol* compressed_reversed_destination = destination;
-        for (ssize_t i = size() - 1; i >= 0; --i) {
-            if (at(i)->to_be_copied()) {
-                at(i)->to_be_copied() = false;
-
-                const size_t new_size =
-                    VIRTUAL_CALL(*at(i), compress_reverse_to, compressed_reversed_destination);
-                compressed_reversed_destination += new_size;
+        for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
+            if (!at(i)->to_be_copied()) {
+                continue;
             }
+
+            at(i)->to_be_copied() = false;
+
+            const size_t new_size = VIRTUAL_CALL(*at(i), compression_size);
+            if (!destination.can_offset_by(new_size)) {
+                return Util::SimpleResult<size_t>::make_error();
+            }
+
+            VIRTUAL_CALL(*at(i), compress_reverse_to, &destination.current());
+            TRY_PASS(size_t, destination += new_size);
         }
 
         // Corrects the size of copied `this` (if additional demanded)
-        Symbol* const last_copied_symbol = compressed_reversed_destination - 1;
+        Symbol* const last_copied_symbol = &destination.current() - 1;
         last_copied_symbol->size() += last_copied_symbol->additional_required_size();
         last_copied_symbol->additional_required_size() = 0;
 
-        return compressed_reversed_destination - destination;
+        return Util::SimpleResult<size_t>::make_good(destination.index() -
+                                                     original_destination_idx);
     }
 
     __host__ __device__ void
@@ -143,15 +155,17 @@ namespace Sym {
         }
     }
 
-    __host__ __device__ size_t Symbol::compress_to(Symbol& destination) {
-        const size_t new_size = compress_reverse_to(&destination);
-        reverse_symbol_sequence(&destination, new_size);
-        return new_size;
+    __host__ __device__ Util::SimpleResult<size_t>
+    Symbol::compress_to(SymbolIterator& destination) {
+        const size_t new_size = TRY(compress_reverse_to(destination));
+        reverse_symbol_sequence(&destination.current(), new_size);
+        return Util::SimpleResult<size_t>::make_good(new_size);
     }
 
-    __host__ __device__ void Symbol::simplify(Symbol* const help_space) {
-        bool success = false;
+    __host__ __device__ Util::BinaryResult Symbol::simplify(SymbolIterator& help_space) {
+        const size_t this_capacity = help_space.capacity() / Integrator::HELP_SPACE_MULTIPLIER;
 
+        bool success = false;
         while (!success) {
             success = true;
 
@@ -159,13 +173,20 @@ namespace Sym {
                 success = at(i)->simplify_in_place(help_space) && success;
             }
 
-            const size_t new_size = compress_reverse_to(help_space);
-            copy_and_reverse_symbol_sequence(this, help_space, new_size);
+            const size_t new_size = TRY_PASS(Util::Empty, compress_reverse_to(help_space));
+
+            if (this_capacity < new_size) {
+                return Util::BinaryResult::make_error();
+            }
+
+            copy_and_reverse_symbol_sequence(*this, *help_space, new_size);
         }
+
+        return Util::BinaryResult::make_good();
     }
 
-    __host__ __device__ bool Symbol::simplify_in_place(Symbol* const help_space) {
-        return VIRTUAL_CALL(*this, simplify_in_place, help_space);
+    __host__ __device__ bool Symbol::simplify_in_place(SymbolIterator& help_space) {
+        return VIRTUAL_CALL(*this, simplify_in_place, &help_space.current());
     }
 
     void Symbol::substitute_variable_with(const Symbol symbol) {
@@ -180,7 +201,7 @@ namespace Sym {
         std::string substitution_name = Substitution::nth_substitution_name(n);
 
         Symbol substitute{};
-        substitute.unknown_constant = UnknownConstant::create(substitution_name.c_str());
+        substitute.init_from(UnknownConstant::create(substitution_name.c_str()));
         substitute_variable_with(substitute);
     }
 

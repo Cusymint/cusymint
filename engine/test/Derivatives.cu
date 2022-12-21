@@ -4,6 +4,7 @@
 
 #include "Evaluation/Integrator.cuh"
 #include "Parser/Parser.cuh"
+#include "Simplify.cuh"
 #include "Symbol/Integral.cuh"
 #include "Symbol/InverseTrigonometric.cuh"
 #include "Symbol/Macros.cuh"
@@ -18,8 +19,9 @@ namespace Test {
 
         void test_derivative(std::vector<Sym::Symbol> expression,
                              std::vector<Sym::Symbol> expected_derivative) {
-            std::vector<Sym::Symbol> help_space(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
-            std::vector<Sym::Symbol> derivative(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
+
+            static const size_t DERIVATIVE_SIZE = 1024;
+            std::vector<Sym::Symbol> derivative(DERIVATIVE_SIZE);
 
             const auto size = expression.data()->derivative_to(*derivative.data());
 
@@ -27,12 +29,8 @@ namespace Test {
                 << "Tried to calculate derivative of:\n  " << expression.data()->to_string()
                 << "\n but calculated size does not match actual size";
 
-            expected_derivative.resize(Sym::EXPRESSION_MAX_SYMBOL_COUNT);
-
-            expected_derivative.data()->simplify(help_space.data());
-            derivative.data()->simplify(help_space.data());
-
-            derivative.resize(size);
+            simplify_vector(expected_derivative);
+            simplify_vector(derivative);
 
             EXPECT_TRUE(
                 Sym::Symbol::are_expressions_equal(*derivative.data(), *expected_derivative.data()))

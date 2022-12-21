@@ -20,6 +20,18 @@ class CommonAtoms extends StorybookPart {
           ),
         ),
         Story(
+            name: 'Atoms/CopyTexIconButton',
+            builder: (context) {
+              return Row(
+                children: [
+                  IconButton(onPressed: () {}, icon: Icon(Icons.copy)),
+                  CuCopyTexIconButton(
+                    onPressed: () {},
+                  ),
+                ],
+              );
+            }),
+        Story(
           name: 'Atoms/Logo',
           builder: (context) => CuLogo(
             color: context.knobs.options(
@@ -87,6 +99,28 @@ class CommonAtoms extends StorybookPart {
             return isError
                 ? CuToast.error(message: message)
                 : CuToast.success(message: message);
+          },
+        ),
+        Story(
+          name: 'Atoms/ShimmerRectangle',
+          builder: (context) {
+            final width = context.knobs.slider(
+              label: 'Width',
+              min: 50,
+              max: 500,
+              initial: 200,
+            );
+            final height = context.knobs.slider(
+              label: 'Height',
+              min: 5,
+              max: 500,
+              initial: 20,
+            );
+
+            return CuShimmerRectangle(
+              width: width,
+              height: height,
+            );
           },
         ),
         Story(
