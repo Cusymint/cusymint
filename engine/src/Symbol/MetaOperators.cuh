@@ -578,13 +578,14 @@ namespace Sym {
     };
 
     template <class L, class R> using Add = TwoArgOperator<Addition, L, R>;
-    template <class I> using Neg = OneArgOperator<Negation, I>;
+    template <class L, class R> using Mul = TwoArgOperator<Product, L, R>;
+
+    template <class I> using Neg = Mul<Integer<-1>, I>;
     template <class L, class R> using Sub = Add<L, Neg<R>>;
 
     template <class Head, class... Tail> struct Sum : Add<Head, Sum<Tail...>> {};
     template <class T> struct Sum<T> : T {};
 
-    template <class L, class R> using Mul = TwoArgOperator<Product, L, R>;
     template <class I> using Inv = OneArgOperator<Reciprocal, I>;
     template <class L, class R> using Frac = Mul<L, Inv<R>>;
 
