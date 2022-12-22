@@ -364,13 +364,13 @@ namespace Sym {
         std::string arg1_pattern = "{}";
         std::string arg2_pattern = "{}";
         std::string cdot = " ";
-        if (arg1().is(Type::Addition) || arg1().is(Type::Negation)) {
+        if (arg1().is(Type::Addition)) {
             arg1_pattern = R"(\left({}\right))";
         }
-        if (arg2().is(Type::Addition) || arg2().is(Type::Negation)) {
+        if (arg2().is(Type::Addition)) {
             arg2_pattern = R"(\left({}\right))";
         }
-        if (arg2().is(Type::Negation) || arg2().is(Type::NumericConstant) ||
+        if (arg2().is(Type::NumericConstant) ||
             (arg2().is(Type::Power) && arg2().as<Power>().arg1().is(Type::NumericConstant)) ||
             (arg2().is(Type::Product) && arg2().as<Product>().arg1().is(Type::NumericConstant))) {
             cdot = " \\cdot ";
