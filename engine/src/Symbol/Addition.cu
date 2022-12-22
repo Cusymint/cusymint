@@ -253,8 +253,8 @@ namespace Sym {
     }
 
     std::vector<Symbol> operator-(const std::vector<Symbol>& arg) {
-        std::vector<Symbol> res(arg.size() + 1);
-        Negation::create(arg.data(), res.data());
+        std::vector<Symbol> res(Neg<Copy>::size_with({*arg.data()}));
+        Neg<Copy>::init(*res.data(), {*arg.data()});
         return res;
     }
 
