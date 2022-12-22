@@ -188,8 +188,10 @@ namespace Test {
     EQUALITY_TEST(PowerWithLogarithm, "e^(sin(x)*x*ln(10)*pi)", "10^(sin(x)*x*pi)")
     EQUALITY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
 
-    SIMPLIFY_TEST(NoActionPolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)",
-                  "(2*x^2)/(3+x+5*x^2+10*x^3)+(x^3)/(3+x+5*x^2+10*x^3)+(9)/(3+x+5*x^2+10*x^3)");
+    SIMPLIFY_TEST(PolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)",
+                  Sym::num(0.1) + Sym::num(-0.1) * Sym::var() / Parser::parse_function("(3+x+5*x^2+10*x^3)") +
+                      Parser::parse_function("1.5x^2/(3+x+5*x^2+10*x^3)") +
+                      Parser::parse_function("8.7/(3+x+5*x^2+10*x^3)"))
     SIMPLIFY_TEST(
         NoActionNumeratorRankLessThanDenominator, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)",
         "(2*x^2)/(3+x+5*x^2+10*x^3+x^6)+(x^3)/(3+x+5*x^2+10*x^3+x^6)+(9)/(3+x+5*x^2+10*x^3+x^6)")
