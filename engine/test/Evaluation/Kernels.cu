@@ -3,8 +3,10 @@
 #include <thrust/scan.h>
 
 #include "Evaluation/Integrator.cuh"
+#include "Evaluation/Status.cuh"
 #include "IntegratorUtils.cuh"
 #include "Symbol/ExpressionArray.cuh"
+#include "Symbol/Integral.cuh"
 #include "Symbol/Macros.cuh"
 #include "Utils/DeviceArray.cuh"
 
@@ -354,9 +356,9 @@ namespace Test {
         std::vector<HeuristicPairVector> expected_heuristics = {
             {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}, {6, {1, 0}}},
             {{0, {1, 0}}},
-            {{3, {1, 1}}},
+            {{3, {1, 1}}, {7, {1, 0}}},
             {{1, {2, 1}}},
-            {{2, {1, 0}}, {3, {1, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}, {7, {1, 0}}},
             {}};
 
         ExprVector expected_expressions_vector =
@@ -391,9 +393,9 @@ namespace Test {
         std::vector<HeuristicPairVector> expected_heuristics = {
             {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}, {6, {1, 0}}},
             {{0, {1, 0}}},
-            {{3, {1, 1}}},
+            {{3, {1, 1}}, {7, {1, 0}}},
             {{1, {2, 1}}},
-            {{2, {1, 0}}, {3, {1, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}, {7, {1, 0}}},
             {}};
 
         ExprVector expected_expression_vector = get_expected_expression_vector(expected_heuristics);
@@ -502,6 +504,12 @@ namespace Test {
                                       ((Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2)))) ^
                                        Sym::inv(Sym::num(2)))),
                                  {Sym::tan(Sym::var())})),
+            nth_expression_candidate(
+                2, Sym::integral(Sym::inv(Sym::num(23) * Sym::cnst("c")) * Sym::var(),
+                                 {Sym::num(23) * Sym::cnst("c") * Sym::var()})),
+            nth_expression_candidate(
+                4, Sym::integral(Sym::inv(Sym::num(0.5)) * (Sym::num(2) * Sym::tan(Sym::var())),
+                                 {Sym::num(0.5) * Sym::var()})),
         };
 
         EvalStatusVector expected_integral_statuses = {
@@ -509,6 +517,7 @@ namespace Test {
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
         };
 
         EvalStatusVector expected_expression_statuses = {
