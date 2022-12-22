@@ -125,7 +125,7 @@ namespace Sym {
 
         if (!optional_rank1.has_value() || optional_rank1.value() == 0 ||
             !optional_rank2.has_value() || optional_rank2.value() == 0 ||
-            optional_rank1.value() <= optional_rank2.value()) {
+            optional_rank1.value() < optional_rank2.value()) {
             return SimplificationResult::NoAction;
         }
 
