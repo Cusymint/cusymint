@@ -9,6 +9,17 @@
 
 namespace Util {
     /*
+     * @brief Calculates the block count for a kernel given the mininum thread count and the block
+     * size
+     *
+     * @param thread_count Minimum number of threads required
+     * @param block_size Number of threads in each thread block
+     */
+    inline size_t block_count(const size_t thread_count, const size_t block_size) {
+        return (thread_count - 1) / block_size + 1;
+    }
+
+    /*
      * @brief The number of threads running in the current kernel
      */
     __device__ inline size_t thread_count() { return gridDim.x * blockDim.x; }

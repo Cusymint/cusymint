@@ -67,9 +67,11 @@ namespace Sym {
         resize_evaluation_statuses(evaluation_statuses_1, integrals.size());
         reset_evaluation_statuses(evaluation_statuses_1);
 
+        const size_t block_count = Util::block_count(integrals.size(), BLOCK_SIZE);
+
         bool success = false;
         while (!success) {
-            Kernel::simplify<<<BLOCK_COUNT, BLOCK_SIZE>>>(integrals, integrals_swap, help_space,
+            Kernel::simplify<<<block_count, BLOCK_SIZE>>>(integrals, integrals_swap, help_space,
                                                           evaluation_statuses_1);
             cudaDeviceSynchronize();
 
