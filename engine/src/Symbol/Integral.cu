@@ -231,7 +231,7 @@ namespace Sym {
         integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count -
                                                                               1);
 
-        return fmt::format(R"(\int {}\dd {},_{{ {} }})", integrand_copy.data()->to_tex(),
+        return fmt::format(R"(\int {}\dd {}_{{ {} }})", integrand_copy.data()->to_tex(),
                            last_substitution_name, first_substitution().to_tex());
     }
 
