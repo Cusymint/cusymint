@@ -3,6 +3,7 @@
 #include <fmt/core.h>
 
 #include "Symbol.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/MetaOperators.cuh"
 
 namespace Sym {
@@ -11,12 +12,17 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(SineIntegral)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(SineIntegral)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(SineIntegral)
-    __host__ __device__ ssize_t
-    SineIntegral::insert_reversed_derivative_at(Symbol* const destination) {
-        if ((destination - 1)->is(0)) {
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(SineIntegral) {
+        if ((&destination - 1)->is(0)) {
             return 0;
         }
-        return Mul<Frac<Sin<Copy>, Copy>, None>::init_reverse(*destination, {arg(), arg()});
+        return Mul<Frac<Sin<Copy>, Copy>, None>::init_reverse(destination, {arg(), arg()});
+    }
+    DEFINE_DERIVATIVE_SIZE(SineIntegral) {
+        if ((&destination - 1)->is(0)) {
+            return 0;
+        }
+        return Mul<Frac<Sin<Copy>, Copy>, None>::size_with({arg(), arg()});
     }
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(SineIntegral)
 
@@ -39,12 +45,17 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(CosineIntegral)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(CosineIntegral)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(CosineIntegral)
-    __host__ __device__ ssize_t
-    CosineIntegral::insert_reversed_derivative_at(Symbol* const destination) {
-        if ((destination - 1)->is(0)) {
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(CosineIntegral) {
+        if ((&destination - 1)->is(0)) {
             return 0;
         }
-        return Mul<Frac<Cos<Copy>, Copy>, None>::init_reverse(*destination, {arg(), arg()});
+        return Mul<Frac<Cos<Copy>, Copy>, None>::init_reverse(destination, {arg(), arg()});
+    }
+    DEFINE_DERIVATIVE_SIZE(CosineIntegral) {
+        if ((&destination - 1)->is(0)) {
+            return 0;
+        }
+        return Mul<Frac<Cos<Copy>, Copy>, None>::size_with({arg(), arg()});
     }
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(CosineIntegral)
 
@@ -67,14 +78,19 @@ namespace Sym {
     DEFINE_IDENTICAL_COMPARE_TO(ExponentialIntegral)
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(ExponentialIntegral)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(ExponentialIntegral)
-    __host__ __device__ ssize_t
-    ExponentialIntegral::insert_reversed_derivative_at(Symbol* const destination) {
-        if ((destination - 1)->is(0)) {
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(ExponentialIntegral) {
+        if ((&destination - 1)->is(0)) {
             return 0;
         }
-        return Mul<Frac<Pow<E, Copy>, Copy>, None>::init_reverse(*destination, {arg(), arg()});
+        return Mul<Frac<Pow<E, Copy>, Copy>, None>::init_reverse(destination, {arg(), arg()});
     }
-    
+    DEFINE_DERIVATIVE_SIZE(ExponentialIntegral) {
+        if ((&destination - 1)->is(0)) {
+            return 0;
+        }
+        return Mul<Frac<Pow<E, Copy>, Copy>, None>::size_with({arg(), arg()});
+    }
+
     DEFINE_SIMPLIFY_IN_PLACE(ExponentialIntegral) {
         if (arg().is(Type::Logarithm)) {
             arg().as<Logarithm>().arg().move_to(arg());
@@ -104,7 +120,7 @@ namespace Sym {
     DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(LogarithmicIntegral)
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(LogarithmicIntegral)
     DEFINE_ONE_ARG_OP_DERIVATIVE(LogarithmicIntegral, Inv<Ln<Copy>>)
-    
+
     DEFINE_SIMPLIFY_IN_PLACE(LogarithmicIntegral) {
         if (Pow<E, Any>::match(arg())) {
             arg().as<Power>().arg2().move_to(arg());
