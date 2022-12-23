@@ -539,166 +539,166 @@ template <class T, class U> struct MacroType<T(U)> {
         seal();                                                                                    \
     }
 
-#define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                                \
-    DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                                \
-    __host__ __device__ const _name* _name::last_in_tree() const {                                         \
-        const auto* last = this;                                                                           \
-        while (last->arg1().is(Type::_name)) {                                                             \
-            last = last->arg1().as_ptr<_name>();                                                           \
-        }                                                                                                  \
-                                                                                                           \
-        return last;                                                                                       \
-    }                                                                                                      \
-                                                                                                           \
-    __host__ __device__ _name* _name::last_in_tree() {                                                     \
-        return const_cast<_name*>(const_cast<const _name*>(this)->last_in_tree());                         \
-    }                                                                                                      \
-                                                                                                           \
-    __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                         \
-        if (!symbol().is(_name::TYPE) || !arg2().is(Type::_name) && is_tree_sorted(*help_space)) {         \
-            return;                                                                                        \
-        }                                                                                                  \
-                                                                                                           \
-        /* We can merge the subtrees like in merge sort, as both should already be                         \
-         * simplified and sorted */                                                                        \
-        auto left_tree_iter = ConstTreeIterator<_name>(&arg1());                                           \
-        auto right_tree_iter = ConstTreeIterator<_name>(&arg2());                                          \
-        const size_t arg1_height =                                                                         \
-            arg1().is(_name::TYPE) ? arg1().as<_name>().tree_size() - 1 : 0;                               \
-        const size_t arg2_height =                                                                         \
-            arg2().is(_name::TYPE) ? arg2().as<_name>().tree_size() - 1 : 0;                               \
-        size_t new_tree_size = 1 + arg1_height + arg2_height;                                              \
-                                                                                                           \
-        /* Initialize a sufficient number of tree iterators */                                             \
-        for (size_t i = 0; i < new_tree_size; ++i) {                                                       \
-            help_space[i].init_from(_name::builder());                                                     \
-        }                                                                                                  \
-                                                                                                           \
-        /* Because the iterators traverse the tree starting with the leaf with the largest                 \
-         * distance from the root, we have to copy them to `help_space` in the same order, so that         \
-         * we do not reverse the order. Also, `size` may not be equal to actual size in here               \
-         * (expression may actually be smaller), this this is just an upper bound on the memory            \
-         * used. */                                                                                        \
-        Symbol* const help_space_back = help_space + size;                                                 \
-        Symbol* current_dst_back = help_space_back;                                                        \
-        while (left_tree_iter.is_valid() && right_tree_iter.is_valid()) {                                  \
-            const auto ordering = _name::compare_and_try_fuse_symbols(                                     \
-                left_tree_iter.current(), right_tree_iter.current(), help_space_back);                     \
-            Symbol* current = nullptr;                                                                     \
-            if (ordering == Util::Order::Greater) {                                                        \
-                                                                                                           \
-                current = left_tree_iter.current();                                                        \
-                left_tree_iter.advance();                                                                  \
-            }                                                                                              \
-            else if (ordering == Util::Order::Less) {                                                      \
-                current = right_tree_iter.current();                                                       \
-                right_tree_iter.advance();                                                                 \
-            }                                                                                              \
-            else {                                                                                         \
-                current = help_space_back;                                                                 \
-                left_tree_iter.advance();                                                                  \
-                right_tree_iter.advance();                                                                 \
-                --new_tree_size;                                                                           \
-            }                                                                                              \
-                                                                                                           \
-            Symbol* const current_dst = current_dst_back - current->size();                                \
-            current->copy_to(*current_dst);                                                                \
-            current_dst_back = current_dst;                                                                \
-        }                                                                                                  \
-                                                                                                           \
-        auto remaining_tree_iter = left_tree_iter.is_valid() ? left_tree_iter : right_tree_iter;           \
-                                                                                                           \
-        while (remaining_tree_iter.is_valid()) {                                                           \
-            Symbol* const current_dst = current_dst_back - remaining_tree_iter.current()->size();          \
-            remaining_tree_iter.current()->copy_to(*current_dst);                                          \
-            remaining_tree_iter.advance();                                                                 \
-            current_dst_back = current_dst;                                                                \
-        }                                                                                                  \
-                                                                                                           \
-        /*Now we have to make sure that the copied expressions are right after the created tree            \
-         * operators, otherwise the `seal`s would fail. */                                                 \
-        const size_t symbols_copied = help_space_back - current_dst_back;                                  \
-        Util::move_mem(help_space + new_tree_size, current_dst_back,                                       \
-                       symbols_copied * sizeof(Symbol));                                                   \
-                                                                                                           \
-        for (size_t i = new_tree_size; i > 0; --i) {                                                       \
-            help_space[i - 1].as<_name>().seal_arg1();                                                     \
-            help_space[i - 1].as<_name>().seal();                                                          \
-        }                                                                                                  \
-                                                                                                           \
-        help_space->copy_to(symbol());                                                                     \
-    }                                                                                                      \
-                                                                                                           \
-    __host__ __device__ bool _name::is_tree_sorted(Symbol& help_space) {                                   \
-        TreeIterator<_name> iterator(this);                                                                \
-        Symbol* last = iterator.current();                                                                 \
-        iterator.advance();                                                                                \
-                                                                                                           \
-        while (iterator.is_valid()) {                                                                      \
-            if (_name::compare_and_try_fuse_symbols<true>(last, iterator.current(),                        \
-                                                          &help_space) != Util::Order::Greater) {          \
-                return false;                                                                              \
-            }                                                                                              \
-                                                                                                           \
-            last = iterator.current();                                                                     \
-            iterator.advance();                                                                            \
-        }                                                                                                  \
-                                                                                                           \
-        return true;                                                                                       \
-    }                                                                                                      \
-                                                                                                           \
-    __host__ __device__ SimplificationResult _name::simplify_pairs(Symbol* const help_space) {             \
-        bool expression_changed = true;                                                                    \
-        SimplificationResult result = SimplificationResult::Success;                                       \
-        while (expression_changed) {                                                                       \
-            expression_changed = false;                                                                    \
-            TreeIterator<_name> first(this);                                                               \
-            while (first.is_valid()) {                                                                     \
-                TreeIterator<_name> second = first;                                                        \
-                second.advance();                                                                          \
-                                                                                                           \
-                while (second.is_valid()) {                                                                \
-                    switch (try_fuse_symbols(first.current(), second.current(), help_space)) {             \
-                    case SimplificationResult::Success:                                                    \
-                        /* Jeśli udało się coś połączyć, to upraszczanie trzeba rozpocząć od nowa \
-                         * (możnaby tylko dla zmienionego elementu, jest to opytmalizacja TODO),          \
-                         * bo być może tę sumę można połączyć z czymś, co było już rozważane.  \
-                         */                                                                                \
-                        expression_changed = true;                                                         \
-                        break;                                                                             \
-                    case SimplificationResult::NeedsSimplification:                                        \
-                        result = SimplificationResult::NeedsSimplification;                                \
-                        break;                                                                             \
-                    case SimplificationResult::NeedsSpace:                                                 \
-                        result = SimplificationResult::NeedsSpace;                                         \
-                        break;                                                                             \
-                    case SimplificationResult::NoAction:                                                   \
-                        break;                                                                             \
-                    }                                                                                      \
-                                                                                                           \
-                    second.advance();                                                                      \
-                }                                                                                          \
-                                                                                                           \
-                first.advance();                                                                           \
-            }                                                                                              \
-        }                                                                                                  \
-        return result;                                                                                     \
-    }                                                                                                      \
-                                                                                                           \
-    /*                                                                                                     \
-     * @brief Number of leaves in a two argument operator tree                                             \
-     */                                                                                                    \
-    __host__ __device__ size_t _name::tree_size() const {                                                  \
-        /* In every sum, number of terms is equal to number of operator signs plus 1.                      \
-         * When an addition tree is simplified, all operator symbols are placed in a row,                  \
-         * so it suffices to calculate address of the last operator symbol. The offset between             \
-         * `this` and last plus 1 is the number of operator signs in the sum.                              \
-         * Thus, the offset plus 2 is the number of terms in the sum.                                      \
-         * Conversion to `Symbol*` with `symbol()` function is necessary, because                          \
-         * `_name`                                                                                         \
-         * structure may be smaller than `Symbol` union.                                                   \
-         */                                                                                                \
-        return &last_in_tree()->symbol() - &symbol() + 2;                                                  \
+#define DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(_name)                                        \
+    DEFINE_TWO_ARGUMENT_OP_FUNCTIONS(_name)                                                        \
+    __host__ __device__ const _name* _name::last_in_tree() const {                                 \
+        const auto* last = this;                                                                   \
+        while (last->arg1().is(Type::_name)) {                                                     \
+            last = last->arg1().as_ptr<_name>();                                                   \
+        }                                                                                          \
+                                                                                                   \
+        return last;                                                                               \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ _name* _name::last_in_tree() {                                             \
+        return const_cast<_name*>(const_cast<const _name*>(this)->last_in_tree());                 \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ void _name::simplify_structure(Symbol* const help_space) {                 \
+        if (!symbol().is(_name::TYPE) || !arg2().is(Type::_name) && is_tree_sorted(*help_space)) { \
+            return;                                                                                \
+        }                                                                                          \
+                                                                                                   \
+        /* We can merge the subtrees like in merge sort, as both should already be                 \
+         * simplified and sorted */                                                                \
+        auto left_tree_iter = ConstTreeIterator<_name>(&arg1());                                   \
+        auto right_tree_iter = ConstTreeIterator<_name>(&arg2());                                  \
+        const size_t arg1_height =                                                                 \
+            arg1().is(_name::TYPE) ? arg1().as<_name>().tree_size() - 1 : 0;                       \
+        const size_t arg2_height =                                                                 \
+            arg2().is(_name::TYPE) ? arg2().as<_name>().tree_size() - 1 : 0;                       \
+        size_t new_tree_size = 1 + arg1_height + arg2_height;                                      \
+                                                                                                   \
+        /* Initialize a sufficient number of tree iterators */                                     \
+        for (size_t i = 0; i < new_tree_size; ++i) {                                               \
+            help_space[i].init_from(_name::builder());                                             \
+        }                                                                                          \
+                                                                                                   \
+        /* Because the iterators traverse the tree starting with the leaf with the largest         \
+         * distance from the root, we have to copy them to `help_space` in the same order, so that \
+         * we do not reverse the order. Also, `size` may not be equal to actual size in here       \
+         * (expression may actually be smaller), this this is just an upper bound on the memory    \
+         * used. */                                                                                \
+        Symbol* const help_space_back = help_space + size;                                         \
+        Symbol* current_dst_back = help_space_back;                                                \
+        while (left_tree_iter.is_valid() && right_tree_iter.is_valid()) {                          \
+            const auto ordering = _name::compare_and_try_fuse_symbols(                             \
+                left_tree_iter.current(), right_tree_iter.current(), help_space_back);             \
+            Symbol* current = nullptr;                                                             \
+            if (ordering == Util::Order::Greater) {                                                \
+                                                                                                   \
+                current = left_tree_iter.current();                                                \
+                left_tree_iter.advance();                                                          \
+            }                                                                                      \
+            else if (ordering == Util::Order::Less) {                                              \
+                current = right_tree_iter.current();                                               \
+                right_tree_iter.advance();                                                         \
+            }                                                                                      \
+            else {                                                                                 \
+                current = help_space_back;                                                         \
+                left_tree_iter.advance();                                                          \
+                right_tree_iter.advance();                                                         \
+                --new_tree_size;                                                                   \
+            }                                                                                      \
+                                                                                                   \
+            Symbol* const current_dst = current_dst_back - current->size();                        \
+            current->copy_to(*current_dst);                                                        \
+            current_dst_back = current_dst;                                                        \
+        }                                                                                          \
+                                                                                                   \
+        auto remaining_tree_iter = left_tree_iter.is_valid() ? left_tree_iter : right_tree_iter;   \
+                                                                                                   \
+        while (remaining_tree_iter.is_valid()) {                                                   \
+            Symbol* const current_dst = current_dst_back - remaining_tree_iter.current()->size();  \
+            remaining_tree_iter.current()->copy_to(*current_dst);                                  \
+            remaining_tree_iter.advance();                                                         \
+            current_dst_back = current_dst;                                                        \
+        }                                                                                          \
+                                                                                                   \
+        /*Now we have to make sure that the copied expressions are right after the created tree    \
+         * operators, otherwise the `seal`s would fail. */                                         \
+        const size_t symbols_copied = help_space_back - current_dst_back;                          \
+        Util::move_mem(help_space + new_tree_size, current_dst_back,                               \
+                       symbols_copied * sizeof(Symbol));                                           \
+                                                                                                   \
+        for (size_t i = new_tree_size; i > 0; --i) {                                               \
+            help_space[i - 1].as<_name>().seal_arg1();                                             \
+            help_space[i - 1].as<_name>().seal();                                                  \
+        }                                                                                          \
+                                                                                                   \
+        help_space->copy_to(symbol());                                                             \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ bool _name::is_tree_sorted(Symbol& help_space) {                           \
+        TreeIterator<_name> iterator(this);                                                        \
+        Symbol* last = iterator.current();                                                         \
+        iterator.advance();                                                                        \
+                                                                                                   \
+        while (iterator.is_valid()) {                                                              \
+            if (_name::compare_and_try_fuse_symbols<true>(last, iterator.current(),                \
+                                                          &help_space) != Util::Order::Greater) {  \
+                return false;                                                                      \
+            }                                                                                      \
+                                                                                                   \
+            last = iterator.current();                                                             \
+            iterator.advance();                                                                    \
+        }                                                                                          \
+                                                                                                   \
+        return true;                                                                               \
+    }                                                                                              \
+                                                                                                   \
+    __host__ __device__ SimplificationResult _name::simplify_pairs(Symbol* const help_space) {     \
+        bool expression_changed = true;                                                            \
+        SimplificationResult result = SimplificationResult::Success;                               \
+        while (expression_changed) {                                                               \
+            expression_changed = false;                                                            \
+            TreeIterator<_name> first(this);                                                       \
+            while (first.is_valid()) {                                                             \
+                TreeIterator<_name> second = first;                                                \
+                second.advance();                                                                  \
+                                                                                                   \
+                while (second.is_valid()) {                                                        \
+                    switch (try_fuse_symbols(first.current(), second.current(), help_space)) {     \
+                    case SimplificationResult::Success:                                            \
+                        /* If anything has been merged, we have to start from scratch, because the \
+                         * newly created element may be fusable with one that has been considered  \
+                         * before                                                                  \
+                         */                                                                        \
+                        expression_changed = true;                                                 \
+                        break;                                                                     \
+                    case SimplificationResult::NeedsSimplification:                                \
+                        result = SimplificationResult::NeedsSimplification;                        \
+                        break;                                                                     \
+                    case SimplificationResult::NeedsSpace:                                         \
+                        result = SimplificationResult::NeedsSpace;                                 \
+                        break;                                                                     \
+                    case SimplificationResult::NoAction:                                           \
+                        break;                                                                     \
+                    }                                                                              \
+                                                                                                   \
+                    second.advance();                                                              \
+                }                                                                                  \
+                                                                                                   \
+                first.advance();                                                                   \
+            }                                                                                      \
+        }                                                                                          \
+        return result;                                                                             \
+    }                                                                                              \
+                                                                                                   \
+    /*                                                                                             \
+     * @brief Number of leaves in a two argument operator tree                                     \
+     */                                                                                            \
+    __host__ __device__ size_t _name::tree_size() const {                                          \
+        /* In every sum, number of terms is equal to number of operator signs plus 1.              \
+         * When an addition tree is simplified, all operator symbols are placed in a row,          \
+         * so it suffices to calculate address of the last operator symbol. The offset between     \
+         * `this` and last plus 1 is the number of operator signs in the sum.                      \
+         * Thus, the offset plus 2 is the number of terms in the sum.                              \
+         * Conversion to `Symbol*` with `symbol()` function is necessary, because                  \
+         * `_name`                                                                                 \
+         * structure may be smaller than `Symbol` union.                                           \
+         */                                                                                        \
+        return &last_in_tree()->symbol() - &symbol() + 2;                                          \
     }
 
 #endif

@@ -95,6 +95,7 @@ namespace Sym::Static {
             SINE_AS_TANGENT,
             COSINE_AS_TANGENT,
             TANGENT_DERIVATIVE,
+            ONE,
         };
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
@@ -119,6 +120,7 @@ namespace Sym::Static {
             SineAsTangent::init,
             CosineAsTangent::init,
             TangentDerivative::init,
+            One::init,
         };
 
         constexpr size_t STATIC_FUNCTION_COUNT =

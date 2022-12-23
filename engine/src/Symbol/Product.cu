@@ -143,7 +143,7 @@ namespace Sym {
 
         if (!optional_rank1.has_value() || optional_rank1.value() == 0 ||
             !optional_rank2.has_value() || optional_rank2.value() == 0 ||
-            optional_rank1.value() <= optional_rank2.value()) {
+            optional_rank1.value() < optional_rank2.value()) {
             return SimplificationResult::NoAction;
         }
 
@@ -388,7 +388,9 @@ namespace Sym {
         if (arg2().is(Type::Addition) || arg2().is(Type::Negation)) {
             arg2_pattern = R"(\left({}\right))";
         }
-        if (arg2().is(Type::Negation) || arg2().is(Type::NumericConstant)) {
+        if (arg2().is(Type::Negation) || arg2().is(Type::NumericConstant) ||
+            (arg2().is(Type::Power) && arg2().as<Power>().arg1().is(Type::NumericConstant)) ||
+            (arg2().is(Type::Product) && arg2().as<Product>().arg1().is(Type::NumericConstant))) {
             cdot = " \\cdot ";
         }
         return fmt::format(arg1_pattern + cdot + arg2_pattern, arg1().to_tex(), arg2().to_tex());
