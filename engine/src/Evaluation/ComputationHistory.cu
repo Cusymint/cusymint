@@ -5,11 +5,13 @@
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
 #include <exception>
 #include <fmt/core.h>
 #include <iterator>
 #include <memory>
+#include <queue>
 #include <sys/types.h>
 #include <vector>
 
@@ -173,10 +175,24 @@ namespace Sym {
             }
         }
 
-        ssize_t idx = -1;
-        for (const auto& expression : expression_tree) {
-            ++idx;
+        std::queue<size_t> index_queue;
+        index_queue.push(0);
 
+        while (!index_queue.empty()) {
+            const size_t idx = index_queue.front();
+            index_queue.pop();
+            const auto& expression = expression_tree[idx];
+            for (const auto& symbol : expression) {
+                if (symbol.is(Type::SubexpressionVacancy)) {
+                    if constexpr (Consts::DEBUG) {
+                        if (symbol.as<SubexpressionVacancy>().is_solved == 0) {
+                            Util::crash("Unsolved SubexpressionVacancy on a path of a completed step");
+                        }
+                    }
+
+                    index_queue.push(symbol.as<SubexpressionVacancy>().solver_idx);
+                }                
+            }
             if (!expression[0].is(Type::SubexpressionCandidate)) {
                 continue;
             }
@@ -184,12 +200,6 @@ namespace Sym {
             const auto& candidate = expression[0].as<SubexpressionCandidate>();
 
             if (candidate.uid <= max_prev_uid) {
-                continue;
-            }
-
-            if (expression_tree[candidate.vacancy_expression_idx][candidate.vacancy_idx]
-                    .as<SubexpressionVacancy>()
-                    .solver_idx != idx) {
                 continue;
             }
 
@@ -203,11 +213,12 @@ namespace Sym {
                 const auto& integral = candidate.arg().as<Integral>();
                 if (integral.substitution_count > creator_integral.substitution_count) {
                     // substitution happened
+                    const auto& last_sub = integral.last_substitution().expression();
                     std::vector<Symbol> substitution(
-                        integral.first_substitution().expression().size());
+                        last_sub.size());
                     std::vector<Symbol> derivative(DERIVATIVE_SIZE);
-                    integral.first_substitution().expression().copy_to(*substitution.data());
-                    integral.first_substitution().expression().derivative_to(derivative.data());
+                    last_sub.copy_to(*substitution.data());
+                    last_sub.derivative_to(derivative.data());
                     derivative.resize(derivative.data()->size());
 
                     list.push_back(std::make_unique<Substitute>(substitution, derivative,

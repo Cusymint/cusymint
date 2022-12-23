@@ -21,14 +21,16 @@ namespace Sym {
     class Substitute : public TransformationType {
         std::vector<Symbol> substitution;
         std::vector<Symbol> derivative;
-        const std::string substitution_name;
+        const std::string variable_name;
 
       public:
         Substitute(const std::vector<Symbol>& substitution, const std::vector<Symbol> derivative,
                    const size_t& substitution_count) :
             substitution(substitution),
             derivative(derivative),
-            substitution_name(Substitution::nth_substitution_name(substitution_count - 1)) {
+            variable_name(substitution_count == 1
+                              ? "x"
+                              : Substitution::nth_substitution_name(substitution_count - 2)) {
             this->substitution.data()->substitute_variable_with_nth_substitution_name(
                 substitution_count - 1);
             this->derivative.data()->substitute_variable_with_nth_substitution_name(
@@ -36,16 +38,15 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format("\\text{{Substitute}}\\: {}={}, \\dd {}={}", substitution_name,
-                               substitution.data()->to_tex(), substitution_name,
+            return fmt::format("\\text{{Substitute}}\\: {}={}, \\dd {}={}", variable_name,
+                               substitution.data()->to_tex(), variable_name,
                                derivative.data()->to_tex());
         }
 
         bool equals(const TransformationType& other) const override {
             const auto* other_sub = dynamic_cast<const Substitute*>(&other);
             return other_sub != nullptr && substitution == other_sub->substitution &&
-                   derivative == other_sub->derivative &&
-                   substitution_name == other_sub->substitution_name;
+                   derivative == other_sub->derivative && variable_name == other_sub->variable_name;
         }
     };
 
@@ -81,11 +82,14 @@ namespace Sym {
     class SolveIntegral : public TransformationType {
         std::vector<Symbol> integral;
         std::vector<Symbol> solution;
+        const std::string variable_name;
 
       public:
         SolveIntegral(const std::vector<Symbol>& integral, const std::vector<Symbol>& solution,
                       const size_t& substitution_count) :
-            integral(integral), solution(solution) {
+            integral(integral),
+            solution(solution),
+            variable_name(Substitution::nth_substitution_name(substitution_count - 1)) {
             if (substitution_count > 0) {
                 this->integral.data()->substitute_variable_with_nth_substitution_name(
                     substitution_count - 1);
@@ -95,7 +99,8 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format("\\text{{Solve integral:}} {} = {}", integral.data()->to_tex(),
+            return fmt::format("\\text{{Solve integral:}} \\int {} \\dd {} = {}",
+                               integral.data()->as<Integral>().integrand().to_tex(), variable_name,
                                solution.data()->to_tex());
         }
 
@@ -124,8 +129,8 @@ namespace Sym {
       public:
         std::string get_description() const override { return "\\text{Simplify expression}"; }
 
-        bool equals(const TransformationType &other) const override {
-          return dynamic_cast<const SimplifyExpression*>(&other) != nullptr;
+        bool equals(const TransformationType& other) const override {
+            return dynamic_cast<const SimplifyExpression*>(&other) != nullptr;
         }
     };
 }

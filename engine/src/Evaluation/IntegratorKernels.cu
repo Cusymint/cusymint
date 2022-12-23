@@ -364,8 +364,6 @@ namespace Sym::Kernel {
                 }
 
                 const size_t idx = index_from_scan(new_integrals_indices, appl_idx);
-                const auto candidates_in_expressions =
-                    get_value_from_scan(appl_idx, new_expressions_indices);
 
                 if (integral_statuses[idx] == EvaluationStatus::Done) {
                     continue;
@@ -398,23 +396,20 @@ namespace Sym::Kernel {
                 }
 
                 // set UIDs for expressions and integrals
-                for (size_t i = 0; i < candidates_in_expressions; ++i) {
+                for (size_t i = 0; i < new_expression_count; ++i) {
                     expressions_dst[expr_dst_idx + i].as<SubexpressionCandidate>().uid =
-                        expr_dst_idx + candidates_created + i;
-                    expressions_dst[expr_dst_idx + i]
-                        .as<SubexpressionCandidate>()
-                        .creator_uid = integrals[int_idx].uid;
+                        expr_idx + candidates_created + i;
+                    expressions_dst[expr_dst_idx + i].as<SubexpressionCandidate>().creator_uid =
+                        integrals[int_idx].uid;
                 }
 
                 const size_t all_expressions_created =
                     new_expressions_indices[new_expressions_indices.size() - 1];
-                for (size_t i = 0; i < get_value_from_scan(appl_idx, new_integrals_indices);
-                     ++i) {
+                for (size_t i = 0; i < new_integral_count; ++i) {
                     integrals_dst[idx + i].as<SubexpressionCandidate>().uid =
                         all_expressions_created + idx + candidates_created + i;
-                    integrals_dst[idx + i]
-                        .as<SubexpressionCandidate>()
-                        .creator_uid = integrals[int_idx].uid;
+                    integrals_dst[idx + i].as<SubexpressionCandidate>().creator_uid =
+                        integrals[int_idx].uid;
                 }
             }
         }

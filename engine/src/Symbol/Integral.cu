@@ -179,12 +179,20 @@ namespace Sym {
         return Util::BinaryResult::make_good();
     }
 
-    __host__ __device__ const Substitution& Integral::first_substitution() const {
+    [[nodiscard]] __host__ __device__ const Substitution& Integral::first_substitution() const {
         return symbol().child().as<Substitution>();
     }
 
-    __host__ __device__ Substitution& Integral::first_substitution() {
+    [[nodiscard]] __host__ __device__ Substitution& Integral::first_substitution() {
         return symbol().child().as<Substitution>();
+    }
+
+    [[nodiscard]] __host__ __device__ const Substitution& Integral::last_substitution() const {
+        const Substitution* sub = &first_substitution();
+        while (!sub->is_last_substitution()) {
+            sub = &sub->next_substitution();
+        }
+        return *sub;
     }
 
     __host__ __device__ size_t Integral::substitutions_size() const {
@@ -216,14 +224,14 @@ namespace Sym {
         std::string last_substitution_name;
 
         if (substitution_count == 0) {
-            return fmt::format(R"(\int {}\text{{d}}x)", integrand_copy.data()->to_tex());
+            return fmt::format(R"(\int {}\dd x)", integrand_copy.data()->to_tex());
         }
 
         last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
         integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count -
                                                                               1);
 
-        return fmt::format(R"(\int {}\text{{d}}{},_{{ {} }})", integrand_copy.data()->to_tex(),
+        return fmt::format(R"(\int {}\dd {},_{{ {} }})", integrand_copy.data()->to_tex(),
                            last_substitution_name, first_substitution().to_tex());
     }
 
