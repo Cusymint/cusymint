@@ -405,7 +405,7 @@ namespace Sym {
                 resize_data(count * other_total_size_past_iterator * REALLOC_MULTIPLIER);
             }
 
-            if (other.expression_count() > capacities.size()) {
+            if (count * other.expression_count() > capacities.size()) {
                 resize_capacities(count * other.expression_count() * REALLOC_MULTIPLIER);
             }
 

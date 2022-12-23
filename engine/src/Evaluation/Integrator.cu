@@ -30,7 +30,7 @@ namespace Sym {
         integrals(INITIAL_ARRAYS_SYMBOLS_CAPACITY, INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
         integrals_swap(INITIAL_ARRAYS_SYMBOLS_CAPACITY, INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
         help_space(INITIAL_ARRAYS_SYMBOLS_CAPACITY * HELP_SPACE_MULTIPLIER,
-                   INITIAL_ARRAYS_EXPRESSIONS_CAPACITY), // heuristic count???
+                   INITIAL_ARRAYS_EXPRESSIONS_CAPACITY * CHECK_COUNT),
         scan_array_1(CHECK_COUNT * INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
         scan_array_2(CHECK_COUNT * INITIAL_ARRAYS_EXPRESSIONS_CAPACITY) {}
 
@@ -311,6 +311,8 @@ namespace Sym {
 
             check_heuristics_applicability();
             apply_heuristics();
+
+            //printf("HEUR:\n%s\n\n", integrals.to_string().c_str());
 
             if (has_original_expression_failed()) {
                 return std::nullopt;
