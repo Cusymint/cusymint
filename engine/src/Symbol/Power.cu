@@ -8,6 +8,7 @@
 #include "Symbol/Addition.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/ExpanderPlaceholder.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Symbol/TreeIterator.cuh"
@@ -154,10 +155,11 @@ namespace Sym {
                 auto* const help_space_back =
                     reinterpret_cast<Symbol*>(triangle.data + triangle.occupied_size());
 
-                const size_t new_size = num * (7 + arg1().size()) - 3;
+                const size_t actual_arg1_size = addition.arg1().size() + addition.arg2().size() + 1;
+                const size_t new_size = num * (7 + actual_arg1_size) - 3;
 
                 if (size < new_size) {
-                    additional_required_size = new_size - arg1().size() - arg2().size() - 1;
+                    additional_required_size = new_size - actual_arg1_size - arg2().size() - 1;
                     return false;
                 }
 
@@ -215,14 +217,14 @@ namespace Sym {
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Power) {
-        const size_t d_arg1_size = (destination - 1)->size();
-        Symbol* const rev_arg2 = destination - 1 - d_arg1_size;
-        if ((destination - 1)->is(0)) { // arg1() is constant: exponential function or constant
-            if (rev_arg2->is(0)) {      // arg2() is constant: constant
+        const size_t d_arg1_size = (&destination - 1)->size();
+        Symbol* const rev_arg2 = &destination - 1 - d_arg1_size;
+        if ((&destination - 1)->is(0)) { // arg1() is constant: exponential function or constant
+            if (rev_arg2->is(0)) {       // arg2() is constant: constant
                 return -1;
             }
             // (expr') c ln (expr) c ^ * *
-            return Prod<Pow<Copy, Copy>, Ln<Copy>, None>::init_reverse(*(destination - 1),
+            return Prod<Pow<Copy, Copy>, Ln<Copy>, None>::init_reverse(*(&destination - 1),
                                                                        {arg1(), arg2(), arg1()}) -
                    1;
         }
@@ -232,7 +234,7 @@ namespace Sym {
             Symbol::move_symbol_sequence(rev_arg2, rev_arg2 + 1,
                                          d_arg1_size); // move derivative of arg1() one index back
             return Prod<Copy, Pow<Copy, Add<Copy, Integer<-1>>>, None>::init_reverse(
-                       *(destination - 1), {arg2(), arg1(), arg2()}) -
+                       *(&destination - 1), {arg2(), arg1(), arg2()}) -
                    1;
         }
         // General case:
@@ -243,6 +245,31 @@ namespace Sym {
         return Mul<Pow<Copy, Copy>, Add<Prod<Copy, Inv<Copy>, Skip>, Mul<Ln<Copy>, None>>>::
                    init_reverse(*(rev_arg2 + 1),
                                 {arg1(), arg2(), arg2(), arg1(), d_arg1_size, arg1()}) -
+               d_arg1_size;
+    }
+
+    DEFINE_DERIVATIVE_SIZE(Power) {
+        const size_t d_arg1_size = (&destination - 1)->size();
+        const Symbol* const rev_arg2 = &destination - 1 - d_arg1_size;
+        if ((&destination - 1)->is(0)) { // arg1() is constant: exponential function or constant
+            if (rev_arg2->is(0)) {       // arg2() is constant: constant
+                return -1;
+            }
+            // (expr') c ln (expr) c ^ * *
+            return Prod<Pow<Copy, Copy>, Ln<Copy>, None>::size_with({arg1(), arg2(), arg1()}) - 1;
+        }
+        if (rev_arg2->is(0)) { // arg2() is constant: monomial
+            // (expr') -1 c + (expr) ^ c * *
+
+            return Prod<Copy, Pow<Copy, Add<Copy, Integer<-1>>>, None>::size_with(
+                       {arg2(), arg1(), arg2()}) -
+                   1;
+        }
+        // General case:
+        // (expr2') (expr1) ln * (expr1') (expr1) inv (expr2) * * + (expr2) (expr1) ^ *
+
+        return Mul<Pow<Copy, Copy>, Add<Prod<Copy, Inv<Copy>, Skip>, Mul<Ln<Copy>, None>>>::
+                   size_with({arg1(), arg2(), arg2(), arg1(), d_arg1_size, arg1()}) -
                d_arg1_size;
     }
 

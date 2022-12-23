@@ -47,6 +47,7 @@ namespace Sym {
         Incomplete,
         Done,
         ReallocationRequest,
+        OutOfCache
     };
 
     /*
