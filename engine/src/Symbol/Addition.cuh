@@ -12,13 +12,9 @@ namespace Sym {
     [[nodiscard]] std::string to_tex() const;
 
     /*
-     * @brief Extracts expression `f(x)` from `symbol`, where `symbol` is like `-f(x)` or `a*f(x)`.
-     * Sets a `coefficient` such that `coefficient*f(x) = symbol`.
-     *
-     * @param `symbol` given expression
-     * @param `coefficient` coefficient to be set
-     *
-     * @return extracted expression from `symbol`
+     * @brief If the `symbol` is in the form `a*f`, where `a` is a `NumericConstant` and `a` is an
+     * expression that is NOT a `Product`, then returns reference to `f` and sets `coefficient` to
+     * `a`
      */
     __host__ __device__ static const Sym::Symbol&
     extract_base_and_coefficient(const Sym::Symbol& symbol, double& coefficient);
@@ -33,6 +29,25 @@ namespace Sym {
     __host__ __device__ static double coefficient(const Sym::Symbol& symbol);
 
     /*
+     * @brief Copies a Product tree skipping any constants
+     *
+     * @param dst Destination
+     * @param expr Expression to copy
+     */
+    __host__ __device__ static void copy_without_coefficient(Sym::Symbol& dst,
+                                                             const Sym::Symbol& expr);
+
+    /*
+     * @brief Copies a Product with a new coefficient, skipping any existing one
+     *
+     * @param dst Destination
+     * @param expr Expression to copy
+     * @param coeff New coefficient
+     */
+    __host__ __device__ static void copy_with_coefficient(Sym::Symbol& dst, const Sym::Symbol& expr,
+                                                          const double coeff);
+
+    /*
      * @brief Checks if `f == g`, where `f*a == expr1` and `g*b == expr2`, where `a` and `b` are
      * `NumericConstant`s
      *
@@ -43,6 +58,20 @@ namespace Sym {
      */
     __host__ __device__ static bool are_equal_except_for_constant(const Sym::Symbol& expr1,
                                                                   const Sym::Symbol& expr2);
+
+    /*
+     * @brief Checks the ordering of `f` and `g`, where `f*a == expr1` and `g*b == expr2`, where `a`
+     * and `b` are `NumericConstant`s
+     *
+     * @param expr1 First expression
+     * @param expr2 Second expression
+     * @param help_space Help space
+     *
+     * @return Ordering of `f` and `g`
+     */
+    __host__ __device__ static Util::Order compare_except_for_constant(const Sym::Symbol& expr1,
+                                                                       const Sym::Symbol& expr2,
+                                                                       Symbol& help_space);
 
     /*
      * @brief Checks if `expr1` and `expr2` are the same expression but with an opposite sign

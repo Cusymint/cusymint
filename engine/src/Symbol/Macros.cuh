@@ -468,7 +468,7 @@ template <class T, class U> struct MacroType<T(U)> {
     /*                                                                                        \
      * @brief Counts symbols in simplified tree.                                              \
      *                                                                                        \
-     * @return Count of symbols in the tree.                                                  \
+     * @return Number of terms/coefficients/etc in the tree.                                                  \
      */                                                                                       \
     __host__ __device__ size_t tree_size() const;
 
@@ -615,7 +615,7 @@ template <class T, class U> struct MacroType<T(U)> {
             current_dst_back = current_dst;                                                        \
         }                                                                                          \
                                                                                                    \
-        /*Now we have to make sure that the copied expressions are right after the created tree    \
+        /* Now we have to make sure that the copied expressions are right after the created tree   \
          * operators, otherwise the `seal`s would fail. */                                         \
         const size_t symbols_copied = help_space_back - current_dst_back;                          \
         Util::move_mem(help_space + new_tree_size, current_dst_back,                               \
