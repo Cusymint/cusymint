@@ -371,72 +371,71 @@ namespace Sym {
             std::swap(capacities_sum, capacities_sum_swap);
         }
 
+        // /*
+        //  * @brief Sets expression count and their offsets to the same as the ones in `other`.
+        //  * Current contents of the array turns into garbage.
+        //  *
+        //  * @param other Iterator to an array from which sizes and offsets are going to be copied.
+        //  * Everything will be copied as if the array begun at the element the iterator is pointing
+        //  * to.
+        //  * @param multiplier The capacities copied from `other` are all going to be multiplied by
+        //  * `multiplier`
+        //  */
+        // template <class U = Symbol>
+        // void reoffset_like(const typename ExpressionArray<U>::Iterator& other,
+        //                    const size_t multiplier = 1) { // TODO: change to repeat_reoffset_like(other, 1, multiplier)
+        //     if (other.expression_count() == 0) {
+        //         expression_count = 0;
+        //         return;
+        //     }
+
+        //     // Not including the element pointed to
+        //     const size_t other_total_size_up_to_iterator =
+        //         other.index_ == 0 ? 0 : other.array->capacities_sum.to_cpu(other.index_ - 1);
+
+        //     const size_t other_total_size =
+        //         other.array->capacities_sum.to_cpu(other.array->expression_count - 1);
+
+        //     // Including the element pointed to
+        //     const size_t other_total_size_past_iterator =
+        //         other_total_size - other_total_size_up_to_iterator;
+
+        //     if (multiplier * other_total_size_past_iterator > data.size()) {
+        //         resize_data(other_total_size_past_iterator * REALLOC_MULTIPLIER);
+        //     }
+
+        //     if (other.expression_count() > capacities.size()) {
+        //         resize_capacities(other.expression_count() * REALLOC_MULTIPLIER);
+        //     }
+
+        //     cudaMemcpy(capacities.data(), other.array->capacities.data() + other.index_,
+        //                other.expression_count() * sizeof(size_t), cudaMemcpyDeviceToDevice);
+        //     cudaMemcpy(capacities_sum.data(), other.array->capacities_sum.data() + other.index_,
+        //                other.expression_count() * sizeof(size_t), cudaMemcpyDeviceToDevice);
+
+        //     if (multiplier != 1) {
+        //         ExpressionArrayKernel::
+        //             multiply_capacities<<<KERNEL_BLOCK_COUNT, KERNEL_BLOCK_SIZE>>>(
+        //                 capacities, capacities_sum, multiplier);
+        //     }
+
+        //     expression_count = other.expression_count();
+        // }
+
         /*
-         * @brief Sets expression count and their offsets to the same as the ones in `other`.
-         * Current contents of the array turns into garbage.
-         *
-         * @param other Iterator to an array from which sizes and offsets are going to be copied.
-         * Everything will be copied as if the array begun at the element the iterator is pointing
-         * to.
-         * @param multiplier The capacities copied from `other` are all going to be multiplied by
-         * `multiplier`
-         */
-        template <class U = Symbol>
-        void reoffset_like(const typename ExpressionArray<U>::Iterator& other,
-                           const size_t multiplier = 1) { // TODO: change to repeat_reoffset_like(other, 1, multiplier)
-            if (other.expression_count() == 0) {
-                expression_count = 0;
-                return;
-            }
-
-            // Not including the element pointed to
-            const size_t other_total_size_up_to_iterator =
-                other.index_ == 0 ? 0 : other.array->capacities_sum.to_cpu(other.index_ - 1);
-
-            const size_t other_total_size =
-                other.array->capacities_sum.to_cpu(other.array->expression_count - 1);
-
-            // Including the element pointed to
-            const size_t other_total_size_past_iterator =
-                other_total_size - other_total_size_up_to_iterator;
-
-            if (multiplier * other_total_size_past_iterator > data.size()) {
-                resize_data(other_total_size_past_iterator * REALLOC_MULTIPLIER);
-            }
-
-            if (other.expression_count() > capacities.size()) {
-                resize_capacities(other.expression_count() * REALLOC_MULTIPLIER);
-            }
-
-            cudaMemcpy(capacities.data(), other.array->capacities.data() + other.index_,
-                       other.expression_count() * sizeof(size_t), cudaMemcpyDeviceToDevice);
-            cudaMemcpy(capacities_sum.data(), other.array->capacities_sum.data() + other.index_,
-                       other.expression_count() * sizeof(size_t), cudaMemcpyDeviceToDevice);
-
-            if (multiplier != 1) {
-                ExpressionArrayKernel::
-                    multiply_capacities<<<KERNEL_BLOCK_COUNT, KERNEL_BLOCK_SIZE>>>(
-                        capacities, capacities_sum, multiplier);
-            }
-
-            expression_count = other.expression_count();
-        }
-
-        /*
-         * @brief Sets expression count and their offsets to the same as the ones in `other`.
+         * @brief Sets expression count and their offsets to the same as the ones in `other`,
          * concatenated `count` times. Current contents of the array turns into garbage.
          *
          * @param other Iterator to an array from which sizes and offsets are going to be copied.
          * Everything will be copied as if the array begun at the element the iterator is pointing
          * to.
          * @param count Number of copies of `other`-like spaces created
-         * `multiplier`
          * @param multiplier The capacities copied from `other` are all going to be multiplied by
          * `multiplier`
          */
         template <class U = Symbol>
-        void repeat_reoffset_like(const typename ExpressionArray<U>::Iterator& other,
-                                  const size_t count, const size_t multiplier = 1) {
+        void reoffset_like(const typename ExpressionArray<U>::Iterator& other,
+                                  const size_t multiplier = 1, const size_t count = 1) {
             if (other.expression_count() == 0 || count == 0) {
                 expression_count = 0;
                 return;

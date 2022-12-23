@@ -180,7 +180,7 @@ namespace Sym {
         scan_array_2.zero_mem();
         cudaDeviceSynchronize();
 
-        help_space.repeat_reoffset_like<SubexpressionCandidate>(integrals.iterator(), Heuristic::COUNT, HELP_SPACE_MULTIPLIER);
+        help_space.reoffset_like<SubexpressionCandidate>(integrals.iterator(), HELP_SPACE_MULTIPLIER, Heuristic::COUNT);
 
         Kernel::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(
             integrals, expressions, help_space, scan_array_1, scan_array_2);
