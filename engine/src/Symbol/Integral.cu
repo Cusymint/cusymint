@@ -141,9 +141,10 @@ namespace Sym {
             return Util::BinaryResult::make_error();
         }
 
-        Mul<Inv<Copy>, None>::init(destination.current(), {derivative});
+        using DerivativeInverse = Mul<Inv<Copy>, None>;
+        DerivativeInverse::init(destination.current(), {derivative});
         const size_t integrand_idx = destination.index();
-        TRY(destination += 2 + derivative.size());
+        TRY(destination += DerivativeInverse::size_with({derivative}));
 
         for (size_t symbol_idx = 0; symbol_idx < integrand().size(); ++symbol_idx) {
             bool found_match = false;

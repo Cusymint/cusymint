@@ -20,8 +20,40 @@ namespace Sym {
      *
      * @return extracted expression from `symbol`
      */
-    __host__ __device__ static const Sym::Symbol& extract_base_and_coefficient(const Sym::Symbol& symbol,
-                                                                        double& coefficient);
+    __host__ __device__ static const Sym::Symbol&
+    extract_base_and_coefficient(const Sym::Symbol& symbol, double& coefficient);
+
+    /*
+     * @brief If the expression can be expressed as `a*f(x)`, where `a` is `NumericConstant`,
+     * returns the value of `a`
+     * @param `symbol` given expression
+     *
+     * @return Value of `a` or `1` if `symbol` can't be expressed as `a*f(x)`.
+     */
+    __host__ __device__ static double coefficient(const Sym::Symbol& symbol);
+
+    /*
+     * @brief Checks if `f == g`, where `f*a == expr1` and `g*b == expr2`, where `a` and `b` are
+     * `NumericConstant`s
+     *
+     * @param expr1 First expression
+     * @param expr2 Second expression
+     *
+     * @return `true` if `f == g`, `false` otherwise
+     */
+    __host__ __device__ static bool are_equal_except_for_constant(const Sym::Symbol& expr1,
+                                                                  const Sym::Symbol& expr2);
+
+    /*
+     * @brief Checks if `expr1` and `expr2` are the same expression but with an opposite sign
+     *
+     * @param expr1 First expression
+     * @param expr2 Second expression
+     *
+     * @return `true` if `expr1 == -expr2`, `false` otherwise
+     */
+    __host__ __device__ static bool are_equal_of_opposite_sign(const Symbol& expr1,
+                                                               const Symbol& expr2);
 
   private:
     /*
@@ -31,17 +63,6 @@ namespace Sym {
      */
     __host__ __device__ static bool is_sine_cosine_squared_sum(const Symbol* const expr1,
                                                                const Symbol* const expr2);
-
-    /*
-     * @brief Sprawdza, czy `expr1` i `expr2` są tym samym wyrażeniem, ale o przeciwnym znaku.
-     *
-     * @param expr1 Pierwsze wyrażenie
-     * @param expr2 Drugie wyrażenie
-     *
-     * @return `true` jeśli `expr1 == -expr2`, `false` w przeciwnym wypadku
-     */
-    __host__ __device__ static bool are_equal_of_opposite_sign(const Symbol& expr1,
-                                                               const Symbol& expr2);
 
     /*
      * @brief W drzewie dodawań usuwa dodawania, których jednym z argumentów jest 0.0. Dodawanie

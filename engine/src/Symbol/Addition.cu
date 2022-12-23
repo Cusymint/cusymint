@@ -94,19 +94,17 @@ namespace Sym {
     }
 
     DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Addition) {
+        if (expr1->is(Type::NumericConstant) && expr2->is(Type::NumericConstant)) {
+            destination->init_from(NumericConstant::with_value(expr1->as<NumericConstant>().value +
+                                                               expr2->as<NumericConstant>().value));
+            return Util::Order::Equal;
+        }
+
         double coef1 = 0.0;
         double coef2 = 0.0;
         const Symbol& base1 = extract_base_and_coefficient(*expr1, coef1);
         const Symbol& base2 = extract_base_and_coefficient(*expr2, coef2);
-
         const auto order = Symbol::compare_expressions(base1, base2, *destination);
-
-        if (base1.is(Type::NumericConstant) && base2.is(Type::NumericConstant)) {
-            destination->init_from(
-                NumericConstant::with_value(coef1 * base1.as<NumericConstant>().value +
-                                            coef2 * base2.as<NumericConstant>().value));
-            return Util::Order::Equal;
-        }
 
         if constexpr (COMPARE_ONLY) {
             return order;
@@ -139,6 +137,58 @@ namespace Sym {
 
         coefficient = 1;
         return symbol;
+    }
+
+    __host__ __device__ double Addition::coefficient(const Sym::Symbol& symbol) {
+        for (ConstTreeIterator<Product> iterator(&symbol); iterator.is_valid();
+             iterator.advance()) {
+            if (iterator.current()->is(Type::NumericConstant)) {
+                return iterator.current()->as<NumericConstant>().value;
+            }
+        }
+
+        return 1;
+    }
+
+    __host__ __device__ bool Addition::are_equal_except_for_constant(const Sym::Symbol& expr1,
+                                                                     const Sym::Symbol& expr2) {
+        ConstTreeIterator<Product> it1(&expr1);
+        ConstTreeIterator<Product> it2(&expr2);
+
+        while (it1.is_valid() && it2.is_valid()) {
+            if (Symbol::are_expressions_equal(*it1.current(), *it2.current())) {
+                it1.advance();
+                it2.advance();
+                continue;
+            }
+
+            if (it1.current()->is(Type::NumericConstant) &&
+                it2.current()->is(Type::NumericConstant)) {
+                it1.advance();
+                it2.advance();
+                continue;
+            }
+
+            if (it1.current()->is(Type::NumericConstant)) {
+                it1.advance();
+                continue;
+            }
+
+            if (it2.current()->is(Type::NumericConstant)) {
+                it2.advance();
+                continue;
+            }
+
+            return false;
+        }
+
+        return !it1.is_valid() && !it2.is_valid();
+    }
+
+    __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol& expr1,
+                                                                  const Symbol& expr2) {
+        return are_equal_except_for_constant(expr1, expr2) &&
+               coefficient(expr1) == -coefficient(expr2);
     }
 
     __host__ __device__ void Addition::eliminate_zeros() {

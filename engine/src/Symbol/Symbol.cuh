@@ -57,7 +57,6 @@
             VC_CASE(Substitution, _instance, _member_function, __VA_ARGS__)                \
             VC_CASE(Addition, _instance, _member_function, __VA_ARGS__)                    \
             VC_CASE(Product, _instance, _member_function, __VA_ARGS__)                     \
-            VC_CASE(Reciprocal, _instance, _member_function, __VA_ARGS__)                  \
             VC_CASE(Power, _instance, _member_function, __VA_ARGS__)                       \
             VC_CASE(Sine, _instance, _member_function, __VA_ARGS__)                        \
             VC_CASE(Cosine, _instance, _member_function, __VA_ARGS__)                      \
@@ -98,7 +97,6 @@ namespace Sym {
         SubexpressionVacancy subexpression_vacancy;
         Addition addition;
         Product product;
-        Reciprocal reciprocal;
         Power power;
         Sine sine;
         Cosine cosine;

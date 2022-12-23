@@ -359,18 +359,18 @@ namespace Test {
 
     META_TEST_SIZE(SimpleComposite1, (Add<Var, Integer<1>>), 3)
     META_TEST_SIZE(SimpleComposite2, (Sub<Num, Var>), 5)
-    META_TEST_SIZE(SimpleComposite3, (Pow<Cos<Frac<Var, Integer<2>>>, Var>), 7)
+    META_TEST_SIZE(SimpleComposite3, (Pow<Cos<Frac<Var, Integer<2>>>, Var>), 8)
 
     META_TEST_SIZE(
         ComplexComposite1,
         (Add<Pow<Cos<Frac<Var, Integer<2>>>, Sub<Pow<Var, Var>, Cos<Frac<Var, Integer<3>>>>>, Var>),
-        19)
+        21)
     META_TEST_SIZE(
         ComplexComposite2,
         (Add<Cos<Sub<SingleIntegralVacancy,
                      Sub<Sub<Cos<Frac<Pow<Integer<8>, Num>, Frac<Var, Var>>>, Var>, Num>>>,
              Cos<Sin<Var>>>),
-        27)
+        29)
 
     META_TEST_NO_SIZE(SimpleCopy, (Add<Var, Copy>))
     META_TEST_NO_SIZE(DeepCopy, (Add<Cos<Sin<Cos<Sin<Copy>>>>, Cos<Sin<Var>>>))

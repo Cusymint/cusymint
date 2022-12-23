@@ -250,7 +250,7 @@ namespace Test {
         "tan(x)^4)+(108*cos(x)))+(108*tan(x)))")
 
     SIMPLIFY_TEST(SplitReciprocal, "1/(e*x*sin^2(x))",
-                  Sym::inv(Sym::e()) / Sym::var() / (Sym::sin(Sym::var()) ^ Sym::num(2)))
+                  Sym::inv(Sym::e()) / Sym::var() * (Sym::sin(Sym::var()) ^ Sym::num(-2)))
 
     SIMPLIFY_TEST(ExponentialIntegralOfLogarithm, "1+Ei(ln(x+2))", "1+li(2+x)")
     SIMPLIFY_TEST(LogarithmicIntegralOfExponential, "5*li(e^(pi*x))", "5*Ei(pi*x)")

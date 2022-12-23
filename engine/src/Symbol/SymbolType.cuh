@@ -23,7 +23,6 @@ namespace Sym {
         // Arithmetic
         Addition,
         Product,
-        Reciprocal,
         Power,
         // Trigonometric functions
         Sine,
@@ -90,8 +89,6 @@ namespace Sym {
             return "Addition";
         case Type::Product:
             return "Product";
-        case Type::Reciprocal:
-            return "Reciprocal";
         case Type::Power:
             return "Power";
         case Type::Sine:

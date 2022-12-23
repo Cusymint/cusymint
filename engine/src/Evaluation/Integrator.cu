@@ -294,7 +294,10 @@ namespace Sym {
         integrals.load_from_vector({first_expression_candidate(integral)});
 
         for (size_t i = 0;; ++i) {
+            /* fmt::print("Start: {}\n", integrals.to_string()); */
             simplify_integrals();
+
+            /* fmt::print("Simplify: {}\n", integrals.to_string()); */
 
             check_for_known_integrals();
             apply_known_integrals();
@@ -307,6 +310,8 @@ namespace Sym {
 
             check_heuristics_applicability();
             apply_heuristics();
+
+            /* fmt::print("Heurs: {}\n", integrals.to_string()); */
 
             if (has_original_expression_failed()) {
                 return std::nullopt;
