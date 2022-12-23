@@ -107,7 +107,7 @@ namespace Sym {
 
     std::string Substitution::to_tex() const {
         if (!is_last_substitution()) {
-            return fmt::format("{}, \\quad {}", next_substitution().to_tex(), to_tex_this());
+            return fmt::format("{}, \\; {}", next_substitution().to_tex(), to_tex_this());
         }
 
         return to_tex_this();
