@@ -56,7 +56,6 @@
             VC_CASE(Solution, _instance, _member_function, __VA_ARGS__)                    \
             VC_CASE(Substitution, _instance, _member_function, __VA_ARGS__)                \
             VC_CASE(Addition, _instance, _member_function, __VA_ARGS__)                    \
-            VC_CASE(Negation, _instance, _member_function, __VA_ARGS__)                    \
             VC_CASE(Product, _instance, _member_function, __VA_ARGS__)                     \
             VC_CASE(Reciprocal, _instance, _member_function, __VA_ARGS__)                  \
             VC_CASE(Power, _instance, _member_function, __VA_ARGS__)                       \
@@ -98,7 +97,6 @@ namespace Sym {
         SubexpressionCandidate subexpression_candidate;
         SubexpressionVacancy subexpression_vacancy;
         Addition addition;
-        Negation negation;
         Product product;
         Reciprocal reciprocal;
         Power power;
@@ -134,6 +132,16 @@ namespace Sym {
         }
 
         [[nodiscard]] __host__ __device__ bool is(const double number) const;
+
+        /*
+         * @brief Checks if the expression is a negation
+         */
+        [[nodiscard]] __host__ __device__ bool is_negation() const;
+
+        /*
+         * @brief If the expression is a negation, returns the negated subexpression
+         */
+        [[nodiscard]] __host__ __device__ const Symbol& negation_arg() const;
 
         [[nodiscard]] __host__ __device__ bool is_integer() const;
 

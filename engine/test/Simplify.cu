@@ -217,6 +217,7 @@ namespace Test {
     SIMPLIFY_TEST(SameExpressionsAdditionRightMultiplied, "e^x+8*e^x", "9*e^x")
     SIMPLIFY_TEST(SameExpressionsMultipliedByConstantAddition, "5*cos(x)+10*cos(x)", "15*cos(x)")
     SIMPLIFY_TEST(ReducingSameExpressionsAddition, "x*y-x*y", "0")
+    SIMPLIFY_TEST(ReducingSameExpressionsAddition2, "2*x*y+-5*x*y", "-1000")
 
     SIMPLIFY_TEST(SameExpressionsMultiplication, "x*x", "x^2")
     SIMPLIFY_TEST(SameExpressionsMultiplicationBeingSorted, "sin(x)*ln(x)*sin(x)", "sin(x)^2*ln(x)")
