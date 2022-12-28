@@ -330,7 +330,7 @@ namespace Sym {
     }
 
     [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
-    Symbol::derivative_to(SymbolIterator& destination) {
+    Symbol::derivative_to(SymbolIterator& destination) const {
         SymbolIterator current_dst = destination;
         for (auto i = static_cast<ssize_t>(size() - 1); i >= 0; --i) {
             const ssize_t predicted_offset = VIRTUAL_CALL(*at(i), derivative_size, *current_dst);

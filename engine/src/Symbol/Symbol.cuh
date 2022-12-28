@@ -548,7 +548,7 @@ namespace Sym {
          * larger than `capacity`
          */
         [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
-        derivative_to(SymbolIterator& destination);
+        derivative_to(SymbolIterator& destination) const;
     };
 
     /*

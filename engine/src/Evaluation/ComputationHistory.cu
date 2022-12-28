@@ -1,6 +1,7 @@
 #include "ComputationHistory.cuh"
 #include "Evaluation/Collapser.cuh"
 #include "Evaluation/IntegratorKernels.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/MetaOperators.cuh"
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/SubexpressionVacancy.cuh"
@@ -217,8 +218,9 @@ namespace Sym {
                     std::vector<Symbol> substitution(
                         last_sub.size());
                     std::vector<Symbol> derivative(DERIVATIVE_SIZE);
+                    auto iterator = SymbolIterator::from_at(*derivative.data(), 0, derivative.size()).good();
                     last_sub.copy_to(*substitution.data());
-                    last_sub.derivative_to(derivative.data());
+                    last_sub.derivative_to(iterator);
                     derivative.resize(derivative.data()->size());
 
                     list.push_back(std::make_unique<Substitute>(substitution, derivative,
@@ -281,8 +283,6 @@ namespace Sym {
             const auto expression_str = expression.data()->to_tex();
 
             if (prev_str != expression_str) {
-                // result.push_back(fmt::format("\\text{{ {}: }}",
-                //                              get_computation_step_text(step.get_step_type())));
                 for (const auto& trans : step.get_operations(*prev_step)) {
                     result.push_back(fmt::format(R"(\quad {}:)", trans->get_description()));
                 }

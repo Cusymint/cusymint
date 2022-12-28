@@ -22,6 +22,7 @@ namespace Sym {
         std::vector<Symbol> substitution;
         std::vector<Symbol> derivative;
         const std::string variable_name;
+        const std::string substitution_name;
 
       public:
         Substitute(const std::vector<Symbol>& substitution, const std::vector<Symbol> derivative,
@@ -30,17 +31,20 @@ namespace Sym {
             derivative(derivative),
             variable_name(substitution_count == 1
                               ? "x"
-                              : Substitution::nth_substitution_name(substitution_count - 2)) {
-            this->substitution.data()->substitute_variable_with_nth_substitution_name(
-                substitution_count - 1);
-            this->derivative.data()->substitute_variable_with_nth_substitution_name(
-                substitution_count - 1);
+                              : Substitution::nth_substitution_name(substitution_count - 2)),
+            substitution_name(Substitution::nth_substitution_name(substitution_count - 1)) {
+            if (substitution_count > 1) {
+                this->substitution.data()->substitute_variable_with_nth_substitution_name(
+                    substitution_count - 2);
+                this->derivative.data()->substitute_variable_with_nth_substitution_name(
+                    substitution_count - 2);
+            }
         }
 
         std::string get_description() const override {
-            return fmt::format("\\text{{Substitute}}\\: {}={}, \\dd {}={}", variable_name,
-                               substitution.data()->to_tex(), variable_name,
-                               derivative.data()->to_tex());
+            return fmt::format(R"(\text{{Substitute}}\: {}={}, \dd {}={} \dd {})", substitution_name,
+                               substitution.data()->to_tex(), substitution_name,
+                               derivative.data()->to_tex(), variable_name);
         }
 
         bool equals(const TransformationType& other) const override {
@@ -99,7 +103,7 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format("\\text{{Solve integral:}} \\int {} \\dd {} = {}",
+            return fmt::format(R"(\text{{Solve integral:}} \int {} \dd {} = {} + C)",
                                integral.data()->as<Integral>().integrand().to_tex(), variable_name,
                                solution.data()->to_tex());
         }
