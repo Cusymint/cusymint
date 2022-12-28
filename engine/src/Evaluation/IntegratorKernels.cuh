@@ -169,6 +169,7 @@ namespace Sym::Kernel {
      *
      * @param integrals Integrals to be checked
      * @param expressions Parents of SubexpressionCandidate in `integrals`.
+     * @param help_spaces Help space for heuristics checks
      * @param new_integrals_flags Solution. When `integrals[i]` matches `Heuristic::CHECKS[j]`
      * sets `new_integrals_flags[MAX_EXPRESSION_COUNT * j + i]` to `1`, otherwise `0`.
      * @param new_expressions_flags  Solution. When `integrals[i]` matches
@@ -178,6 +179,7 @@ namespace Sym::Kernel {
     __global__ void
     check_heuristics_applicability(const ExpressionArray<SubexpressionCandidate> integrals,
                                    ExpressionArray<> expressions,
+                                   ExpressionArray<> help_spaces,
                                    Util::DeviceArray<uint32_t> new_integrals_flags,
                                    Util::DeviceArray<uint32_t> new_expressions_flags);
 

@@ -367,6 +367,7 @@ namespace Sym {
          * expressed as `g1(x), g2(x), ..., gn(x)`, this function checks if there exists a
          * function `h(x1, x2, ..., xn)`, such that `f(x) = h(g1(x), g2(x), ..., gn(x))`.
          *
+         * @param help_space The help space
          * @param expressions Expressions to check
          *
          * @return `true` if `this` is a function of `expressions`, false otherwise. Returns
@@ -374,9 +375,9 @@ namespace Sym {
          * constant expression
          */
         template <class... Args, std::enable_if_t<(std::is_same_v<Args, Symbol> && ...), int> = 0>
-        [[nodiscard]] __host__ __device__ bool is_function_of(const Args&... expressions) const {
+        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space, const Args&... expressions) const {
             const Symbol* const expression_array[] = {&expressions...};
-            return VIRTUAL_CALL(*this, is_function_of, expression_array, sizeof...(Args));
+            return is_function_of(help_space, expression_array, sizeof...(Args));
         }
 
         /*
@@ -384,13 +385,14 @@ namespace Sym {
          * in concrete symbols. It should be called only when the templated version cannot be
          * used.
          *
+         * @param help_space The help space
          * @param expressions Array of pointers to expressions to check
          * @param expression_count Number of expressions in `expressions`
          *
          * @return Same as in the other function
          */
-        [[nodiscard]] __host__ __device__ bool
-        is_function_of(const Symbol* const* const expressions, const size_t expression_count) const;
+        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space, const Symbol* const* const expressions,
+                                                const size_t expression_count) const;
 
         /*
          * @brief Removes holes from symbol tree and copies it in reverse order to

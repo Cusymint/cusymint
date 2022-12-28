@@ -4,7 +4,7 @@
 #include "Heuristic.cuh"
 
 namespace Sym::Heuristic {
-    __device__ CheckResult is_simple_function(const Integral& integral);
+    __device__ CheckResult is_simple_function(const Integral& integral, Symbol& help_space);
     __device__ EvaluationStatus integrate_simple_function_by_parts(
         const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
         const ExpressionArray<>::Iterator& expression_dst,

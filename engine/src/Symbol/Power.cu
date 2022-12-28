@@ -196,6 +196,8 @@ namespace Sym {
     }
 
     DEFINE_IS_FUNCTION_OF(Power) {
+        BASE_TWO_ARGUMENT_IS_FUNCTION_OF
+
         for (size_t i = 0; i < expression_count; ++i) {
             if (!expressions[i]->is(Type::Power)) {
                 continue;
@@ -212,8 +214,7 @@ namespace Sym {
             }
         }
 
-        return arg1().is_function_of(expressions, expression_count) &&
-               arg2().is_function_of(expressions, expression_count);
+        return false;
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Power) {
