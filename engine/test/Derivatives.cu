@@ -23,9 +23,13 @@ namespace Test {
             static const size_t DERIVATIVE_SIZE = 1024;
             std::vector<Sym::Symbol> derivative(DERIVATIVE_SIZE);
 
-            const auto size = expression.data()->derivative_to(derivative.data());
+            auto iterator = Sym::SymbolIterator::from_at(*derivative.data(), 0, derivative.size()).good();
 
-            EXPECT_EQ(size, derivative.data()->size())
+            const auto size_result = expression.data()->derivative_to(iterator);
+
+            ASSERT_TRUE(size_result.is_good());
+
+            ASSERT_EQ(size_result.good(), derivative.data()->size())
                 << "Tried to calculate derivative of:\n  " << expression.data()->to_string()
                 << "\n but calculated size does not match actual size";
 

@@ -3,6 +3,7 @@
 #include "Evaluation/Integrator.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
+#include "Utils/Result.cuh"
 #include "Utils/StaticStack.cuh"
 
 namespace Sym {
@@ -344,15 +345,22 @@ namespace Sym {
         return coefficients[0];
     }
 
-    __host__ __device__ size_t Symbol::derivative_to(Symbol* const destination) {
-        Symbol* current_dst = destination;
+    [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
+    Symbol::derivative_to(SymbolIterator& destination) {
+        SymbolIterator current_dst = destination;
         for (auto i = static_cast<ssize_t>(size() - 1); i >= 0; --i) {
-            const ssize_t offset = VIRTUAL_CALL(*at(i), insert_reversed_derivative_at, current_dst);
-            current_dst += offset;
+            const ssize_t predicted_offset = VIRTUAL_CALL(*at(i), derivative_size, *current_dst);
+
+            if (predicted_offset > 0 && !destination.can_offset_by(predicted_offset)) {
+                return Util::SimpleResult<size_t>::make_error();
+            }
+
+            const ssize_t offset = VIRTUAL_CALL(*at(i), insert_reversed_derivative_at, *current_dst);
+            TRY_PASS(size_t, current_dst += offset);
         }
-        const size_t symbols_inserted = current_dst - destination;
-        reverse_symbol_sequence(destination, symbols_inserted);
-        return symbols_inserted;
+        const size_t symbols_inserted = current_dst.index() - destination.index();
+        reverse_symbol_sequence(&destination.current(), symbols_inserted);
+        return Util::SimpleResult<size_t>::make_good(symbols_inserted);
     }
 
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {

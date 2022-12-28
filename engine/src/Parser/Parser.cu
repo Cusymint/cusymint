@@ -149,9 +149,9 @@ namespace Parser {
 
     SymbolicFunction Parser::function() {
         static constexpr SymbolicFunction functions[] = {
-            Sym::abs,  Sym::arcsin, Sym::arccos, Sym::arctan, Sym::arccot, Sym::cos,
-            Sym::cot,  Sym::cosh,   Sym::coth,   Sym::sgn,    Sym::sin,    Sym::sinh,
-            Sym::sqrt, Sym::tan,    Sym::tanh,   Sym::ln};
+            Sym::abs,  Sym::arcsin, Sym::arccos, Sym::arctan, Sym::arccot, Sym::cos,  Sym::cot,
+            Sym::cosh, Sym::coth,   Sym::sgn,    Sym::sin,    Sym::sinh,   Sym::sqrt, Sym::tan,
+            Sym::tanh, Sym::ln,     Sym::erf,    Sym::si,     Sym::ci,     Sym::ei,   Sym::li};
         const Token prev = tok;
         next_token();
         return functions[static_cast<int>(prev) - static_cast<int>(Token::Abs)];

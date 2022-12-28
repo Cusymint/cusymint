@@ -10,9 +10,11 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Sign)
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Sign) {
-        destination->init_from(NumericConstant::with_value(0));
+        destination.init_from(NumericConstant::with_value(0));
         return 1;
     }
+
+    DEFINE_DERIVATIVE_SIZE(Sign) { return 1; }
 
     DEFINE_SIMPLIFY_IN_PLACE(Sign) {
         if (arg().is(Type::Negation)) {
@@ -89,7 +91,7 @@ namespace Sym {
 
     std::vector<Symbol> abs(const std::vector<Symbol>& arg) {
         using Abs = Mul<Sgn<Copy>, Copy>;
-        cuda::std::tuple args = {*arg.data(), *arg.data()};
+        Abs::AdditionalArgs args = {*arg.data(), *arg.data()};
 
         std::vector<Symbol> res(Abs::size_with(args));
         Abs::init(*res.data(), args);

@@ -249,13 +249,12 @@ class _HomeButtonRow extends StatelessWidget {
           onPressed: callbacks!.onShareUtf,
           icon: const Icon(Icons.share),
         ),
-        IconButton(
+        CuCopyTexIconButton(
           onPressed: callbacks!.onCopyTex,
-          icon: const Icon(Icons.copy),
         ),
         IconButton(
           onPressed: callbacks!.onCopyUtf,
-          icon: const Icon(Icons.copy_sharp),
+          icon: const Icon(Icons.copy),
         ),
       ],
     );

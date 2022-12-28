@@ -43,7 +43,7 @@ namespace Sym {
 
     struct None {
         using AdditionalArgs = cuda::std::tuple<>;
-        using Size = Unsized;
+        using Size = Size<0>;
         static constexpr bool HAS_SAME = false;
 
         __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args = {}){};
@@ -71,6 +71,11 @@ namespace Sym {
         __host__ __device__ static size_t init_reverse(Symbol& /*dst*/,
                                                        const AdditionalArgs& args) {
             return cuda::std::get<0>(args);
+        }
+
+        __host__ __device__ static void init(Symbol& dst, const AdditionalArgs& args) {
+            dst.init_from(Unknown::create());
+            dst.as<Unknown>().size = cuda::std::get<0>(args);
         }
     };
 
@@ -528,7 +533,7 @@ namespace Sym {
 
         __host__ __device__ static size_t size_with(const AdditionalArgs& args) {
             return 1 + cuda::std::get<0>(args).get().substitutions_size() +
-                   Inner::init(Util::slice_tuple<INTEGRAL_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
+                   Inner::size_with(Util::slice_tuple<INTEGRAL_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
@@ -575,6 +580,8 @@ namespace Sym {
         __host__ __device__ static bool match(const Symbol& dst, const Symbol& /*other_same*/) {
             return match(dst);
         }
+
+        __host__ __device__ static size_t size_with(const AdditionalArgs& /*args*/) { return 1; }
     };
 
     template <class L, class R> using Add = TwoArgOperator<Addition, L, R>;
@@ -603,6 +610,11 @@ namespace Sym {
     template <class I> using Arccos = OneArgOperator<Arccosine, I>;
     template <class I> using Arctan = OneArgOperator<Arctangent, I>;
     template <class I> using Arccot = OneArgOperator<Arccotangent, I>;
+    template <class I> using Erf = OneArgOperator<ErrorFunction, I>;
+    template <class I> using Si = OneArgOperator<SineIntegral, I>;
+    template <class I> using Ci = OneArgOperator<CosineIntegral, I>;
+    template <class I> using Ei = OneArgOperator<ExponentialIntegral, I>;
+    template <class I> using Li = OneArgOperator<LogarithmicIntegral, I>;
 
     template <class I> using Ln = OneArgOperator<Logarithm, I>;
 

@@ -38,7 +38,14 @@ namespace Sym {
         // Logarithm
         Logarithm,
         // Polynomials
-        Polynomial
+        Polynomial,
+        // Error function
+        ErrorFunction,
+        // Integral functions
+        SineIntegral,
+        CosineIntegral,
+        ExponentialIntegral,
+        LogarithmicIntegral
     };
 
     /*
@@ -111,6 +118,16 @@ namespace Sym {
             return "Polynomial";
         case Type::Sign:
             return "Sign";
+        case Type::ErrorFunction:
+            return "ErrorFunction";
+        case Type::SineIntegral:
+            return "SineIntegral";
+        case Type::CosineIntegral:
+            return "CosineIntegral";
+        case Type::ExponentialIntegral:
+            return "ExponentialIntegral";
+        case Type::LogarithmicIntegral:
+            return "LogarithmicIntegral";
         }
 
         return "Invalid type";

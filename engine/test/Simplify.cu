@@ -178,6 +178,7 @@ namespace Test {
     SIMPLIFY_TEST(CotangentOfArccotangent, "cot(arccot(5^x))", "5^x")
     SIMPLIFY_TEST(PythagoreanTrigIdentity, "cos(x+e^cos(x))^2+sin(x+e^cos(x))^2", "1")
     SIMPLIFY_TEST(AdvancedPythagoreanTrigIdentity, "cos(2)^2+sin(1+cos(x)^2+sin(x)^2)^2", "1")
+    SIMPLIFY_TEST(TangentCotangentProduct, "tg(tan(x)cot(x)x^2)ctg(x^2)", "1")
 
     SIMPLIFY_TEST(LogarithmOfE, "ln(e)", "1")
     SIMPLIFY_TEST(LogarithmOfOne, "ln(1)", "0")
@@ -187,8 +188,10 @@ namespace Test {
     EQUALITY_TEST(PowerWithLogarithm, "e^(sin(x)*x*ln(10)*pi)", "10^(sin(x)*x*pi)")
     EQUALITY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
 
-    SIMPLIFY_TEST(NoActionPolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)",
-                  "(2*x^2)/(3+x+5*x^2+10*x^3)+(x^3)/(3+x+5*x^2+10*x^3)+(9)/(3+x+5*x^2+10*x^3)");
+    SIMPLIFY_TEST(PolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)",
+                  Sym::num(0.1) + Sym::num(-0.1) * Sym::var() / Parser::parse_function("(3+x+5*x^2+10*x^3)") +
+                      Parser::parse_function("1.5x^2/(3+x+5*x^2+10*x^3)") +
+                      Parser::parse_function("8.7/(3+x+5*x^2+10*x^3)"))
     SIMPLIFY_TEST(
         NoActionNumeratorRankLessThanDenominator, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)",
         "(2*x^2)/(3+x+5*x^2+10*x^3+x^6)+(x^3)/(3+x+5*x^2+10*x^3+x^6)+(9)/(3+x+5*x^2+10*x^3+x^6)")
@@ -244,4 +247,10 @@ namespace Test {
         "(4*cos(x)^3)*tan(x)))+((108*cos(x))*tan(x)))+((((72*y)*x)*cos(x))*tan(x)))+((((12*y^2)*x^"
         "2)*cos(x))*tan(x)))+(54*cos(x)^2))+(54*tan(x)^2))+(12*cos(x)^3))+(12*tan(x)^3))+cos(x)^4)+"
         "tan(x)^4)+(108*cos(x)))+(108*tan(x)))")
+
+    SIMPLIFY_TEST(SplitReciprocal, "1/(e*x*sin^2(x))",
+                  Sym::inv(Sym::e()) / Sym::var() / (Sym::sin(Sym::var()) ^ Sym::num(2)))
+
+    SIMPLIFY_TEST(ExponentialIntegralOfLogarithm, "1+Ei(ln(x+2))", "1+li(2+x)")
+    SIMPLIFY_TEST(LogarithmicIntegralOfExponential, "5*li(e^(pi*x))", "5*Ei(pi*x)")
 }

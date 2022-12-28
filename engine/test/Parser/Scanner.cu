@@ -132,6 +132,22 @@ namespace Test {
     SCANNER_TEST(ExpectLogarithm, "log*2", Token::Log, "log")
     SCANNER_TEST_ERR(ExpectErrorOnLettersAfterLogarithm, "logarithm*2", "logarithm")
 
+    SCANNER_TEST(ExpectErrorFunction, "erf", Token::Erf, "erf")
+    SCANNER_TEST_ERR(ExpectErrorOnLettersAfterErrorFunction, "erfi", "erfi")
+
+    SCANNER_TEST(ExpectSineIntegral, "Si1", Token::Si, "Si")
+    SCANNER_TEST_ERR(ExpectErrorOnLettersAfterSineIntegral, "Sin", "Sin")
+
+    SCANNER_TEST(ExpectCosineIntegral, "Ci cos", Token::Ci, "Ci")
+    SCANNER_TEST_ERR(ExpectErrorOnLettersAfterCosineIntegral, "Cii cos", "Cii")
+
+    SCANNER_TEST(ExpectExponentialIntegral, "Ei^2", Token::Ei, "Ei")
+    SCANNER_TEST_ERR(ExpectErrorOnLettersAfterExponentialIntegral, "Eixp", "Eixp")
+
+    SCANNER_TEST(ExpectLogarithmicIntegral, "li", Token::Li, "li")
+    SCANNER_TEST_ERR(ExpectErrorOnLettersAfterLogarithmicIntegral, "lint", "lint")
+    SCANNER_TEST_ERR(LogarithmicIntegralCaseSensitive, "Li", "Li")
+
     SCANNER_TEST_ERR(ExpectErrorOnUnrecognizedSymbol, "%$$", "%")
 
     SCANNER_TEST(TrimSpacesBeforeToken, "   23", Token::Integer, "23")

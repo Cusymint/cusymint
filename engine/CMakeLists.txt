@@ -43,6 +43,8 @@ add_library(
   ${SYMBOL_DIR}/Logarithm.cu
   ${SYMBOL_DIR}/SubexpressionCandidate.cu
   ${SYMBOL_DIR}/SubexpressionVacancy.cu
+  ${SYMBOL_DIR}/ErrorFunction.cu
+  ${SYMBOL_DIR}/IntegralFunctions.cu
   ${SYMBOL_DIR}/ExpressionArray.cu
   ${EVALUATION_DIR}/Collapser.cu
   ${EVALUATION_DIR}/Integrator.cu
@@ -53,13 +55,18 @@ add_library(
   ${EVALUATION_DIR}/Heuristic/SubstituteEToX.cu
   ${EVALUATION_DIR}/Heuristic/UniversalSubstitution.cu
   ${EVALUATION_DIR}/Heuristic/BringOutConstantsFromProduct.cu
+  ${EVALUATION_DIR}/Heuristic/IntegrateByParts.cu
+  ${EVALUATION_DIR}/Heuristic/LinearSubstitution.cu
+  ${EVALUATION_DIR}/Heuristic/TrigonometricSubstitutions.cu
   ${EVALUATION_DIR}/KnownIntegral/KnownIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/ConstantIntegral.cu
   ${EVALUATION_DIR}/KnownIntegral/PowerFunction.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleSineCosine.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleExponent.cu
   ${EVALUATION_DIR}/KnownIntegral/SimpleVariable.cu
-  ${EVALUATION_DIR}/KnownIntegral/SimpleArctan.cu
+  ${EVALUATION_DIR}/KnownIntegral/SimpleArctanArcsine.cu
+  ${EVALUATION_DIR}/KnownIntegral/SimpleTangentCotangent.cu
+  ${EVALUATION_DIR}/KnownIntegral/NonElementary.cu
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
 

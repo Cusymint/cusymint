@@ -87,6 +87,11 @@ namespace Test {
 
     PARSER_TEST(Sign, "sgn(x)", Sym::sgn(Sym::var()))
     PARSER_TEST(Absolute, "abs(x)", Sym::abs(Sym::var()))
+    PARSER_TEST(ErrorFunction, "erf(x)", Sym::erf(Sym::var()))
+    PARSER_TEST(SineIntegral, "Si(x)", Sym::si(Sym::var()))
+    PARSER_TEST(CosineIntegral, "Ci(x)", Sym::ci(Sym::var()))
+    PARSER_TEST(ExponentialIntegral, "Ei(x)", Sym::ei(Sym::var()))
+    PARSER_TEST(LogarithmicIntegral, "li(x)", Sym::li(Sym::var()))
 
     PARSER_TEST(MultiplicationOverAddition, "x+4*pi", Sym::var() + (Sym::num(4) * Sym::pi()))
     PARSER_TEST(MultiplicationOverSubtraction, "x-4*pi", Sym::var() - (Sym::num(4) * Sym::pi()))

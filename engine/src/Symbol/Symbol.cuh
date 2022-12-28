@@ -7,9 +7,11 @@
 
 #include "Addition.cuh"
 #include "Constants.cuh"
+#include "ErrorFunction.cuh"
 #include "ExpanderPlaceholder.cuh"
 #include "Hyperbolic.cuh"
 #include "Integral.cuh"
+#include "IntegralFunctions.cuh"
 #include "InverseTrigonometric.cuh"
 #include "Logarithm.cuh"
 #include "Polynomial.cuh"
@@ -70,6 +72,11 @@
             VC_CASE(Arccotangent, _instance, _member_function, __VA_ARGS__)                \
             VC_CASE(Logarithm, _instance, _member_function, __VA_ARGS__)                   \
             VC_CASE(Polynomial, _instance, _member_function, __VA_ARGS__)                  \
+            VC_CASE(ErrorFunction, _instance, _member_function, __VA_ARGS__)               \
+            VC_CASE(SineIntegral, _instance, _member_function, __VA_ARGS__)                \
+            VC_CASE(CosineIntegral, _instance, _member_function, __VA_ARGS__)              \
+            VC_CASE(ExponentialIntegral, _instance, _member_function, __VA_ARGS__)         \
+            VC_CASE(LogarithmicIntegral, _instance, _member_function, __VA_ARGS__)         \
             VC_CASE(Unknown, _instance, _member_function, __VA_ARGS__)                     \
         }                                                                                  \
                                                                                            \
@@ -108,6 +115,11 @@ namespace Sym {
         Arccotangent arccotangent;
         Logarithm logarithm;
         Polynomial polynomial;
+        ErrorFunction error_function;
+        SineIntegral sine_integral;
+        CosineIntegral cosine_integral;
+        ExponentialIntegral exponential_integral;
+        LogarithmicIntegral logarithmic_integral;
 
         constexpr static Sym::Type TYPE = Sym::Type::Symbol;
 
@@ -421,7 +433,6 @@ namespace Sym {
          * @brief Simplifies an expression
          *
          * @param help_space Help space
-         * @param
          *
          * @return A good result when the simplification succeds, an error result when the
          * help_space is too small or when the simplification result would be larger than
@@ -543,9 +554,12 @@ namespace Sym {
          *
          * @param `destination` This is what it is.
          *
-         * @return Number of symbols inserted.
+         * @return A good result with number of symbols inserted when the simplification succeds, an
+         * error result when the help_space is too small or when the simplification result would be
+         * larger than `capacity`
          */
-        __host__ __device__ size_t derivative_to(Symbol* const destination);
+        [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
+        derivative_to(SymbolIterator& destination);
     };
 
     /*

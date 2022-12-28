@@ -100,6 +100,11 @@ namespace Parser {
             ++pos;
             return Token::Ln;
         }
+        if (text.substr(pos+1,1)=="i") {
+            read_text += "i";
+            ++pos;
+            return Token::Li;
+        }
         return Token::SymbolicConstant;
     }
 
@@ -228,7 +233,14 @@ namespace Parser {
             break;
         case 'e':
             read_text += 'e';
-            state = Token::E;
+            if (text.substr(pos + 1, 2) == "rf") {
+                read_text += "rf";
+                pos += 2;
+                state = Token::Erf;
+            }
+            else {
+                state = Token::E;
+            }
             break;
         case 'p':
             read_text += 'p';
@@ -265,6 +277,39 @@ namespace Parser {
                 read_text += 'x';
                 ++pos;
                 state = Token::Differential;
+            }
+            else {
+                state = Token::SymbolicConstant;
+            }
+            break;
+        case 'S':
+            read_text += 'S';
+            if (text.substr(pos + 1, 1) == "i") {
+                read_text += 'i';
+                ++pos;
+                state = Token::Si;
+            }
+            else {
+                state = Token::SymbolicConstant;
+            }
+            break;
+        case 'C':
+            read_text += 'C';
+            if (text.substr(pos + 1, 1) == "i") {
+                read_text += 'i';
+                ++pos;
+                state = Token::Ci;
+            }
+            else {
+                state = Token::SymbolicConstant;
+            }
+            break;
+        case 'E':
+            read_text += 'E';
+            if (text.substr(pos + 1, 1) == "i") {
+                read_text += 'i';
+                ++pos;
+                state = Token::Ei;
             }
             else {
                 state = Token::SymbolicConstant;
