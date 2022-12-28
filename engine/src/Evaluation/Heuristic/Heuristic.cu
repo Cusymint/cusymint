@@ -1,6 +1,7 @@
 #include "Heuristic.cuh"
 
 #include "BringOutConstantsFromProduct.cuh"
+#include "IntegrateByParts.cuh"
 #include "LinearSubstitution.cuh"
 #include "SplitSum.cuh"
 #include "SubstituteEToX.cuh"
@@ -18,13 +19,20 @@ namespace Sym::Heuristic {
         is_function_of_trigs,        contains_constants_product,
         is_function_of_simple_trigs, is_function_of_simple_trigs,
         is_function_of_simple_trigs, is_function_of_linear_function,
+        is_simple_function,
+
     };
-    
+
     __device__ const Application APPLICATIONS[] = {
-        transform_function_of_ex,  split_sum,
-        do_universal_substitution, bring_out_constants_from_product,
-        substitute_sine,           substitute_cosine,
-        substitute_tangent,        substitute_linear_function,
+        transform_function_of_ex,
+        split_sum,
+        do_universal_substitution,
+        bring_out_constants_from_product,
+        substitute_sine,
+        substitute_cosine,
+        substitute_tangent,
+        substitute_linear_function,
+        integrate_simple_function_by_parts,
     };
 
 #ifdef __CUDA_ARCH__

@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("sin(2*x+1)"));
+    const auto integral = Sym::integral(Parser::parse_function("ctg(x)^2"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 

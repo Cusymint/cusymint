@@ -54,10 +54,17 @@ namespace Sym {
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Addition) {
-        if ((destination - 1)->is(0) && (destination - 2)->is(0)) {
+        if ((&destination - 1)->is(0) && (&destination - 2)->is(0)) {
             return -1;
         }
-        return Add<None, None>::init_reverse(*destination);
+        return Add<None, None>::init_reverse(destination);
+    }
+
+    DEFINE_DERIVATIVE_SIZE(Addition) {
+        if ((&destination - 1)->is(0) && (&destination - 2)->is(0)) {
+            return -1;
+        }
+        return Add<None, None>::Size::get_value();
     }
 
     __host__ __device__ bool Addition::is_sine_cosine_squared_sum(const Symbol* const expr1,
@@ -187,10 +194,17 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Negation)
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Negation) {
-        if ((destination - 1)->is(0)) {
+        if ((&destination - 1)->is(0)) {
             return 0;
         }
-        return Neg<None>::init_reverse(*destination);
+        return Neg<None>::init_reverse(destination);
+    }
+
+    DEFINE_DERIVATIVE_SIZE(Negation) {
+        if ((&destination - 1)->is(0)) {
+            return 0;
+        }
+        return Neg<None>::Size::get_value();
     }
 
     DEFINE_SIMPLIFY_IN_PLACE(Negation) {

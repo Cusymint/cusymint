@@ -14,6 +14,7 @@
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Symbol/Unknown.cuh"
 #include "Symbol/Variable.cuh"
 
 #define _META_TEST_MATCH(_name, _pattern, _expression, _should_match)      \
@@ -42,6 +43,11 @@
 
 #define META_TEST_INIT(_name, _pattern, ...) \
     TEST(MetaOperatorsInitTest, _name) { test_meta_init<MACRO_TYPE(_pattern)>(__VA_ARGS__); }
+
+#define META_TEST_INIT_REVERSE(_name, _pattern, ...)               \
+    TEST(MetaOperatorsInitReverseTest, _name) {                    \
+        test_meta_init_reverse<MACRO_TYPE(_pattern)>(__VA_ARGS__); \
+    }
 
 #define META_TEST_SIZE(_name, _pattern, _size)                       \
     TEST(MetaOperatorsSizeTest, _name) {                             \
@@ -105,6 +111,35 @@ namespace Test {
         void test_meta_init(const std::string& expected_expression, const Args&... args) {
             test_meta_init<T, Args...>(Parser::parse_function(expected_expression), args...);
         }
+
+        template <class T, class... Args>
+        void test_meta_init_reverse(const std::vector<Symbol>& expected_expression,
+                                    const Args&... args) {
+            static const size_t SAFETY_MULTIPLIER = 5;
+            std::vector<Symbol> expression(SAFETY_MULTIPLIER * expected_expression.size());
+            const size_t size = T::init_reverse(*expression.data(), {args...});
+            Symbol::reverse_symbol_sequence(expression.data(), size);
+            expression.resize(expression[0].size());
+            EXPECT_TRUE(
+                Symbol::are_expressions_equal(*expression.data(), *expected_expression.data()))
+                << "Expressions do not match:\n"
+                << expression.data()->to_string() << " <- got,\n"
+                << expected_expression.data()->to_string() << " <- expected\n";
+        }
+
+        template <class T, class... Args>
+        void test_meta_init_reverse(const std::string& expected_expression, const Args&... args) {
+            test_meta_init_reverse<T, Args...>(Parser::parse_function(expected_expression),
+                                               args...);
+        }
+
+        std::vector<Sym::Symbol> unknown_with_size(size_t size) {
+            std::vector<Sym::Symbol> result;
+            auto unknown = Unknown::create();
+            unknown.size = size;
+            result.push_back(unknown.symbol());
+            return result;
+        }
     }
 
     // Init
@@ -114,6 +149,7 @@ namespace Test {
     META_TEST_INIT(Integer, Integer<69>, "69")
     META_TEST_INIT(NumericConstant, Num, "123.456", 123.456)
     META_TEST_INIT(Copy, Copy, "x^2", *(var() ^ num(2)).data())
+    META_TEST_INIT(Skip, Skip, unknown_with_size(1), 1)
     // Simple OneArgOperators
     META_TEST_INIT(Sine, Sin<E>, "sin(e)")
     META_TEST_INIT(Cosine, Cos<Var>, "cos(x)")
@@ -164,6 +200,46 @@ namespace Test {
             << destination.data()->to_string() << " <- got,\n"
             << expected_expression.data()->to_string() << " <- expected\n";
     }
+
+    // Init_reverse
+    META_TEST_INIT_REVERSE(Variable, Var, "x")
+    META_TEST_INIT_REVERSE(Pi, Pi, "pi")
+    META_TEST_INIT_REVERSE(E, E, "e")
+    META_TEST_INIT_REVERSE(Integer, Integer<69>, "69")
+    META_TEST_INIT_REVERSE(NumericConstant, Num, "123.456", 123.456)
+    META_TEST_INIT_REVERSE(Copy, Copy, "x^2", *(var() ^ num(2)).data())
+    TEST(MetaOperatorsInitReverseTest, None) {
+        std::vector<Sym::Symbol> dummy = unknown_with_size(1);
+        EXPECT_EQ(None::init_reverse(dummy[0]), 0);
+    }
+    TEST(MetaOperatorsInitReverseTest, Skip) {
+        std::vector<Sym::Symbol> dummy = unknown_with_size(1);
+        const size_t val = 2;
+        EXPECT_EQ(Skip::init_reverse(dummy[0], {val}), val);
+    }
+    // Simple OneArgOperators
+    META_TEST_INIT_REVERSE(Sine, Sin<E>, "sin(e)")
+    META_TEST_INIT_REVERSE(Cosine, Cos<Var>, "cos(x)")
+    META_TEST_INIT_REVERSE(Tangent, Tan<Pi>, "tan(pi)")
+    META_TEST_INIT_REVERSE(Cotangent, Cot<Sin<Var>>, "cot(sin(x))")
+    META_TEST_INIT_REVERSE(Arcsine, Arcsin<E>, "arcsin(e)")
+    META_TEST_INIT_REVERSE(Arccosine, Arccos<E>, "arccos(e)")
+    META_TEST_INIT_REVERSE(Arctangent, Arctan<E>, "arctan(e)")
+    META_TEST_INIT_REVERSE(Arccotangent, Arccot<E>, "arccot(e)")
+    META_TEST_INIT_REVERSE(Logarithm, Ln<Var>, "ln(x)")
+    // Simple TwoArgOperators
+    META_TEST_INIT_REVERSE(Sum, (Add<Cos<E>, Pi>), "cos(e)+pi")
+    META_TEST_INIT_REVERSE(Product, (Mul<Cos<Var>, Pi>), "cos(x)*pi")
+    META_TEST_INIT_REVERSE(Power, (Pow<Cos<E>, Pi>), "cos(e)^pi")
+    // Advanced expressions
+    META_TEST_INIT_REVERSE(LongSum, (Sum<Var, Cos<Ln<Mul<Num, Var>>>, E, Integer<1>>),
+                           "x+(cos(ln(2*x))+(e+1))", 2)
+    META_TEST_INIT_REVERSE(LongProduct, (Prod<Add<Var, Num>, Var, Pow<E, Var>>), "(x+5.6)*(x*e^x)",
+                           5.6)
+    META_TEST_INIT_REVERSE(EToXTower, (Pow<E, Pow<E, Pow<E, Pow<E, Pow<E, Pow<E, Var>>>>>>),
+                           "e^e^e^e^e^e^x")
+    // Solution, Candidate, Integral, Vacancy, SingleIntegralVacancy do not have (and do not need)
+    // init_reverse
 
     template <class T> using Map = Add<Pow<Num, T>, Num>;
     TEST(MetaOperatorsInitTest, FromCreateWithComplexMap) {

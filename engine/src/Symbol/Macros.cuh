@@ -58,7 +58,10 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ void _fname(Util::StaticStack<Symbol*>& stack)
 
 #define INSERT_REVERSED_DERIVATIVE_AT_HEADER(_fname) \
-    __host__ __device__ ssize_t _fname(Symbol* const destination)
+    __host__ __device__ ssize_t _fname(Symbol& destination)
+
+#define DERIVATIVE_SIZE_HEADER(_fname) \
+    [[nodiscard]] __host__ __device__ ssize_t _fname(const Symbol& destination)
 
 #define SEAL_WHOLE_HEADER(_fname) __host__ __device__ void _fname()
 
@@ -121,6 +124,7 @@ template <class T, class U> struct MacroType<T(U)> {
          * @return Offset pointing right after created derivative (can be negative).     \
          */                                                                              \
         INSERT_REVERSED_DERIVATIVE_AT_HEADER(insert_reversed_derivative_at);             \
+        DERIVATIVE_SIZE_HEADER(derivative_size);                                         \
         __host__ __device__ static _name* create_reversed_at(Symbol* const destination); \
         SEAL_WHOLE_HEADER(seal_whole);
 
@@ -303,10 +307,16 @@ template <class T, class U> struct MacroType<T(U)> {
 #define DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) \
     INSERT_REVERSED_DERIVATIVE_AT_HEADER(_name::insert_reversed_derivative_at) // NOLINT
 
-#define DEFINE_INVALID_DERIVATIVE(_name)                               \
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                      \
-        Util::crash("Trying to calculate a derivative of %s", #_name); \
-        return 0; /* Just to silence warnings */                       \
+#define DEFINE_DERIVATIVE_SIZE(_name) DERIVATIVE_SIZE_HEADER(_name::derivative_size) // NOLINT
+
+#define DEFINE_INVALID_DERIVATIVE(_name)                                  \
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                         \
+        Util::crash("Trying to calculate a derivative of %s", #_name);    \
+        return 0; /* Just to silence warnings */                          \
+    }                                                                     \
+    DEFINE_DERIVATIVE_SIZE(_name) {                                       \
+        Util::crash("Trying to calculate derivative size of %s", #_name); \
+        return 0; /* Just to silence warnings */                          \
     }
 
 #define DEFINE_ZERO_ARGUMENT_OP_FUNCTIONS(_name)                                      \
@@ -361,12 +371,18 @@ template <class T, class U> struct MacroType<T(U)> {
                                                                                                  \
     DEFINE_SEAL_WHOLE(_name) { seal(); }
 
-#define DEFINE_ONE_ARG_OP_DERIVATIVE(_name, _derivative)                                \
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                                       \
-        if ((destination - 1)->is(0)) {                                                 \
-            return 0;                                                                   \
-        }                                                                               \
-        return Mul<MACRO_TYPE(_derivative), None>::init_reverse(*destination, {arg()}); \
+#define DEFINE_ONE_ARG_OP_DERIVATIVE(_name, _derivative)                               \
+    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(_name) {                                      \
+        if ((&destination - 1)->is(0)) {                                               \
+            return 0;                                                                  \
+        }                                                                              \
+        return Mul<MACRO_TYPE(_derivative), None>::init_reverse(destination, {arg()}); \
+    }                                                                                  \
+    DEFINE_DERIVATIVE_SIZE(_name) {                                                    \
+        if ((&destination - 1)->is(0)) {                                               \
+            return 0;                                                                  \
+        }                                                                              \
+        return Mul<MACRO_TYPE(_derivative), None>::size_with({arg()});                 \
     }
 
 #define TWO_ARGUMENT_OP_SYMBOL                                                                   \

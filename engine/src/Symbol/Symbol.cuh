@@ -424,7 +424,6 @@ namespace Sym {
          * @brief Simplifies an expression
          *
          * @param help_space Help space
-         * @param
          *
          * @return A good result when the simplification succeds, an error result when the
          * help_space is too small or when the simplification result would be larger than
@@ -546,9 +545,12 @@ namespace Sym {
          *
          * @param `destination` This is what it is.
          *
-         * @return Number of symbols inserted.
+         * @return A good result with number of symbols inserted when the simplification succeds, an
+         * error result when the help_space is too small or when the simplification result would be
+         * larger than `capacity`
          */
-        __host__ __device__ size_t derivative_to(Symbol* const destination);
+        [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
+        derivative_to(SymbolIterator& destination);
     };
 
     /*
