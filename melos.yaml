@@ -65,6 +65,30 @@ scripts:
         - web
       scope: 'cusymint_app'
 
+  build:linux:
+    run: melos exec --fail-fast -- \
+      "flutter build linux"
+    select-package:
+      dir-exists:
+        - linux
+      scope: 'cusymint_app'
+
+  build:windows:
+    run: melos exec --fail-fast -- \
+      "flutter build windows"
+    select-package:
+      dir-exists:
+        - windows
+      scope: 'cusymint_app'
+
+  build:android:
+    run: melos exec --fail-fast -- \
+      "flutter build apk --split-per-abi"
+    select-package:
+      dir-exists:
+        - android
+      scope: 'cusymint_app'
+
 command:
   bootstrap:
     usePubspecOverrides: true
