@@ -81,6 +81,17 @@ scripts:
         - windows
       scope: 'cusymint_app'
 
+
+  build:windows:msix:
+    run: melos exec --fail-fast -- \
+      "flutter pub run msix:create"
+    select-package:
+      depends-on: 
+        - msix
+      dir-exists:
+        - windows
+      scope: 'cusymint_app'
+
   build:android:
     run: melos exec --fail-fast -- \
       "flutter build apk --split-per-abi"
