@@ -29,7 +29,7 @@ namespace Sym {
         expressions_swap(INITIAL_ARRAYS_SYMBOLS_CAPACITY, INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
         integrals(INITIAL_ARRAYS_SYMBOLS_CAPACITY, INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
         integrals_swap(INITIAL_ARRAYS_SYMBOLS_CAPACITY, INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
-        help_space(INITIAL_ARRAYS_SYMBOLS_CAPACITY * HELP_SPACE_MULTIPLIER,
+        help_space(INITIAL_ARRAYS_SYMBOLS_CAPACITY * HELP_SPACE_MULTIPLIER * CHECK_COUNT,
                    INITIAL_ARRAYS_EXPRESSIONS_CAPACITY * CHECK_COUNT),
         scan_array_1(CHECK_COUNT * INITIAL_ARRAYS_EXPRESSIONS_CAPACITY),
         scan_array_2(CHECK_COUNT * INITIAL_ARRAYS_EXPRESSIONS_CAPACITY) {}
@@ -180,7 +180,7 @@ namespace Sym {
         scan_array_2.zero_mem();
         cudaDeviceSynchronize();
 
-        help_space.reoffset_like<SubexpressionCandidate>(integrals.iterator(), HELP_SPACE_MULTIPLIER, Heuristic::COUNT);
+        help_space.reoffset_like<SubexpressionCandidate>(integrals.iterator(), HELP_SPACE_MULTIPLIER, Heuristic::COUNT);;
 
         Kernel::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(
             integrals, expressions, help_space, scan_array_1, scan_array_2);
@@ -311,8 +311,6 @@ namespace Sym {
 
             check_heuristics_applicability();
             apply_heuristics();
-
-            //printf("HEUR:\n%s\n\n", integrals.to_string().c_str());
 
             if (has_original_expression_failed()) {
                 return std::nullopt;

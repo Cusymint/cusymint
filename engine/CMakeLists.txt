@@ -74,6 +74,7 @@ add_executable(
   testcusymint
   ${TEST_PARSER_DIR}/Scanner.cu
   ${TEST_PARSER_DIR}/Parser.cu
+  ${TEST_DIR}/ExpressionArray.cu
   ${TEST_DIR}/Heuristic.cu
   ${TEST_DIR}/IntegralCommons.cu
   ${TEST_DIR}/KnownIntegral.cu

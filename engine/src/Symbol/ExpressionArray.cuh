@@ -45,6 +45,19 @@ namespace Sym {
                                             const size_t expression_count, const size_t start);
 
         /*
+         * @brief Repeats and offsets `expression_capacities` and
+         * `expression_capacities_sum` filled with capacities of original array.
+         * E.g. original capacities and sums with `[2,4]` and `[2,6]` with `original_expression_count=3` and `original_total_size=7`
+         * shall be repeated to `[2,4,1,2,4,1,2,4,...]` and `[2,6,7,9,13,14,16,20,...]` 
+         *
+         * TODO description
+         */
+        __global__ void repeat_capacities(Util::DeviceArray<size_t> expression_capacities,
+                                          Util::DeviceArray<size_t> expression_capacities_sum,
+                                          const size_t original_expression_count,
+                                          const size_t original_total_size);
+
+        /*
          * @brief Copies expressions from one array to another while changing offset of each
          * expression
          *
@@ -384,7 +397,7 @@ namespace Sym {
          */
         template <class U = Symbol>
         void reoffset_like(const typename ExpressionArray<U>::Iterator& other,
-                                  const size_t multiplier = 1, const size_t count = 1) {
+                           const size_t multiplier = 1, const size_t count = 1) {
             if (other.expression_count() == 0 || count == 0) {
                 expression_count = 0;
                 return;
@@ -409,11 +422,15 @@ namespace Sym {
                 resize_capacities(count * other.expression_count() * REALLOC_MULTIPLIER);
             }
 
-            for (int i = 0; i < count; ++i) {
-                cudaMemcpy(capacities.data() + i * other.expression_count(), other.array->capacities.data() + other.index_,
-                           other.expression_count() * sizeof(size_t), cudaMemcpyDeviceToDevice);
-                cudaMemcpy(capacities_sum.data() + i * other.expression_count(), other.array->capacities_sum.data() + other.index_,
-                           other.expression_count() * sizeof(size_t), cudaMemcpyDeviceToDevice);
+            cudaMemcpy(capacities.data(), other.array->capacities.data() + other.index_,
+                       other.expression_count() * sizeof(size_t), cudaMemcpyDeviceToDevice);
+            cudaMemcpy(capacities_sum.data(), other.array->capacities_sum.data() + other.index_,
+                       other.expression_count() * sizeof(size_t), cudaMemcpyDeviceToDevice);
+
+            if (count > 1) {
+                ExpressionArrayKernel::repeat_capacities<<<KERNEL_BLOCK_COUNT, KERNEL_BLOCK_SIZE>>>(
+                    capacities, capacities_sum, other.expression_count(),
+                    other_total_size_past_iterator);
             }
 
             if (multiplier != 1) {
