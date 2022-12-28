@@ -11,6 +11,7 @@ namespace Test {
                    "e^e^e^e^e^e^x")
 
     HEURISTIC_TEST(IntegralWithConstant, "10/(1+x^2)", "arctan(x)*10")
+    HEURISTIC_TEST(IntegralWithAlmostConstant, "sgn(e^x^2)/(1+x^2)", "arctan(x)*sgn(e^x^2)")
     HEURISTIC_TEST(Polynomial, "x^3+3*x^2+8*x+12", "(1/4)*(x^4)+x^3+(x^2)*4+x*12")
     HEURISTIC_TEST(ArbitraryProduct, "pi*2*e*e^x*10*sin(e^x)*ln(pi)", "-1*cos(e^x)*ln(pi)*20*e*pi")
 
@@ -27,6 +28,4 @@ namespace Test {
     HEURISTIC_TEST(LinearSubstitutionAxB, "sin(2*x+1)", "-0.5*cos(2*x+1)")
     HEURISTIC_TEST(LinearSubstitutionNoFreeTerm, "(e^x)^2", "0.5e^(2x)")
     HEURISTIC_TEST(LinearSubstitutionNoCoefficient, "cos(x+c+pi)", "sin(x+c+pi)")
-
-    // TODO: Universal substitution when simplification is powerful enough
 };
