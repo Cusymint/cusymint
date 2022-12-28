@@ -10,7 +10,8 @@ services:
       resources:
         reservations:
           devices:
-            - capabilities: ["gpu"]
+            - driver: nvidia
+              capabilities: ["gpu"]
               count: 1
 
   webapp:
