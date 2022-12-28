@@ -136,12 +136,12 @@ namespace Sym {
         /*
          * @brief Block size of CUDA kernels used by `solve_integral`
          */
-        static constexpr size_t BLOCK_SIZE = 256;
+        static constexpr size_t BLOCK_SIZE = 1;
 
         /*
          * @brief Block count of CUDA kernels used by `solve_integral`
          */
-        static constexpr size_t BLOCK_COUNT = 32;
+        static constexpr size_t BLOCK_COUNT = 128;
 
         /*
          * @brief How many symbols can an expression hold initially

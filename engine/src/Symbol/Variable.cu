@@ -24,9 +24,11 @@ namespace Sym {
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Variable) {
-        destination->init_from(NumericConstant::with_value(1));
+        destination.init_from(NumericConstant::with_value(1));
         return 1;
     }
+
+    DEFINE_DERIVATIVE_SIZE(Variable) { return 1; }
 
     std::vector<Symbol> var() {
         std::vector<Symbol> var(1);

@@ -80,19 +80,25 @@ namespace Sym {
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(NumericConstant) {
-        destination->init_from(NumericConstant::with_value(0));
+        destination.init_from(NumericConstant::with_value(0));
         return 1;
     }
+
+    DEFINE_DERIVATIVE_SIZE(NumericConstant) { return 1; }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(KnownConstant) {
-        destination->init_from(NumericConstant::with_value(0));
+        destination.init_from(NumericConstant::with_value(0));
         return 1;
     }
 
+    DEFINE_DERIVATIVE_SIZE(KnownConstant) { return 1; }
+
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(UnknownConstant) {
-        destination->init_from(NumericConstant::with_value(0));
+        destination.init_from(NumericConstant::with_value(0));
         return 1;
     }
+
+    DEFINE_DERIVATIVE_SIZE(UnknownConstant) { return 1; }
 
     __host__ __device__ NumericConstant NumericConstant::with_value(double value) {
         NumericConstant constant = NumericConstant::create();

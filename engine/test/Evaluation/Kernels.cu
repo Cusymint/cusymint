@@ -3,8 +3,10 @@
 #include <thrust/scan.h>
 
 #include "Evaluation/Integrator.cuh"
+#include "Evaluation/Status.cuh"
 #include "IntegratorUtils.cuh"
 #include "Symbol/ExpressionArray.cuh"
+#include "Symbol/Integral.cuh"
 #include "Symbol/Macros.cuh"
 #include "Utils/DeviceArray.cuh"
 
@@ -20,17 +22,25 @@ namespace Test {
             "1/(1/(1/(1/(x))))",
             "2*5*7*x^5/(--(14*x^2))",
             "3*(2*x+4*(10*x+2)+5)+1",
-            "(x+1)^20",
+            "(x+1)^30",
         };
         StringVector solutions_vector = {
-            "1",        "e^(pi*x*sin(x))", "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3+x^6)", "x", "5*x^3",
-            "40+126*x", "(1+x)^20",
+            "1",
+            "e^(pi*x*sin(x))",
+            "(((((2*(x)^2)/((((3+x)+(5*(x)^2))+(10*(x)^3))+(x)^6))+((x)^3/" // NOLINT(bugprone-suspicious-missing-comma)
+            "((((3+x)+(5*(x)^2))+(10*(x)^3))+(x)^6)))+(9/((((3+x)+(5*(x)^2))+(10*(x)^3))+(x)^6))))",
+            "x",
+            "5*x^3",
+            "40+126*x",
+            "(1+x)^30",
         };
 
         std::vector<Sym::EvaluationStatus> expected_statuses = {
             Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done,
-            Sym::EvaluationStatus::ReallocationRequest,
+            Sym::EvaluationStatus::Done, // This one passes only due to the available cache being
+                                         // larger than what we allocate here. If this changes, the
+                                         // test should be changed
             Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done,
@@ -45,7 +55,10 @@ namespace Test {
             with_count(expressions.size());
         Util::DeviceArray<Sym::EvaluationStatus> statuses(expressions.size(), true);
 
-        Sym::Kernel::simplify<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
+        const size_t block_count =
+            Util::block_count(expressions.size(), Sym::Integrator::BLOCK_SIZE);
+
+        Sym::Kernel::simplify<<<block_count, Sym::Integrator::BLOCK_SIZE>>>(
             expressions, destination, help_spaces, statuses);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
@@ -354,9 +367,9 @@ namespace Test {
         std::vector<HeuristicPairVector> expected_heuristics = {
             {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}, {6, {1, 0}}},
             {{0, {1, 0}}},
-            {{3, {1, 1}}},
+            {{3, {1, 1}}, {7, {1, 0}}},
             {{1, {2, 1}}},
-            {{2, {1, 0}}, {3, {1, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}, {7, {1, 0}}},
             {}};
 
         ExprVector expected_expressions_vector =
@@ -391,9 +404,9 @@ namespace Test {
         std::vector<HeuristicPairVector> expected_heuristics = {
             {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}, {6, {1, 0}}},
             {{0, {1, 0}}},
-            {{3, {1, 1}}},
+            {{3, {1, 1}}, {7, {1, 0}}},
             {{1, {2, 1}}},
-            {{2, {1, 0}}, {3, {1, 1}}},
+            {{2, {1, 0}}, {3, {1, 1}}, {7, {1, 0}}},
             {}};
 
         ExprVector expected_expression_vector = get_expected_expression_vector(expected_heuristics);
@@ -502,6 +515,12 @@ namespace Test {
                                       ((Sym::inv(Sym::num(1) + (Sym::var() ^ Sym::num(2)))) ^
                                        Sym::inv(Sym::num(2)))),
                                  {Sym::tan(Sym::var())})),
+            nth_expression_candidate(
+                2, Sym::integral(Sym::inv(Sym::num(23) * Sym::cnst("c")) * Sym::var(),
+                                 {Sym::num(23) * Sym::cnst("c") * Sym::var()})),
+            nth_expression_candidate(
+                4, Sym::integral(Sym::inv(Sym::num(0.5)) * (Sym::num(2) * Sym::tan(Sym::var())),
+                                 {Sym::num(0.5) * Sym::var()})),
         };
 
         EvalStatusVector expected_integral_statuses = {
@@ -509,6 +528,7 @@ namespace Test {
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
         };
 
         EvalStatusVector expected_expression_statuses = {

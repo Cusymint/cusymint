@@ -70,6 +70,9 @@ namespace Sym::Static {
 
         // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables, cert-err58-cpp)
 
+        using One = Integer<1>;
+        __device__ Symbol ONE[One::Size::get_value()];
+
         __device__ Symbol* const STATIC_FUNCTIONS[] = {
             IDENTITY,
             INVERSE,
@@ -84,6 +87,7 @@ namespace Sym::Static {
             UNIVERSAL_DERIVATIVE,
             TAN_X_OVER_2,
             E_TO_X,
+            ONE,
             PYTHAGOREAN_SIN_COS,
             NEG_PYTHAGOREAN_SIN_COS,
             TANGENT_AS_SINE,
@@ -91,6 +95,7 @@ namespace Sym::Static {
             SINE_AS_TANGENT,
             COSINE_AS_TANGENT,
             TANGENT_DERIVATIVE,
+            ONE,
         };
 
         __device__ const StaticFunctionInitializer STATIC_FUNCTIONS_INITIALIZERS[] = {
@@ -107,6 +112,7 @@ namespace Sym::Static {
             UniversalDerivative::init,
             init_tan_x_over_2,
             EToX::init,
+            One::init,
             PythagoreanSinCos::init,
             NegPythagoreanSinCos::init,
             TangentAsSine::init,
@@ -114,6 +120,7 @@ namespace Sym::Static {
             SineAsTangent::init,
             CosineAsTangent::init,
             TangentDerivative::init,
+            One::init,
         };
 
         constexpr size_t STATIC_FUNCTION_COUNT =
@@ -146,6 +153,7 @@ namespace Sym::Static {
 
     __device__ const Symbol& e_to_x() { return *E_TO_X; }
 
+    __device__ const Symbol& one() { return *ONE; }
     __device__ const Symbol& pythagorean_sin_cos() { return *PYTHAGOREAN_SIN_COS; }
     __device__ const Symbol& neg_pythagorean_sin_cos() { return *NEG_PYTHAGOREAN_SIN_COS; }
     __device__ const Symbol& tangent_as_sine() { return *TANGENT_AS_SINE; }

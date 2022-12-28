@@ -1,6 +1,7 @@
 #include "IntegratorKernels.cuh"
 
 #include "Heuristic/Heuristic.cuh"
+#include "Integrator.cuh"
 #include "KnownIntegral/KnownIntegral.cuh"
 #include "Symbol/SymbolType.cuh"
 
@@ -21,6 +22,60 @@ namespace Sym {
 namespace Sym::Kernel {
     namespace {
         constexpr size_t TRANSFORM_GROUP_SIZE = 32;
+
+        __device__ EvaluationStatus simpilfy_with_cache(const ExpressionArray<>& expressions,
+                                                        ExpressionArray<>& destination,
+                                                        const size_t expr_idx, Symbol* cache) {
+            const size_t cache_symbols_per_thread = SIMPLIFY_SHARED_MEM_SYMBOLS / blockDim.x;
+            const size_t cache_offset = cache_symbols_per_thread * threadIdx.x;
+
+            Symbol& expr_cache = cache[cache_offset];
+            const size_t expr_cache_size =
+                cache_symbols_per_thread / (1 + Integrator::HELP_SPACE_MULTIPLIER);
+
+            Symbol& help_space_cache = cache[cache_offset + expr_cache_size];
+            const size_t help_space_cache_size =
+                expr_cache_size * Integrator::HELP_SPACE_MULTIPLIER;
+
+            expressions[expr_idx].copy_to(expr_cache);
+            auto help_space_iterator =
+                SymbolIterator::from_at(help_space_cache, 0, help_space_cache_size);
+
+            if (help_space_iterator.is_error()) {
+                return EvaluationStatus::OutOfCache;
+            }
+
+            auto good_iterator = help_space_iterator.good();
+            const auto result = expr_cache.simplify(good_iterator);
+
+            if (result.is_good()) {
+                if (expr_cache.size() > destination.expression_capacity(expr_idx)) {
+                    return EvaluationStatus::ReallocationRequest;
+                }
+
+                expr_cache.copy_to(destination[expr_idx]);
+                return EvaluationStatus::Done;
+            }
+
+            return EvaluationStatus::OutOfCache;
+        }
+
+        __device__ EvaluationStatus simpilfy_without_cache(const ExpressionArray<>& expressions,
+                                                           ExpressionArray<>& destination,
+                                                           const size_t expr_idx,
+                                                           ExpressionArray<>& help_spaces) {
+            expressions[expr_idx].copy_to(destination[expr_idx]);
+            auto help_space_iterator = SymbolIterator::from_at(
+                help_spaces[expr_idx], 0, help_spaces.expression_capacity(expr_idx));
+
+            if (help_space_iterator.is_error()) {
+                return EvaluationStatus::ReallocationRequest;
+            }
+
+            auto good_iterator = help_space_iterator.good();
+            const auto result = destination[expr_idx].simplify(good_iterator);
+            return result_to_evaluation_status(result);
+        }
     }
 
     /*
@@ -93,28 +148,34 @@ namespace Sym::Kernel {
     __global__ void simplify(const ExpressionArray<> expressions, ExpressionArray<> destination,
                              ExpressionArray<> help_spaces,
                              Util::DeviceArray<EvaluationStatus> statuses) {
-        const size_t thread_count = Util::thread_count();
-        const size_t thread_idx = Util::thread_idx();
+        __shared__ Symbol cache[SIMPLIFY_SHARED_MEM_SYMBOLS];
+        const size_t expr_idx = Util::thread_idx();
 
-        for (size_t expr_idx = thread_idx; expr_idx < expressions.size();
-             expr_idx += thread_count) {
-            if (statuses[expr_idx] == EvaluationStatus::Done) {
-                continue;
-            }
-
-            expressions[expr_idx].copy_to(destination[expr_idx]);
-            auto help_space_iterator = SymbolIterator::from_at(
-                help_spaces[expr_idx], 0, help_spaces.expression_capacity(expr_idx));
-
-            if (help_space_iterator.is_error()) {
-                statuses[expr_idx] = EvaluationStatus::ReallocationRequest;
-                continue;
-            }
-
-            auto good_iterator = help_space_iterator.good();
-            const auto result = destination[expr_idx].simplify(good_iterator);
-            statuses[expr_idx] = result_to_evaluation_status(result);
+        if (expr_idx >= expressions.size() || statuses[expr_idx] == EvaluationStatus::Done) {
+            return;
         }
+
+        const size_t cache_symbols_per_thread = SIMPLIFY_SHARED_MEM_SYMBOLS / blockDim.x;
+        const size_t expr_cache_size =
+            cache_symbols_per_thread / (1 + Integrator::HELP_SPACE_MULTIPLIER);
+        const bool use_cache =
+            expressions[expr_idx].size() * (1 + Integrator::HELP_SPACE_MULTIPLIER) <=
+                cache_symbols_per_thread &&
+            (statuses[expr_idx] != EvaluationStatus::ReallocationRequest ||
+             destination.expression_capacity(expr_idx) <= expr_cache_size &&
+                 expressions.size() < expr_cache_size);
+
+        if (use_cache) {
+            statuses[expr_idx] = simpilfy_with_cache(expressions, destination, expr_idx, cache);
+
+            if (statuses[expr_idx] != EvaluationStatus::OutOfCache) {
+                return;
+            }
+        }
+
+        // If we get here, we either didn't use cache or got EvaluationStatus::OutOfCache
+        statuses[expr_idx] =
+            simpilfy_without_cache(expressions, destination, expr_idx, help_spaces);
     }
 
     __global__ void

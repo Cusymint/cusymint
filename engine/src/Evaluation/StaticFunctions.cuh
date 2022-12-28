@@ -24,6 +24,7 @@ namespace Sym::Static {
 
     __device__ const Symbol& e_to_x();
 
+    __device__ const Symbol& one();
     // sqrt(1-x^2)
     __device__ const Symbol& pythagorean_sin_cos();
     // -sqrt(1-x^2)

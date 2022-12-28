@@ -30,6 +30,10 @@ namespace Sym {
 }
 
 namespace Sym::Kernel {
+    static constexpr size_t SIMPLIFY_SHARED_MEM_BYTES = 48LU * 1024LU;
+    static constexpr size_t SIMPLIFY_SHARED_MEM_SYMBOLS =
+        SIMPLIFY_SHARED_MEM_BYTES / sizeof(Symbol);
+
     /*
      * @brief Simplifies `expressions`
      *
