@@ -6,7 +6,7 @@ on:
     branches:
       - master
     tags:
-      - 'engine_*' # Push events to matching engine_*, i.e. engine_1.0.0
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
   
   pull_request:
     branches:

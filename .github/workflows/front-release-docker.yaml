@@ -6,7 +6,7 @@ on:
     branches:
       - master
     tags:
-      - 'app_*' # Push events to matching app_*, i.e. app_1.0.0
+      - 'v*' # Push events to matching v*, i.e. v1.0.0
   
   pull_request:
     branches:
