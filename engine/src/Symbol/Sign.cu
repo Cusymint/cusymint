@@ -74,6 +74,24 @@ namespace Sym {
             return true;
         }
 
+        if (arg().is(Type::Sign)) {
+            arg().move_to(symbol());
+            return true;
+        }
+
+        if (Pow<Any, Num>::match(symbol())) {
+            double& exponent = arg().as<Power>().arg2().as<NumericConstant>().value;
+
+            if (floor(exponent) == exponent) {
+                if (static_cast<int64_t>(exponent) % 2 == 0) {
+                    exponent = 2.0;
+                }
+                else {
+                    exponent = 1.0;
+                }
+            }
+        }
+
         return true;
     }
 

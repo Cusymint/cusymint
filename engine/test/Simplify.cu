@@ -189,7 +189,8 @@ namespace Test {
     EQUALITY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
 
     SIMPLIFY_TEST(PolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)",
-                  Sym::num(0.1) + Sym::num(-0.1) * Sym::var() / Parser::parse_function("(3+x+5*x^2+10*x^3)") +
+                  Sym::num(0.1) +
+                      Sym::num(-0.1) * Sym::var() / Parser::parse_function("(3+x+5*x^2+10*x^3)") +
                       Parser::parse_function("1.5x^2/(3+x+5*x^2+10*x^3)") +
                       Parser::parse_function("8.7/(3+x+5*x^2+10*x^3)"))
     SIMPLIFY_TEST(
@@ -253,4 +254,17 @@ namespace Test {
 
     SIMPLIFY_TEST(ExponentialIntegralOfLogarithm, "1+Ei(ln(x+2))", "1+li(2+x)")
     SIMPLIFY_TEST(LogarithmicIntegralOfExponential, "5*li(e^(pi*x))", "5*Ei(pi*x)")
+
+    SIMPLIFY_TEST(SignOfConstant1, "sgn(-6)", "-1")
+    SIMPLIFY_TEST(SignOfConstant2, "sgn(348)", "1")
+    SIMPLIFY_TEST(SignOfConstant3, "sgn(0)", "0")
+    SIMPLIFY_TEST_NO_ACTION(SignOfVariable, "sgn(x)")
+    SIMPLIFY_TEST(OneOverSign, "1/sgn(sin(x))", "sgn(sin(x))")
+    SIMPLIFY_TEST(SquareOfAbsoluteValue, "abs(x)^2", "x^2")
+    SIMPLIFY_TEST(AbsoluteValueOfSquare, "abs(x^2)", "x^2")
+    SIMPLIFY_TEST(EvenPowerOfAbsoluteValue, "abs(x)^78232", "x^78232")
+    SIMPLIFY_TEST(AbsoluteValueOfEvenPower, "abs(x^78232)", "x^78232")
+    SIMPLIFY_TEST(SignOfSign, "sgn(sgn(tan(x)))", "sgn(tan(x))")
+    SIMPLIFY_TEST(AbsolutevalueOfAbsoluteValue, "abs(abs(cot(x)))", "abs(cot(x))")
+    SIMPLIFY_TEST(AbsoluteValueOfNegation, "abs(-x)", "abs(x)")
 }
