@@ -3,7 +3,7 @@
 #include "Symbol/MetaOperators.cuh"
 
 namespace Sym::Heuristic {
-    __device__ CheckResult is_sum(const Integral& integral) {
+    __device__ CheckResult is_sum(const Integral& integral, Symbol&  /*help_space*/) {
         if (integral.integrand().is(Type::Addition)) {
             return {2, 1};
         }

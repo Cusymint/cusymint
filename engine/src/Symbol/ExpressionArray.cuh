@@ -45,6 +45,19 @@ namespace Sym {
                                             const size_t expression_count, const size_t start);
 
         /*
+         * @brief Repeats and offsets `expression_capacities` and
+         * `expression_capacities_sum` filled with capacities of original array.
+         * E.g. original capacities and sums with `[2,4]` and `[2,6]` with `original_expression_count=3` and `original_total_size=7`
+         * shall be repeated to `[2,4,1,2,4,1,2,4,...]` and `[2,6,7,9,13,14,16,20,...]` 
+         *
+         * TODO description
+         */
+        __global__ void repeat_capacities(Util::DeviceArray<size_t> expression_capacities,
+                                          Util::DeviceArray<size_t> expression_capacities_sum,
+                                          const size_t original_expression_count,
+                                          const size_t original_total_size);
+
+        /*
          * @brief Copies expressions from one array to another while changing offset of each
          * expression
          *
@@ -372,19 +385,20 @@ namespace Sym {
         }
 
         /*
-         * @brief Sets expression count and their offsets to the same as the ones in `other`.
-         * Current contents of the array turns into garbage.
+         * @brief Sets expression count and their offsets to the same as the ones in `other`,
+         * concatenated `count` times. Current contents of the array turns into garbage.
          *
          * @param other Iterator to an array from which sizes and offsets are going to be copied.
          * Everything will be copied as if the array begun at the element the iterator is pointing
          * to.
+         * @param count Number of copies of `other`-like spaces created
          * @param multiplier The capacities copied from `other` are all going to be multiplied by
          * `multiplier`
          */
         template <class U = Symbol>
         void reoffset_like(const typename ExpressionArray<U>::Iterator& other,
-                           const size_t multiplier = 1) {
-            if (other.expression_count() == 0) {
+                           const size_t multiplier = 1, const size_t count = 1) {
+            if (other.expression_count() == 0 || count == 0) {
                 expression_count = 0;
                 return;
             }
@@ -400,12 +414,12 @@ namespace Sym {
             const size_t other_total_size_past_iterator =
                 other_total_size - other_total_size_up_to_iterator;
 
-            if (multiplier * other_total_size_past_iterator > data.size()) {
-                resize_data(other_total_size_past_iterator * REALLOC_MULTIPLIER);
+            if (count * multiplier * other_total_size_past_iterator > data.size()) {
+                resize_data(count * other_total_size_past_iterator * REALLOC_MULTIPLIER);
             }
 
-            if (other.expression_count() > capacities.size()) {
-                resize_capacities(other.expression_count() * REALLOC_MULTIPLIER);
+            if (count * other.expression_count() > capacities.size()) {
+                resize_capacities(count * other.expression_count() * REALLOC_MULTIPLIER);
             }
 
             cudaMemcpy(capacities.data(), other.array->capacities.data() + other.index_,
@@ -413,13 +427,19 @@ namespace Sym {
             cudaMemcpy(capacities_sum.data(), other.array->capacities_sum.data() + other.index_,
                        other.expression_count() * sizeof(size_t), cudaMemcpyDeviceToDevice);
 
+            if (count > 1) {
+                ExpressionArrayKernel::repeat_capacities<<<KERNEL_BLOCK_COUNT, KERNEL_BLOCK_SIZE>>>(
+                    capacities, capacities_sum, other.expression_count(),
+                    other_total_size_past_iterator);
+            }
+
             if (multiplier != 1) {
                 ExpressionArrayKernel::
                     multiply_capacities<<<KERNEL_BLOCK_COUNT, KERNEL_BLOCK_SIZE>>>(
                         capacities, capacities_sum, multiplier);
             }
 
-            expression_count = other.expression_count();
+            expression_count = count * other.expression_count();
         }
 
         /*

@@ -40,9 +40,7 @@ namespace Sym {
                symbol->as<Solution>().expression_offset == expression_offset;
     }
 
-    DEFINE_IS_FUNCTION_OF(Solution) {
-        return expression().is_function_of(expressions, expression_count);
-    }
+    DEFINE_IS_FUNCTION_OF(Solution) { return results[expression_offset]; } // NOLINT
 
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Solution) {
         if (substitution_count > 0) {

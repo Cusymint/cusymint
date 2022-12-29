@@ -22,9 +22,7 @@ namespace Sym {
 
     DEFINE_NO_OP_SIMPLIFY_IN_PLACE(SubexpressionCandidate)
 
-    DEFINE_IS_FUNCTION_OF(SubexpressionCandidate) {
-        return arg().is_function_of(expressions, expression_count);
-    }
+    DEFINE_IS_FUNCTION_OF(SubexpressionCandidate) { return results[1]; } // NOLINT
 
     [[nodiscard]] std::string SubexpressionCandidate::to_string() const {
         return fmt::format("SubexpressionCandidate{{uid={}, created_by={}, ({}, {}, {}), ({})}}",

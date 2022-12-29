@@ -6,7 +6,7 @@
 #include "Utils/Meta.cuh"
 
 namespace Sym::Heuristic {
-    __device__ CheckResult is_function_of_linear_function(const Integral& integral) {
+    __device__ CheckResult is_function_of_linear_function(const Integral& integral, Symbol& help_space) {
         const auto& integrand = integral.integrand();
 
         if (integrand.size() == 1) {
@@ -23,7 +23,7 @@ namespace Sym::Heuristic {
             }
         }
 
-        if (linear_expr != nullptr && integrand.is_function_of(*linear_expr)) {
+        if (linear_expr != nullptr && integrand.is_function_of(&help_space, *linear_expr)) {
             return {1, 0};
         }
 
