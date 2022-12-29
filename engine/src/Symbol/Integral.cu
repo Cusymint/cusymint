@@ -222,14 +222,14 @@ namespace Sym {
         std::string last_substitution_name;
 
         if (substitution_count == 0) {
-            return fmt::format(R"(\int {}\dd x)", integrand_copy.data()->to_tex());
+            return fmt::format(R"(\int {}\text{{d}} x)", integrand_copy.data()->to_tex());
         }
 
         last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
         integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count -
                                                                               1);
 
-        return fmt::format(R"(\int {}\dd {}_{{ {} }})", integrand_copy.data()->to_tex(),
+        return fmt::format(R"(\int {}\text{{d}} {}_{{ {} }})", integrand_copy.data()->to_tex(),
                            last_substitution_name, first_substitution().to_tex());
     }
 

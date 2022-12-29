@@ -42,7 +42,7 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format(R"(\text{{Substitute}}\: {}={}, \dd {}={} \dd {})", substitution_name,
+            return fmt::format(R"(\text{{Substitute}}\: {}={}, \text{{d}} {}={} \text{{d}} {})", substitution_name,
                                substitution.data()->to_tex(), substitution_name,
                                derivative.data()->to_tex(), variable_name);
         }
@@ -103,7 +103,7 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format(R"(\text{{Solve integral:}} \int {} \dd {} = {} + C)",
+            return fmt::format(R"(\text{{Solve integral:}} \int {} \text{{d}} {} = {} + C)",
                                integral.data()->as<Integral>().integrand().to_tex(), variable_name,
                                solution.data()->to_tex());
         }
