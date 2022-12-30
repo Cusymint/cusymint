@@ -74,7 +74,7 @@ namespace Sym::Heuristic {
         }
     }
 
-    __device__ CheckResult is_simple_function(const Integral& integral) {
+    __device__ CheckResult is_simple_function(const Integral& integral, Symbol&  /*help_space*/) {
         if (integral.integrand().size() == 2) {
             return {1, 1};
         }

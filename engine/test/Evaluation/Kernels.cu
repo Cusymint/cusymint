@@ -2,6 +2,7 @@
 
 #include <thrust/scan.h>
 
+#include "Evaluation/Heuristic/Heuristic.cuh"
 #include "Evaluation/Integrator.cuh"
 #include "Evaluation/Status.cuh"
 #include "IntegratorUtils.cuh"
@@ -377,13 +378,14 @@ namespace Test {
             get_expected_expression_vector(expected_heuristics);
 
         auto expressions = Sym::ExpressionArray(expressions_vector);
+        auto help_spaces = with_count(COUNT * integrals_vector.size());
         Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * integrals_vector.size());
         Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * expressions_vector.size());
 
         Sym::Kernel::check_heuristics_applicability<<<Sym::Integrator::BLOCK_COUNT,
                                                       Sym::Integrator::BLOCK_SIZE>>>(
-            from_string_vector_with_candidate(integrals_vector), expressions, new_integrals_flags,
-            new_expressions_flags);
+            from_string_vector_with_candidate(integrals_vector), expressions, help_spaces,
+            new_integrals_flags, new_expressions_flags);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
@@ -541,13 +543,14 @@ namespace Test {
 
         auto integrals = Sym::ExpressionArray<Sym::SubexpressionCandidate>(h_integrals);
         auto expressions = Sym::ExpressionArray(expressions_vector);
+        auto help_spaces = with_count(COUNT * integrals_vector.size());
 
         Util::DeviceArray<uint32_t> new_integrals_flags(COUNT * integrals_vector.size());
         Util::DeviceArray<uint32_t> new_expressions_flags(COUNT * expressions_vector.size());
 
         Sym::Kernel::check_heuristics_applicability<<<Sym::Integrator::BLOCK_COUNT,
                                                       Sym::Integrator::BLOCK_SIZE>>>(
-            integrals, expressions, new_integrals_flags, new_expressions_flags);
+            integrals, expressions, help_spaces, new_integrals_flags, new_expressions_flags);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
@@ -564,7 +567,6 @@ namespace Test {
         const size_t expressions_dst_offset = expressions.size();
 
         auto integrals_destinations = with_count(new_integral_count);
-        auto help_spaces = with_count(new_integral_count);
 
         integrals_destinations.resize(new_integral_count,
                                       Sym::Integrator::INITIAL_EXPRESSIONS_CAPACITY);

@@ -230,6 +230,8 @@ namespace Sym {
     }
 
     DEFINE_IS_FUNCTION_OF(Product) {
+        BASE_TWO_ARGUMENT_IS_FUNCTION_OF
+
         for (size_t i = 0; i < expression_count; ++i) {
             if (!expressions[i]->is(Type::Product)) {
                 continue;
@@ -245,8 +247,7 @@ namespace Sym {
             }
         }
 
-        return arg1().is_function_of(expressions, expression_count) &&
-               arg2().is_function_of(expressions, expression_count);
+        return false;
     }
 
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol& expr1,

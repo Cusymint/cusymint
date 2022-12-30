@@ -246,6 +246,7 @@ namespace Test {
     EQUALITY_TEST(PoweredToSum, "(x+1)^(x+c)", "(1+x)^c * (1+x)^x")
     EQUALITY_TEST(PoweredLongProduct, "(x*cos(x)*sin(x)*ln(x)*d)^2",
                   "d^2*x^2*(sin(x))^2*(cos(x))^2*ln(x)^2")
+    SIMPLIFY_TEST(LinearPolynomialsDivision, "(2x-1)/x", Sym::num(2) + Sym::num(-1) / Sym::var())
     EQUALITY_TEST(PoweredToLongSum, "e^(1+c+x+cos(x))", "e^x*e^(1+c)*e^cos(x)")
 
     EQUALITY_TEST(LogarithmOfProduct, "ln(x*ln(x))", "ln(x)+ln(ln(x))")

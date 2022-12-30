@@ -118,9 +118,16 @@ namespace Sym {
         return -1;
     }
 
-    __host__ __device__ bool Symbol::is_function_of(const Symbol* const* const expressions,
+    __host__ __device__ bool Symbol::is_function_of(Symbol* const help_space,
+                                                    const Symbol* const* const expressions,
                                                     const size_t expression_count) const {
-        return VIRTUAL_CALL(*this, is_function_of, expressions, expression_count);
+        bool* const results = reinterpret_cast<bool*>(help_space);
+
+        for (auto i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
+            results[i] =
+                VIRTUAL_CALL(*at(i), is_function_of, expressions, expression_count, results + i);
+        }
+        return results[0];
     }
 
     __host__ __device__ void Symbol::seal_whole(Symbol& expr, const size_t size) {
