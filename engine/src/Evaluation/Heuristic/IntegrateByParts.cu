@@ -123,7 +123,8 @@ namespace Sym::Heuristic {
         while (iterator.is_valid()) {
             if (iterator.current()->is(Type::Power)) {
                 const auto& power = iterator.current()->as<Power>();
-                if (power.arg1().is(Type::Variable) && power.arg2().is_integer()) {
+                if (power.arg1().is(Type::Variable) && power.arg2().is_integer() &&
+                    !power.arg2().is(-1)) {
                     return {1, 1};
                 }
             }
