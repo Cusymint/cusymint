@@ -189,7 +189,8 @@ namespace Test {
     EQUALITY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
 
     SIMPLIFY_TEST(PolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)",
-                  Sym::num(0.1) + Sym::num(-0.1) * Sym::var() / Parser::parse_function("(3+x+5*x^2+10*x^3)") +
+                  Sym::num(0.1) +
+                      Sym::num(-0.1) * Sym::var() / Parser::parse_function("(3+x+5*x^2+10*x^3)") +
                       Parser::parse_function("1.5x^2/(3+x+5*x^2+10*x^3)") +
                       Parser::parse_function("8.7/(3+x+5*x^2+10*x^3)"))
     SIMPLIFY_TEST(
@@ -209,6 +210,8 @@ namespace Test {
                   Sym::num(7) + (Sym::num(-6) * Sym::var()) / Parser::parse_function("1+x+x^2") +
                       Parser::parse_function("2/(1+x+x^2)") +
                       (Sym::num(-1) * (Sym::var() ^ Sym::num(2))) + (Sym::var() ^ Sym::num(3)))
+
+    SIMPLIFY_TEST(LinearPolynomialsDivision, "(2x-1)/x", Sym::num(2) + Sym::num(-1) / Sym::var())
 
     SIMPLIFY_TEST(SameExpressionsAddition, "x+x", "2*x")
     SIMPLIFY_TEST(SameExpressionsAdditionBeingSorted, "sin(x)+ln(x)+sin(x)", "2*sin(x)+ln(x)")
