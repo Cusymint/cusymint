@@ -33,7 +33,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/${{ github.repository }}/webapp
+            ghcr.io/${{ github.repository }}/client
 
       - name: Build and push
         uses: docker/build-push-action@v3
