@@ -86,9 +86,9 @@ namespace Sym {
 
   private:
     /*
-     * @brief Sprawdza, czy `expr1 == sin^2(x)` i `expr2 == cos^2(x)`
+     * @brief Checks if `expr1 == sin^2(x)` and `expr2 == cos^2(x)`.
      *
-     * @return `true` jeśli powyższe to prawda, `false` w.p.p.
+     * @return `true` if aforementioned is true, `false` otherwise.
      */
     __host__ __device__ static bool is_sine_cosine_squared_sum(const Symbol* const expr1,
                                                                const Symbol* const expr2);
