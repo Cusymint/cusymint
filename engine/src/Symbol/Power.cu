@@ -282,8 +282,7 @@ namespace Sym {
         if (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value == 0.5) {
             return fmt::format("\\sqrt{{ {} }}", arg1().to_tex());
         }
-        if (arg1().is(Type::Addition) || arg1().is(Type::Product) || arg1().is(Type::Negation) ||
-            arg1().is(Type::Reciprocal) || arg1().is(Type::Power)) {
+        if (arg1().is(Type::Addition) || arg1().is(Type::Product) || arg1().is(Type::Power)) {
             return fmt::format(R"(\left({}\right)^{{ {} }})", arg1().to_tex(), arg2().to_tex());
         }
         return fmt::format("{}^{{ {} }}", arg1().to_tex(), arg2().to_tex());

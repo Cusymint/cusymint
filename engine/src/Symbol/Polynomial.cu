@@ -105,8 +105,6 @@ namespace Sym {
             [[fallthrough]];
         case Type::Power:
             [[fallthrough]];
-        case Type::Negation:
-            [[fallthrough]];
         case Type::Variable:
             dst_coefs[rank] = term_coefficients[0].value();
             break;

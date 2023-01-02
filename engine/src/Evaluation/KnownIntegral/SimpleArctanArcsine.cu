@@ -7,19 +7,22 @@ namespace Sym::KnownIntegral {
         return Inv<Add<Integer<1>, Pow<Var, Integer<2>>>>::match(integral.integrand()) ? 1 : 0;
     }
 
-    __device__ EvaluationStatus integrate_simple_arctan(const Integral& integral, SymbolIterator& destination,
-                             const ExpressionArray<>::Iterator& /*help_space*/) {
+    __device__ EvaluationStatus
+    integrate_simple_arctan(const Integral& integral, SymbolIterator& destination,
+                            const ExpressionArray<>::Iterator& /*help_space*/) {
         return simple_solution<Arctan<Var>>(destination, {integral});
     }
 
     __device__ size_t is_simple_arcsine(const Integral& integral) {
-        if (!Inv<Pow<Sub<Integer<1>, Pow<Var, Integer<2>>>, Num>>::match(integral.integrand())) {
+        if (!Pow<Sub<Integer<1>, Pow<Var, Integer<2>>>, Num>::match(integral.integrand())) {
             return 0;
-        } 
-        return integral.integrand().as<Reciprocal>().arg().as<Power>().arg2().as<NumericConstant>().value == 0.5 ? 1 : 0;
+        }
+
+        return integral.integrand().as<Power>().arg2().as<NumericConstant>().value == -0.5 ? 1 : 0;
     }
 
-    __device__ EvaluationStatus integrate_simple_arcsine(const Integral& integral, SymbolIterator& destination,
+    __device__ EvaluationStatus
+    integrate_simple_arcsine(const Integral& integral, SymbolIterator& destination,
                              const ExpressionArray<>::Iterator& /*help_space*/) {
         return simple_solution<Arcsin<Var>>(destination, {integral});
     }

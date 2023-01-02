@@ -8,40 +8,82 @@
 namespace Sym {
     DECLARE_SYMBOL(Addition, false)
     TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(Addition)
-    std::string to_string() const;
-    std::string to_tex() const;
+    [[nodiscard]] std::string to_string() const;
+    [[nodiscard]] std::string to_tex() const;
 
     /*
-     * @brief Extracts expression `f(x)` from `symbol`, where `symbol` is like `-f(x)` or `a*f(x)`.
-     * Sets a `coefficient` such that `coefficient*f(x) = symbol`.
-     *
+     * @brief If the expression can be expressed as `a*f(x)`, where `a` is `NumericConstant`,
+     * returns the value of `a`
      * @param `symbol` given expression
-     * @param `coefficient` coefficient to be set
      *
-     * @return extracted expression from `symbol`
+     * @return Value of `a` or `1` if `symbol` can't be expressed as `a*f(x)`.
      */
-    __host__ __device__ static const Sym::Symbol& extract_base_and_coefficient(const Sym::Symbol& symbol,
-                                                                        double& coefficient);
-
-  private:
-    /*
-     * @brief Sprawdza, czy `expr1 == sin^2(x)` i `expr2 == cos^2(x)`
-     *
-     * @return `true` jeśli powyższe to prawda, `false` w.p.p.
-     */
-    __host__ __device__ static bool is_sine_cosine_squared_sum(const Symbol* const expr1,
-                                                               const Symbol* const expr2);
+    __host__ __device__ static double coefficient(const Sym::Symbol& symbol);
 
     /*
-     * @brief Sprawdza, czy `expr1` i `expr2` są tym samym wyrażeniem, ale o przeciwnym znaku.
+     * @brief Copies a Product tree skipping any `NumericConstant`s
      *
-     * @param expr1 Pierwsze wyrażenie
-     * @param expr2 Drugie wyrażenie
+     * @param dst Destination
+     * @param expr Expression to copy
+     */
+    __host__ __device__ static void copy_without_coefficient(Sym::Symbol& dst,
+                                                             const Sym::Symbol& expr);
+
+    /*
+     * @brief Copies a Product with a new coefficient, skipping any existing one
      *
-     * @return `true` jeśli `expr1 == -expr2`, `false` w przeciwnym wypadku
+     * @param dst Destination
+     * @param expr Expression to copy
+     * @param coeff New coefficient
+     */
+    __host__ __device__ static void copy_with_coefficient(Sym::Symbol& dst, const Sym::Symbol& expr,
+                                                          const double coeff);
+
+    /*
+     * @brief Checks if `f == g`, where `f*a == expr1` and `g*b == expr2`, where `a` and `b` are
+     * `NumericConstant`s
+     *
+     * @param expr1 First expression
+     * @param expr2 Second expression
+     *
+     * @return `true` if `f == g`, `false` otherwise
+     */
+    __host__ __device__ static bool are_equal_except_for_constant(const Sym::Symbol& expr1,
+                                                                  const Sym::Symbol& expr2);
+
+    /*
+     * @brief Checks the ordering of `f` and `g`, where `f*a == expr1` and `g*b == expr2`, where `a`
+     * and `b` are `NumericConstant`s
+     *
+     * @param expr1 First expression
+     * @param expr2 Second expression
+     * @param help_space Help space
+     *
+     * @return Ordering of `f` and `g`
+     */
+    __host__ __device__ static Util::Order compare_except_for_constant(const Sym::Symbol& expr1,
+                                                                       const Sym::Symbol& expr2,
+                                                                       Symbol& help_space);
+
+    /*
+     * @brief Checks if `expr1` and `expr2` are the same expression but with an opposite sign
+     *
+     * @param expr1 First expression
+     * @param expr2 Second expression
+     *
+     * @return `true` if `expr1 == -expr2`, `false` otherwise
      */
     __host__ __device__ static bool are_equal_of_opposite_sign(const Symbol& expr1,
                                                                const Symbol& expr2);
+
+  private:
+    /*
+     * @brief Checks if `expr1 == sin^2(x)` and `expr2 == cos^2(x)`.
+     *
+     * @return `true` if aforementioned is true, `false` otherwise.
+     */
+    __host__ __device__ static bool is_sine_cosine_squared_sum(const Symbol* const expr1,
+                                                               const Symbol* const expr2);
 
     /*
      * @brief W drzewie dodawań usuwa dodawania, których jednym z argumentów jest 0.0. Dodawanie
@@ -54,13 +96,6 @@ namespace Sym {
     __host__ __device__ void eliminate_zeros();
 
     END_DECLARE_SYMBOL(Addition)
-
-    DECLARE_SYMBOL(Negation, false)
-    ONE_ARGUMENT_OP_SYMBOL
-
-    std::string to_string() const;
-    std::string to_tex() const;
-    END_DECLARE_SYMBOL(Negation)
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs);
     std::vector<Symbol> operator-(const std::vector<Symbol>& arg);
