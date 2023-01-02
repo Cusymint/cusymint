@@ -20,7 +20,10 @@ docker pull ghcr.io/cusymint/engine:latest
 # Pull the client image
 docker pull ghcr.io/cusymint/client:latest
 ```
-To run cusymint, you need to have Docker installed. You can find instructions on how to install Docker [here](https://docs.docker.com/get-docker/). Once you have Docker installed, you can run cusymint with the following command:
+To run cusymint, you need to have Docker installed. You can find instructions on how to install Docker [here](https://docs.docker.com/get-docker/).
+Depending on your OS you may also need to install Nvidia Container Toolkit. You can find instructions on how to install Nvidia Container Toolkit [here](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker).
+Note that when running Docker on WSL2 you can probably skip the Nvidia container toolkit installation ([see reference](https://docs.nvidia.com/cuda/wsl-user-guide/index.html)).
+Once you have Docker installed, you can run cusymint with the following command:
 
 ```bash
 # Run the engine, which will listen on port 8000
