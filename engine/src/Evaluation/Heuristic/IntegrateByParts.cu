@@ -70,7 +70,6 @@ namespace Sym::Heuristic {
                 case Type::Cosine:
                 case Type::Tangent:
                 case Type::Cotangent:
-                case Type::Reciprocal: // temporary until removed
                     return false;
                 case Type::Power: {
                     const auto& second_arg = current.as<Power>().arg2();
