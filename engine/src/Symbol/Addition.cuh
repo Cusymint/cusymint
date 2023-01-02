@@ -29,7 +29,7 @@ namespace Sym {
     __host__ __device__ static double coefficient(const Sym::Symbol& symbol);
 
     /*
-     * @brief Copies a Product tree skipping any constants
+     * @brief Copies a Product tree skipping any `NumericConstant`s
      *
      * @param dst Destination
      * @param expr Expression to copy
