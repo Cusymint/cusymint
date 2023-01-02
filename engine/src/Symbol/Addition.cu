@@ -166,7 +166,7 @@ namespace Sym {
 
     __host__ __device__ void Addition::copy_without_coefficient(Sym::Symbol& dst,
                                                                 const Sym::Symbol& expr) {
-        if (expr.is(Type::KnownConstant)) {
+        if (expr.is(Type::NumericConstant)) {
             dst.init_from(NumericConstant::with_value(1.0));
             return;
         }
@@ -205,7 +205,7 @@ namespace Sym {
 
     __host__ __device__ void
     Addition::copy_with_coefficient(Sym::Symbol& dst, const Sym::Symbol& expr, const double coeff) {
-        if (expr.is(Type::KnownConstant)) {
+        if (expr.is(Type::NumericConstant)) {
             dst.init_from(NumericConstant::with_value(coeff));
             return;
         }
