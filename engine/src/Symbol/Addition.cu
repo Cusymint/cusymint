@@ -102,12 +102,6 @@ namespace Sym {
         }
 
         const auto order = compare_except_for_constant(*expr1, *expr2, *destination);
-        /* const auto d = Symbol::compare_expressions(*expr1, *expr2, *destination); */
-        /* printf("d: %d, o: %d\n", order, d); */
-        /* const auto order2 = compare_except_for_constant(*expr1, *expr2, *destination); */
-        /* const auto d2 = Symbol::compare_expressions(*expr1, *expr2, *destination); */
-        /* return order; */
-
         if constexpr (COMPARE_ONLY) {
             return order;
         }
