@@ -238,6 +238,19 @@ namespace Test {
     EQUALITY_TEST(SameExpressionsMultiplicationRightPowered, "e^x*(e^x)^8", "e^(9*x)")
     EQUALITY_TEST(SameExpressionsPoweredToConstantMultiplication, "cos(x)^5*cos(x)^10", "cos(x)^15")
     EQUALITY_TEST(ReducingSameExpressionsMultiplication, "((x*v)^sin(x))/((x*v)^sin(x))", "1")
+
+    EQUALITY_TEST(SameLongExpressionsMultiplication, "x^(b*c*d)*x^(b*c*d)", "x^(2*b*c*d)")
+    EQUALITY_TEST(SameLongExpressionsMultiplicationBeingSorted,
+                  "sin(x)^(a*b*c)*ln(x)*sin(x)^(3*b*c*a)", "sin(x)^(4*a*b*c)*ln(x)")
+    EQUALITY_TEST(SameLongExpressionsMultiplicationBeingSorted2,
+                  "ln(x)^(x*x*x)*sin(x)*ln(x)^(x*x*x)", "sin(x)*ln(x)^(2*x*x*x)")
+    EQUALITY_TEST(SameLongExpressionsMultiplicationLeftPowered, "c^(3*d)*c^d", "c^(4*d)")
+    EQUALITY_TEST(SameLongExpressionsMultiplicationRightPowered, "e^(20*x)*(e^x)^8", "e^(28*x)")
+    EQUALITY_TEST(SameLongExpressionsPoweredToConstantMultiplication,
+                  "cos(x)^(5*a*b*c*d*e*f)*cos(x)^(10*a*b*c*d*e*f)", "cos(x)^(15*a*b*c*d*e*f)")
+    EQUALITY_TEST(ReducingSameLongExpressionsMultiplication,
+                  "((x*v)^(18*sin(x)*b))/((x*v)^(b*sin(x)*18))", "1")
+
     EQUALITY_TEST(ReducingIdenticalFractionWithCoefficients, "(x+1)/(-x-1)", "-1")
     EQUALITY_TEST(ReducingIdenticalFractionWithCoefficients2, "(x+1)/(-2x-2)", "-0.5")
     EQUALITY_TEST(ReducingIdenticalFractionWithCoefficients3, "6(x+1)/(2x+2)", "3")

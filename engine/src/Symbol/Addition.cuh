@@ -12,14 +12,6 @@ namespace Sym {
     [[nodiscard]] std::string to_tex() const;
 
     /*
-     * @brief If the `symbol` is in the form `a*f`, where `a` is a `NumericConstant` and `a` is an
-     * expression that is NOT a `Product`, then returns reference to `f` and sets `coefficient` to
-     * `a`
-     */
-    __host__ __device__ static const Sym::Symbol&
-    extract_base_and_coefficient(const Sym::Symbol& symbol, double& coefficient);
-
-    /*
      * @brief If the expression can be expressed as `a*f(x)`, where `a` is `NumericConstant`,
      * returns the value of `a`
      * @param `symbol` given expression

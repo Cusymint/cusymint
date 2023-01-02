@@ -127,18 +127,6 @@ namespace Sym {
         return Util::Order::Equal;
     }
 
-    __host__ __device__ const Sym::Symbol&
-    Addition::extract_base_and_coefficient(const Sym::Symbol& symbol, double& coefficient) {
-        if (Sym::Mul<Sym::Num, Sym::Any>::match(symbol)) {
-            coefficient = symbol.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
-            const Sym::Symbol& base = symbol.as<Sym::Product>().arg2();
-            return base;
-        }
-
-        coefficient = 1;
-        return symbol;
-    }
-
     __host__ __device__ double Addition::coefficient(const Sym::Symbol& symbol) {
         double coeff = 1.0;
         for (ConstTreeIterator<Product> iterator(&symbol); iterator.is_valid();

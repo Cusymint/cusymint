@@ -22,6 +22,36 @@ namespace Sym {
      */
     __host__ __device__ void eliminate_ones();
 
+    /*
+     * @brief If the expression can be expressed as `f(x)^(ag(x))`, where `a` is `NumericConstant`,
+     * returns the value of `a`
+     *
+     * @param `symbol` given expression
+     *
+     * @return Value of `a` or `1` if `symbol` can't be expressed as `f(x)^(ag(x))`.
+     */
+    __host__ __device__ static double exponent_coefficient(const Symbol& symbol);
+
+    /*
+     * @brief If the expression is a power, returns a reference to its base. If not, returns the
+     * expression itself.
+     *
+     * @param `symbol` given expression.
+     *
+     * @return Reference to the expression or its base
+     */
+    __host__ __device__ static const Symbol& base(const Symbol& symbol);
+
+    /*
+     * @brief If the expression is a power, returns a reference to its exponent. If not, returns a
+     * reference to the static identity function
+     *
+     * @param `symbol` given expression.
+     *
+     * @return Reference to the expression's exponent or `NumericConstant` with value of `1.0`
+     */
+    __host__ __device__ static const Symbol& exponent(const Symbol& symbol);
+
   private:
     /*
      * @brief Checks, if `expr1` and `expr2` are an inverse of eachother
