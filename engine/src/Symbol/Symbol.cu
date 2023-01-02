@@ -1,6 +1,7 @@
 #include "Symbol.cuh"
 
 #include "Evaluation/Integrator.cuh"
+#include "MetaOperators.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "Utils/Cuda.cuh"
 #include "Utils/Result.cuh"
@@ -15,6 +16,25 @@ namespace Sym {
 
     [[nodiscard]] __host__ __device__ bool Symbol::is(const double number) const {
         return is(Type::NumericConstant) && as<NumericConstant>().value == number;
+    }
+
+    [[nodiscard]] __host__ __device__ bool Symbol::is_negation() const {
+        return Mul<Integer<-1>, Any>::match(*this) || Mul<Any, Integer<-1>>::match(*this);
+    }
+
+    [[nodiscard]] __host__ __device__ const Symbol& Symbol::negation_arg() const {
+        if (Mul<Integer<-1>, Any>::match(*this)) {
+            return as<Product>().arg2();
+        }
+
+        if constexpr (Consts::DEBUG) {
+            if (!Mul<Any, Integer<-1>>::match(*this)) {
+                Util::crash(
+                    "Trying to get negated subexpression of something that is not a negation");
+            }
+        }
+
+        return as<Product>().arg1();
     }
 
     [[nodiscard]] __host__ __device__ bool Symbol::is_integer() const {
@@ -271,9 +291,6 @@ namespace Sym {
                 const auto& rank2 = ranks[i + addition.second_arg_offset];
                 ranks[i] = Util::max(rank1, rank2); // TODO
             } break;
-            case Type::Negation:
-                ranks[i] = ranks[i + 1];
-                break;
             case Type::NumericConstant:
                 ranks[i] = 0;
                 break;
@@ -313,9 +330,6 @@ namespace Sym {
         for (ssize_t i = static_cast<ssize_t>(size()) - 1; i >= 0; --i) {
             const Symbol* const current = at(i);
             switch (current->type()) {
-            case Type::Negation:
-                coefficients[i] = -coefficients[i + 1];
-                break;
             case Type::NumericConstant:
                 coefficients[i] = current->as<NumericConstant>().value;
                 break;

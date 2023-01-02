@@ -1,10 +1,11 @@
-#include "Symbol/Addition.cuh"
-#include "Symbol/Constants.cuh"
-#include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
 
 #include <fmt/core.h>
 
+#include "Evaluation/StaticFunctions.cuh"
+#include "Symbol/Addition.cuh"
+#include "Symbol/Constants.cuh"
+#include "Symbol/Macros.cuh"
 #include "Symbol/MetaOperators.cuh"
 #include "Symbol/SimplificationResult.cuh"
 #include "Symbol/Symbol.cuh"
@@ -22,37 +23,6 @@ namespace Sym {
             }
             return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(),
                                denominator.to_tex());
-        }
-
-        __host__ __device__ void extract_base_exponent_and_coefficient(const Sym::Symbol& symbol,
-                                                                       const Sym::Symbol*& base,
-                                                                       const Sym::Symbol*& exponent,
-                                                                       double& coefficient) {
-            const Sym::Symbol* inner = &symbol;
-            double reciprocal_coefficient = 1;
-
-            if (inner->is(Sym::Type::Reciprocal)) {
-                inner = &inner->as<Sym::Reciprocal>().arg();
-                reciprocal_coefficient = -1;
-            }
-
-            if (!inner->is(Sym::Type::Power)) {
-                base = inner;
-                // we do not assign to exponent as it has default value
-                coefficient = reciprocal_coefficient;
-                return;
-            }
-
-            base = &inner->as<Sym::Power>().arg1();
-
-            exponent = &Sym::Addition::extract_base_and_coefficient(inner->as<Sym::Power>().arg2(),
-                                                                    coefficient);
-
-            if (base->is(Sym::Type::Reciprocal)) {
-                base = &base->as<Sym::Reciprocal>().arg();
-                coefficient = -coefficient;
-            }
-            coefficient *= reciprocal_coefficient;
         }
     }
 
@@ -122,19 +92,54 @@ namespace Sym {
                d_arg1_size;
     }
 
+    __host__ __device__ double Product::exponent_coefficient(const Sym::Symbol& symbol) {
+        if (!symbol.is(Type::Power)) {
+            return 1.0;
+        }
+
+        return Addition::coefficient(symbol.as<Power>().arg2());
+    }
+
+    __host__ __device__ const Symbol& Product::base(const Symbol& symbol) {
+        if (!symbol.is(Type::Power)) {
+            return symbol;
+        }
+
+        return symbol.as<Power>().arg1();
+    }
+
+    __host__ __device__ const Symbol& Product::exponent(const Symbol& symbol) {
+#ifndef __CUDA_ARCH__
+        static const NumericConstant one = NumericConstant::with_value(1);
+#endif
+
+        if (!symbol.is(Type::Power)) {
+#ifdef __CUDA_ARCH__
+            return Static::one();
+#else
+            return one.symbol();
+#endif
+        }
+
+        return symbol.as<Power>().arg2();
+    }
+
     __host__ __device__ SimplificationResult Product::try_dividing_polynomials(
         Symbol* const expr1, Symbol* const expr2, Symbol* const help_space) {
         Symbol* numerator = nullptr;
         Symbol* denominator = nullptr;
-        if (!expr1->is(Type::Reciprocal) && expr2->is(Type::Reciprocal)) {
+
+        if ((!expr1->is(Type::Power) || !expr1->as<Power>().arg2().is(-1)) &&
+            expr2->is(Type::Power) && expr2->as<Power>().arg2().is(-1)) {
             numerator = expr1;
-            denominator = &expr2->as<Reciprocal>().arg();
+            denominator = &expr2->as<Power>().arg1();
         }
-        else if (!expr2->is(Type::Reciprocal) && expr1->is(Type::Reciprocal)) {
+        else if ((!expr2->is(Type::Power) || !expr2->as<Power>().arg2().is(-1)) &&
+                 expr1->is(Type::Power) && expr1->as<Power>().arg2().is(-1)) {
             numerator = expr2;
-            denominator = &expr1->as<Reciprocal>().arg();
+            denominator = &expr1->as<Power>().arg1();
         }
-        if (numerator == nullptr || denominator == nullptr) {
+        else {
             return SimplificationResult::NoAction;
         }
 
@@ -189,9 +194,11 @@ namespace Sym {
         poly1->as<Polynomial>().expand_to(&prod->arg1());
         prod->seal_arg1();
 
-        Reciprocal* const rec = &prod->arg2() << Reciprocal::builder();
-        poly2->as<Polynomial>().expand_to(&rec->arg());
-        rec->seal();
+        Power* const inv = &prod->arg2() << Power::builder();
+        poly2->as<Polynomial>().expand_to(&inv->arg1());
+        inv->seal_arg1();
+        inv->arg2().init_from(NumericConstant::with_value(-1));
+        inv->seal();
 
         prod->seal();
         plus->seal();
@@ -258,6 +265,13 @@ namespace Sym {
 
     __host__ __device__ bool Product::are_inverse_of_eachother(const Symbol& expr1,
                                                                const Symbol& expr2) {
+        if (expr1.is(Type::Power) && expr2.is(Type::Power)) {
+            return Symbol::are_expressions_equal(expr1.as<Power>().arg1(),
+                                                 expr2.as<Power>().arg1()) &&
+                   Addition::are_equal_of_opposite_sign(expr1.as<Power>().arg2(),
+                                                        expr2.as<Power>().arg2());
+        }
+
         using Matcher = PatternPair<Inv<Same>, Same>;
         using TrigMatcher = PatternPair<Tan<Same>, Cot<Same>>;
         return Matcher::match_pair(expr1, expr2) || Matcher::match_pair(expr2, expr1) ||
@@ -298,72 +312,59 @@ namespace Sym {
     }
 
     DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Product) {
-        NumericConstant one = NumericConstant::with_value(1);
+        const Symbol& base1 = base(*expr1);
+        const Symbol& base2 = base(*expr2);
 
-        const Symbol* base1 = nullptr;
-        const Symbol* base2 = nullptr;
-        const Symbol* exponent1 = &one.symbol();
-        const Symbol* exponent2 = &one.symbol();
-        double coef1 = 0.0;
-        double coef2 = 0.0;
-
-        extract_base_exponent_and_coefficient(*expr1, base1, exponent1, coef1);
-        extract_base_exponent_and_coefficient(*expr2, base2, exponent2, coef2);
-
-        const auto base_order = Symbol::compare_expressions(*base1, *base2, *destination);
+        const auto base_order = Symbol::compare_expressions(base1, base2, *destination);
 
         if (base_order != Util::Order::Equal) {
             return base_order;
         }
 
-        if (exponent1->is(Type::NumericConstant) && exponent2->is(Type::NumericConstant)) {
-            const double exp_sum = coef1 * exponent1->as<NumericConstant>().value +
-                                   coef2 * exponent2->as<NumericConstant>().value;
-            if (exp_sum == 0) {
-                destination->init_from(NumericConstant::with_value(1));
-                return Util::Order::Equal;
-            }
-            if (exp_sum == 1) {
-                base1->copy_to(*destination);
-                return Util::Order::Equal;
-            }
-            if (base1->is(Type::NumericConstant)) {
-                destination->init_from(
-                    NumericConstant::with_value(pow(base1->as<NumericConstant>().value, exp_sum)));
-                return Util::Order::Equal;
-            }
-            if (exp_sum == -1) {
-                Inv<Copy>::init(*destination, {*base1});
-                return Util::Order::Equal;
-            }
+        const Symbol& exponent1 = exponent(*expr1);
+        const Symbol& exponent2 = exponent(*expr2);
+        const auto exponent_order =
+            Addition::compare_except_for_constant(exponent1, exponent2, *destination);
 
-            Pow<Copy, Num>::init(*destination, {*base1, exp_sum});
-            return Util::Order::Equal;
+        if (exponent_order != Util::Order::Equal) {
+            return exponent_order;
         }
-
-        const auto order = Symbol::compare_expressions(*exponent1, *exponent2, *destination);
 
         if constexpr (COMPARE_ONLY) {
-            return order;
+            return exponent_order;
         }
 
-        if (order != Util::Order::Equal) {
-            return order;
-        }
+        const double coeff1 = Addition::coefficient(exponent1);
+        const double coeff2 = Addition::coefficient(exponent2);
+        const double coeff_sum = coeff1 + coeff2;
 
-        const double sum = coef1 + coef2;
-        if (sum == 0) {
-            destination->init_from(one);
+        // `base1 == base2` and `exponent1 == exponent2` (modulo `NumericConstant`), so it is
+        // sufficient to only check `base1` and `exponent1`
+        if (base1.is(Type::NumericConstant) && exponent1.is(Type::NumericConstant)) {
+            destination->init_from(
+                NumericConstant::with_value(pow(base1.as<NumericConstant>().value, coeff_sum)));
         }
-        else if (sum == 1) {
-            Pow<Copy, Copy>::init(*destination, {*base1, *exponent1});
-        }
-        else if (sum == -1) {
-            Pow<Inv<Copy>, Copy>::init(*destination, {*base1, *exponent1});
+        else if (coeff_sum == 0.0) {
+            destination->init_from(NumericConstant::with_value(1.0));
         }
         else {
-            Pow<Copy, Mul<Num, Copy>>::init(*destination, {*base1, sum, *exponent1});
+            using PowCopy = Pow<Copy, None>;
+            const PowCopy::AdditionalArgs args = {base1};
+            PowCopy::init(*destination, args);
+            destination->size() = BUILDER_SIZE;
+
+            if (coeff_sum == 1) {
+                Addition::copy_without_coefficient(destination[PowCopy::size_with(args)],
+                                                   exponent1);
+            }
+            else {
+                Addition::copy_with_coefficient(destination[PowCopy::size_with(args)], exponent1,
+                                                coeff_sum);
+            }
+
+            destination->as<Power>().seal();
         }
+
         return Util::Order::Equal;
     }
 
@@ -372,24 +373,16 @@ namespace Sym {
     }
 
     std::string Product::to_tex() const {
-        if (arg1().is(Type::Reciprocal)) {
-            return fraction_to_tex(arg2(), arg1().as<Reciprocal>().arg());
-        }
-
-        if (arg2().is(Type::Reciprocal)) {
-            return fraction_to_tex(arg1(), arg2().as<Reciprocal>().arg());
-        }
-
         std::string arg1_pattern = "{}";
         std::string arg2_pattern = "{}";
         std::string cdot = " ";
-        if (arg1().is(Type::Addition) || arg1().is(Type::Negation)) {
+        if (arg1().is(Type::Addition)) {
             arg1_pattern = R"(\left({}\right))";
         }
-        if (arg2().is(Type::Addition) || arg2().is(Type::Negation)) {
+        if (arg2().is(Type::Addition)) {
             arg2_pattern = R"(\left({}\right))";
         }
-        if (arg2().is(Type::Negation) || arg2().is(Type::NumericConstant) ||
+        if (arg2().is(Type::NumericConstant) ||
             (arg2().is(Type::Power) && arg2().as<Power>().arg1().is(Type::NumericConstant)) ||
             (arg2().is(Type::Product) && arg2().as<Product>().arg1().is(Type::NumericConstant))) {
             cdot = " \\cdot ";
@@ -412,47 +405,6 @@ namespace Sym {
             }
         }
     }
-
-    std::string Reciprocal::to_string() const { return fmt::format("(1/{})", arg().to_string()); }
-
-    std::string Reciprocal::to_tex() const {
-        return fmt::format(R"(\frac{{1}}{{ {} }})", arg().to_tex());
-    }
-
-    DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Reciprocal)
-    DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Reciprocal)
-    DEFINE_IDENTICAL_COMPARE_TO(Reciprocal)
-    DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Reciprocal)
-    DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Reciprocal)
-    DEFINE_ONE_ARG_OP_DERIVATIVE(Reciprocal, (Neg<Inv<Pow<Copy, Integer<2>>>>))
-
-    DEFINE_SIMPLIFY_IN_PLACE(Reciprocal) { // NOLINT(misc-unused-parameters)
-        if (arg().is(Type::Reciprocal)) {
-            arg().as<Reciprocal>().arg().copy_to(symbol());
-            return true;
-        }
-
-        if (arg().is(Type::NumericConstant)) {
-            symbol().init_from(
-                NumericConstant::with_value(1.0 / arg().as<NumericConstant>().value));
-            return true;
-        }
-
-        if (arg().is(Type::Product)) {
-            const auto count = arg().as<Product>().tree_size();
-            if (size < arg().size() + count) {
-                additional_required_size = count - 1;
-                return false;
-            }
-            From<Product>::Create<Product>::WithMap<Inv>::init(*help_space,
-                                                               {{arg().as<Product>(), count}});
-            help_space->copy_to(symbol());
-            return false;
-        }
-
-        return true;
-    }
-
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);
         Product::create(lhs.data(), rhs.data(), res.data());
@@ -460,7 +412,7 @@ namespace Sym {
     }
 
     std::vector<Symbol> inv(const std::vector<Symbol>& arg) {
-        std::vector<Symbol> res(arg.size() + 1);
+        std::vector<Symbol> res(Inv<Copy>::size_with({*arg.data()}));
         Inv<Copy>::init(*res.data(), {*arg.data()});
         return res;
     }

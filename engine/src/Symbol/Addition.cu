@@ -73,15 +73,9 @@ namespace Sym {
             *expr1, *expr2);
     }
 
-    __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol& expr1,
-                                                                  const Symbol& expr2) {
-        return PatternPair<Neg<Same>, Same>::match_pair(expr1, expr2) ||
-               PatternPair<Same, Neg<Same>>::match_pair(expr1, expr2);
-    }
-
     DEFINE_TRY_FUSE_SYMBOLS(Addition) { // NOLINT(misc-unused-parameters)
-        // Sprawdzenie, czy jeden z argumentów nie jest rónwy zero jest wymagane by nie wpaść w
-        // nieskończoną pętlę, zera i tak są potem usuwane w `eliminate_zeros`.
+        // Check if one of the arguments is not equal to zero so that we don't go into an infinite
+        // loop. Zeros are later removed in `eliminate_zeros`
         if (expr1->is(Type::NumericConstant) && expr2->is(Type::NumericConstant) &&
             expr1->as<NumericConstant>().value != 0.0 &&
             expr2->as<NumericConstant>().value != 0.0) {
@@ -90,39 +84,24 @@ namespace Sym {
             return SimplificationResult::Success;
         }
 
-        if (are_equal_of_opposite_sign(*expr1, *expr2)) {
-            expr1->init_from(NumericConstant::with_value(0.0));
-            expr2->init_from(NumericConstant::with_value(0.0));
-            return SimplificationResult::Success;
-        }
-
-        // TODO: Jakieś inne tożsamości trygonometryczne
+        // TODO: Some other trigonometric identities
         if (is_sine_cosine_squared_sum(expr1, expr2)) {
             expr1->init_from(NumericConstant::with_value(1.0));
             expr2->init_from(NumericConstant::with_value(0.0));
             return SimplificationResult::Success;
         }
 
-        // TODO: Jedynka hiperboliczna
-
         return SimplificationResult::NoAction;
     }
 
     DEFINE_COMPARE_AND_TRY_FUSE_SYMBOLS(Addition) {
-        double coef1 = 0.0;
-        double coef2 = 0.0;
-        const Symbol& base1 = extract_base_and_coefficient(*expr1, coef1);
-        const Symbol& base2 = extract_base_and_coefficient(*expr2, coef2);
-
-        const auto order = Symbol::compare_expressions(base1, base2, *destination);
-
-        if (base1.is(Type::NumericConstant) && base2.is(Type::NumericConstant)) {
-            destination->init_from(
-                NumericConstant::with_value(coef1 * base1.as<NumericConstant>().value +
-                                            coef2 * base2.as<NumericConstant>().value));
+        if (expr1->is(Type::NumericConstant) && expr2->is(Type::NumericConstant)) {
+            destination->init_from(NumericConstant::with_value(expr1->as<NumericConstant>().value +
+                                                               expr2->as<NumericConstant>().value));
             return Util::Order::Equal;
         }
 
+        const auto order = compare_except_for_constant(*expr1, *expr2, *destination);
         if constexpr (COMPARE_ONLY) {
             return order;
         }
@@ -131,44 +110,240 @@ namespace Sym {
             return order;
         }
 
+        const double coef1 = coefficient(*expr1);
+        const double coef2 = coefficient(*expr2);
         const double sum = coef1 + coef2;
+
         if (sum == 0) {
             destination->init_from(NumericConstant::with_value(0));
         }
         else if (sum == 1) {
-            base1.copy_to(*destination);
-        }
-        else if (sum == -1) {
-            Neg<Copy>::init(*destination, {base1});
+            copy_without_coefficient(*destination, *expr1);
         }
         else {
-            Mul<Num, Copy>::init(*destination, {coef1 + coef2, base1});
+            copy_with_coefficient(*destination, *expr1, coef1 + coef2);
         }
+
         return Util::Order::Equal;
     }
 
-    __host__ __device__ const Sym::Symbol&
-    Addition::extract_base_and_coefficient(const Sym::Symbol& symbol, double& coefficient) {
-        if (symbol.is(Sym::Type::Negation)) {
-            const Sym::Symbol& base = symbol.as<Sym::Negation>().arg();
-            if (Sym::Mul<Sym::Num, Sym::Any>::match(base)) {
-                coefficient = -base.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
-                return base.as<Sym::Product>().arg2();
+    __host__ __device__ double Addition::coefficient(const Sym::Symbol& symbol) {
+        double coeff = 1.0;
+        for (ConstTreeIterator<Product> iterator(&symbol); iterator.is_valid();
+             iterator.advance()) {
+            if (iterator.current()->is(Type::NumericConstant)) {
+                coeff *= iterator.current()->as<NumericConstant>().value;
             }
-            coefficient = -1;
-            return base;
         }
-        if (Sym::Mul<Sym::Num, Sym::Any>::match(symbol)) {
-            coefficient = symbol.as<Sym::Product>().arg1().as<Sym::NumericConstant>().value;
-            const Sym::Symbol& base = symbol.as<Sym::Product>().arg2();
-            if (base.is(Sym::Type::Negation)) {
-                coefficient = -coefficient;
-                return base.as<Sym::Negation>().arg();
+
+        return coeff;
+    }
+
+    namespace {
+        __host__ __device__ size_t coefficient_count(const Symbol& expr) {
+            size_t count = 0;
+            for (ConstTreeIterator<Product> iter(&expr); iter.is_valid(); iter.advance()) {
+                if (iter.current()->is(Type::NumericConstant)) {
+                    count += 1;
+                }
             }
-            return base;
+
+            return count;
         }
-        coefficient = 1;
-        return symbol;
+    }
+
+    __host__ __device__ void Addition::copy_without_coefficient(Sym::Symbol& dst,
+                                                                const Sym::Symbol& expr) {
+        if (expr.is(Type::NumericConstant)) {
+            dst.init_from(NumericConstant::with_value(1.0));
+            return;
+        }
+
+        const size_t coeff_count = coefficient_count(expr);
+        if (coeff_count == 0) {
+            expr.copy_to(dst);
+            return;
+        }
+
+        ConstTreeIterator<Product> iter(&expr);
+        const size_t new_product_symbol_count = expr.as<Product>().tree_size() - 1 - coeff_count;
+
+        for (size_t i = 0; i < new_product_symbol_count; ++i) {
+            dst.at_unchecked(i)->init_from(Product::builder());
+        }
+
+        const size_t new_tree_size = expr.size() - 2 * coeff_count;
+        Symbol* current_dst_back = &dst + new_tree_size;
+
+        while (iter.is_valid()) {
+            if (!iter.current()->is(Type::NumericConstant)) {
+                Symbol* const current_dst = current_dst_back - iter.current()->size();
+                iter.current()->copy_to(*current_dst);
+                current_dst_back = current_dst;
+            }
+
+            iter.advance();
+        }
+
+        for (auto i = static_cast<ssize_t>(new_product_symbol_count) - 1; i >= 0; --i) {
+            dst.at_unchecked(i)->as<Product>().seal_arg1();
+            dst.at_unchecked(i)->as<Product>().seal();
+        }
+    }
+
+    __host__ __device__ void
+    Addition::copy_with_coefficient(Sym::Symbol& dst, const Sym::Symbol& expr, const double coeff) {
+        if (expr.is(Type::NumericConstant)) {
+            dst.init_from(NumericConstant::with_value(coeff));
+            return;
+        }
+
+        ConstTreeIterator<Product> iter(&expr);
+        const size_t coeff_count = coefficient_count(expr);
+        const size_t current_product_symbol_count =
+            expr.is(Type::Product) ? expr.as<Product>().tree_size() - 1 : 0;
+
+        const size_t new_product_symbol_count = current_product_symbol_count - coeff_count + 1;
+
+        for (size_t i = 0; i < new_product_symbol_count; ++i) {
+            dst.at_unchecked(i)->init_from(Product::builder());
+        }
+
+        const size_t new_tree_size = expr.size() - 2 * coeff_count + 2;
+        Symbol* current_dst_back = &dst + new_tree_size;
+
+        while (iter.is_valid()) {
+            if (!iter.current()->is(Type::NumericConstant)) {
+                Symbol* const current_dst = current_dst_back - iter.current()->size();
+                iter.current()->copy_to(*current_dst);
+                current_dst_back = current_dst;
+            }
+
+            iter.advance();
+        }
+
+        Symbol* const constant_dst = current_dst_back - 1;
+        constant_dst->init_from(NumericConstant::with_value(coeff));
+
+        for (auto i = static_cast<ssize_t>(new_product_symbol_count) - 1; i >= 0; --i) {
+            dst.at_unchecked(i)->as<Product>().seal_arg1();
+            dst.at_unchecked(i)->as<Product>().seal();
+        }
+    }
+
+    namespace {
+        __host__ __device__ bool
+        advance_nonconstant_iterators(Sym::ConstTreeIterator<Product>& it1,
+                                      Sym::ConstTreeIterator<Product>& it2) {
+            if (it1.current()->is(Type::NumericConstant) &&
+                it2.current()->is(Type::NumericConstant)) {
+                it1.advance();
+                it2.advance();
+                return false;
+            }
+
+            if (it1.current()->is(Type::NumericConstant)) {
+                it1.advance();
+                return false;
+            }
+
+            if (it2.current()->is(Type::NumericConstant)) {
+                it2.advance();
+                return false;
+            }
+
+            if (Symbol::are_expressions_equal(*it1.current(), *it2.current())) {
+                it1.advance();
+                it2.advance();
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    __host__ __device__ bool Addition::are_equal_except_for_constant(const Sym::Symbol& expr1,
+                                                                     const Sym::Symbol& expr2) {
+        ConstTreeIterator<Product> it1(&expr1);
+        ConstTreeIterator<Product> it2(&expr2);
+
+        while (it1.is_valid() && it2.is_valid()) {
+            if (advance_nonconstant_iterators(it1, it2)) {
+                return false;
+            }
+        }
+
+        if (it1.is_valid() && it1.current()->is<NumericConstant>()) {
+            it1.advance();
+        }
+
+        if (it2.is_valid() && it2.current()->is<NumericConstant>()) {
+            it2.advance();
+        }
+
+        return !it1.is_valid() && !it2.is_valid();
+    }
+
+    __host__ __device__ Util::Order Addition::compare_except_for_constant(const Sym::Symbol& expr1,
+                                                                          const Sym::Symbol& expr2,
+                                                                          Symbol& help_space) {
+        ConstTreeIterator<Product> it1(&expr1);
+        ConstTreeIterator<Product> it2(&expr2);
+
+        // Check if subsequent elements of both trees are equal
+        while (it1.is_valid() && it2.is_valid()) {
+            if (advance_nonconstant_iterators(it1, it2)) {
+                break;
+            }
+        }
+
+        if (it1.is_valid() && it1.current()->is(Type::NumericConstant)) {
+            it1.advance();
+        }
+        else if (it2.is_valid() && it2.current()->is(Type::NumericConstant)) {
+            it2.advance();
+        }
+
+        if (!it1.is_valid() && !it2.is_valid()) {
+            return Util::Order::Equal;
+        }
+
+        if (it1.is_valid() && it2.is_valid()) {
+            return Symbol::compare_expressions(*it1.current(), *it2.current(), help_space);
+        }
+
+        // expr1 is a higher tree (ignoring constants), so their comparasion would terminate when
+        // the last element of the shorter tree would be compared with a `Product` symbol (unless
+        // the last element of the shorter tree is a constant, then the second to last element would
+        // be used)
+        if (it1.is_valid()) {
+            size_t second_tree_ordinal = expr2.type_ordinal();
+            if (expr2.is(Type::Product)) {
+                const auto* const last_in_tree = expr2.as<Product>().last_in_tree();
+                second_tree_ordinal = last_in_tree->arg1().is(Type::NumericConstant)
+                                          ? last_in_tree->arg2().type_ordinal()
+                                          : last_in_tree->arg1().type_ordinal();
+            }
+
+            return Util::compare(type_ordinal(Type::Product), second_tree_ordinal);
+        }
+
+        // Same as above, but expr2 is the higher tree.
+        size_t second_tree_ordinal = expr1.type_ordinal();
+        if (expr1.is(Type::Product)) {
+            const auto* const last_in_tree = expr1.as<Product>().last_in_tree();
+            second_tree_ordinal = last_in_tree->arg1().is(Type::NumericConstant)
+                                      ? last_in_tree->arg2().type_ordinal()
+                                      : last_in_tree->arg1().type_ordinal();
+        }
+
+        return Util::compare(second_tree_ordinal, type_ordinal(Type::Product));
+    }
+
+    __host__ __device__ bool Addition::are_equal_of_opposite_sign(const Symbol& expr1,
+                                                                  const Symbol& expr2) {
+        return are_equal_except_for_constant(expr1, expr2) &&
+               coefficient(expr1) == -coefficient(expr2);
     }
 
     __host__ __device__ void Addition::eliminate_zeros() {
@@ -187,78 +362,16 @@ namespace Sym {
         }
     }
 
-    DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Negation)
-    DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Negation)
-    DEFINE_IDENTICAL_COMPARE_TO(Negation)
-    DEFINE_ONE_ARGUMENT_OP_COMPRESS_REVERSE_TO(Negation)
-    DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Negation)
-
-    DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Negation) {
-        if ((&destination - 1)->is(0)) {
-            return 0;
-        }
-        return Neg<None>::init_reverse(destination);
-    }
-
-    DEFINE_DERIVATIVE_SIZE(Negation) {
-        if ((&destination - 1)->is(0)) {
-            return 0;
-        }
-        return Neg<None>::Size::get_value();
-    }
-
-    DEFINE_SIMPLIFY_IN_PLACE(Negation) {
-        if (arg().is(Type::Negation)) {
-            arg().as<Negation>().arg().move_to(symbol());
-            return true;
-        }
-
-        if (arg().is(Type::NumericConstant)) {
-            symbol().init_from(NumericConstant::with_value(-arg().as<NumericConstant>().value));
-            return true;
-        }
-
-        if (arg().is(Type::Addition)) {
-            const size_t term_count = arg().as<Addition>().tree_size();
-            if (size < arg().size() + term_count) {
-                additional_required_size = term_count - 1;
-                return false;
-            }
-
-            From<Addition>::Create<Addition>::WithMap<Neg>::init(
-                *help_space, {{arg().as<Addition>(), term_count}});
-            help_space->copy_to(symbol());
-
-            // created addition needs to be simplified again, but without additional
-            // size
-            return false;
-        }
-        return true;
-    }
-
     std::string Addition::to_string() const {
         return fmt::format("({}+{})", arg1().to_string(), arg2().to_string());
     }
 
     std::string Addition::to_tex() const {
-        if (arg2().is(Type::Negation)) {
-            return fmt::format("{}{}", arg1().to_tex(), arg2().as<Negation>().to_tex());
-        }
-
         if (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value < 0.0) {
             return fmt::format("{}-{}", arg1().to_tex(), -arg2().as<NumericConstant>().value);
         }
 
         return fmt::format("{}+{}", arg1().to_tex(), arg2().to_tex());
-    }
-
-    std::string Negation::to_string() const { return fmt::format("-({})", arg().to_string()); }
-
-    std::string Negation::to_tex() const {
-        if (arg().is(Type::Addition) || arg().is(Type::Negation)) {
-            return fmt::format("-\\left({}\\right)", arg().to_tex());
-        }
-        return fmt::format("-{}", arg().to_tex());
     }
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
@@ -268,8 +381,8 @@ namespace Sym {
     }
 
     std::vector<Symbol> operator-(const std::vector<Symbol>& arg) {
-        std::vector<Symbol> res(arg.size() + 1);
-        Negation::create(arg.data(), res.data());
+        std::vector<Symbol> res(Neg<Copy>::size_with({*arg.data()}));
+        Neg<Copy>::init(*res.data(), {*arg.data()});
         return res;
     }
 

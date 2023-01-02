@@ -533,7 +533,8 @@ namespace Sym {
 
         __host__ __device__ static size_t size_with(const AdditionalArgs& args) {
             return 1 + cuda::std::get<0>(args).get().substitutions_size() +
-                   Inner::size_with(Util::slice_tuple<INTEGRAL_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
+                   Inner::size_with(
+                       Util::slice_tuple<INTEGRAL_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
         }
 
         __host__ __device__ static bool match(const Symbol& dst) {
@@ -585,20 +586,20 @@ namespace Sym {
     };
 
     template <class L, class R> using Add = TwoArgOperator<Addition, L, R>;
-    template <class I> using Neg = OneArgOperator<Negation, I>;
+    template <class L, class R> using Mul = TwoArgOperator<Product, L, R>;
+    template <class L, class R> using Pow = TwoArgOperator<Power, L, R>;
+
+    template <class I> using Neg = Mul<Integer<-1>, I>;
     template <class L, class R> using Sub = Add<L, Neg<R>>;
 
     template <class Head, class... Tail> struct Sum : Add<Head, Sum<Tail...>> {};
     template <class T> struct Sum<T> : T {};
 
-    template <class L, class R> using Mul = TwoArgOperator<Product, L, R>;
-    template <class I> using Inv = OneArgOperator<Reciprocal, I>;
+    template <class I> using Inv = Pow<I, Integer<-1>>;
     template <class L, class R> using Frac = Mul<L, Inv<R>>;
 
     template <class Head, class... Tail> struct Prod : Mul<Head, Prod<Tail...>> {};
     template <class T> struct Prod<T> : T {};
-
-    template <class L, class R> using Pow = TwoArgOperator<Power, L, R>;
 
     template <class I> using Sin = OneArgOperator<Sine, I>;
     template <class I> using Cos = OneArgOperator<Cosine, I>;

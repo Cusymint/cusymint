@@ -114,15 +114,15 @@ namespace Sym::Heuristic {
             second_factor_size = integrand.size() - first_function_derivative.size() - 1;
         }
 
-        const typename ExpressionType::AdditionalArgs EXPRESSION_ARGS = {
+        const typename ExpressionType::AdditionalArgs expression_args = {
             {integral.vacancy_expression_idx, integral.vacancy_idx, 1},
             first_function,
             second_factor_size,
         };
 
-        ENSURE_ENOUGH_SPACE(ExpressionType::size_with(EXPRESSION_ARGS), expression_dst);
+        ENSURE_ENOUGH_SPACE(ExpressionType::size_with(expression_args), expression_dst);
 
-        ExpressionType::init(*expression_dst, EXPRESSION_ARGS);
+        ExpressionType::init(*expression_dst, expression_args);
 
         Symbol& second_factor_dst = (*expression_dst)
                                         .as<SubexpressionCandidate>()
@@ -153,16 +153,16 @@ namespace Sym::Heuristic {
 
         const auto& original_integral = integral.arg().as<Integral>();
 
-        const typename IntegralType::AdditionalArgs INTEGRAL_ARGS = {
-            {expression_dst.index(), 3, 0},
+        const typename IntegralType::AdditionalArgs integral_args = {
+            {expression_dst.index(), 4, 0},
             original_integral,
             first_function,
             *help_iterator,
         };
 
-        ENSURE_ENOUGH_SPACE(IntegralType::size_with(INTEGRAL_ARGS), integral_dst);
+        ENSURE_ENOUGH_SPACE(IntegralType::size_with(integral_args), integral_dst);
 
-        IntegralType::init(*integral_dst, INTEGRAL_ARGS);
+        IntegralType::init(*integral_dst, integral_args);
 
         return EvaluationStatus::Done;
     }
