@@ -527,7 +527,7 @@ namespace Test {
                 4, Sym::integral(Sym::inv(Sym::num(0.5)) * (Sym::num(2) * Sym::tan(Sym::var())),
                                  {Sym::num(0.5) * Sym::var()})),
             nth_expression_candidate(
-                10, Sym::integral(Sym::num(0.5) * (Sym::var() ^ Sym::num(2)) * Sym::num(0)), 3),
+                10, Sym::integral(Sym::num(0.5) * (Sym::var() ^ Sym::num(2)) * Sym::num(0)), 4),
         };
 
         EvalStatusVector expected_integral_statuses = {

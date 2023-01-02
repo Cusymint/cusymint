@@ -24,7 +24,7 @@ namespace Test {
 
     HEURISTIC_TEST(LogarithmByParts, "ln(x)", "x*ln(x)-x")
     HEURISTIC_TEST(ExponentialWithPower, "x^2*e^x", "x^2*e^x-2x*e^x+2e^x")
-    HEURISTIC_TEST(SineWithPower, "x*sin(x)", "-x*cos(x)-sin(x)")
+    HEURISTIC_TEST(SineWithPower, "x*sin(x)", "-x*cos(x)+sin(x)")
     HEURISTIC_TEST(CosineWithPower, "x*cos(x)", "x*sin(x)+cos(x)")
     HEURISTIC_TEST(PowerWithLog, "x^20*ln(x)", "x^21/21*ln(x)-x^21/21/21")
     
