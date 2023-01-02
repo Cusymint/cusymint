@@ -212,6 +212,8 @@ namespace Sym {
     }
 
     DEFINE_IS_FUNCTION_OF(Power) {
+        BASE_TWO_ARGUMENT_IS_FUNCTION_OF
+
         for (size_t i = 0; i < expression_count; ++i) {
             if (!expressions[i]->is(Type::Power)) {
                 continue;
@@ -228,8 +230,7 @@ namespace Sym {
             }
         }
 
-        return arg1().is_function_of(expressions, expression_count) &&
-               arg2().is_function_of(expressions, expression_count);
+        return false;
     }
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Power) {
@@ -297,8 +298,7 @@ namespace Sym {
         if (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value == 0.5) {
             return fmt::format("\\sqrt{{ {} }}", arg1().to_tex());
         }
-        if (arg1().is(Type::Addition) || arg1().is(Type::Product) || arg1().is(Type::Negation) ||
-            arg1().is(Type::Reciprocal) || arg1().is(Type::Power)) {
+        if (arg1().is(Type::Addition) || arg1().is(Type::Product) || arg1().is(Type::Power)) {
             return fmt::format(R"(\left({}\right)^{{ {} }})", arg1().to_tex(), arg2().to_tex());
         }
         return fmt::format("{}^{{ {} }}", arg1().to_tex(), arg2().to_tex());

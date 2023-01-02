@@ -16,7 +16,7 @@ namespace Sym::Heuristic {
         size_t new_expressions;
     };
 
-    using Check = CheckResult (*)(const Integral& integral);
+    using Check = CheckResult (*)(const Integral& integral, Symbol& help_space);
     using Application = EvaluationStatus (*)(const SubexpressionCandidate& integral,
                                              const ExpressionArray<>::Iterator& integral_dst,
                                              const ExpressionArray<>::Iterator& expression_dst,

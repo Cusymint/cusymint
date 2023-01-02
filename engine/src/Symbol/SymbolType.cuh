@@ -6,6 +6,8 @@ namespace Sym {
         // Basic types
         Symbol = 0,
         Unknown,
+        // NumericConstant MUST be first here, some things depend on the fact that it is first in
+        // the symbol ordering
         NumericConstant, // Constants with given numeric value, e.g. 5, 1.345, 12.44
         KnownConstant,   // Well known real constants, e.g. pi, e (Euler's number)
         UnknownConstant, // Constants marked with letters, e.g. a, phi, delta
@@ -20,9 +22,7 @@ namespace Sym {
         SubexpressionCandidate,
         // Arithmetic
         Addition,
-        Negation,
         Product,
-        Reciprocal,
         Power,
         Sign,
         // Trigonometric functions
@@ -88,12 +88,8 @@ namespace Sym {
             return "SubexpressionCandidate";
         case Type::Addition:
             return "Addition";
-        case Type::Negation:
-            return "Negation";
         case Type::Product:
             return "Product";
-        case Type::Reciprocal:
-            return "Reciprocal";
         case Type::Power:
             return "Power";
         case Type::Sine:

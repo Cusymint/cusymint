@@ -27,10 +27,8 @@ namespace Sym {
                symbol->as<Substitution>().substitution_idx == substitution_idx;
     }
 
-    DEFINE_IS_FUNCTION_OF(Substitution) {
-        return expression().is_function_of(expressions, expression_count);
-    }
-
+    DEFINE_IS_FUNCTION_OF(Substitution) { return results[1]; } // NOLINT
+    
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Substitution) {
         if (!is_last_substitution()) {
             stack.push(&next_substitution().symbol());

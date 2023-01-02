@@ -46,9 +46,7 @@ namespace Sym {
                symbol->as<Integral>().integrand_offset == integrand_offset;
     }
 
-    DEFINE_IS_FUNCTION_OF(Integral) {
-        return integrand().is_function_of(expressions, expression_count);
-    }
+    DEFINE_IS_FUNCTION_OF(Integral) { return results[integrand_offset]; } // NOLINT
 
     DEFINE_PUSH_CHILDREN_ONTO_STACK(Integral) {
         if (substitution_count > 0) {
@@ -141,9 +139,10 @@ namespace Sym {
             return Util::BinaryResult::make_error();
         }
 
-        Mul<Inv<Copy>, None>::init(destination.current(), {derivative});
+        using DerivativeInverse = Mul<Inv<Copy>, None>;
+        DerivativeInverse::init(destination.current(), {derivative});
         const size_t integrand_idx = destination.index();
-        TRY(destination += 2 + derivative.size());
+        TRY(destination += DerivativeInverse::size_with({derivative}));
 
         for (size_t symbol_idx = 0; symbol_idx < integrand().size(); ++symbol_idx) {
             bool found_match = false;

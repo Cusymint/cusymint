@@ -73,7 +73,7 @@ namespace Sym::Heuristic {
         }
     }
 
-    __device__ CheckResult contains_constants_product(const Integral& integral) {
+    __device__ CheckResult contains_constants_product(const Integral& integral, Symbol& /*help_space*/) {
         if (!integral.integrand().is(Type::Product)) {
             return CheckResult::empty();
         }

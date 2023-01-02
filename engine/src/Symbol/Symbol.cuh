@@ -57,9 +57,7 @@
             VC_CASE(Solution, _instance, _member_function, __VA_ARGS__)                    \
             VC_CASE(Substitution, _instance, _member_function, __VA_ARGS__)                \
             VC_CASE(Addition, _instance, _member_function, __VA_ARGS__)                    \
-            VC_CASE(Negation, _instance, _member_function, __VA_ARGS__)                    \
             VC_CASE(Product, _instance, _member_function, __VA_ARGS__)                     \
-            VC_CASE(Reciprocal, _instance, _member_function, __VA_ARGS__)                  \
             VC_CASE(Power, _instance, _member_function, __VA_ARGS__)                       \
             VC_CASE(Sign, _instance, _member_function, __VA_ARGS__)                        \
             VC_CASE(Sine, _instance, _member_function, __VA_ARGS__)                        \
@@ -100,9 +98,7 @@ namespace Sym {
         SubexpressionCandidate subexpression_candidate;
         SubexpressionVacancy subexpression_vacancy;
         Addition addition;
-        Negation negation;
         Product product;
-        Reciprocal reciprocal;
         Power power;
         Sign sign;
         Sine sine;
@@ -137,6 +133,16 @@ namespace Sym {
         }
 
         [[nodiscard]] __host__ __device__ bool is(const double number) const;
+
+        /*
+         * @brief Checks if the expression is a negation
+         */
+        [[nodiscard]] __host__ __device__ bool is_negation() const;
+
+        /*
+         * @brief If the expression is a negation, returns the negated subexpression
+         */
+        [[nodiscard]] __host__ __device__ const Symbol& negation_arg() const;
 
         [[nodiscard]] __host__ __device__ bool is_integer() const;
 
@@ -378,6 +384,7 @@ namespace Sym {
          * expressed as `g1(x), g2(x), ..., gn(x)`, this function checks if there exists a
          * function `h(x1, x2, ..., xn)`, such that `f(x) = h(g1(x), g2(x), ..., gn(x))`.
          *
+         * @param help_space The help space
          * @param expressions Expressions to check
          *
          * @return `true` if `this` is a function of `expressions`, false otherwise. Returns
@@ -385,9 +392,9 @@ namespace Sym {
          * constant expression
          */
         template <class... Args, std::enable_if_t<(std::is_same_v<Args, Symbol> && ...), int> = 0>
-        [[nodiscard]] __host__ __device__ bool is_function_of(const Args&... expressions) const {
+        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space, const Args&... expressions) const {
             const Symbol* const expression_array[] = {&expressions...};
-            return VIRTUAL_CALL(*this, is_function_of, expression_array, sizeof...(Args));
+            return is_function_of(help_space, expression_array, sizeof...(Args));
         }
 
         /*
@@ -395,13 +402,14 @@ namespace Sym {
          * in concrete symbols. It should be called only when the templated version cannot be
          * used.
          *
+         * @param help_space The help space
          * @param expressions Array of pointers to expressions to check
          * @param expression_count Number of expressions in `expressions`
          *
          * @return Same as in the other function
          */
-        [[nodiscard]] __host__ __device__ bool
-        is_function_of(const Symbol* const* const expressions, const size_t expression_count) const;
+        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space, const Symbol* const* const expressions,
+                                                const size_t expression_count) const;
 
         /*
          * @brief Removes holes from symbol tree and copies it in reverse order to
