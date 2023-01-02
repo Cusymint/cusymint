@@ -2,6 +2,7 @@
 #include "IntegrateByParts.cuh"
 
 #include "Evaluation/StaticFunctions.cuh"
+#include "Symbol/Constants.cuh"
 #include "Symbol/MetaOperators.cuh"
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/Symbol.cuh"
@@ -59,6 +60,31 @@ namespace Sym::Heuristic {
             const size_t size = (current_dst - &destination) + expressions_copied - 1;
             Symbol::reverse_symbol_sequence(&destination, size);
         }
+
+        __host__ __device__ bool
+        is_derivative_going_to_simplify_expression(const Symbol& expression) {
+            for (size_t i = 0; i < expression.size(); ++i) {
+                const Symbol& current = *expression.at(i);
+                switch (current.type()) {
+                case Type::Sine:
+                case Type::Cosine:
+                case Type::Tangent:
+                case Type::Cotangent:
+                case Type::Reciprocal: // temporary until removed
+                    return false;
+                case Type::Power: {
+                    const auto& second_arg = current.as<Power>().arg2();
+                    if (!second_arg.is(Type::NumericConstant) ||
+                        second_arg.as<NumericConstant>().value < 0) {
+                        return false;
+                    }
+                } break;
+                default:
+                    break;
+                }
+            }
+            return true;
+        }
     }
 
     __device__ CheckResult is_simple_function(const Integral& integral, Symbol& /*help_space*/) {
@@ -112,23 +138,33 @@ namespace Sym::Heuristic {
                                   expression_dst, help_space);
     }
 
-    __device__ CheckResult is_product_with_power(const Integral& integral, Symbol& help_space) {
+    __device__ CheckResult is_product_with_power(const Integral& integral, Symbol&  /*help_space*/) {
         const auto& integrand = integral.integrand();
         if (!integrand.is(Type::Product)) {
             return {0, 0};
         }
 
         ConstTreeIterator<Product> iterator(integrand.as_ptr<Product>());
+        bool found_expression = false;
 
         while (iterator.is_valid()) {
-            if (iterator.current()->is(Type::Power)) {
+            if (!found_expression && iterator.current()->is(Type::Variable)) {
+                found_expression = true;
+            }
+            else if (!found_expression && iterator.current()->is(Type::Power)) {
                 const auto& power = iterator.current()->as<Power>();
-                if (power.arg1().is(Type::Variable) && power.arg2().is_integer() &&
+                if (power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
                     !power.arg2().is(-1)) {
-                    return {1, 1};
+                    found_expression = true;
                 }
             }
+            else if (!is_derivative_going_to_simplify_expression(*iterator.current())) {
+                return {0, 0};
+            }
             iterator.advance();
+        }
+        if (found_expression) {
+            return {1, 1};
         }
         return {0, 0};
     }
@@ -145,6 +181,11 @@ namespace Sym::Heuristic {
         const Symbol* power_symbol;
 
         while (iterator.is_valid()) {
+            if (iterator.current()->is(Type::Variable)) {
+                power_symbol = iterator.current();
+                exponent = 1;
+                break;
+            }
             if (iterator.current()->is(Type::Power)) {
                 const auto& power = iterator.current()->as<Power>();
                 if (power.arg1().is(Type::Variable) && power.arg2().is_integer()) {
@@ -176,12 +217,20 @@ namespace Sym::Heuristic {
         }
 
         ConstTreeIterator<Product> iterator(integrand.as_ptr<Product>());
+        bool found_expression = false;
 
         while (iterator.is_valid()) {
-            if (Symbol::are_expressions_equal(*iterator.current(), expression)) {
-                return {1, 1};
+            if (!found_expression &&
+                Symbol::are_expressions_equal(*iterator.current(), expression)) {
+                found_expression = true;
+            }
+            else if (!is_derivative_going_to_simplify_expression(*iterator.current())) {
+                return {0, 0};
             }
             iterator.advance();
+        }
+        if (found_expression) {
+            return {1, 1};
         }
         return {0, 0};
     }
