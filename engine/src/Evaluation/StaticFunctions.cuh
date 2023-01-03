@@ -13,6 +13,7 @@ namespace Sym::Static {
     __device__ const Symbol& cos_x();
     __device__ const Symbol& tan_x();
     __device__ const Symbol& cot_x();
+    __device__ const Symbol& neg_cos_x();
 
     // Functions used in the universal substitution
     __device__ const Symbol& universal_sin_x();

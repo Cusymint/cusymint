@@ -392,7 +392,8 @@ namespace Sym {
          * constant expression
          */
         template <class... Args, std::enable_if_t<(std::is_same_v<Args, Symbol> && ...), int> = 0>
-        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space, const Args&... expressions) const {
+        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space,
+                                                              const Args&... expressions) const {
             const Symbol* const expression_array[] = {&expressions...};
             return is_function_of(help_space, expression_array, sizeof...(Args));
         }
@@ -408,8 +409,9 @@ namespace Sym {
          *
          * @return Same as in the other function
          */
-        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space, const Symbol* const* const expressions,
-                                                const size_t expression_count) const;
+        [[nodiscard]] __host__ __device__ bool
+        is_function_of(Symbol* const help_space, const Symbol* const* const expressions,
+                       const size_t expression_count) const;
 
         /*
          * @brief Removes holes from symbol tree and copies it in reverse order to
@@ -568,6 +570,12 @@ namespace Sym {
          */
         [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
         derivative_to(SymbolIterator& destination);
+
+        /*
+         * @brief Checks if `this` should be displayed with a minus sign. Returns `true` if so,
+         * `false` otherwise.
+         */
+        bool is_negated() const;
     };
 
     /*

@@ -2,6 +2,7 @@
 #include "IntegrateByParts.cuh"
 
 #include "Evaluation/StaticFunctions.cuh"
+#include "Symbol/Constants.cuh"
 #include "Symbol/MetaOperators.cuh"
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/Symbol.cuh"
@@ -13,7 +14,7 @@ namespace Sym::Heuristic {
     namespace {
         __host__ __device__ void extract_second_factor(const Symbol& product,
                                                        const Symbol& first_factor,
-                                                       Symbol& destination, Symbol& help_space) {
+                                                       Symbol& destination) {
             if (first_factor.is(1)) {
                 product.copy_to(destination);
                 return;
@@ -28,38 +29,25 @@ namespace Sym::Heuristic {
             size_t expressions_copied = 0;
 
             while (product_it.is_valid() && first_factor_it.is_valid()) {
-                const auto order = Symbol::compare_expressions(
-                    *product_it.current(), *first_factor_it.current(), help_space);
-
-                switch (order) {
-                case Util::Order::Equal:
-                    product_it.advance();
-                    first_factor_it.advance();
-                    break;
-                case Util::Order::Greater:
+                if (!Symbol::are_expressions_equal(*product_it.current(),
+                                                   *first_factor_it.current())) {
                     Symbol::copy_and_reverse_symbol_sequence(*current_dst, *product_it.current(),
                                                              product_it.current()->size());
-                    current_dst += current_dst->size();
+                    current_dst += product_it.current()->size();
                     ++expressions_copied;
-                    product_it.advance();
-                    break;
-                case Util::Order::Less:
-                    Symbol::copy_and_reverse_symbol_sequence(*current_dst,
-                                                             *first_factor_it.current(),
-                                                             first_factor_it.current()->size());
-                    current_dst += current_dst->size();
-                    ++expressions_copied;
-                    first_factor_it.advance();
-                    break;
                 }
+                else {
+                    first_factor_it.advance();
+                }
+                product_it.advance();
             }
 
-            auto* const valid_it = product_it.is_valid() ? &product_it : &first_factor_it;
-            while (valid_it->is_valid()) {
-                Symbol::copy_and_reverse_symbol_sequence(*current_dst, *valid_it->current(),
-                                                         valid_it->current()->size());
-                current_dst += current_dst->size();
+            while (product_it.is_valid()) {
+                Symbol::copy_and_reverse_symbol_sequence(*current_dst, *product_it.current(),
+                                                         product_it.current()->size());
+                current_dst += product_it.current()->size();
                 ++expressions_copied;
+                product_it.advance();
             }
 
             if (expressions_copied == 0) {
@@ -72,9 +60,33 @@ namespace Sym::Heuristic {
             const size_t size = (current_dst - &destination) + expressions_copied - 1;
             Symbol::reverse_symbol_sequence(&destination, size);
         }
+
+        __host__ __device__ bool
+        is_derivative_going_to_simplify_expression(const Symbol& expression) {
+            for (size_t i = 0; i < expression.size(); ++i) {
+                const Symbol& current = *expression.at(i);
+                switch (current.type()) {
+                case Type::Sine:
+                case Type::Cosine:
+                case Type::Tangent:
+                case Type::Cotangent:
+                    return false;
+                case Type::Power: {
+                    const auto& second_arg = current.as<Power>().arg2();
+                    if (!second_arg.is(Type::NumericConstant) ||
+                        second_arg.as<NumericConstant>().value < 0) {
+                        return false;
+                    }
+                } break;
+                default:
+                    break;
+                }
+            }
+            return true;
+        }
     }
 
-    __device__ CheckResult is_simple_function(const Integral& integral, Symbol&  /*help_space*/) {
+    __device__ CheckResult is_simple_function(const Integral& integral, Symbol& /*help_space*/) {
         if (integral.integrand().size() == 2) {
             return {1, 1};
         }
@@ -88,6 +100,138 @@ namespace Sym::Heuristic {
         const ExpressionArray<>::Iterator& help_space) {
         return integrate_by_parts(integral, Static::one(), Static::identity(), integral_dst,
                                   expression_dst, help_space);
+    }
+
+    __device__ CheckResult is_product_with_exponential(const Integral& integral,
+                                                       Symbol& help_space) {
+        return is_product_with(Static::e_to_x(), integral, help_space);
+    }
+
+    __device__ EvaluationStatus integrate_exp_product_by_parts(
+        const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
+        const ExpressionArray<>::Iterator& expression_dst,
+        const ExpressionArray<>::Iterator& help_space) {
+        return integrate_by_parts(integral, Static::e_to_x(), Static::e_to_x(), integral_dst,
+                                  expression_dst, help_space);
+    }
+
+    __device__ CheckResult is_product_with_sine(const Integral& integral, Symbol& help_space) {
+        return is_product_with(Static::sin_x(), integral, help_space);
+    }
+    __device__ EvaluationStatus integrate_sine_product_by_parts(
+        const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
+        const ExpressionArray<>::Iterator& expression_dst,
+        const ExpressionArray<>::Iterator& help_space) {
+        return integrate_by_parts(integral, Static::sin_x(), Static::neg_cos_x(), integral_dst,
+                                  expression_dst, help_space);
+    }
+
+    __device__ CheckResult is_product_with_cosine(const Integral& integral, Symbol& help_space) {
+        return is_product_with(Static::cos_x(), integral, help_space);
+    }
+    __device__ EvaluationStatus integrate_cosine_product_by_parts(
+        const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
+        const ExpressionArray<>::Iterator& expression_dst,
+        const ExpressionArray<>::Iterator& help_space) {
+        return integrate_by_parts(integral, Static::cos_x(), Static::sin_x(), integral_dst,
+                                  expression_dst, help_space);
+    }
+
+    __device__ CheckResult is_product_with_power(const Integral& integral, Symbol&  /*help_space*/) {
+        const auto& integrand = integral.integrand();
+        if (!integrand.is(Type::Product)) {
+            return {0, 0};
+        }
+
+        ConstTreeIterator<Product> iterator(integrand.as_ptr<Product>());
+        bool found_expression = false;
+
+        while (iterator.is_valid()) {
+            if (!found_expression && iterator.current()->is(Type::Variable)) {
+                found_expression = true;
+            }
+            else if (!found_expression && iterator.current()->is(Type::Power)) {
+                const auto& power = iterator.current()->as<Power>();
+                if (power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
+                    !power.arg2().is(-1)) {
+                    found_expression = true;
+                }
+            }
+            else if (!is_derivative_going_to_simplify_expression(*iterator.current())) {
+                return {0, 0};
+            }
+            iterator.advance();
+        }
+        if (found_expression) {
+            return {1, 1};
+        }
+        return {0, 0};
+    }
+
+    __device__ EvaluationStatus integrate_power_product_by_parts(
+        const SubexpressionCandidate& integral, const ExpressionArray<>::Iterator& integral_dst,
+        const ExpressionArray<>::Iterator& expression_dst,
+        const ExpressionArray<>::Iterator& help_space) {
+        const auto& integrand = integral.arg().as<Integral>().integrand();
+
+        ConstTreeIterator<Product> iterator(integrand.as_ptr<Product>());
+
+        double exponent;
+        const Symbol* power_symbol;
+
+        while (iterator.is_valid()) {
+            if (iterator.current()->is(Type::Variable)) {
+                power_symbol = iterator.current();
+                exponent = 1;
+                break;
+            }
+            if (iterator.current()->is(Type::Power)) {
+                const auto& power = iterator.current()->as<Power>();
+                if (power.arg1().is(Type::Variable) && power.arg2().is_integer()) {
+                    power_symbol = iterator.current();
+                    exponent = power.arg2().as<NumericConstant>().value;
+                    break;
+                }
+            }
+            iterator.advance();
+        }
+
+        using PowerAntiDerivativeType = Mul<Num, Pow<Var, Num>>;
+
+        ENSURE_ENOUGH_SPACE(PowerAntiDerivativeType::Size::get_value(), help_space);
+
+        Symbol& antiderivative_dst = *help_space;
+
+        PowerAntiDerivativeType::init(antiderivative_dst, {1 / (exponent + 1), exponent + 1});
+
+        return integrate_by_parts(integral, *power_symbol, antiderivative_dst, integral_dst,
+                                  expression_dst, help_space);
+    }
+
+    __device__ CheckResult is_product_with(const Symbol& expression, const Integral& integral,
+                                           Symbol& help_space) {
+        const auto& integrand = integral.integrand();
+        if (!integrand.is(Type::Product) || integrand.is_function_of(&help_space, expression)) {
+            return {0, 0};
+        }
+
+        ConstTreeIterator<Product> iterator(integrand.as_ptr<Product>());
+        bool found_expression = false;
+
+        while (iterator.is_valid()) {
+            if (!found_expression &&
+                Symbol::are_expressions_equal(*iterator.current(), expression)) {
+                found_expression = true;
+            }
+            else if (!is_derivative_going_to_simplify_expression(*iterator.current())) {
+                return {0, 0};
+            }
+            iterator.advance();
+        }
+        if (found_expression) {
+            return {1, 1};
+        }
+        return {0, 0};
     }
 
     __device__ EvaluationStatus integrate_by_parts(
@@ -124,17 +268,17 @@ namespace Sym::Heuristic {
 
         ExpressionType::init(*expression_dst, expression_args);
 
-        Symbol& second_factor_dst = (*expression_dst)
-                                        .as<SubexpressionCandidate>()
-                                        .arg()
-                                        .as<Addition>()
-                                        .arg2()
-                                        .as<Product>()
-                                        .arg2();
+        auto& second_factor_product = (*expression_dst)
+                                          .as<SubexpressionCandidate>()
+                                          .arg()
+                                          .as<Addition>()
+                                          .arg2()
+                                          .as<Product>();
 
-        ENSURE_ENOUGH_SPACE(integrand.size(), help_space);
+        Symbol& second_factor_dst = second_factor_product.arg2();
+        const Symbol& first_function_copy = second_factor_product.arg1();
 
-        extract_second_factor(integrand, first_function_derivative, second_factor_dst, *help_space);
+        extract_second_factor(integrand, first_function_derivative, second_factor_dst);
 
         if constexpr (Consts::DEBUG) {
             if (second_factor_dst.size() != second_factor_size) {
@@ -156,7 +300,7 @@ namespace Sym::Heuristic {
         const typename IntegralType::AdditionalArgs integral_args = {
             {expression_dst.index(), 4, 0},
             original_integral,
-            first_function,
+            first_function_copy,
             *help_iterator,
         };
 

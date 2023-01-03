@@ -383,6 +383,17 @@ namespace Sym {
         return Util::SimpleResult<size_t>::make_good(symbols_inserted);
     }
 
+    bool Symbol::is_negated() const {
+        if (is(Type::NumericConstant) && as<NumericConstant>().value < 0) {
+            return true;
+        }
+        if (is(Type::Product)) {
+            const Symbol& first = as<Product>().last_in_tree()->arg1();
+            return first.is(Type::NumericConstant) && first.as<NumericConstant>().value < 0;
+        }
+        return false;
+    }
+
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {
         return VIRTUAL_CALL(sym1, are_equal, &sym2);
     }
