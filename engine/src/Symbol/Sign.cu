@@ -17,11 +17,6 @@ namespace Sym {
     DEFINE_DERIVATIVE_SIZE(Sign) { return 1; }
 
     DEFINE_SIMPLIFY_IN_PLACE(Sign) {
-        if (arg().is(Type::Negation)) {
-            arg().as<Negation>().type = Type::Sign;
-            type = Type::Negation;
-        }
-
         if (arg().is(Type::Product)) {
             // This is done under assumptions that the product tree contains at most one
             // NumericConstant (because `arg()`  is simplified)
