@@ -30,7 +30,7 @@ namespace Sym {
                 }
             }
 
-            return false;
+            return Prod<Same, Sgn<Same>>::match(expr) || Prod<Sgn<Same>, Same>::match(expr);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Sym {
         Symbol::copy_symbol_sequence(&new_sign->as<Sign>().arg() + variable_expression_count - 1,
                                      help_space, variable_expressions_size);
 
-        for (ssize_t i = static_cast<ssize_t>(variable_expression_count) - 2; i >= 0; ++i) {
+        for (ssize_t i = static_cast<ssize_t>(variable_expression_count) - 2; i >= 0; --i) {
             new_sign->as<Sign>().arg()[i].as<Product>().seal_arg1();
             new_sign->as<Sign>().arg()[i].as<Product>().seal();
         }

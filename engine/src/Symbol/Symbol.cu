@@ -110,10 +110,8 @@ namespace Sym {
 
     __host__ __device__ bool Symbol::is_almost_constant() const {
         for (size_t i = 0; i < size(); ++i) {
-            if (this[i].is(Type::Sign)) {
-                i += this[i].size() - 1;
-            }
-            else if (this[i].is(Type::Power) && this[i].as<Power>().arg1().is<Sign>()) {
+            if (this[i].is(Type::Sign) ||
+                this[i].is(Type::Power) && this[i].as<Power>().arg1().is(Type::Sign)) {
                 i += this[i].size() - 1;
             }
             else if (this[i].is(Type::Variable)) {
@@ -376,7 +374,8 @@ namespace Sym {
                 return Util::SimpleResult<size_t>::make_error();
             }
 
-            const ssize_t offset = VIRTUAL_CALL(*at(i), insert_reversed_derivative_at, *current_dst);
+            const ssize_t offset =
+                VIRTUAL_CALL(*at(i), insert_reversed_derivative_at, *current_dst);
             TRY_PASS(size_t, current_dst += offset);
         }
         const size_t symbols_inserted = current_dst.index() - destination.index();

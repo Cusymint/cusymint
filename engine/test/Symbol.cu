@@ -45,4 +45,9 @@ namespace Test {
         EXPECT_EQ(reverse_order, Sym::Symbol::compare_expressions(*expr2.data(), *expr1.data(),
                                                                   *help_space.data()));
     }
+
+    TEST(Symbol, AlmostConstant) {
+        ASSERT_EQ(Parser::parse_function("10+pi*e+sgn(e^(-x^2))").data()->is_almost_constant(),
+                  true);
+    }
 }

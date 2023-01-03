@@ -294,6 +294,6 @@ namespace Test {
     EQUALITY_TEST(EvenPowerOfAbsoluteValue, "abs(x)^78232", "x^78232")
     EQUALITY_TEST(AbsoluteValueOfEvenPower, "abs(x^78232)", "x^78232")
     EQUALITY_TEST(SignOfSign, "sgn(sgn(tan(x)))", "sgn(tan(x))")
-    EQUALITY_TEST(AbsolutevalueOfAbsoluteValue, "abs(abs(cot(x)))", "abs(cot(x))")
+    EQUALITY_TEST(AbsoluteValueOfAbsoluteValue, "abs(abs(cot(x)))", "abs(cot(x))")
     EQUALITY_TEST(AbsoluteValueOfNegation, "abs(-x)", "abs(x)")
 }

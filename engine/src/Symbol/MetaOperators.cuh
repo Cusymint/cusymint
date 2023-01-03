@@ -350,7 +350,21 @@ namespace Sym {
         }
     };
 
-    // In C++17, doubles can't be template parameters.
+    struct AlmostConst {
+        using AdditionalArgs = cuda::std::tuple<>;
+        using Size = Unsized;
+
+        static constexpr bool HAS_SAME = false;
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is_almost_constant();
+        }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& /*other_same*/) {
+            return match(dst);
+        }
+    };
+
+    // In C++17 doubles can't be template parameters.
     template <int V> struct Integer {
         using AdditionalArgs = cuda::std::tuple<>;
         using Size = SingletonSize;

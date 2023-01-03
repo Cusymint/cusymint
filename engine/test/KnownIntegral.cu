@@ -11,8 +11,8 @@ namespace Test {
     KNOWN_INTEGRAL_TEST(SimplePowerFunction, "x^4", "(1/5)*x^5")
     KNOWN_INTEGRAL_TEST(PowerFunctionWithConstant, "x^pi", "(1/(pi+1))*x^(pi+1)")
     KNOWN_INTEGRAL_TEST(AdvancedPowerFunction, "x^(10+pi*e)", "(1/(pi*e+11))*x^(pi*e+11)")
-    KNOWN_INTEGRAL_TEST(VeryAdvancedPowerFunction, "x^(10+pi*e+sgn(e^(-x^2)))",
-                        "(1/(pi*e+11+sgn(e^(-x^2))))*x^(pi*e+11+sgn(e^(-x^2)))")
+    KNOWN_INTEGRAL_TEST(VeryAdvancedPowerFunction, "x^(10*pi*e*sgn(e^(-x^2)))",
+                        "(1/(1+10*pi*e*sgn(e^(-x^2))))*x^(1+10*pi*e*sgn(e^(-x^2)))")
 
     KNOWN_INTEGRAL_TEST(SimpleExponent, "e^x", "e^x")
 
