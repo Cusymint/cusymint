@@ -3,6 +3,37 @@
 #include "Symbol.cuh"
 
 namespace Sym {
+    namespace {
+        // This function checks only some simple cases, a complete check would require full-blown
+        // inequality solver
+        __host__ __device__ bool is_always_positive(const Symbol& expr) {
+            if (expr.is(Type::NumericConstant)) {
+                return expr.as<NumericConstant>().value > 0.0;
+            }
+
+            if (expr.is(Type::KnownConstant)) {
+                switch (expr.as<KnownConstant>().value) {
+                case KnownConstantValue::Unknown:
+                    return false;
+                case KnownConstantValue::E:
+                    [[fallthrough]];
+                case KnownConstantValue::Pi:
+                    return true;
+                }
+            }
+
+            if (Pow<Any, Num>::match(expr)) {
+                const double& exponent = expr.as<Power>().arg2().as<NumericConstant>().value;
+
+                if (floor(exponent) == exponent && static_cast<int64_t>(exponent) % 2 == 0) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     DEFINE_ONE_ARGUMENT_OP_FUNCTIONS(Sign)
     DEFINE_SIMPLE_ONE_ARGUMENT_OP_ARE_EQUAL(Sign)
     DEFINE_IDENTICAL_COMPARE_TO(Sign)
@@ -17,55 +48,13 @@ namespace Sym {
     DEFINE_DERIVATIVE_SIZE(Sign) { return 1; }
 
     DEFINE_SIMPLIFY_IN_PLACE(Sign) {
-        if (arg().is(Type::Product)) {
-            // This is done under assumptions that the product tree contains at most one
-            // NumericConstant (because `arg()`  is simplified)
-            for (TreeIterator<Product> iterator(&arg()); iterator.is_valid(); iterator.advance()) {
-                if (!iterator.current()->is(Type::NumericConstant)) {
-                    continue;
-                }
-
-                if (iterator.current()->as<NumericConstant>().value < 0) {
-                    iterator.current()->as<NumericConstant>().value *= -1;
-
-                    Neg<Copy>::init(*help_space, {symbol()});
-                    help_space->copy_to(symbol());
-                }
-
-                break;
-            }
-        }
-
-        if (arg().is(Type::NumericConstant)) {
-            double value = 0.0;
-
-            if (arg().as<NumericConstant>().value > 0.0) {
-                value = 1.0;
-            }
-            else if (arg().as<NumericConstant>().value < 0.0) {
-                value = -1.0;
-            }
-
-            symbol().init_from(NumericConstant::with_value(value));
-
+        if (arg().is(0)) {
+            symbol().init_from(NumericConstant::with_value(0));
             return true;
         }
 
-        if (arg().is(Type::KnownConstant)) {
-            double value = 0.0;
-
-            switch (arg().as<KnownConstant>().value) {
-            case KnownConstantValue::Unknown:
-                return true;
-            case KnownConstantValue::E:
-                [[fallthrough]];
-            case KnownConstantValue::Pi:
-                value = 1.0;
-                break;
-            }
-
-            symbol().init_from(NumericConstant::with_value(value));
-
+        if (is_always_positive(arg())) {
+            symbol().init_from(NumericConstant::with_value(1));
             return true;
         }
 
@@ -74,17 +63,51 @@ namespace Sym {
             return true;
         }
 
-        if (Pow<Any, Num>::match(symbol())) {
-            double& exponent = arg().as<Power>().arg2().as<NumericConstant>().value;
-
-            if (floor(exponent) == exponent) {
-                if (static_cast<int64_t>(exponent) % 2 == 0) {
-                    exponent = 2.0;
-                }
-                else {
-                    exponent = 1.0;
-                }
+        size_t variable_expressions_size = 0;
+        size_t variable_expression_count = 0;
+        int sign = 1;
+        for (TreeIterator<Product> iterator(&arg()); iterator.is_valid(); iterator.advance()) {
+            if (iterator.current()->is(Type::NumericConstant)) {
+                sign *= iterator.current()->as<NumericConstant>().value > 0 ? 1 : -1;
             }
+            else if (!is_always_positive(*iterator.current())) {
+                iterator.current()->copy_to(help_space[variable_expressions_size]);
+                variable_expression_count += 1;
+                variable_expressions_size += iterator.current()->size();
+            }
+        }
+
+        if (variable_expression_count == 0) {
+            symbol().init_from(NumericConstant::with_value(sign));
+            return true;
+        }
+
+        Symbol* new_sign = &symbol();
+        const size_t neg_size = Neg<None>::Size::get_value();
+
+        if (sign < 0) {
+            Neg<None>::init(symbol(), {});
+            new_sign += neg_size;
+        }
+
+        new_sign->init_from(Sign::builder());
+
+        for (size_t i = 0; i < variable_expression_count - 1; ++i) {
+            new_sign->as<Sign>().arg()[i].init_from(Product::builder());
+        }
+
+        Symbol::copy_symbol_sequence(&new_sign->as<Sign>().arg() + variable_expression_count - 1,
+                                     help_space, variable_expressions_size);
+
+        for (ssize_t i = static_cast<ssize_t>(variable_expression_count) - 2; i >= 0; ++i) {
+            new_sign->as<Sign>().arg()[i].as<Product>().seal_arg1();
+            new_sign->as<Sign>().arg()[i].as<Product>().seal();
+        }
+
+        new_sign->as<Sign>().seal();
+
+        if (sign < 0) {
+            (new_sign - neg_size)->size() = new_sign->size() + neg_size;
         }
 
         return true;
