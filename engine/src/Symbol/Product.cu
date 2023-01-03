@@ -1,12 +1,16 @@
 #include "Symbol/Product.cuh"
 
 #include <fmt/core.h>
+#include <fmt/format.h>
+#include <list>
+#include <string>
 
 #include "Evaluation/StaticFunctions.cuh"
 #include "Symbol/Addition.cuh"
 #include "Symbol/Constants.cuh"
 #include "Symbol/Macros.cuh"
 #include "Symbol/MetaOperators.cuh"
+#include "Symbol/ReverseTreeIterator.cuh"
 #include "Symbol/SimplificationResult.cuh"
 #include "Symbol/Symbol.cuh"
 #include "Symbol/SymbolType.cuh"
@@ -14,18 +18,6 @@
 #include "Utils/Order.cuh"
 
 namespace Sym {
-    namespace {
-        std::string fraction_to_tex(const Symbol& numerator, const Symbol& denominator) {
-            if (numerator.is(Type::Logarithm) && denominator.is(Type::Logarithm)) {
-                return fmt::format(R"(\log_{{ {} }}\left({}\right))",
-                                   denominator.as<Logarithm>().arg().to_tex(),
-                                   numerator.as<Logarithm>().arg().to_tex());
-            }
-            return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator.to_tex(),
-                               denominator.to_tex());
-        }
-    }
-
     DEFINE_TWO_ARGUMENT_COMMUTATIVE_OP_FUNCTIONS(Product)
     DEFINE_SIMPLE_TWO_ARGUMENT_OP_ARE_EQUAL(Product)
     DEFINE_IDENTICAL_COMPARE_TO(Product)
@@ -372,22 +364,117 @@ namespace Sym {
         return fmt::format("({}*{})", arg1().to_string(), arg2().to_string());
     }
 
+    namespace {
+        std::string get_numerator_result(const std::list<const Symbol*>& numerator_symbols) {
+            if (numerator_symbols.empty()) {
+                return "1";
+            }
+            if (numerator_symbols.size() == 1) {
+                return numerator_symbols.front()->to_tex();
+            }
+
+            std::string numerator_result;
+            auto it = numerator_symbols.cbegin();
+            if ((*it)->is(Type::Addition)) {
+                numerator_result = fmt::format(R"(\left({}\right))", (*it)->to_tex());
+            }
+            else {
+                numerator_result = (*it)->to_tex();
+            }
+
+            for (++it; it != numerator_symbols.cend(); ++it) {
+                if ((*it)->is(Type::NumericConstant) ||
+                    ((*it)->is(Type::Power) &&
+                     (*it)->as<Power>().arg1().is(Type::NumericConstant)) ||
+                    ((*it)->is(Type::Product) &&
+                     (*it)->as<Product>().arg1().is(Type::NumericConstant))) {
+                    numerator_result += " \\cdot ";
+                }
+                if ((*it)->is(Type::Addition) || (*it)->is_negated()) {
+                    numerator_result += fmt::format(R"(\left({}\right))", (*it)->to_tex());
+                }
+                else {
+                    numerator_result += (*it)->to_tex();
+                }
+            }
+
+            return numerator_result;
+        }
+
+        std::string get_denominator_result(const std::list<const Power*>& denominator_symbols) {
+            if (denominator_symbols.size() == 1) {
+                return denominator_symbols.front()->to_tex_without_negation(false);
+            }
+
+            auto it = denominator_symbols.cbegin();
+            std::string denominator_result = (*it)->to_tex_without_negation();
+
+            for (++it; it != denominator_symbols.cend(); ++it) {
+                if ((*it)->arg1().is(Type::NumericConstant) ||
+                    ((*it)->arg1().is(Type::Power) &&
+                     (*it)->arg1().as<Power>().arg1().is(Type::NumericConstant)) ||
+                    ((*it)->arg1().is(Type::Product) &&
+                     (*it)->arg1().as<Product>().arg1().is(Type::NumericConstant))) {
+                    denominator_result += " \\cdot ";
+                }
+                denominator_result += (*it)->to_tex_without_negation();
+            }
+
+            return denominator_result;
+        }
+    }
+
+    std::string Product::to_tex_without_negation() const {
+        NumericConstant first_value = NumericConstant::with_value(1);
+        std::list<const Symbol*> numerator_symbols;
+        std::list<const Power*> denominator_symbols;
+
+        ConstReverseTreeIterator<Product> iterator(this);
+
+        if (iterator.current()->is(Type::NumericConstant)) {
+            first_value.value = abs(iterator.current()->as<NumericConstant>().value);
+            if (first_value.value != 1) {
+                numerator_symbols.push_back(&first_value.symbol());
+            }
+            iterator.advance();
+        }
+
+        for (; iterator.is_valid(); iterator.advance()) {
+            if (iterator.current()->is(Type::Power)) {
+                const auto& power = iterator.current()->as<Power>();
+                if (power.arg2().is_negated()) {
+                    denominator_symbols.push_back(&power);
+                }
+                else {
+                    numerator_symbols.push_back(&power.symbol());
+                }
+            }
+            else {
+                numerator_symbols.push_back(iterator.current());
+            }
+        }
+
+        std::string numerator_result = get_numerator_result(numerator_symbols);
+
+        if (denominator_symbols.empty()) {
+            return numerator_result;
+        }
+
+        std::string denominator_result = get_denominator_result(denominator_symbols);
+
+        return fmt::format(R"(\frac{{ {} }}{{ {} }})", numerator_result, denominator_result);
+    }
+
     std::string Product::to_tex() const {
-        std::string arg1_pattern = "{}";
-        std::string arg2_pattern = "{}";
-        std::string cdot = " ";
-        if (arg1().is(Type::Addition)) {
-            arg1_pattern = R"(\left({}\right))";
+        bool negated = false;
+
+        const Symbol& first = last_in_tree()->arg1();
+
+        if (first.is(Type::NumericConstant) && first.as<NumericConstant>().value < 0) {
+            negated = true;
         }
-        if (arg2().is(Type::Addition)) {
-            arg2_pattern = R"(\left({}\right))";
-        }
-        if (arg2().is(Type::NumericConstant) ||
-            (arg2().is(Type::Power) && arg2().as<Power>().arg1().is(Type::NumericConstant)) ||
-            (arg2().is(Type::Product) && arg2().as<Product>().arg1().is(Type::NumericConstant))) {
-            cdot = " \\cdot ";
-        }
-        return fmt::format(arg1_pattern + cdot + arg2_pattern, arg1().to_tex(), arg2().to_tex());
+
+        return fmt::format("{}{}", negated ? "-" : "", to_tex_without_negation());
     }
 
     __host__ __device__ void Product::eliminate_ones() {

@@ -2,6 +2,7 @@
 
 #include "MetaOperators.cuh"
 #include "Symbol.cuh"
+#include "Symbol/Constants.cuh"
 #include "Symbol/Macros.cuh"
 #include "Symbol/Product.cuh"
 #include "Symbol/SimplificationResult.cuh"
@@ -367,11 +368,18 @@ namespace Sym {
     }
 
     std::string Addition::to_tex() const {
-        if (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value < 0.0) {
-            return fmt::format("{}-{}", arg1().to_tex(), -arg2().as<NumericConstant>().value);
+        std::string result;
+        ConstReverseTreeIterator<Addition> iterator(this);
+        result = iterator.current()->to_tex();
+        iterator.advance();
+        for (; iterator.is_valid(); iterator.advance()) {
+            if (!iterator.current()->is_negated()) {
+                result += "+";
+            }
+            result += iterator.current()->to_tex();
         }
-
-        return fmt::format("{}+{}", arg1().to_tex(), arg2().to_tex());
+        
+        return result;
     }
 
     std::vector<Symbol> operator+(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
