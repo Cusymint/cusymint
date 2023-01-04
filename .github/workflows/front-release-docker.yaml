@@ -1,4 +1,4 @@
-name: 'Engine release'
+name: 'Frontend Docker release'
 on:
   workflow_dispatch:
     
@@ -6,7 +6,7 @@ on:
     branches:
       - master
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - 'v*' # Push events to matching v*, i.e. v1.0.0
   
   pull_request:
     branches:
@@ -33,14 +33,13 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/${{ github.repository }}/engine
+            ghcr.io/${{ github.repository }}/client
 
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          context: ./engine
-          file: ./engine/Dockerfile
+          context: .
+          file: ./front/cusymint_app/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-            

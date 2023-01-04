@@ -35,10 +35,10 @@ scripts:
   analyze:
     run: melos exec -c 1 -- "dart analyze . --fatal-infos"
 
-  test:all:
-    run: melos run test --no-select
+  test:unit:all:
+    run: melos run test:unit --no-select
 
-  test:
+  test:unit:
     run: |
       melos exec -c 6 --fail-fast -- \
         "flutter test --no-pub"
@@ -46,8 +46,59 @@ scripts:
       dir-exists:
         - test
   
+  test:integration:
+    run: |
+      melos exec -c 6 --fail-fast -- \
+        "dart test integration_test"
+    select-package:
+      dir-exists:
+        - integration_test
+
   format-check:
     run: melos exec flutter format . --set-exit-if-changed
+
+  build:web:
+    run: melos exec --fail-fast -- \
+      "flutter build web"
+    select-package:
+      dir-exists:
+        - web
+      scope: 'cusymint_app'
+
+  build:linux:
+    run: melos exec --fail-fast -- \
+      "flutter build linux"
+    select-package:
+      dir-exists:
+        - linux
+      scope: 'cusymint_app'
+
+  build:windows:
+    run: melos exec --fail-fast -- \
+      "flutter build windows"
+    select-package:
+      dir-exists:
+        - windows
+      scope: 'cusymint_app'
+
+
+  build:windows:msix:
+    run: melos exec --fail-fast -- \
+      "flutter pub run msix:create"
+    select-package:
+      depends-on: 
+        - msix
+      dir-exists:
+        - windows
+      scope: 'cusymint_app'
+
+  build:android:
+    run: melos exec --fail-fast -- \
+      "flutter build apk --split-per-abi"
+    select-package:
+      dir-exists:
+        - android
+      scope: 'cusymint_app'
 
 command:
   bootstrap:

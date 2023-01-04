@@ -2,7 +2,7 @@ name: cusymint_client
 description: Library for communicating with the cusymint engine.
 
 environment:
-  sdk: '>=2.18.2 <3.0.0'
+  sdk: '>=2.18.0 <3.0.0'
 
 dependencies:
   # Temporal fix, doesn't check for "jsonrpc": "2.0" in the response

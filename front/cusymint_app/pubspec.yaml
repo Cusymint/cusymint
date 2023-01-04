@@ -43,6 +43,8 @@ dev_dependencies:
 
   mockito: ^5.3.2
 
+  msix: ^3.7.0
+
 flutter:
   uses-material-design: true
   
@@ -67,3 +69,10 @@ flutter_native_splash:
   color: "#b9ded2"
   image: "../cusymint_assets/assets/images/logo_wide.png"
   
+msix_config:
+  displayName: "cusymint"
+  publisher_display_name: "cusymint"
+  identity_name: "cusymint.app"
+  logo_path: "../cusymint_assets/assets/icons/app_icon_curved_edges.png"
+  capabilities: "internetClient"
+  languages: "en-US, pl-PL"
