@@ -86,7 +86,8 @@ add_executable(
   ${TEST_MATH_DIR}/PascalTriangle.cu
   ${TEST_EVALUATION_DIR}/IntegratorUtils.cu
   ${TEST_EVALUATION_DIR}/Kernels.cu
-  ${TEST_EVALUATION_DIR}/Collapser.cu)
+  ${TEST_EVALUATION_DIR}/Collapser.cu
+  ${TEST_EVALUATION_DIR}/AdvancedIntegral.cu)
 
 add_executable(
   srvcusymint
