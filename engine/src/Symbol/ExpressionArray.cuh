@@ -581,7 +581,7 @@ namespace Sym {
                 if constexpr (Consts::DEBUG) {
                     if (index >= array.size()) {
                         Util::crash("Trying to create an iterator to an ExpressionArray past the "
-                                    "last expression");
+                                    "last expression (index %lu with size %lu)", index, array.size());
                     }
                 }
             }

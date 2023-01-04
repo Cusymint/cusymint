@@ -189,7 +189,8 @@ namespace Test {
     EQUALITY_TEST(PowerWithLogarithmReciprocal, "10^(sin(x)*x/ln(10)*pi)", "e^(sin(x)*x*pi)")
 
     SIMPLIFY_TEST(PolynomialsOfEqualRank, "(9+2*x^2+x^3)/(3+x+5*x^2+10*x^3)",
-                  Sym::num(0.1) + Sym::num(-0.1) * Sym::var() / Parser::parse_function("(3+x+5*x^2+10*x^3)") +
+                  Sym::num(0.1) +
+                      Sym::num(-0.1) * Sym::var() / Parser::parse_function("(3+x+5*x^2+10*x^3)") +
                       Parser::parse_function("1.5x^2/(3+x+5*x^2+10*x^3)") +
                       Parser::parse_function("8.7/(3+x+5*x^2+10*x^3)"))
     SIMPLIFY_TEST(
@@ -210,33 +211,62 @@ namespace Test {
                       Parser::parse_function("2/(1+x+x^2)") +
                       (Sym::num(-1) * (Sym::var() ^ Sym::num(2))) + (Sym::var() ^ Sym::num(3)))
 
-    SIMPLIFY_TEST(SameExpressionsAddition, "x+x", "2*x")
-    SIMPLIFY_TEST(SameExpressionsAdditionBeingSorted, "sin(x)+ln(x)+sin(x)", "2*sin(x)+ln(x)")
-    SIMPLIFY_TEST(SameExpressionsAdditionBeingSorted2, "ln(x)+sin(x)+ln(x)", "sin(x)+2*ln(x)")
-    SIMPLIFY_TEST(SameExpressionsAdditionLeftMultiplied, "3*c+c", "4*c")
-    SIMPLIFY_TEST(SameExpressionsAdditionRightMultiplied, "e^x+8*e^x", "9*e^x")
-    SIMPLIFY_TEST(SameExpressionsMultipliedByConstantAddition, "5*cos(x)+10*cos(x)", "15*cos(x)")
-    SIMPLIFY_TEST(ReducingSameExpressionsAddition, "x*y-x*y", "0")
+    EQUALITY_TEST(SameExpressionsAddition, "x+x", "2*x")
+    EQUALITY_TEST(SameExpressionsAdditionBeingSorted, "sin(x)+ln(x)+sin(x)", "2*sin(x)+ln(x)")
+    EQUALITY_TEST(SameExpressionsAdditionBeingSorted2, "ln(x)+sin(x)+ln(x)", "sin(x)+2*ln(x)")
+    EQUALITY_TEST(SameExpressionsAdditionLeftMultiplied, "3*c+c", "4*c")
+    EQUALITY_TEST(SameExpressionsAdditionRightMultiplied, "e^x+8*e^x", "9*e^x")
+    EQUALITY_TEST(SameExpressionsMultipliedByConstantAddition, "5*cos(x)+10*cos(x)", "15*cos(x)")
+    EQUALITY_TEST(ReducingSameExpressionsAddition, "x*y-x*y", "0")
 
-    SIMPLIFY_TEST(SameExpressionsMultiplication, "x*x", "x^2")
-    SIMPLIFY_TEST(SameExpressionsMultiplicationBeingSorted, "sin(x)*ln(x)*sin(x)", "sin(x)^2*ln(x)")
-    SIMPLIFY_TEST(SameExpressionsMultiplicationBeingSorted2, "ln(x)*sin(x)*ln(x)", "sin(x)*ln(x)^2")
-    SIMPLIFY_TEST(SameExpressionsMultiplicationLeftPowered, "c^3*c", "c^4")
-    SIMPLIFY_TEST(SameExpressionsMultiplicationRightPowered, "e^x*(e^x)^8", "e^(9*x)")
-    SIMPLIFY_TEST(SameExpressionsPoweredToConstantMultiplication, "cos(x)^5*cos(x)^10", "cos(x)^15")
-    SIMPLIFY_TEST(ReducingSameExpressionsMultiplication, "((x*v)^sin(x))/((x*v)^sin(x))", "1")
+    EQUALITY_TEST(SameLongExpressionsAddition, "x*y*z+x*y*z", "2*x*y*z")
+    EQUALITY_TEST(SameLongExpressionsAdditionBeingSorted, "sin(x)*cos(x)*x+ln(x)+x*cos(x)*sin(x)",
+                  "2*sin(x)*cos(x)*x+ln(x)")
+    EQUALITY_TEST(SameLongExpressionsAdditionBeingSorted2, "tan(x)*v*ln(x)+sin(x)+ln(x)*tan(x)*v",
+                  "sin(x)+2*ln(x)*tan(x)*v")
+    EQUALITY_TEST(SameLongExpressionsAdditionLeftMultiplied, "3*c*a*b*d*h+c*a*b*d*h", "4*c*a*b*d*h")
+    EQUALITY_TEST(SameLongExpressionsAdditionRightMultiplied, "e^x*a*b*h*d+8*e^x*b*a*d*h",
+                  "9*e^x*a*b*d*h")
+    EQUALITY_TEST(SameLongExpressionsMultipliedByConstantAddition, "5*cos(x)*a*b*c+10*c*cos(x)*b*a",
+                  "15*a*cos(x)*c*b")
+    EQUALITY_TEST(ReducingSameLongExpressionsAddition, "x*y*b*n*e*u*l*j-x*y*n*b*l*j*e*u", "0")
 
-    SIMPLIFY_TEST(PoweredProduct, "(sin(x+2)*ln(cos(x)))^(e^x)", "sin(2+x)^e^x*ln(cos(x))^e^x")
-    SIMPLIFY_TEST(PoweredToSum, "(x+1)^(x+c)", "(1+x)^c * (1+x)^x")
-    SIMPLIFY_TEST(PoweredLongProduct, "(x*cos(x)*sin(x)*ln(x)*d)^2",
+    EQUALITY_TEST(SameExpressionsMultiplication, "x*x", "x^2")
+    EQUALITY_TEST(SameExpressionsMultiplicationBeingSorted, "sin(x)*ln(x)*sin(x)", "sin(x)^2*ln(x)")
+    EQUALITY_TEST(SameExpressionsMultiplicationBeingSorted2, "ln(x)*sin(x)*ln(x)", "sin(x)*ln(x)^2")
+    EQUALITY_TEST(SameExpressionsMultiplicationLeftPowered, "c^3*c", "c^4")
+    EQUALITY_TEST(SameExpressionsMultiplicationRightPowered, "e^x*(e^x)^8", "e^(9*x)")
+    EQUALITY_TEST(SameExpressionsPoweredToConstantMultiplication, "cos(x)^5*cos(x)^10", "cos(x)^15")
+    EQUALITY_TEST(ReducingSameExpressionsMultiplication, "((x*v)^sin(x))/((x*v)^sin(x))", "1")
+
+    EQUALITY_TEST(SameLongExpressionsMultiplication, "x^(b*c*d)*x^(b*c*d)", "x^(2*b*c*d)")
+    EQUALITY_TEST(SameLongExpressionsMultiplicationBeingSorted,
+                  "sin(x)^(a*b*c)*ln(x)*sin(x)^(3*b*c*a)", "sin(x)^(4*a*b*c)*ln(x)")
+    EQUALITY_TEST(SameLongExpressionsMultiplicationBeingSorted2,
+                  "ln(x)^(x*x*x)*sin(x)*ln(x)^(x*x*x)", "sin(x)*ln(x)^(2*x*x*x)")
+    EQUALITY_TEST(SameLongExpressionsMultiplicationLeftPowered, "c^(3*d)*c^d", "c^(4*d)")
+    EQUALITY_TEST(SameLongExpressionsMultiplicationRightPowered, "e^(20*x)*(e^x)^8", "e^(28*x)")
+    EQUALITY_TEST(SameLongExpressionsPoweredToConstantMultiplication,
+                  "cos(x)^(5*a*b*c*d*e*f)*cos(x)^(10*a*b*c*d*e*f)", "cos(x)^(15*a*b*c*d*e*f)")
+    EQUALITY_TEST(ReducingSameLongExpressionsMultiplication,
+                  "((x*v)^(18*sin(x)*b))/((x*v)^(b*sin(x)*18))", "1")
+
+    EQUALITY_TEST(ReducingIdenticalFractionWithCoefficients, "(x+1)/(-x-1)", "-1")
+    EQUALITY_TEST(ReducingIdenticalFractionWithCoefficients2, "(x+1)/(-2x-2)", "-0.5")
+    EQUALITY_TEST(ReducingIdenticalFractionWithCoefficients3, "6(x+1)/(2x+2)", "3")
+
+    EQUALITY_TEST(PoweredProduct, "(sin(x+2)*ln(cos(x)))^(e^x)", "sin(2+x)^e^x*ln(cos(x))^e^x")
+    EQUALITY_TEST(PoweredToSum, "(x+1)^(x+c)", "(1+x)^c * (1+x)^x")
+    EQUALITY_TEST(PoweredLongProduct, "(x*cos(x)*sin(x)*ln(x)*d)^2",
                   "d^2*x^2*(sin(x))^2*(cos(x))^2*ln(x)^2")
-    SIMPLIFY_TEST(PoweredToLongSum, "e^(1+c+x+cos(x))", "e^x*e^(1+c)*e^cos(x)")
+    SIMPLIFY_TEST(LinearPolynomialsDivision, "(2x-1)/x", Sym::num(2) + Sym::num(-1) / Sym::var())
+    EQUALITY_TEST(PoweredToLongSum, "e^(1+c+x+cos(x))", "e^x*e^(1+c)*e^cos(x)")
 
-    SIMPLIFY_TEST(LogarithmOfProduct, "ln(x*ln(x))", "ln(x)+ln(ln(x))")
-    SIMPLIFY_TEST(SplitProductIntoSum, "(x+1)*(y+c)", "c+y+c*x+y*x")
+    EQUALITY_TEST(LogarithmOfProduct, "ln(x*ln(x))", "ln(x)+ln(ln(x))")
+    EQUALITY_TEST(SplitProductIntoSum, "(x+1)*(y+c)", "c+y+c*x+y*x")
 
-    SIMPLIFY_TEST(ExpandBinomial, "(x+1)^3", "1+3*x+3*x^2+x^3")
-    SIMPLIFY_TEST(
+    EQUALITY_TEST(ExpandBinomial, "(x+1)^3", "1+3*x+3*x^2+x^3")
+    EQUALITY_TEST(
         ExpandAdvancedExpression, "(tg(x)+x*y+cos(x)+3)^4",
         "((((((((((((((((((((((((((((((((((81+((108*y)*x))+((54*y^2)*x^2))+(((36*y)*x)*cos(x)^2))+("
         "((6*y^2)*x^2)*cos(x)^2))+(((36*y)*x)*tan(x)^2))+(((6*y^2)*x^2)*tan(x)^2))+((6*cos(x)^2)*"
@@ -249,8 +279,8 @@ namespace Test {
         "tan(x)^4)+(108*cos(x)))+(108*tan(x)))")
 
     SIMPLIFY_TEST(SplitReciprocal, "1/(e*x*sin^2(x))",
-                  Sym::inv(Sym::e()) / Sym::var() / (Sym::sin(Sym::var()) ^ Sym::num(2)))
+                  Sym::inv(Sym::e()) / Sym::var() * (Sym::sin(Sym::var()) ^ Sym::num(-2)))
 
-    SIMPLIFY_TEST(ExponentialIntegralOfLogarithm, "1+Ei(ln(x+2))", "1+li(2+x)")
-    SIMPLIFY_TEST(LogarithmicIntegralOfExponential, "5*li(e^(pi*x))", "5*Ei(pi*x)")
+    EQUALITY_TEST(ExponentialIntegralOfLogarithm, "1+Ei(ln(x+2))", "1+li(2+x)")
+    EQUALITY_TEST(LogarithmicIntegralOfExponential, "5*li(e^(pi*x))", "5*Ei(pi*x)")
 }

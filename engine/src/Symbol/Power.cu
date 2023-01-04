@@ -278,15 +278,36 @@ namespace Sym {
         return fmt::format("({})^{}", arg1().to_string(), arg2().to_string());
     }
 
+    std::string Power::to_tex_without_negation(const bool wrap_addition_in_braces) const {
+        std::string base_pattern = "{}";
+        std::string exponent_pattern = "{{ {} }}";
+        if (arg2().is(Type::NumericConstant)) { 
+            const double value = abs(arg2().as<NumericConstant>().value);
+            if (value == 0.5) {
+                return fmt::format("\\sqrt{{ {} }}", arg1().to_tex());
+            }
+            if (value == 1) {
+                if (wrap_addition_in_braces && (arg1().is(Type::Addition) || arg1().is_negated())) {
+                    return fmt::format(R"(\left({}\right))", arg1().to_tex());
+                }
+                return arg1().to_tex();
+            }
+            exponent_pattern = fmt::format("{{{{ {} }}}}", value);
+        }
+        if (arg1().is(Type::Addition) || arg1().is(Type::Product) || arg1().is(Type::Power)) {
+            base_pattern = R"(\left({}\right))";
+        }
+        if (arg2().is(Type::Product)) {
+            return fmt::format(base_pattern + "^" + exponent_pattern, arg1().to_tex(), arg2().as<Product>().to_tex_without_negation());
+        }
+        return fmt::format(base_pattern + "^" + exponent_pattern, arg1().to_tex(), arg2().to_tex());
+    }
+
     std::string Power::to_tex() const {
-        if (arg2().is(Type::NumericConstant) && arg2().as<NumericConstant>().value == 0.5) {
-            return fmt::format("\\sqrt{{ {} }}", arg1().to_tex());
+        if (arg2().is_negated()) {
+            return fmt::format(R"(\frac{{ 1 }}{{ {} }})", to_tex_without_negation(false));
         }
-        if (arg1().is(Type::Addition) || arg1().is(Type::Product) || arg1().is(Type::Negation) ||
-            arg1().is(Type::Reciprocal) || arg1().is(Type::Power)) {
-            return fmt::format(R"(\left({}\right)^{{ {} }})", arg1().to_tex(), arg2().to_tex());
-        }
-        return fmt::format("{}^{{ {} }}", arg1().to_tex(), arg2().to_tex());
+        return to_tex_without_negation();
     }
 
     std::vector<Symbol> operator^(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {

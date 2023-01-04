@@ -56,9 +56,7 @@
             VC_CASE(Solution, _instance, _member_function, __VA_ARGS__)                    \
             VC_CASE(Substitution, _instance, _member_function, __VA_ARGS__)                \
             VC_CASE(Addition, _instance, _member_function, __VA_ARGS__)                    \
-            VC_CASE(Negation, _instance, _member_function, __VA_ARGS__)                    \
             VC_CASE(Product, _instance, _member_function, __VA_ARGS__)                     \
-            VC_CASE(Reciprocal, _instance, _member_function, __VA_ARGS__)                  \
             VC_CASE(Power, _instance, _member_function, __VA_ARGS__)                       \
             VC_CASE(Sine, _instance, _member_function, __VA_ARGS__)                        \
             VC_CASE(Cosine, _instance, _member_function, __VA_ARGS__)                      \
@@ -98,9 +96,7 @@ namespace Sym {
         SubexpressionCandidate subexpression_candidate;
         SubexpressionVacancy subexpression_vacancy;
         Addition addition;
-        Negation negation;
         Product product;
-        Reciprocal reciprocal;
         Power power;
         Sine sine;
         Cosine cosine;
@@ -134,6 +130,16 @@ namespace Sym {
         }
 
         [[nodiscard]] __host__ __device__ bool is(const double number) const;
+
+        /*
+         * @brief Checks if the expression is a negation
+         */
+        [[nodiscard]] __host__ __device__ bool is_negation() const;
+
+        /*
+         * @brief If the expression is a negation, returns the negated subexpression
+         */
+        [[nodiscard]] __host__ __device__ const Symbol& negation_arg() const;
 
         [[nodiscard]] __host__ __device__ bool is_integer() const;
 
@@ -375,7 +381,8 @@ namespace Sym {
          * constant expression
          */
         template <class... Args, std::enable_if_t<(std::is_same_v<Args, Symbol> && ...), int> = 0>
-        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space, const Args&... expressions) const {
+        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space,
+                                                              const Args&... expressions) const {
             const Symbol* const expression_array[] = {&expressions...};
             return is_function_of(help_space, expression_array, sizeof...(Args));
         }
@@ -391,8 +398,9 @@ namespace Sym {
          *
          * @return Same as in the other function
          */
-        [[nodiscard]] __host__ __device__ bool is_function_of(Symbol* const help_space, const Symbol* const* const expressions,
-                                                const size_t expression_count) const;
+        [[nodiscard]] __host__ __device__ bool
+        is_function_of(Symbol* const help_space, const Symbol* const* const expressions,
+                       const size_t expression_count) const;
 
         /*
          * @brief Removes holes from symbol tree and copies it in reverse order to
@@ -551,6 +559,12 @@ namespace Sym {
          */
         [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
         derivative_to(SymbolIterator& destination) const;
+
+        /*
+         * @brief Checks if `this` should be displayed with a minus sign. Returns `true` if so,
+         * `false` otherwise.
+         */
+        bool is_negated() const;
     };
 
     /*

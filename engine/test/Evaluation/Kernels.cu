@@ -9,6 +9,7 @@
 #include "Symbol/ExpressionArray.cuh"
 #include "Symbol/Integral.cuh"
 #include "Symbol/Macros.cuh"
+#include "Symbol/SubexpressionVacancy.cuh"
 #include "Utils/DeviceArray.cuh"
 
 #define KERNEL_TEST(_name) TEST(Kernels, _name)
@@ -159,7 +160,7 @@ namespace Test {
                     (Sym::single_integral_vacancy() ^ Sym::single_integral_vacancy()),
                 4),
             nth_expression_candidate(1, -vacancy(3, 2), 3),
-            nth_expression_candidate(5, vacancy_solved_by(10) + vacancy(2, 1), 2),
+            nth_expression_candidate(5, vacancy_solved_by(10) + vacancy(2, 1), 3),
             nth_expression_candidate(6, vacancy_solved_by(9) * vacancy_solved_by(8), 3)};
 
         ExprVector result_tree = {
@@ -174,7 +175,7 @@ namespace Test {
                     (Sym::single_integral_vacancy() ^ Sym::single_integral_vacancy()),
                 4),
             nth_expression_candidate(1, -vacancy_solved_by(6), 3),
-            nth_expression_candidate(5, vacancy_solved_by(10) + vacancy_solved_by(7), 2),
+            nth_expression_candidate(5, vacancy_solved_by(10) + vacancy_solved_by(7), 3),
             nth_expression_candidate(6, vacancy_solved_by(9) * vacancy_solved_by(8), 3)};
 
         auto expressions = Sym::ExpressionArray(vacancy_tree);
@@ -368,10 +369,11 @@ namespace Test {
         std::vector<HeuristicPairVector> expected_heuristics = {
             {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}, {6, {1, 0}}},
             {{0, {1, 0}}},
-            {{3, {1, 1}}, {7, {1, 0}}},
+            {{3, {1, 1}}, {7, {1, 0}}, {12, {1, 1}}},
             {{1, {2, 1}}},
             {{2, {1, 0}}, {3, {1, 1}}, {7, {1, 0}}},
-            {}};
+            {},
+        };
 
         ExprVector expected_expressions_vector =
             get_expected_expression_vector(expected_heuristics);
@@ -406,7 +408,7 @@ namespace Test {
         std::vector<HeuristicPairVector> expected_heuristics = {
             {{1, {2, 1}}, {2, {1, 0}}, {4, {1, 0}}, {5, {1, 0}}, {6, {1, 0}}},
             {{0, {1, 0}}},
-            {{3, {1, 1}}, {7, {1, 0}}},
+            {{3, {1, 1}}, {7, {1, 0}}, {12, {1, 1}}},
             {{1, {2, 1}}},
             {{2, {1, 0}}, {3, {1, 1}}, {7, {1, 0}}},
             {}};
@@ -476,15 +478,16 @@ namespace Test {
 
         expected_expression_vector.insert(
             expected_expression_vector.end(),
-            {
-                nth_expression_candidate(0, Sym::single_integral_vacancy() +
-                                                Sym::single_integral_vacancy()),
-                nth_expression_candidate(3, Sym::single_integral_vacancy() +
-                                                Sym::single_integral_vacancy()),
-                nth_expression_candidate(2, Sym::single_integral_vacancy() * Sym::cnst("c") *
-                                                Sym::num(23)),
-                nth_expression_candidate(4, Sym::single_integral_vacancy() * Sym::num(2)),
-            });
+            {nth_expression_candidate(0, Sym::single_integral_vacancy() +
+                                             Sym::single_integral_vacancy()),
+             nth_expression_candidate(3, Sym::single_integral_vacancy() +
+                                             Sym::single_integral_vacancy()),
+             nth_expression_candidate(2, Sym::single_integral_vacancy() * Sym::cnst("c") *
+                                             Sym::num(23)),
+             nth_expression_candidate(4, Sym::single_integral_vacancy() * Sym::num(2)),
+             nth_expression_candidate(2, -Sym::single_integral_vacancy() +
+                                             (Sym::num(0.5) * (Sym::var() ^ Sym::num(2))) *
+                                                 (Sym::num(23) * Sym::cnst("c")))});
 
         ExprVector expected_integral_vector = {
             nth_expression_candidate(1, int_with_subs),
@@ -523,6 +526,8 @@ namespace Test {
             nth_expression_candidate(
                 4, Sym::integral(Sym::inv(Sym::num(0.5)) * (Sym::num(2) * Sym::tan(Sym::var())),
                                  {Sym::num(0.5) * Sym::var()})),
+            nth_expression_candidate(
+                10, Sym::integral(Sym::num(0.5) * (Sym::var() ^ Sym::num(2)) * Sym::num(0)), 4),
         };
 
         EvalStatusVector expected_integral_statuses = {
@@ -530,14 +535,12 @@ namespace Test {
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
             Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
-            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
         };
 
         EvalStatusVector expected_expression_statuses = {
-            Sym::EvaluationStatus::Done,
-            Sym::EvaluationStatus::Done,
-            Sym::EvaluationStatus::Done,
-            Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
+            Sym::EvaluationStatus::Done, Sym::EvaluationStatus::Done,
         };
 
         auto integrals = Sym::ExpressionArray<Sym::SubexpressionCandidate>(h_integrals);
@@ -603,7 +606,7 @@ namespace Test {
                     (Sym::single_integral_vacancy() ^ Sym::single_integral_vacancy()),
                 4),
             nth_expression_candidate(1, -vacancy(0, 1), 3),
-            nth_expression_candidate(5, Sym::single_integral_vacancy() + vacancy(0, 1), 2),
+            nth_expression_candidate(5, Sym::single_integral_vacancy() + vacancy(0, 1), 3),
             nth_expression_candidate(6, failed_vacancy() * Sym::single_integral_vacancy(), 3),
             nth_expression_candidate(0, vacancy(1, 1)) /*child failed but one integral remains*/,
             nth_expression_candidate(8, failed_vacancy(), 1)};
@@ -620,7 +623,7 @@ namespace Test {
                     (Sym::single_integral_vacancy() ^ Sym::single_integral_vacancy()),
                 4),
             nth_expression_candidate(1, -failed_vacancy(), 3),
-            nth_expression_candidate(5, Sym::single_integral_vacancy() + failed_vacancy(), 2),
+            nth_expression_candidate(5, Sym::single_integral_vacancy() + failed_vacancy(), 3),
             nth_expression_candidate(6, failed_vacancy() * Sym::single_integral_vacancy(), 3),
             nth_expression_candidate(0, vacancy(1, 0)) /*child failed but one integral remains*/,
             nth_expression_candidate(8, failed_vacancy(), 1)};
