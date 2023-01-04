@@ -77,8 +77,20 @@ namespace Sym {
                 sign *= iterator.current()->as<NumericConstant>().value > 0 ? 1 : -1;
             }
             else if (!is_always_positive(*iterator.current())) {
-                iterator.current()->copy_to(help_space[variable_expressions_size]);
                 variable_expression_count += 1;
+
+                if (Pow<Any, Num>::match(*iterator.current())) {
+                    const double value =
+                        iterator.current()->as<Power>().arg2().as<NumericConstant>().value;
+
+                    if (value == floor(value)) {
+                        help_space[variable_expressions_size].init_from(Variable::create());
+                        variable_expressions_size += 1;
+                        continue;
+                    }
+                }
+
+                iterator.current()->copy_to(help_space[variable_expressions_size]);
                 variable_expressions_size += iterator.current()->size();
             }
         }
