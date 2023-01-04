@@ -287,6 +287,8 @@ namespace Test {
     EQUALITY_TEST(SignOfConstant1, "sgn(-6)", "-1")
     EQUALITY_TEST(SignOfConstant2, "sgn(348)", "1")
     EQUALITY_TEST(SignOfConstant3, "sgn(0)", "0")
+    EQUALITY_TEST(SignOfExponent1, "sgn(e^(-3x))", "1")
+    EQUALITY_TEST(SignOfExponent2, "sgn(24^cos(x))", "1")
     SIMPLIFY_TEST_NO_ACTION(SignOfVariable, "sgn(x)")
     EQUALITY_TEST(OneOverSign, "1/sgn(sin(x))", "sgn(sin(x))")
     EQUALITY_TEST(SquareOfAbsoluteValue, "abs(x)^2", "x^2")

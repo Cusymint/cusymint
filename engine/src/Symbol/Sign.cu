@@ -30,6 +30,12 @@ namespace Sym {
                 }
             }
 
+            if (Pow<AnyOf<Pi, E>, Any>::match(expr) ||
+                Pow<Num, Any>::match(expr) &&
+                    expr.as<Power>().arg1().as<NumericConstant>().value > 0) {
+                return true;
+            }
+
             return Prod<Same, Sgn<Same>>::match(expr) || Prod<Sgn<Same>, Same>::match(expr);
         }
     }
