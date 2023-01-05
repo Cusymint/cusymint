@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("(sqrt(x)-2)^2/x^2"));
+    const auto integral = Sym::integral(Parser::parse_function("sin^4(x)cos^3(x)"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
