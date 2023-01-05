@@ -21,7 +21,10 @@ namespace Sym {
         virtual bool equals(const TransformationType& other) const = 0;
     };
 
-    std::optional<std::shared_ptr<TransformationType>> get_transformation_type(const SubexpressionCandidate& candidate, const Integral& previous_integral);
+    std::optional<std::shared_ptr<TransformationType>>
+    get_transformation_type(const SubexpressionCandidate& candidate,
+                            const Integral& previous_integral,
+                            const std::vector<std::vector<Symbol>> expression_tree);
 
     class Substitute : public TransformationType {
         std::vector<Symbol> substitution;
@@ -47,8 +50,8 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format(R"(\text{{Substitute}}\: {}={}, \text{{d}} {}={} \text{{d}} {})", substitution_name,
-                               substitution.data()->to_tex(), substitution_name,
+            return fmt::format(R"(\text{{Substitute}}\: {}={}, \text{{d}} {}={} \text{{d}} {})",
+                               substitution_name, substitution.data()->to_tex(), substitution_name,
                                derivative.data()->to_tex(), variable_name);
         }
 
@@ -77,14 +80,49 @@ namespace Sym {
     };
 
     class IntegrateByParts : public TransformationType {
-        std::vector<Symbol> first_factor;
+        std::vector<Symbol> first;
+        std::vector<Symbol> second;
+        std::vector<Symbol> first_derivative;
+        std::vector<Symbol> second_derivative;
+        const std::string variable_name;
 
       public:
-        std::string get_description() const override { return "\\text{Integrate by parts}"; }
+        IntegrateByParts(const std::vector<Symbol>& first, const std::vector<Symbol>& second,
+                         const std::vector<Symbol>& first_derivative,
+                         const std::vector<Symbol>& second_derivative,
+                         const size_t& substitution_count) :
+            first(first),
+            second(second),
+            first_derivative(first_derivative),
+            second_derivative(second_derivative),
+            variable_name(substitution_count > 0
+                              ? Substitution::nth_substitution_name(substitution_count - 1)
+                              : "x") {
+            if (substitution_count > 0) {
+                this->first.data()->substitute_variable_with_nth_substitution_name(
+                    substitution_count - 1);
+                this->second.data()->substitute_variable_with_nth_substitution_name(
+                    substitution_count - 1);
+                this->first_derivative.data()->substitute_variable_with_nth_substitution_name(
+                    substitution_count - 1);
+                this->second_derivative.data()->substitute_variable_with_nth_substitution_name(
+                    substitution_count - 1);
+            }
+        }
+
+        std::string get_description() const override {
+            return fmt::format(
+                R"(\text{{Integrate by parts:}}\: f'({})={},\: g({})={},\: f({})={},\: g'({})={})",
+                variable_name, first_derivative.data()->to_tex(), variable_name,
+                second.data()->to_tex(), variable_name, first.data()->to_tex(), variable_name,
+                second_derivative.data()->to_tex());
+        }
 
         bool equals(const TransformationType& other) const override {
             const auto* other_int = dynamic_cast<const IntegrateByParts*>(&other);
-            return other_int != nullptr && first_factor == other_int->first_factor;
+            return other_int != nullptr && first == other_int->first &&
+                   second == other_int->second && first_derivative == other_int->first_derivative &&
+                   second_derivative == other_int->second_derivative;
         }
     };
 
@@ -98,7 +136,9 @@ namespace Sym {
                       const size_t& substitution_count) :
             integral(integral),
             solution(solution),
-            variable_name(substitution_count > 0 ? Substitution::nth_substitution_name(substitution_count - 1) : "x") {
+            variable_name(substitution_count > 0
+                              ? Substitution::nth_substitution_name(substitution_count - 1)
+                              : "x") {
             if (substitution_count > 0) {
                 this->integral.data()->substitute_variable_with_nth_substitution_name(
                     substitution_count - 1);

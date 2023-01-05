@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("x^2*cos(x)"));
+    const auto integral = Sym::integral(Parser::parse_function("ln(sin(x))cos(x)"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 

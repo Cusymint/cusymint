@@ -211,7 +211,7 @@ namespace Sym {
                                                .arg()
                                                .as<Integral>();
 
-            const auto transformation = get_transformation_type(candidate, creator_integral);
+            const auto transformation = get_transformation_type(candidate, creator_integral, expression_tree);
             if (transformation.has_value()) {
                 list.push_back(transformation.value());
             }
