@@ -292,6 +292,7 @@ namespace Sym {
                         result.push_back(fmt::format(
                             R"(\quad \text{{{}{}{}:}}\:{}:)", trans_idx, get_ordinal_suffix(trans_idx),
                             Globalization::INTEGRAL, trans->get_description()));
+                        ++trans_idx;
                     }
                 }
                 result.push_back(fmt::format(R"(=\qquad {})", expression.data()->to_tex()));
