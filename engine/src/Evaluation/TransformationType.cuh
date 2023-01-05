@@ -93,7 +93,7 @@ namespace Sym {
                       const size_t& substitution_count) :
             integral(integral),
             solution(solution),
-            variable_name(Substitution::nth_substitution_name(substitution_count - 1)) {
+            variable_name(substitution_count > 0 ? Substitution::nth_substitution_name(substitution_count - 1) : "x") {
             if (substitution_count > 0) {
                 this->integral.data()->substitute_variable_with_nth_substitution_name(
                     substitution_count - 1);
