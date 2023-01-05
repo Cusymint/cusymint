@@ -13,16 +13,13 @@
 namespace Sym {
 
     using ExprVector = std::vector<std::vector<Symbol>>;
-    using TransformationList = std::list<std::unique_ptr<TransformationType>>;
+    using TransformationList = std::list<std::shared_ptr<TransformationType>>;
 
     enum ComputationStepType { Simplify, ApplyHeuristic, ApplySolution };
 
     const char* get_computation_step_text(ComputationStepType type);
 
     class ComputationStep {
-        // Space assumed to be not exceeded by the derivative of substitution or integration by parts (improvement possible)
-        static constexpr size_t DERIVATIVE_SIZE = 1024; 
-
         ExprVector expression_tree;
         ComputationStepType step_type;
 

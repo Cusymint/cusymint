@@ -210,35 +210,9 @@ namespace Sym {
                                                .arg()
                                                .as<Integral>();
 
-            if (candidate.arg().is(Type::Integral)) {
-                const auto& integral = candidate.arg().as<Integral>();
-                if (integral.substitution_count > creator_integral.substitution_count) {
-                    // substitution happened
-                    const auto& last_sub = integral.last_substitution().expression();
-                    std::vector<Symbol> substitution(
-                        last_sub.size());
-                    std::vector<Symbol> derivative(DERIVATIVE_SIZE);
-                    auto iterator = SymbolIterator::from_at(*derivative.data(), 0, derivative.size()).good();
-                    last_sub.copy_to(*substitution.data());
-                    last_sub.derivative_to(iterator);
-                    derivative.resize(derivative.data()->size());
-
-                    list.push_back(std::make_unique<Substitute>(substitution, derivative,
-                                                                integral.substitution_count));
-                }
-            }
-
-            if (candidate.arg().is(Type::Solution)) {
-                // solution happened
-                const auto& solution_arg = candidate.arg().as<Solution>().expression();
-                std::vector<Symbol> integrand(creator_integral.integrand().size());
-                std::vector<Symbol> solution(solution_arg.size());
-
-                solution_arg.copy_to(*solution.data());
-                creator_integral.integrand().copy_to(*integrand.data());
-
-                list.push_back(std::make_unique<SolveIntegral>(
-                    integral(integrand), solution, creator_integral.substitution_count));
+            const auto transformation = get_transformation_type(candidate, creator_integral);
+            if (transformation.has_value()) {
+                list.push_back(transformation.value());
             }
         }
 

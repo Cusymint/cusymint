@@ -2,11 +2,14 @@
 #define TRANSFORMATION_TYPE_CUH
 
 #include <fmt/core.h>
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "Symbol/Integral.cuh"
 #include "Symbol/Solution.cuh"
+#include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/Substitution.cuh"
 #include "Symbol/Symbol.cuh"
 
@@ -17,6 +20,8 @@ namespace Sym {
         virtual std::string get_description() const = 0;
         virtual bool equals(const TransformationType& other) const = 0;
     };
+
+    std::optional<std::shared_ptr<TransformationType>> get_transformation_type(const SubexpressionCandidate& candidate, const Integral& previous_integral);
 
     class Substitute : public TransformationType {
         std::vector<Symbol> substitution;
