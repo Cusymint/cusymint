@@ -1,11 +1,9 @@
 name: Frontend Tests
 on:
   pull_request:
-    types: [ labeled ]
 
 jobs:
   tests:
-    if: ${{ github.event.label.name == 'front' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -28,5 +26,5 @@ jobs:
         run: melos bootstrap
 
       - name: Run tests
-        run: melos test:all
+        run: melos test:unit:all
       

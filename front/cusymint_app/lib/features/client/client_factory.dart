@@ -18,7 +18,7 @@ class ClientFactory {
   Uri _uri = Uri.parse(_defaultUri);
 
   CusymintClient get client => _client;
-  CusymintClient _client = const CusymintClientMock();
+  CusymintClient _client = CusymintClientJsonRpc(uri: Uri.parse(_defaultUri));
 
   static const _defaultUri = 'ws://localhost:8000/websocket';
   static const _clientUrlKey = 'clientUrl';
