@@ -248,7 +248,8 @@ namespace Sym {
     }
 
     namespace {
-        const char* get_ordinal_suffix(const size_t trans_idx) {
+        const char* get_ordinal_suffix(size_t trans_idx) {
+            trans_idx %= 100;
             if (trans_idx > 10 && trans_idx < 20) {
                 return Globalization::TH_SUFFIX;
             }
