@@ -25,7 +25,7 @@ namespace Sym {
     DEFINE_IS_FUNCTION_OF(SubexpressionCandidate) { return results[1]; } // NOLINT
 
     [[nodiscard]] std::string SubexpressionCandidate::to_string() const {
-        return fmt::format("SubexpressionCandidate{{uid={}, created_by={}, ({}, {}, {}), ({})}}",
+        return fmt::format("SubexpressionCandidate{{uid={}, created_by={}, vacancy={}[{}], subexpressions_left={}), ({})}}",
                            uid, creator_uid, vacancy_expression_idx, vacancy_idx, subexpressions_left, arg().to_string());
     }
 
