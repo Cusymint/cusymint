@@ -8,6 +8,7 @@
 #include "Symbol/Symbol.cuh"
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
+#include <cstddef>
 #include <exception>
 #include <fmt/core.h>
 #include <iterator>
@@ -211,7 +212,8 @@ namespace Sym {
                                                .arg()
                                                .as<Integral>();
 
-            const auto transformation = get_transformation_type(candidate, creator_integral, expression_tree);
+            const auto transformation =
+                get_transformation_type(candidate, creator_integral, expression_tree);
             if (transformation.has_value()) {
                 list.push_back(transformation.value());
             }
@@ -258,8 +260,16 @@ namespace Sym {
             const auto expression_str = expression.data()->to_tex();
 
             if (prev_str != expression_str) {
-                for (const auto& trans : step.get_operations(*prev_step)) {
-                    result.push_back(fmt::format(R"(\quad {}:)", trans->get_description()));
+                const auto& operations = step.get_operations(*prev_step);
+                if (operations.size() == 1) {
+                    result.push_back(
+                        fmt::format(R"(\quad {}:)", operations.front()->get_description()));
+                }
+                else {
+                    size_t trans_idx = 1;
+                    for (const auto& trans : step.get_operations(*prev_step)) {
+                        result.push_back(fmt::format(R"(\quad {}:)", trans->get_description()));
+                    }
                 }
                 result.push_back(fmt::format(R"(=\qquad {})", expression.data()->to_tex()));
             }

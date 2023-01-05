@@ -12,17 +12,9 @@
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Symbol/Substitution.cuh"
 #include "Symbol/Symbol.cuh"
+#include "Utils/Globalization.cuh"
 
 namespace Sym {
-    namespace {
-        constexpr char SUBSTITUTE_STR[] = "substitute";
-        constexpr char SPLIT_SUM_STR[] = "splitSum";
-        constexpr char INTEGRATE_BY_PARTS_STR[] = "integrateByParts";
-        constexpr char SOLVE_INTEGRAL_STR[] = "solveIntegral";
-        constexpr char BRING_OUT_CONST_STR[] = "bringOutConstant";
-        constexpr char SIMPLIFY_STR[] = "simplify"
-    }
-
     class TransformationType {
       public:
         virtual ~TransformationType() = default;
@@ -60,7 +52,7 @@ namespace Sym {
 
         std::string get_description() const override {
             return fmt::format(R"(\text{{{}}}\: {}={}, \text{{d}} {}={} \text{{d}} {})",
-                               SUBSTITUTE_STR, substitution_name, substitution.data()->to_tex(),
+                               Globalization::SUBSTITUTE, substitution_name, substitution.data()->to_tex(),
                                substitution_name, derivative.data()->to_tex(), variable_name);
         }
 
@@ -80,7 +72,7 @@ namespace Sym {
             first_term(first_term), second_term(second_term) {}
 
         std::string get_description() const override {
-            return fmt::format("\\text{{{}}}", SPLIT_SUM_STR);
+            return fmt::format("\\text{{{}}}", Globalization::SPLIT_SUM);
         }
 
         bool equals(const TransformationType& other) const override {
@@ -123,7 +115,7 @@ namespace Sym {
 
         std::string get_description() const override {
             return fmt::format(R"(\text{{{}:}}\: f'({})={},\: g({})={},\: f({})={},\: g'({})={})",
-                               INTEGRATE_BY_PARTS_STR, variable_name,
+                               Globalization::INTEGRATE_BY_PARTS, variable_name,
                                first_derivative.data()->to_tex(), variable_name,
                                second.data()->to_tex(), variable_name, first.data()->to_tex(),
                                variable_name, second_derivative.data()->to_tex());
@@ -159,7 +151,7 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format(R"(\text{{{}:}} \int {} \text{{d}} {} = {} + C)", SOLVE_INTEGRAL_STR,
+            return fmt::format(R"(\text{{{}:}} \int {} \text{{d}} {} = {} + C)", Globalization::SOLVE_INTEGRAL,
                                integral.data()->as<Integral>().integrand().to_tex(), variable_name,
                                solution.data()->to_tex());
         }
@@ -176,7 +168,7 @@ namespace Sym {
         std::vector<Symbol> integral_after;
 
       public:
-        std::string get_description() const override { return fmt::format("\\text{{{}}}", BRING_OUT_CONST_STR); }
+        std::string get_description() const override { return fmt::format("\\text{{{}}}", Globalization::BRING_OUT_CONST); }
 
         bool equals(const TransformationType& other) const override {
             const auto* other_bring = dynamic_cast<const BringOutConstant*>(&other);
@@ -187,7 +179,7 @@ namespace Sym {
 
     class SimplifyExpression : public TransformationType {
       public:
-        std::string get_description() const override { return fmt::format("\\text{{{}}}", SIMPLIFY_STR); }
+        std::string get_description() const override { return fmt::format("\\text{{{}}}", Globalization::SIMPLIFY); }
 
         bool equals(const TransformationType& other) const override {
             return dynamic_cast<const SimplifyExpression*>(&other) != nullptr;
