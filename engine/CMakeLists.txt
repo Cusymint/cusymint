@@ -87,7 +87,7 @@ add_executable(
   ${TEST_EVALUATION_DIR}/IntegratorUtils.cu
   ${TEST_EVALUATION_DIR}/Kernels.cu
   ${TEST_EVALUATION_DIR}/Collapser.cu
-  ${TEST_EVALUATION_DIR}/AdvancedIntegral.cu)
+  ${TEST_DIR}/AdvancedIntegral.cu)
 
 add_executable(
   srvcusymint
