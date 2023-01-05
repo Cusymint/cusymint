@@ -85,6 +85,15 @@ namespace Sym::Heuristic {
             }
             return true;
         }
+
+        __host__ __device__ bool is_non_log_power_function(const Symbol& expression) {
+            if (!expression.is(Type::Power)) {
+                return false;
+            }
+            const auto& power = expression.as<Power>();
+            return power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
+                   power.arg2().as<NumericConstant>().value != -1.0;
+        }
     }
 
     __device__ CheckResult is_simple_function(const Integral& integral, Symbol& /*help_space*/) {
@@ -151,12 +160,8 @@ namespace Sym::Heuristic {
             if (!found_expression && iterator.current()->is(Type::Variable)) {
                 found_expression = true;
             }
-            else if (!found_expression && iterator.current()->is(Type::Power)) {
-                const auto& power = iterator.current()->as<Power>();
-                if (power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
-                    !power.arg2().is(-1)) {
-                    found_expression = true;
-                }
+            else if (!found_expression && is_non_log_power_function(*iterator.current())) {
+                found_expression = true;
             }
             else if (!is_derivative_going_to_simplify_expression(*iterator.current())) {
                 return {0, 0};

@@ -300,6 +300,8 @@ namespace Sym {
         for (size_t i = 0;; ++i) {
             simplify_integrals();
 
+            printf("SIMPL:\n%s\n\n", integrals.to_string().c_str());
+
             check_for_known_integrals();
             apply_known_integrals();
 
