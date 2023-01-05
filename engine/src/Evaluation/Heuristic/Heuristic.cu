@@ -19,8 +19,9 @@ namespace Sym::Heuristic {
         is_function_of_trigs,        contains_constants_product,
         is_function_of_simple_trigs, is_function_of_simple_trigs,
         is_function_of_simple_trigs, is_function_of_linear_function,
-        is_simple_function,
-
+        is_simple_function,          is_product_with_exponential,
+        is_product_with_sine,        is_product_with_cosine,
+        is_product_with_power,
     };
 
     __device__ const Application APPLICATIONS[] = {
@@ -33,6 +34,10 @@ namespace Sym::Heuristic {
         substitute_tangent,
         substitute_linear_function,
         integrate_simple_function_by_parts,
+        integrate_exp_product_by_parts,
+        integrate_sine_product_by_parts,
+        integrate_cosine_product_by_parts,
+        integrate_power_product_by_parts,
     };
 
 #ifdef __CUDA_ARCH__

@@ -10,6 +10,7 @@ namespace Sym {
     DECLARE_SYMBOL(Product, false)
     TWO_ARGUMENT_COMMUTATIVE_OP_SYMBOL(Product)
     std::string to_string() const;
+    std::string to_tex_without_negation() const;
     std::string to_tex() const;
 
     /*

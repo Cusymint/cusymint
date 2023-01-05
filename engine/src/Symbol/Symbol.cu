@@ -360,12 +360,24 @@ namespace Sym {
                 return Util::SimpleResult<size_t>::make_error();
             }
 
-            const ssize_t offset = VIRTUAL_CALL(*at(i), insert_reversed_derivative_at, *current_dst);
+            const ssize_t offset =
+                VIRTUAL_CALL(*at(i), insert_reversed_derivative_at, *current_dst);
             TRY_PASS(size_t, current_dst += offset);
         }
         const size_t symbols_inserted = current_dst.index() - destination.index();
         reverse_symbol_sequence(&destination.current(), symbols_inserted);
         return Util::SimpleResult<size_t>::make_good(symbols_inserted);
+    }
+
+    bool Symbol::is_negated() const {
+        if (is(Type::NumericConstant) && as<NumericConstant>().value < 0) {
+            return true;
+        }
+        if (is(Type::Product)) {
+            const Symbol& first = as<Product>().last_in_tree()->arg1();
+            return first.is(Type::NumericConstant) && first.as<NumericConstant>().value < 0;
+        }
+        return false;
     }
 
     __host__ __device__ bool operator==(const Symbol& sym1, const Symbol& sym2) {

@@ -23,6 +23,8 @@ namespace Sym::Static {
         __device__ Symbol TAN_X[TanX::Size::get_value()];
         using CotX = Cot<Var>;
         __device__ Symbol COT_X[CotX::Size::get_value()];
+        using NegCosX = Neg<CosX>;
+        __device__ Symbol NEG_COS_X[NegCosX::Size::get_value()];
 
         using UniversalSinX = Frac<Mul<Integer<2>, Var>, Add<Integer<1>, Pow<Var, Integer<2>>>>;
         __device__ Symbol UNIVERSAL_SIN_X[UniversalSinX::Size::get_value()];
@@ -59,7 +61,8 @@ namespace Sym::Static {
         using CotangentAsSine = Frac<PythagoreanSinCos, Var>;
         __device__ Symbol COTANGENT_AS_SINE[TangentAsSine::Size::get_value()];
 
-        using SineAsTangent = Sqrt<Frac<Pow<Var, Integer<2>>, Add<Integer<1>, Pow<Var, Integer<2>>>>>;
+        using SineAsTangent =
+            Sqrt<Frac<Pow<Var, Integer<2>>, Add<Integer<1>, Pow<Var, Integer<2>>>>>;
         __device__ Symbol SINE_AS_TANGENT[SineAsTangent::Size::get_value()];
 
         using CosineAsTangent = Sqrt<Inv<Add<Integer<1>, Pow<Var, Integer<2>>>>>;
@@ -80,6 +83,7 @@ namespace Sym::Static {
             COS_X,
             TAN_X,
             COT_X,
+            NEG_COS_X,
             UNIVERSAL_SIN_X,
             UNIVERSAL_COS_X,
             UNIVERSAL_TAN_X,
@@ -105,6 +109,7 @@ namespace Sym::Static {
             CosX::init,
             TanX::init,
             CotX::init,
+            NegCosX::init,
             UniversalSinX::init,
             UniversalCosX::init,
             UniversalTanX::init,
@@ -143,6 +148,7 @@ namespace Sym::Static {
     __device__ const Symbol& cos_x() { return *COS_X; }
     __device__ const Symbol& tan_x() { return *TAN_X; }
     __device__ const Symbol& cot_x() { return *COT_X; }
+    __device__ const Symbol& neg_cos_x() { return *NEG_COS_X; }
 
     __device__ const Symbol& universal_sin_x() { return *UNIVERSAL_SIN_X; }
     __device__ const Symbol& universal_cos_x() { return *UNIVERSAL_COS_X; }
