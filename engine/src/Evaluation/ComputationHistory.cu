@@ -291,7 +291,7 @@ namespace Sym {
                     size_t trans_idx = 1;
                     for (const auto& trans : step.get_operations(*prev_step)) {
                         result.push_back(fmt::format(
-                            R"(\quad \text{{{}{}{}:}}\:{}:)", trans_idx, get_ordinal_suffix(trans_idx),
+                            R"(\quad \text{{{}{} {}:}}\:{}:)", trans_idx, get_ordinal_suffix(trans_idx),
                             Globalization::INTEGRAL, trans->get_description()));
                         ++trans_idx;
                     }
