@@ -1,4 +1,14 @@
 #include "ComputationHistory.cuh"
+
+#include <cstddef>
+#include <exception>
+#include <fmt/core.h>
+#include <iterator>
+#include <memory>
+#include <queue>
+#include <sys/types.h>
+#include <vector>
+
 #include "Evaluation/Collapser.cuh"
 #include "Evaluation/IntegratorKernels.cuh"
 #include "Symbol/Macros.cuh"
@@ -8,14 +18,7 @@
 #include "Symbol/Symbol.cuh"
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Cuda.cuh"
-#include <cstddef>
-#include <exception>
-#include <fmt/core.h>
-#include <iterator>
-#include <memory>
-#include <queue>
-#include <sys/types.h>
-#include <vector>
+#include "Utils/Globalization.cuh"
 
 namespace Sym {
     const char* get_computation_step_text(ComputationStepType type) {
@@ -244,6 +247,24 @@ namespace Sym {
         completed = true;
     }
 
+    namespace {
+        const char* get_ordinal_suffix(const size_t trans_idx) {
+            if (trans_idx > 10 && trans_idx < 20) {
+                return Globalization::TH_SUFFIX;
+            }
+            switch (trans_idx % 10) {
+            case 1:
+                return Globalization::ST_SUFFIX;
+            case 2:
+                return Globalization::ND_SUFFIX;
+            case 3:
+                return Globalization::RD_SUFFIX;
+            default:
+                return Globalization::TH_SUFFIX;
+            }
+        }
+    }
+
     std::vector<std::string> ComputationHistory::get_tex_history() const {
         if (!completed) {
             Util::crash("Trying to get history from uncompleted ComputationHistory");
@@ -268,7 +289,9 @@ namespace Sym {
                 else {
                     size_t trans_idx = 1;
                     for (const auto& trans : step.get_operations(*prev_step)) {
-                        result.push_back(fmt::format(R"(\quad {}:)", trans->get_description()));
+                        result.push_back(fmt::format(
+                            R"(\quad \text{{{}{}{}:}}\:{}:)", trans_idx, get_ordinal_suffix(trans_idx),
+                            Globalization::INTEGRAL, trans->get_description()));
                     }
                 }
                 result.push_back(fmt::format(R"(=\qquad {})", expression.data()->to_tex()));

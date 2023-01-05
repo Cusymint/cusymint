@@ -1,3 +1,6 @@
+#ifndef GLOBALIZATION_CUH
+#define GLOBALIZATION_CUH
+
 namespace Globalization {
     constexpr char SUBSTITUTE[] = "substitute";
     constexpr char SPLIT_SUM[] = "splitSum";
@@ -12,3 +15,5 @@ namespace Globalization {
     constexpr char RD_SUFFIX[] = "rdSuffix";
     constexpr char TH_SUFFIX[] = "thSuffix";
 }
+
+#endif
