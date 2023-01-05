@@ -35,7 +35,7 @@ namespace Sym {
     DEFINE_SIMPLE_SEAL_WHOLE(UnknownConstant)
 
     DEFINE_ARE_EQUAL(NumericConstant) {
-        return BASE_ARE_EQUAL(NumericConstant) && symbol->as<NumericConstant>().value == value;
+        return BASE_ARE_EQUAL(NumericConstant) && ::abs(symbol->as<NumericConstant>().value - value) < Consts::EPS;
     }
 
     DEFINE_COMPARE_TO(NumericConstant) {

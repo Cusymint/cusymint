@@ -6,6 +6,17 @@
 namespace Test {
     class AdvancedIntegral : public IntegrationFixture {};
 
+    // easy excercises from http://www.math.uni.wroc.pl/~ikrol/zbiorek7.pdf
+    ADVANCED_INTEGRAL_TEST(EasyPolynomial, "x^4-5x+3", "x^5/5-5x^2/2+3x")
+    ADVANCED_INTEGRAL_TEST(EasyPolynomial2, "(1-x^3)^2", "x-x^4/2+x^7/7")
+    ADVANCED_INTEGRAL_TEST(KnownConstantMonomial, "x^3t^2", "x^4t^2/4")
+    ADVANCED_INTEGRAL_TEST(Root, "x^(2/3)", "3/5x^(5/3)")
+    ADVANCED_INTEGRAL_TEST(RootInverse, "1/x^(2/3)", "3x^(1/3)")
+    ADVANCED_INTEGRAL_TEST(SimpleRational, "(x^3-3x^2+1)/x^5", "-1/x+3/2/x^2-1/4/x^4")
+    ADVANCED_INTEGRAL_TEST(RootRational, "(x^(2/3)-sqrt(x))/x^(1/3)", "3/4x^(4/3)-6/7x^(7/6)")
+    ADVANCED_INTEGRAL_TEST(ExponentialsSum, "2e^x+3*5^x", "2e^x+3*5^x/ln(5)")
+
+    // harder ones from WUT MiNI faculty
     // https://pages.mini.pw.edu.pl/~dembinskaa/www/?download=Inf_I_cw9_2022_23.pdf, tasks 1-3
     ADVANCED_INTEGRAL_TEST(SimpleRationalWithSquare, "(sqrt(x)-2)^2/x^2", "-4/x+8/sqrt(x)+ln(x)")
     ADVANCED_INTEGRAL_TEST(SineCosineSquaredInDenominator, "1/(sin^2(x)cos^2(x))", "-1/tg(x)+tg(x)")
