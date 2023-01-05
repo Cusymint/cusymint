@@ -14,6 +14,15 @@
 #include "Symbol/Symbol.cuh"
 
 namespace Sym {
+    namespace {
+        constexpr char SUBSTITUTE_STR[] = "substitute";
+        constexpr char SPLIT_SUM_STR[] = "splitSum";
+        constexpr char INTEGRATE_BY_PARTS_STR[] = "integrateByParts";
+        constexpr char SOLVE_INTEGRAL_STR[] = "solveIntegral";
+        constexpr char BRING_OUT_CONST_STR[] = "bringOutConstant";
+        constexpr char SIMPLIFY_STR[] = "simplify"
+    }
+
     class TransformationType {
       public:
         virtual ~TransformationType() = default;
@@ -50,9 +59,9 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format(R"(\text{{Substitute}}\: {}={}, \text{{d}} {}={} \text{{d}} {})",
-                               substitution_name, substitution.data()->to_tex(), substitution_name,
-                               derivative.data()->to_tex(), variable_name);
+            return fmt::format(R"(\text{{{}}}\: {}={}, \text{{d}} {}={} \text{{d}} {})",
+                               SUBSTITUTE_STR, substitution_name, substitution.data()->to_tex(),
+                               substitution_name, derivative.data()->to_tex(), variable_name);
         }
 
         bool equals(const TransformationType& other) const override {
@@ -70,7 +79,9 @@ namespace Sym {
         SplitSum(const std::vector<Symbol>& first_term, const std::vector<Symbol>& second_term) :
             first_term(first_term), second_term(second_term) {}
 
-        std::string get_description() const override { return "\\text{Split sum}"; }
+        std::string get_description() const override {
+            return fmt::format("\\text{{{}}}", SPLIT_SUM_STR);
+        }
 
         bool equals(const TransformationType& other) const override {
             const auto* other_split = dynamic_cast<const SplitSum*>(&other);
@@ -111,11 +122,11 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format(
-                R"(\text{{Integrate by parts:}}\: f'({})={},\: g({})={},\: f({})={},\: g'({})={})",
-                variable_name, first_derivative.data()->to_tex(), variable_name,
-                second.data()->to_tex(), variable_name, first.data()->to_tex(), variable_name,
-                second_derivative.data()->to_tex());
+            return fmt::format(R"(\text{{{}:}}\: f'({})={},\: g({})={},\: f({})={},\: g'({})={})",
+                               INTEGRATE_BY_PARTS_STR, variable_name,
+                               first_derivative.data()->to_tex(), variable_name,
+                               second.data()->to_tex(), variable_name, first.data()->to_tex(),
+                               variable_name, second_derivative.data()->to_tex());
         }
 
         bool equals(const TransformationType& other) const override {
@@ -148,7 +159,7 @@ namespace Sym {
         }
 
         std::string get_description() const override {
-            return fmt::format(R"(\text{{Solve integral:}} \int {} \text{{d}} {} = {} + C)",
+            return fmt::format(R"(\text{{{}:}} \int {} \text{{d}} {} = {} + C)", SOLVE_INTEGRAL_STR,
                                integral.data()->as<Integral>().integrand().to_tex(), variable_name,
                                solution.data()->to_tex());
         }
@@ -165,7 +176,7 @@ namespace Sym {
         std::vector<Symbol> integral_after;
 
       public:
-        std::string get_description() const override { return "\\text{Bring out constant}"; }
+        std::string get_description() const override { return fmt::format("\\text{{{}}}", BRING_OUT_CONST_STR); }
 
         bool equals(const TransformationType& other) const override {
             const auto* other_bring = dynamic_cast<const BringOutConstant*>(&other);
@@ -176,7 +187,7 @@ namespace Sym {
 
     class SimplifyExpression : public TransformationType {
       public:
-        std::string get_description() const override { return "\\text{Simplify expression}"; }
+        std::string get_description() const override { return fmt::format("\\text{{{}}}", SIMPLIFY_STR); }
 
         bool equals(const TransformationType& other) const override {
             return dynamic_cast<const SimplifyExpression*>(&other) != nullptr;
