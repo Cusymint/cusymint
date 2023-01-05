@@ -61,8 +61,6 @@ int main() {
     if (solution.has_value()) {
         fmt::print("Success! Solution:\n{} + C\n", solution.value().data()->to_tex());
 
-        history.print_history();
-
         fmt::print("\nComputation steps:\n\n");
 
         for (const auto& step: history.get_tex_history()) {
