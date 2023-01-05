@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("5x"));
+    const auto integral = Sym::integral(Parser::parse_function("x^2*cos(x)"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
@@ -60,6 +60,8 @@ int main() {
 
     if (solution.has_value()) {
         fmt::print("Success! Solution:\n{} + C\n", solution.value().data()->to_tex());
+
+        history.print_history();
 
         fmt::print("\nComputation steps:\n\n");
 

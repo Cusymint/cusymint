@@ -1,5 +1,9 @@
 #include "TransformationType.cuh"
 
+#include <vector>
+
+#include "Evaluation/Integrator.cuh"
+
 namespace Sym {
     namespace {
         // Space assumed to be not exceeded by the derivative of substitution or integration by
@@ -17,10 +21,16 @@ namespace Sym {
                 const auto& last_sub = integral.last_substitution().expression();
                 std::vector<Symbol> substitution(last_sub.size());
                 std::vector<Symbol> derivative(DERIVATIVE_SIZE);
-                auto iterator =
+                std::vector<Symbol> help_space(DERIVATIVE_SIZE * Integrator::HELP_SPACE_MULTIPLIER);
+
+                auto derivative_iterator =
                     SymbolIterator::from_at(*derivative.data(), 0, derivative.size()).good();
+                auto help_space_iterator =
+                    SymbolIterator::from_at(*help_space.data(), 0, help_space.size()).good();
+
                 last_sub.copy_to(*substitution.data());
-                last_sub.derivative_to(iterator).unwrap();
+                last_sub.derivative_to(derivative_iterator).unwrap();
+                derivative.data()->simplify(help_space_iterator).unwrap();
                 derivative.resize(derivative.data()->size());
 
                 return std::make_shared<Substitute>(substitution, derivative,

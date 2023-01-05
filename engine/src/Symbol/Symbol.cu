@@ -100,7 +100,7 @@ namespace Sym {
 
     __host__ __device__ bool Symbol::is_constant() const {
         for (size_t i = 0; i < size(); ++i) {
-            if (this[i].is(Type::Variable)) {
+            if (this[i].is(Type::Variable) || this[i].is(Type::Integral)) {
                 return false;
             }
         }

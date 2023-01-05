@@ -187,12 +187,13 @@ namespace Sym {
                 if (symbol.is(Type::SubexpressionVacancy)) {
                     if constexpr (Consts::DEBUG) {
                         if (symbol.as<SubexpressionVacancy>().is_solved == 0) {
-                            Util::crash("Unsolved SubexpressionVacancy on a path of a completed step");
+                            Util::crash(
+                                "Unsolved SubexpressionVacancy on a path of a completed step");
                         }
                     }
 
                     index_queue.push(symbol.as<SubexpressionVacancy>().solver_idx);
-                }                
+                }
             }
             if (!expression[0].is(Type::SubexpressionCandidate)) {
                 continue;
