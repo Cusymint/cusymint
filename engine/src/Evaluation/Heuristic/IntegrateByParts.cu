@@ -8,6 +8,7 @@
 #include "Symbol/Symbol.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include "Utils/CompileConstants.cuh"
+#include "Utils/Cuda.cuh"
 #include "Utils/Order.cuh"
 
 namespace Sym::Heuristic {
@@ -137,7 +138,7 @@ namespace Sym::Heuristic {
                                   expression_dst, help_space);
     }
 
-    __device__ CheckResult is_product_with_power(const Integral& integral, Symbol&  /*help_space*/) {
+    __device__ CheckResult is_product_with_power(const Integral& integral, Symbol& /*help_space*/) {
         const auto& integrand = integral.integrand();
         if (!integrand.is(Type::Product)) {
             return {0, 0};
@@ -177,7 +178,7 @@ namespace Sym::Heuristic {
         ConstTreeIterator<Product> iterator(integrand.as_ptr<Product>());
 
         double exponent;
-        const Symbol* power_symbol;
+        const Symbol* power_symbol = nullptr;
 
         while (iterator.is_valid()) {
             if (iterator.current()->is(Type::Variable)) {
@@ -187,13 +188,20 @@ namespace Sym::Heuristic {
             }
             if (iterator.current()->is(Type::Power)) {
                 const auto& power = iterator.current()->as<Power>();
-                if (power.arg1().is(Type::Variable) && power.arg2().is_integer()) {
+                if (power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
+                    !power.arg2().is(-1)) {
                     power_symbol = iterator.current();
                     exponent = power.arg2().as<NumericConstant>().value;
                     break;
                 }
             }
             iterator.advance();
+        }
+
+        if constexpr (Consts::DEBUG) {
+            if (power_symbol == nullptr) {
+                Util::crash("Couldn't find power factor in product");
+            }
         }
 
         using PowerAntiDerivativeType = Mul<Num, Pow<Var, Num>>;
