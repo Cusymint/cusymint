@@ -12,6 +12,12 @@ class CusymintClientMock implements CusymintClient {
   }
 
   @override
+  Future<Response> solveIntegralWithSteps(Request request) {
+    // TODO: implement solveIntegralWithSteps
+    throw UnimplementedError();
+  }
+
+  @override
   Future<Response> interpretIntegral(Request request) async {
     await Future.delayed(interpretDelay);
     final responseWithoutOutput = Response(

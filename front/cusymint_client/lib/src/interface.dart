@@ -11,6 +11,8 @@ class Response {
   final String? outputInUtf;
   final String? outputInTex;
 
+  final String? history;
+
   final List<ResponseError> errors;
 
   const Response({
@@ -18,6 +20,7 @@ class Response {
     this.inputInTex,
     this.outputInUtf,
     this.outputInTex,
+    this.history,
     this.errors = const [],
   });
 
@@ -57,5 +60,6 @@ class UnexpectedEndOfInputError extends ResponseError {
 
 abstract class CusymintClient {
   Future<Response> solveIntegral(Request request);
+  Future<Response> solveIntegralWithSteps(Request request);
   Future<Response> interpretIntegral(Request request);
 }

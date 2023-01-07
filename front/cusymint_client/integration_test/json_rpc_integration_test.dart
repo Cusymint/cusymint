@@ -22,6 +22,8 @@ void main() {
       expect(response.outputInUtf, isNotNull);
       expect(response.outputInTex, isNotNull);
 
+      expect(response.history, isNull);
+
       expect(response.errors, isEmpty);
     });
 
@@ -37,6 +39,54 @@ void main() {
 
       expect(response.outputInUtf, isNull);
       expect(response.outputInTex, isNull);
+
+      expect(response.history, isNull);
+
+      expect(response.errors, isNotEmpty);
+      expect(
+        response.errors,
+        allOf(
+          isNotEmpty,
+          contains(
+            isA<UnexpectedEndOfInputError>(),
+          ),
+        ),
+      );
+    });
+
+    test('Correct solve with steps method returns result', () async {
+      final client = CusymintClientJsonRpc(uri: uri);
+
+      final request = Request('x^2');
+
+      final response = await client.solveIntegralWithSteps(request);
+
+      expect(response.inputInUtf, isNotNull);
+      expect(response.inputInTex, isNotNull);
+
+      expect(response.outputInUtf, isNotNull);
+      expect(response.outputInTex, isNotNull);
+
+      expect(response.history, isNotNull);
+
+      expect(response.errors, isEmpty);
+    });
+
+    test('Incorrect solve with steps method returns UnexpectedToken error',
+        () async {
+      final client = CusymintClientJsonRpc(uri: uri);
+
+      final request = Request('x^2 +');
+
+      final response = await client.solveIntegralWithSteps(request);
+
+      expect(response.inputInUtf, isNull);
+      expect(response.inputInTex, isNull);
+
+      expect(response.outputInUtf, isNull);
+      expect(response.outputInTex, isNull);
+
+      expect(response.history, isNull);
 
       expect(response.errors, isNotEmpty);
       expect(
@@ -63,6 +113,8 @@ void main() {
       expect(response.outputInUtf, isNull);
       expect(response.outputInTex, isNull);
 
+      expect(response.history, isNull);
+
       expect(response.errors, isNotEmpty);
       expect(
         response.errors,
@@ -88,6 +140,8 @@ void main() {
       expect(response.outputInUtf, isNull);
       expect(response.outputInTex, isNull);
 
+      expect(response.history, isNull);
+
       expect(response.errors, isEmpty);
     });
 
@@ -103,6 +157,8 @@ void main() {
 
       expect(response.outputInUtf, isNull);
       expect(response.outputInTex, isNull);
+
+      expect(response.history, isNull);
 
       expect(response.errors, isNotEmpty);
     });
@@ -125,6 +181,7 @@ void main() {
           contains('rpc.list'),
           contains('solve'),
           contains('interpret'),
+          contains('solve_with_steps'),
         ]),
       );
     });

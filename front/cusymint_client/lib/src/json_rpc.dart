@@ -12,11 +12,17 @@ class CusymintClientJsonRpc implements CusymintClient {
 
   final Uri uri;
   static const String _solveMethodName = 'solve';
+  static const String _solveWithStepsMethodName = 'solve_with_steps';
   static const String _interpretMethodName = 'interpret';
 
   @override
   Future<Response> solveIntegral(Request request) async {
     return await _handleRequest(_solveMethodName, request);
+  }
+
+  @override
+  Future<Response> solveIntegralWithSteps(Request request) async {
+    return await _handleRequest(_solveWithStepsMethodName, request);
   }
 
   @override
@@ -46,6 +52,7 @@ class CusymintClientJsonRpc implements CusymintClient {
         inputInTex: result['inputInTex'],
         outputInUtf: result['outputInUtf'],
         outputInTex: result['outputInTex'],
+        history: result['history'],
         errors: errors,
       );
     } on json_rpc.RpcException catch (e) {
