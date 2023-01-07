@@ -289,6 +289,8 @@ namespace Test {
     EQUALITY_TEST(SignOfConstant3, "sgn(0)", "0")
     EQUALITY_TEST(SignOfExponent1, "sgn(e^(-3x))", "1")
     EQUALITY_TEST(SignOfExponent2, "sgn(24^cos(x))", "1")
+    EQUALITY_TEST(SignOfEvenPower, "sgn(cos(x)^232)", "1")
+    EQUALITY_TEST(SignOfOddPower, "sgn(cos(x)^233)", "sgn(cos(x))")
     EQUALITY_TEST(SignOfMultiplication1, "sgn(23*x*cos(x))", "sgn(x*cos(x))")
     EQUALITY_TEST(SignOfMultiplication2, "sgn(pi*x*(-23)*cos(x)*x^2*2^x)", "-sgn(x*cos(x))")
     SIMPLIFY_TEST_NO_ACTION(SignOfVariable, "sgn(x)")

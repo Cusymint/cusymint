@@ -84,8 +84,9 @@ namespace Sym {
                         iterator.current()->as<Power>().arg2().as<NumericConstant>().value;
 
                     if (value == floor(value)) {
-                        help_space[variable_expressions_size].init_from(Variable::create());
-                        variable_expressions_size += 1;
+                        iterator.current()->as<Power>().arg1().copy_to(
+                            help_space[variable_expressions_size]);
+                        variable_expressions_size += help_space[variable_expressions_size].size();
                         continue;
                     }
                 }
