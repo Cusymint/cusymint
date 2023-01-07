@@ -1,5 +1,6 @@
 #include "Evaluation/Status.cuh"
 #include "IntegratorUtils.cuh"
+#include "Parser/Parser.cuh"
 #include "Symbol/Macros.cuh"
 
 namespace Test {
@@ -228,6 +229,26 @@ namespace Test {
 
     SymVector nth_expression_candidate(size_t n, const std::string& child, size_t vacancy_idx) {
         return nth_expression_candidate(n, Parser::parse_function(child), vacancy_idx);
+    }
+
+    SymVector nth_expression_candidate_with_uid(size_t uid, size_t n, const SymVector& child,
+                                                size_t vacancy_idx) {
+        SymVector candidate = nth_expression_candidate(n, child, vacancy_idx);
+        candidate[0].as<SubexpressionCandidate>().uid = uid;
+        return candidate;
+    }
+
+    SymVector nth_expression_candidate_with_uid(size_t uid, size_t n, const std::string& child,
+                                                size_t vacancy_idx) {
+        return nth_expression_candidate_with_uid(uid, n, Parser::parse_function(child),
+                                                 vacancy_idx);
+    }
+
+    SymVector nth_expression_candidate_with_uids(size_t uid, size_t creator_uid, size_t n, const SymVector& child, size_t vacancy_idx)
+    {
+        SymVector candidate = nth_expression_candidate_with_uid(uid, n, child, vacancy_idx);
+        candidate[0].as<SubexpressionCandidate>().creator_uid = creator_uid;
+        return candidate;
     }
 
     ExprVector get_expected_expression_vector(std::vector<HeuristicPairVector> heuristics_vector) {

@@ -80,6 +80,8 @@ namespace Sym {
     [[nodiscard]] __host__ __device__ const Substitution& first_substitution() const;
     [[nodiscard]] __host__ __device__ Substitution& first_substitution();
 
+    [[nodiscard]] __host__ __device__ const Substitution& last_substitution() const;
+
     /*
      * @brief Number of symbols between the integral symbol and the integrand (not counting either
      * of them)

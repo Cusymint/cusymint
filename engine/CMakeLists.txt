@@ -49,6 +49,8 @@ add_library(
   ${EVALUATION_DIR}/Integrator.cu
   ${EVALUATION_DIR}/IntegratorKernels.cu
   ${EVALUATION_DIR}/StaticFunctions.cu
+  ${EVALUATION_DIR}/ComputationHistory.cu
+  ${EVALUATION_DIR}/TransformationType.cu
   ${EVALUATION_DIR}/Heuristic/Heuristic.cu
   ${EVALUATION_DIR}/Heuristic/SplitSum.cu
   ${EVALUATION_DIR}/Heuristic/SubstituteEToX.cu
@@ -86,7 +88,8 @@ add_executable(
   ${TEST_MATH_DIR}/PascalTriangle.cu
   ${TEST_EVALUATION_DIR}/IntegratorUtils.cu
   ${TEST_EVALUATION_DIR}/Kernels.cu
-  ${TEST_EVALUATION_DIR}/Collapser.cu)
+  ${TEST_EVALUATION_DIR}/Collapser.cu
+  ${TEST_EVALUATION_DIR}/ComputationHistory.cu)
 
 add_executable(
   srvcusymint

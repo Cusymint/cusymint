@@ -2,13 +2,18 @@
 #define INTEGRATOR_CUH
 
 #include <optional>
+#include <type_traits>
 
+#include "Evaluation/Collapser.cuh"
 #include "Symbol/ExpressionArray.cuh"
+#include "Symbol/MetaOperators.cuh"
 #include "Symbol/Symbol.cuh"
 
 #include "Heuristic/Heuristic.cuh"
 #include "KnownIntegral/KnownIntegral.cuh"
 #include "Status.cuh"
+
+#include "ComputationHistory.cuh"
 
 namespace Sym {
     class Integrator {
@@ -27,10 +32,18 @@ namespace Sym {
         Util::DeviceArray<uint32_t> scan_array_1;
         Util::DeviceArray<uint32_t> scan_array_2;
 
+        // Count of SubexpressionCandidate expressions ever created
+        size_t candidates_created = 1;
+
         // EvaluationStatus arrays used for checking reallocation requests. Their size can be larger
         // than the actually used part.
         Util::DeviceArray<EvaluationStatus> evaluation_statuses_1;
         Util::DeviceArray<EvaluationStatus> evaluation_statuses_2;
+
+        /*
+         * @brief Increments `candidates_created` by value read from GPU
+         */
+        void increment_counter_from_device();
 
         /*
          * @brief Sets all evaluation statuses to `EvaluationStatus::Incomplete`
@@ -115,8 +128,8 @@ namespace Sym {
         static constexpr size_t HELP_SPACE_MULTIPLIER = 2;
 
         /*
-         * @brief Sizes of `scan_array_X` and `evaluation_statuses_X` are multiplied by this value on
-         * reallocation
+         * @brief Sizes of `scan_array_X` and `evaluation_statuses_X` are multiplied by this value
+         * on reallocation
          */
         static constexpr size_t REALLOC_MULTIPLIER = 2;
 
@@ -158,8 +171,73 @@ namespace Sym {
          * @return `std::nullopt` if no result has been found, vector of vectors with the solution
          * tree otherwise
          */
-        std::optional<std::vector<Sym::Symbol>>
-        solve_integral(const std::vector<Sym::Symbol>& integral);
+        std::optional<std::vector<Symbol>> solve_integral(const std::vector<Symbol>& integral);
+
+        /*
+         * @brief Solves an integral, optionally saves computation history and returns the result
+         *
+         * @tparam WITH_HISTORY If `true` then computation steps will be dumped to `history`.
+         * otherwise not. Parameter introduced for performance reasons in case when history is not
+         * needed.
+         *
+         * @param integral Vector of symbols with the integral, the first symbol should be
+         * `Sym::Integral`
+         *
+         * @param history An already created `ComputationHistory` object to save the history to.
+         * History can be later retrieved by function `get_steps()` or `get_tex_history()`.
+         * The dummy object must be provided even if `WITH_HISTORY` is `false`.
+         *
+         * @return `std::nullopt` if no result has been found, vector of vectors with the solution
+         * tree otherwise
+         */
+        template <bool WITH_HISTORY = true>
+        std::optional<std::vector<Symbol>>
+        solve_integral_with_history(const std::vector<Symbol>& integral,
+                                    ComputationHistory& history) {
+            expressions.load_from_vector({single_integral_vacancy()});
+            integrals.load_from_vector({first_expression_candidate(integral)});
+
+            for (size_t i = 0;; ++i) {
+                simplify_integrals();
+
+                if constexpr (WITH_HISTORY) {
+                    history.add_step({expressions.to_vector(), integrals.to_vector(),
+                                      ComputationStepType::Simplify});
+                }
+
+                check_for_known_integrals();
+                apply_known_integrals();
+
+                if constexpr (WITH_HISTORY) {
+                    history.add_step({expressions.to_vector(), integrals.to_vector(),
+                                      ComputationStepType::ApplySolution});
+                }
+                if (is_original_expression_solved()) {
+                    if constexpr (WITH_HISTORY) {
+                        history.complete();
+                    }
+                    return Collapser::collapse(expressions.to_vector());
+                }
+
+                remove_unnecessary_candidates();
+
+                check_heuristics_applicability();
+                apply_heuristics();
+
+                if constexpr (WITH_HISTORY) {
+                    history.add_step({expressions.to_vector(), integrals.to_vector(),
+                                      ComputationStepType::ApplyHeuristic});
+                }
+
+                if (has_original_expression_failed()) {
+                    return std::nullopt;
+                }
+
+                remove_failed_candidates();
+            }
+
+            return std::nullopt;
+        }
     };
 }
 

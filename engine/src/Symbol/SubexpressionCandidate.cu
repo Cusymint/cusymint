@@ -25,8 +25,8 @@ namespace Sym {
     DEFINE_IS_FUNCTION_OF(SubexpressionCandidate) { return results[1]; } // NOLINT
 
     [[nodiscard]] std::string SubexpressionCandidate::to_string() const {
-        return fmt::format("SubexpressionCandidate{{({}, {}, {}), ({})}}", vacancy_expression_idx,
-                           vacancy_idx, subexpressions_left, arg().to_string());
+        return fmt::format("SubexpressionCandidate{{uid={}, created_by={}, vacancy={}[{}], subexpressions_left={}), ({})}}",
+                           uid, creator_uid, vacancy_expression_idx, vacancy_idx, subexpressions_left, arg().to_string());
     }
 
     [[nodiscard]] std::string SubexpressionCandidate::to_tex() const {
@@ -48,5 +48,11 @@ namespace Sym {
         candidate.vacancy_idx = 0;
         candidate.subexpressions_left = 0;
         return candidate_vec;
+    }
+
+    std::vector<Symbol> first_expression_candidate_with_uid(size_t uid, const std::vector<Symbol> &child) {
+        auto result = first_expression_candidate(child);
+        result[0].as<SubexpressionCandidate>().uid = uid;
+        return result;
     }
 }
