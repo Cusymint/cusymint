@@ -47,11 +47,12 @@ namespace Sym {
     DEFINE_SIMPLE_ONE_ARGUMENT_IS_FUNCTION_OF(Sign)
 
     DEFINE_INSERT_REVERSED_DERIVATIVE_AT(Sign) {
-        destination.init_from(NumericConstant::with_value(0));
-        return 1;
+        const size_t arg_deriveative_size = (&destination - 1)->size();
+        (&destination - arg_deriveative_size)->init_from(NumericConstant::with_value(0));
+        return derivative_size(destination);
     }
 
-    DEFINE_DERIVATIVE_SIZE(Sign) { return 1; }
+    DEFINE_DERIVATIVE_SIZE(Sign) { return 1L - static_cast<ssize_t>((&destination - 1)->size()); }
 
     DEFINE_SIMPLIFY_IN_PLACE(Sign) {
         if (arg().is(0)) {
