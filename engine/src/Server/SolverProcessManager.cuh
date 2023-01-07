@@ -5,7 +5,8 @@
 class SolverProcessManager {
     private:
         std::string executable_name = "srvcusymint";
-        std::string create_command(const std::string& input) const;
+        std::string create_solve_command(const std::string& input) const;
+        std::string create_solve_with_steps_command(const std::string& input) const;
 
     public:
         /*
@@ -23,4 +24,5 @@ class SolverProcessManager {
          * @return: The solver output in json format
          */
         std::string try_solve(const std::string& input) const;
+        std::string try_solve_with_steps(const std::string& input) const;
 };
