@@ -46,11 +46,18 @@ class CommonOrganisms extends StorybookPart {
                 label: 'Output in TeX',
                 initial: '7.5x^2 + C',
               ),
+              steps: context.knobs.nullable
+                  .text(label: 'Steps', initial: '\\quad \\text{Simplify}: \\\\'
+                      // ' \\int 15\\text{d} x\\newline\\quad'
+                      // ' \\text{Solve integral:} \\int 15'
+                      // ' \\text{d} x = 15x + C:\\newline=\\qquad 15x',
+                      ),
               buttonRowCallbacks: hasAllCallbacks
                   ? CuButtonRowCallbacks(
                       onCopyTex: () {},
                       onCopyUtf: () {},
                       onShareUtf: () {},
+                      onStepsTap: () {},
                     )
                   : null,
             );

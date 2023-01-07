@@ -33,5 +33,6 @@
    "errorInternal": "Internal error",
    "history": "History",
    "historyEmpty": "History is empty",
-   "clearHistory": "Clear history"
+   "clearHistory": "Clear history",
+   "steps": "Steps"
 }

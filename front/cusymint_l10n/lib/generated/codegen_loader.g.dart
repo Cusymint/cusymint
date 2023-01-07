@@ -49,7 +49,8 @@ class CodegenLoader extends AssetLoader{
   "errorInternal": "Internal error",
   "history": "History",
   "historyEmpty": "History is empty",
-  "clearHistory": "Clear history"
+  "clearHistory": "Clear history",
+  "steps": "Steps"
 };
 static const Map<String,dynamic> pl = {
   "enterIntegral": "Wpisz tutaj całkę",
@@ -86,7 +87,8 @@ static const Map<String,dynamic> pl = {
   "errorInternal": "Błąd wewnętrzny",
   "history": "Historia",
   "historyEmpty": "Historia jest pusta",
-  "clearHistory": "Wyczyść"
+  "clearHistory": "Wyczyść",
+  "steps": "Kroki"
 };
 static const Map<String, Map<String,dynamic>> mapLocales = {"en": en, "pl": pl};
 }

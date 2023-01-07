@@ -36,5 +36,6 @@ abstract class  LocaleKeys {
   static const history = 'history';
   static const historyEmpty = 'historyEmpty';
   static const clearHistory = 'clearHistory';
+  static const steps = 'steps';
 
 }
