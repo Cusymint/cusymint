@@ -79,7 +79,7 @@ static void solve_with_steps(struct mg_rpc_req* r) {
     Logger::print("[Server] Solve with steps input {}\n", input);
 
     auto solver_process_manager = SolverProcessManager();
-    auto result = solver_process_manager.try_solve(input);
+    auto result = solver_process_manager.try_solve_with_steps(input);
 
     Logger::print("[Server] Solve with steps result {}\n", result);
 
