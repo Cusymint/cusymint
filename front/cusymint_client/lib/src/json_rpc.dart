@@ -52,7 +52,7 @@ class CusymintClientJsonRpc implements CusymintClient {
         inputInTex: result['inputInTex'],
         outputInUtf: result['outputInUtf'],
         outputInTex: result['outputInTex'],
-        steps: result['history'],
+        steps: result['steps'],
         errors: errors,
       );
     } on json_rpc.RpcException catch (e) {

@@ -53,7 +53,7 @@ std::string join(const std::vector<std::string> &lst, const std::string &delim)
 void ResponseBuilder::set_history(const std::vector<std::string>& history_entries) {
     const auto *new_line_katex = R"(\newline)";
     auto joined_history = join(history_entries, new_line_katex);
-    auto history_pair = generate_key_value("history", joined_history);
+    auto history_pair = generate_key_value("steps", joined_history);
     history = fmt::format("{},", history_pair);
 }
 
