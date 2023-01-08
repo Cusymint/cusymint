@@ -58,10 +58,10 @@ template <class T, class U> struct MacroType<T(U)> {
     __host__ __device__ void _fname(Util::StaticStack<Symbol*>& stack)
 
 #define INSERT_REVERSED_DERIVATIVE_AT_HEADER(_fname) \
-    __host__ __device__ ssize_t _fname(Symbol& destination)
+    __host__ __device__ ssize_t _fname(Symbol& destination) const
 
 #define DERIVATIVE_SIZE_HEADER(_fname) \
-    [[nodiscard]] __host__ __device__ ssize_t _fname(const Symbol& destination)
+    [[nodiscard]] __host__ __device__ ssize_t _fname(const Symbol& destination) const
 
 #define SEAL_WHOLE_HEADER(_fname) __host__ __device__ void _fname()
 

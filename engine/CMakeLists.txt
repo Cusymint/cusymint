@@ -32,6 +32,7 @@ add_library(
   ${SYMBOL_DIR}/Addition.cu
   ${SYMBOL_DIR}/Product.cu
   ${SYMBOL_DIR}/Power.cu
+  ${SYMBOL_DIR}/Sign.cu
   ${SYMBOL_DIR}/Trigonometric.cu
   ${SYMBOL_DIR}/Integral.cu
   ${SYMBOL_DIR}/Substitution.cu
@@ -49,6 +50,8 @@ add_library(
   ${EVALUATION_DIR}/Integrator.cu
   ${EVALUATION_DIR}/IntegratorKernels.cu
   ${EVALUATION_DIR}/StaticFunctions.cu
+  ${EVALUATION_DIR}/ComputationHistory.cu
+  ${EVALUATION_DIR}/TransformationType.cu
   ${EVALUATION_DIR}/Heuristic/Heuristic.cu
   ${EVALUATION_DIR}/Heuristic/SplitSum.cu
   ${EVALUATION_DIR}/Heuristic/SubstituteEToX.cu
@@ -82,12 +85,13 @@ add_executable(
   ${TEST_DIR}/Simplify.cu
   ${TEST_DIR}/Symbol.cu
   ${TEST_DIR}/Derivatives.cu
+  ${TEST_DIR}/AdvancedIntegral.cu
   ${TEST_SYMBOL_DIR}/MetaOperators.cu
   ${TEST_MATH_DIR}/PascalTriangle.cu
   ${TEST_EVALUATION_DIR}/IntegratorUtils.cu
   ${TEST_EVALUATION_DIR}/Kernels.cu
   ${TEST_EVALUATION_DIR}/Collapser.cu
-  ${TEST_DIR}/AdvancedIntegral.cu)
+  ${TEST_EVALUATION_DIR}/ComputationHistory.cu)
 
 add_executable(
   srvcusymint

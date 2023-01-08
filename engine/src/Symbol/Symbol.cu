@@ -100,7 +100,21 @@ namespace Sym {
 
     __host__ __device__ bool Symbol::is_constant() const {
         for (size_t i = 0; i < size(); ++i) {
-            if (this[i].is(Type::Variable)) {
+            if (this[i].is(Type::Variable) || this[i].is(Type::Integral)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    __host__ __device__ bool Symbol::is_almost_constant() const {
+        for (size_t i = 0; i < size(); ++i) {
+            if (this[i].is(Type::Sign) ||
+                this[i].is(Type::Power) && this[i].as<Power>().arg1().is(Type::Sign)) {
+                i += this[i].size() - 1;
+            }
+            else if (this[i].is(Type::Variable)) {
                 return false;
             }
         }
@@ -351,7 +365,7 @@ namespace Sym {
     }
 
     [[nodiscard]] __host__ __device__ Util::SimpleResult<size_t>
-    Symbol::derivative_to(SymbolIterator& destination) {
+    Symbol::derivative_to(SymbolIterator& destination) const {
         SymbolIterator current_dst = destination;
         for (auto i = static_cast<ssize_t>(size() - 1); i >= 0; --i) {
             const ssize_t predicted_offset = VIRTUAL_CALL(*at(i), derivative_size, *current_dst);

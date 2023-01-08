@@ -16,6 +16,17 @@ namespace Sym {
      */
     __device__ bool is_nonzero(const size_t index,
                                const Util::DeviceArray<uint32_t>& inclusive_scan);
+
+    /*
+     * @brief Gets element signaled by inclusive_scan[index]
+     *
+     * @param index Index to check
+     * @param inclusive_scan Array of element sizes on which inclusive_scan has been run
+     *
+     * @return Value of the element before inclusive_scan was run
+     */
+    __device__ uint32_t get_value_from_scan(const size_t index,
+                                            const Util::DeviceArray<uint32_t>& inclusive_scan);
 }
 
 namespace Sym::Kernel {
@@ -60,12 +71,17 @@ namespace Sym::Kernel {
      * @param help_spaces Help space used in applying known integrals
      * @param applicability Result of `inclusive_scan` on `check_for_known_integrals()`
      * applicability array
+     * @param candidates_created Evaluation statuses for all created integrals that are set
+     * according to the result of applications
+     * @param candidates_created Number of `SubexpressionCandidates` already created
+     * in integration process
      */
     __global__ void apply_known_integrals(const ExpressionArray<SubexpressionCandidate> integrals,
                                           ExpressionArray<> expressions, const size_t dst_offset,
                                           ExpressionArray<> help_spaces,
                                           const Util::DeviceArray<uint32_t> applicability,
-                                          Util::DeviceArray<EvaluationStatus> statuses);
+                                          Util::DeviceArray<EvaluationStatus> statuses,
+                                          const size_t candidates_created);
 
     /*
      * @brief Marks SubexpressionsVacancies as solved (sets `is_solved` and `solver_id`)
@@ -202,16 +218,16 @@ namespace Sym::Kernel {
      * according to the result of applications
      * @param expression_statuses Evaluation statuses for all created expressions that are set
      * according to the result of applications
+     * @param candidates_created Number of `SubexpressionCandidates` already created
+     * in integration process
      */
-    __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
-                                     ExpressionArray<> integrals_dst,
-                                     ExpressionArray<> expressions_dst,
-                                     const size_t expressions_dst_offset,
-                                     ExpressionArray<> help_spaces,
-                                     const Util::DeviceArray<uint32_t> new_integrals_indices,
-                                     const Util::DeviceArray<uint32_t> new_expressions_indices,
-                                     Util::DeviceArray<EvaluationStatus> integral_statuses,
-                                     Util::DeviceArray<EvaluationStatus> expression_statuses);
+    __global__ void apply_heuristics(
+        const ExpressionArray<SubexpressionCandidate> integrals, ExpressionArray<> integrals_dst,
+        ExpressionArray<> expressions_dst, const size_t expressions_dst_offset,
+        ExpressionArray<> help_spaces, const Util::DeviceArray<uint32_t> new_integrals_indices,
+        const Util::DeviceArray<uint32_t> new_expressions_indices,
+        Util::DeviceArray<EvaluationStatus> integral_statuses,
+        Util::DeviceArray<EvaluationStatus> expression_statuses, const size_t candidates_created);
 
     /*
      * @brief Propagates information about failed SubexpressionVacancy upwards to parent

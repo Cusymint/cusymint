@@ -55,10 +55,17 @@ int main() {
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
     Sym::Integrator integrator;
-    const auto solution = integrator.solve_integral(integral);
+    Sym::ComputationHistory history;
+    const auto solution = integrator.solve_integral_with_history(integral, history);
 
     if (solution.has_value()) {
         fmt::print("Success! Solution:\n{} + C\n", solution.value().data()->to_tex());
+
+        fmt::print("\nComputation steps:\n\n");
+
+        for (const auto& step: history.get_tex_history()) {
+            fmt::print("  {}\\\\\n\n", step);
+        }
     }
     else {
         fmt::print("No solution found\n");

@@ -108,8 +108,8 @@ namespace Sym {
     template <class T = Symbol> class ExpressionArray {
         template <class U> friend class ExpressionArray;
 
-        static constexpr size_t KERNEL_BLOCK_SIZE = 1024;
-        static constexpr size_t KERNEL_BLOCK_COUNT = 4;
+        static constexpr size_t KERNEL_BLOCK_SIZE = 512;
+        static constexpr size_t KERNEL_BLOCK_COUNT = 8;
 
         // When doing a reallocation, how many times more memory to allocate than is actually needed
         static constexpr size_t REALLOC_MULTIPLIER = 4;

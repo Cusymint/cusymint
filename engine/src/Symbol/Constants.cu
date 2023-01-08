@@ -139,9 +139,6 @@ namespace Sym {
     std::string NumericConstant::to_string() const { return fmt::format("{:g}", value); }
 
     std::string NumericConstant::to_tex() const {
-        if (value < 0) {
-            return fmt::format("\\left( {:g} \\right)", value);
-        }
         return fmt::format("{:g}", value);
     }
 

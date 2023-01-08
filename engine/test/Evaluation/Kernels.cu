@@ -139,7 +139,7 @@ namespace Test {
 
         Sym::Kernel::
             apply_known_integrals<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
-                integrals, expressions, dst_offset, help_spaces, applicability, statuses);
+                integrals, expressions, dst_offset, help_spaces, applicability, statuses, 0);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 
@@ -581,7 +581,7 @@ namespace Test {
         Sym::Kernel::
             apply_heuristics<<<Sym::Integrator::BLOCK_COUNT, Sym::Integrator::BLOCK_SIZE>>>(
                 integrals, integrals_destinations, expressions, expressions_dst_offset, help_spaces,
-                new_integrals_flags, new_expressions_flags, integral_statuses, expression_statuses);
+                new_integrals_flags, new_expressions_flags, integral_statuses, expression_statuses, 0);
 
         ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 

@@ -11,6 +11,12 @@ namespace Sym {
         return index == 0 && inclusive_scan[index] != 0 ||
                index != 0 && inclusive_scan[index - 1] != inclusive_scan[index];
     }
+
+    __device__ uint32_t get_value_from_scan(const size_t index,
+                                            const Util::DeviceArray<uint32_t>& inclusive_scan) {
+        return index == 0 ? inclusive_scan[index]
+                          : (inclusive_scan[index] - inclusive_scan[index - 1]);
+    }
 }
 
 namespace Sym::Kernel {
@@ -195,7 +201,8 @@ namespace Sym::Kernel {
                                           ExpressionArray<> expressions, const size_t dst_offset,
                                           ExpressionArray<> help_spaces,
                                           const Util::DeviceArray<uint32_t> applicability,
-                                          Util::DeviceArray<EvaluationStatus> statuses) {
+                                          Util::DeviceArray<EvaluationStatus> statuses,
+                                          const size_t candidates_created) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -236,6 +243,9 @@ namespace Sym::Kernel {
                 statuses[idx] =
                     KnownIntegral::APPLICATIONS[trans_idx](integrals[int_idx].arg().as<Integral>(),
                                                            dst_iterator, help_spaces.iterator(idx));
+
+                subexpr_candidate->uid = idx + candidates_created;
+                subexpr_candidate->creator_uid = integrals[int_idx].uid;
                 subexpr_candidate->seal();
 
                 try_set_solver_idx(expressions, destination.index());
@@ -394,15 +404,13 @@ namespace Sym::Kernel {
         }
     }
 
-    __global__ void apply_heuristics(const ExpressionArray<SubexpressionCandidate> integrals,
-                                     ExpressionArray<> integrals_dst,
-                                     ExpressionArray<> expressions_dst,
-                                     const size_t expressions_dst_offset,
-                                     ExpressionArray<> help_spaces,
-                                     const Util::DeviceArray<uint32_t> new_integrals_indices,
-                                     const Util::DeviceArray<uint32_t> new_expressions_indices,
-                                     Util::DeviceArray<EvaluationStatus> integral_statuses,
-                                     Util::DeviceArray<EvaluationStatus> expression_statuses) {
+    __global__ void apply_heuristics(
+        const ExpressionArray<SubexpressionCandidate> integrals, ExpressionArray<> integrals_dst,
+        ExpressionArray<> expressions_dst, const size_t expressions_dst_offset,
+        ExpressionArray<> help_spaces, const Util::DeviceArray<uint32_t> new_integrals_indices,
+        const Util::DeviceArray<uint32_t> new_expressions_indices,
+        Util::DeviceArray<EvaluationStatus> integral_statuses,
+        Util::DeviceArray<EvaluationStatus> expression_statuses, const size_t candidates_created) {
         const size_t thread_count = Util::thread_count();
         const size_t thread_idx = Util::thread_idx();
 
@@ -447,6 +455,23 @@ namespace Sym::Kernel {
 
                 for (size_t status_idx = 0; status_idx < new_expression_count; ++status_idx) {
                     expression_statuses[expr_idx + status_idx] = integral_statuses[idx];
+                }
+
+                // set UIDs for expressions and integrals
+                for (size_t i = 0; i < new_expression_count; ++i) {
+                    expressions_dst[expr_dst_idx + i].as<SubexpressionCandidate>().uid =
+                        expr_idx + candidates_created + i;
+                    expressions_dst[expr_dst_idx + i].as<SubexpressionCandidate>().creator_uid =
+                        integrals[int_idx].uid;
+                }
+
+                const size_t all_expressions_created =
+                    new_expressions_indices[new_expressions_indices.size() - 1];
+                for (size_t i = 0; i < new_integral_count; ++i) {
+                    integrals_dst[idx + i].as<SubexpressionCandidate>().uid =
+                        all_expressions_created + idx + candidates_created + i;
+                    integrals_dst[idx + i].as<SubexpressionCandidate>().creator_uid =
+                        integrals[int_idx].uid;
                 }
             }
         }

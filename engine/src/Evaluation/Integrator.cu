@@ -1,14 +1,14 @@
-#include "Evaluation/Heuristic/Heuristic.cuh"
 #include "Integrator.cuh"
 
 #include <thrust/count.h>
 #include <thrust/execution_policy.h>
 #include <thrust/scan.h>
 
-#include "Collapser.cuh"
 #include "IntegratorKernels.cuh"
 #include "StaticFunctions.cuh"
+#include "ComputationHistory.cuh"
 
+#include "Evaluation/Heuristic/Heuristic.cuh"
 #include "Symbol/SubexpressionCandidate.cuh"
 #include "Utils/CompileConstants.cuh"
 #include "Utils/Meta.cuh"
@@ -58,6 +58,12 @@ namespace Sym {
             scan_array_1.resize(size * REALLOC_MULTIPLIER);
             scan_array_2.resize(size * REALLOC_MULTIPLIER);
         }
+    }
+
+    void Integrator::increment_counter_from_device() {
+        const size_t increment = scan_array_1.to_cpu(scan_array_1.size() - 1) +
+                                 scan_array_2.to_cpu(scan_array_2.size() - 1);
+        candidates_created += increment;
     }
 
     void Integrator::simplify_integrals() {
@@ -120,7 +126,7 @@ namespace Sym {
         while (!success) {
             Kernel::apply_known_integrals<<<BLOCK_COUNT, BLOCK_SIZE>>>(
                 integrals, expressions, new_expressions.index(), help_space, scan_array_1,
-                evaluation_statuses_1);
+                evaluation_statuses_1, candidates_created);
             cudaDeviceSynchronize();
 
             success = are_evaluation_statuses_done(evaluation_statuses_1, expression_count_diff);
@@ -129,6 +135,8 @@ namespace Sym {
                 help_space.reoffset_like(new_expressions, HELP_SPACE_MULTIPLIER);
             }
         }
+
+        increment_counter_from_device();
 
         Kernel::propagate_solved_subexpressions<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions);
         cudaDeviceSynchronize();
@@ -228,7 +236,8 @@ namespace Sym {
         while (!success) {
             Kernel::apply_heuristics<<<BLOCK_COUNT, BLOCK_SIZE>>>(
                 integrals, integrals_swap, expressions, new_expressions_offset, help_space,
-                scan_array_1, scan_array_2, evaluation_statuses_1, evaluation_statuses_2);
+                scan_array_1, scan_array_2, evaluation_statuses_1, evaluation_statuses_2,
+                candidates_created);
             cudaDeviceSynchronize();
 
             // No need to check evaluation_statuses_2 as a reallocation request will appear there
@@ -243,6 +252,8 @@ namespace Sym {
         }
 
         std::swap(integrals, integrals_swap);
+
+        increment_counter_from_device();
 
         scan_array_1.set_mem(1);
         Kernel::propagate_failures_upwards<<<BLOCK_COUNT, BLOCK_SIZE>>>(expressions, scan_array_1);
@@ -294,35 +305,7 @@ namespace Sym {
 
     std::optional<std::vector<Symbol>>
     Integrator::solve_integral(const std::vector<Symbol>& integral) {
-        expressions.load_from_vector({single_integral_vacancy()});
-        integrals.load_from_vector({first_expression_candidate(integral)});
-
-        for (size_t i = 0;; ++i) {
-            simplify_integrals();
-
-            //printf("SIMPL:\n%s\n\n", integrals.to_string().c_str());
-
-            check_for_known_integrals();
-            apply_known_integrals();
-
-            if (is_original_expression_solved()) {
-                return Collapser::collapse(expressions.to_vector());
-            }
-
-            remove_unnecessary_candidates();
-
-            check_heuristics_applicability();
-            apply_heuristics();
-
-            //printf("HEUR:\n%s\n\n", integrals.to_string().c_str());
-
-            if (has_original_expression_failed()) {
-                return std::nullopt;
-            }
-
-            remove_failed_candidates();
-        }
-
-        return std::nullopt;
+        ComputationHistory dummy_history;
+        return solve_integral_with_history<false>(integral, dummy_history);
     }
 }

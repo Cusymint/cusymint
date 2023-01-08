@@ -14,12 +14,17 @@ namespace Sym {
     // znajduje się w tablicy całek.
     // Typ to nie `size_t`, bo `atomicSub` nie jest dla niego zdefiniowane
     unsigned int subexpressions_left;
+    
+    size_t uid;
+    size_t creator_uid;
+
     [[nodiscard]] std::string to_string() const;
     [[nodiscard]] std::string to_tex() const;
     __host__ __device__ void copy_metadata_from(const SubexpressionCandidate& other);
     END_DECLARE_SYMBOL(SubexpressionCandidate)
 
     std::vector<Symbol> first_expression_candidate(const std::vector<Symbol>& child);
+    std::vector<Symbol> first_expression_candidate_with_uid(size_t uid, const std::vector<Symbol> &child);
 }
 
 #endif
