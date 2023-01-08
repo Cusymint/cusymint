@@ -8,13 +8,20 @@ class CusymintClientMock implements CusymintClient {
   @override
   Future<Response> solveIntegral(Request request) async {
     await Future.delayed(solveDelay);
-    return Future.value(fakeResponse);
+    final responseWithoutHistory = Response(
+      inputInUtf: fakeResponse.inputInUtf,
+      inputInTex: fakeResponse.inputInTex,
+      outputInUtf: fakeResponse.outputInUtf,
+      outputInTex: fakeResponse.outputInTex,
+      errors: fakeResponse.errors,
+    );
+    return Future.value(responseWithoutHistory);
   }
 
   @override
-  Future<Response> solveIntegralWithSteps(Request request) {
-    // TODO: implement solveIntegralWithSteps
-    throw UnimplementedError();
+  Future<Response> solveIntegralWithSteps(Request request) async {
+    await Future.delayed(solveDelay);
+    return Future.value(fakeResponse);
   }
 
   @override
@@ -42,6 +49,26 @@ class ResponseMockFactory {
     inputInTex: '\\int x^2 + \\frac{\\sin(x)}{\\cos(x)} dx',
     outputInUtf: 'x^3/3 + log(cos(x)) + C',
     outputInTex: '\\frac{x^3}{3} + \\log{\\left(\\cos{x}\\right)} + C',
+    steps: '\\quad \\text{[[simplify]]}:\\newline'
+        '=\\qquad \\int \\frac{ \\sin\\left(x\\right) }'
+        '{ \\cos\\left(x\\right) }+x^{ 2 }\\text{d} x\\newline'
+        '=\\qquad \\int \\frac{ \\sin\\left(x\\right) }'
+        '{ \\cos\\left(x\\right) }\\text{d} '
+        'x+\\int x^{ 2 }\\text{d} x\\newline\\quad'
+        ' \\text{[[solveIntegral]]:} \\int x^{ 2 } \\text{d} x '
+        '= \\frac{ x^{ 2+1 } }{ 2+1 }'
+        ' + C:\\newline=\\qquad \\int \\frac{'
+        ' \\sin\\left(x\\right) }{ \\cos\\left(x\\right) }'
+        '\\text{d} x+0.333333x^{ 3 }\\newline\\quad \\text{[[substitute]]}'
+        '\\: u=\\cos\\left(x\\right), \\text{d}'
+        ' u=-\\sin\\left(x\\right) \\text{d} x:\\newline=\\qquad \\int'
+        ' -\\frac{ 1 }{ u }\\text{d} u_{ u = \\cos\\left(x\\right)'
+        ' }+0.333333x^{ 3 }\\newline=\\qquad -\\int'
+        ' \\frac{ 1 }{ u }\\text{d} '
+        'u_{ u = \\cos\\left(x\\right) }+0.333333x^{ 3 }\\newline\\quad '
+        '\\text{[[solveIntegral]]:} \\int \\frac{ 1 }{ u } '
+        '\\text{d} u = \\ln\\left(u\\right) + C:\\newline=\\qquad '
+        '0.333333x^{ 3 }-\\ln\\left(\\cos\\left(x\\right)\\right)',
   );
 
   static const Response validationErrors = Response(

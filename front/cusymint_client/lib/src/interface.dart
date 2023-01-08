@@ -11,7 +11,7 @@ class Response {
   final String? outputInUtf;
   final String? outputInTex;
 
-  final String? history;
+  final String? steps;
 
   final List<ResponseError> errors;
 
@@ -20,7 +20,7 @@ class Response {
     this.inputInTex,
     this.outputInUtf,
     this.outputInTex,
-    this.history,
+    this.steps,
     this.errors = const [],
   });
 

@@ -52,7 +52,7 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
         inputInUtf: Wrapped(response.inputInUtf),
         outputInTex: Wrapped(response.outputInTex),
         outputInUtf: Wrapped(response.outputInUtf),
-        steps: Wrapped(response.history),
+        steps: Wrapped(response.steps),
       ));
     } catch (e) {
       emit(MainPageState(
@@ -95,7 +95,7 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
         inputInUtf: Wrapped(response.inputInUtf),
         outputInTex: Wrapped(response.outputInTex),
         outputInUtf: Wrapped(response.outputInUtf),
-        steps: Wrapped(response.history),
+        steps: Wrapped(response.steps),
       ));
     } catch (e) {
       emit(MainPageState(
@@ -124,7 +124,7 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
         inputInUtf: Wrapped(response.inputInUtf),
         outputInTex: Wrapped(response.outputInTex),
         outputInUtf: Wrapped(response.outputInUtf),
-        steps: Wrapped(response.history),
+        steps: Wrapped(response.steps),
       ));
     } catch (e) {
       emit(MainPageState(

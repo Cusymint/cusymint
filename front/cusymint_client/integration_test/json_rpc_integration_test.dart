@@ -22,7 +22,7 @@ void main() {
       expect(response.outputInUtf, isNotNull);
       expect(response.outputInTex, isNotNull);
 
-      expect(response.history, isNull);
+      expect(response.steps, isNull);
 
       expect(response.errors, isEmpty);
     });
@@ -40,7 +40,7 @@ void main() {
       expect(response.outputInUtf, isNull);
       expect(response.outputInTex, isNull);
 
-      expect(response.history, isNull);
+      expect(response.steps, isNull);
 
       expect(response.errors, isNotEmpty);
       expect(
@@ -67,7 +67,7 @@ void main() {
       expect(response.outputInUtf, isNotNull);
       expect(response.outputInTex, isNotNull);
 
-      expect(response.history, isNotNull);
+      expect(response.steps, isNotNull);
 
       expect(response.errors, isEmpty);
     });
@@ -86,7 +86,7 @@ void main() {
       expect(response.outputInUtf, isNull);
       expect(response.outputInTex, isNull);
 
-      expect(response.history, isNull);
+      expect(response.steps, isNull);
 
       expect(response.errors, isNotEmpty);
       expect(
@@ -113,7 +113,7 @@ void main() {
       expect(response.outputInUtf, isNull);
       expect(response.outputInTex, isNull);
 
-      expect(response.history, isNull);
+      expect(response.steps, isNull);
 
       expect(response.errors, isNotEmpty);
       expect(
@@ -140,7 +140,7 @@ void main() {
       expect(response.outputInUtf, isNull);
       expect(response.outputInTex, isNull);
 
-      expect(response.history, isNull);
+      expect(response.steps, isNull);
 
       expect(response.errors, isEmpty);
     });
@@ -158,7 +158,7 @@ void main() {
       expect(response.outputInUtf, isNull);
       expect(response.outputInTex, isNull);
 
-      expect(response.history, isNull);
+      expect(response.steps, isNull);
 
       expect(response.errors, isNotEmpty);
     });
