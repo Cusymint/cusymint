@@ -432,7 +432,7 @@ namespace Sym {
         ConstReverseTreeIterator<Product> iterator(this);
 
         if (iterator.current()->is(Type::NumericConstant)) {
-            first_value.value = abs(iterator.current()->as<NumericConstant>().value);
+            first_value.value = ::abs(iterator.current()->as<NumericConstant>().value);
             if (first_value.value != 1) {
                 numerator_symbols.push_back(&first_value.symbol());
             }
@@ -492,6 +492,7 @@ namespace Sym {
             }
         }
     }
+
     std::vector<Symbol> operator*(const std::vector<Symbol>& lhs, const std::vector<Symbol>& rhs) {
         std::vector<Symbol> res(lhs.size() + rhs.size() + 1);
         Product::create(lhs.data(), rhs.data(), res.data());

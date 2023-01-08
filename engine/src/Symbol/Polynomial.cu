@@ -180,7 +180,7 @@ namespace Sym {
 
     __host__ __device__ void Polynomial::make_proper() {
         auto i = static_cast<ssize_t>(rank);
-        while (i > 0 && abs(coefficients()[i--]) < Consts::EPS) {
+        while (i > 0 && std::abs(coefficients()[i--]) < Consts::EPS) {
             --rank;
         }
         size = size_from_rank(rank);

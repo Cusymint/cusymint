@@ -85,6 +85,8 @@ namespace Test {
     PARSER_TEST(Cotangent, "cot(x)", Sym::cot(Sym::var()))
     PARSER_TEST(Ctg, "ctg(x)", Sym::cot(Sym::var()))
 
+    PARSER_TEST(Sign, "sgn(x)", Sym::sgn(Sym::var()))
+    PARSER_TEST(Absolute, "abs(x)", Sym::abs(Sym::var()))
     PARSER_TEST(ErrorFunction, "erf(x)", Sym::erf(Sym::var()))
     PARSER_TEST(SineIntegral, "Si(x)", Sym::si(Sym::var()))
     PARSER_TEST(CosineIntegral, "Ci(x)", Sym::ci(Sym::var()))

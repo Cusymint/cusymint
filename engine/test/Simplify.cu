@@ -283,4 +283,23 @@ namespace Test {
 
     EQUALITY_TEST(ExponentialIntegralOfLogarithm, "1+Ei(ln(x+2))", "1+li(2+x)")
     EQUALITY_TEST(LogarithmicIntegralOfExponential, "5*li(e^(pi*x))", "5*Ei(pi*x)")
+
+    EQUALITY_TEST(SignOfConstant1, "sgn(-6)", "-1")
+    EQUALITY_TEST(SignOfConstant2, "sgn(348)", "1")
+    EQUALITY_TEST(SignOfConstant3, "sgn(0)", "0")
+    EQUALITY_TEST(SignOfExponent1, "sgn(e^(-3x))", "1")
+    EQUALITY_TEST(SignOfExponent2, "sgn(24^cos(x))", "1")
+    EQUALITY_TEST(SignOfEvenPower, "sgn(cos(x)^232)", "1")
+    EQUALITY_TEST(SignOfOddPower, "sgn(cos(x)^233)", "sgn(cos(x))")
+    EQUALITY_TEST(SignOfMultiplication1, "sgn(23*x*cos(x))", "sgn(x*cos(x))")
+    EQUALITY_TEST(SignOfMultiplication2, "sgn(pi*x*(-23)*cos(x)*x^2*2^x)", "-sgn(x*cos(x))")
+    SIMPLIFY_TEST_NO_ACTION(SignOfVariable, "sgn(x)")
+    EQUALITY_TEST(OneOverSign, "1/sgn(sin(x))", "sgn(sin(x))")
+    EQUALITY_TEST(SquareOfAbsoluteValue, "abs(x)^2", "x^2")
+    EQUALITY_TEST(AbsoluteValueOfSquare, "abs(x^2)", "x^2")
+    EQUALITY_TEST(EvenPowerOfAbsoluteValue, "abs(x)^78232", "x^78232")
+    EQUALITY_TEST(AbsoluteValueOfEvenPower, "abs(x^78232)", "x^78232")
+    EQUALITY_TEST(SignOfSign, "sgn(sgn(tan(x)))", "sgn(tan(x))")
+    EQUALITY_TEST(AbsoluteValueOfAbsoluteValue, "abs(abs(cot(x)))", "abs(cot(x))")
+    EQUALITY_TEST(AbsoluteValueOfNegation, "abs(-x)", "abs(x)")
 }
