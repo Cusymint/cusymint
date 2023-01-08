@@ -2,7 +2,7 @@
 #define COMPILE_CONSTANTS_CUH
 
 namespace Consts {
-    constexpr double EPS = 1e-10;
+    constexpr double EPS = 1e-13;
 
     static constexpr bool DEBUG =
 #ifdef __DEBUG__
