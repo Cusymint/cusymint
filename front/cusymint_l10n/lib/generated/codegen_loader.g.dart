@@ -50,7 +50,18 @@ class CodegenLoader extends AssetLoader{
   "history": "History",
   "historyEmpty": "History is empty",
   "clearHistory": "Clear history",
-  "steps": "Steps"
+  "steps": "Steps",
+  "stepSubstitute": "Substitute",
+  "stepSplitSum": "Split sum",
+  "stepIntegrateByParts": "Integrate by parts",
+  "stepSolveIntegral": "Solve integral",
+  "stepBringOutConstant": "Bring out constant",
+  "stepSimplify": "Simplify",
+  "stepIntegral": "integral",
+  "stepStSuffix": "st",
+  "stepNdSuffix": "nd",
+  "stepRdSuffix": "rd",
+  "stepThSuffix": "th"
 };
 static const Map<String,dynamic> pl = {
   "enterIntegral": "Wpisz tutaj całkę",
@@ -88,7 +99,18 @@ static const Map<String,dynamic> pl = {
   "history": "Historia",
   "historyEmpty": "Historia jest pusta",
   "clearHistory": "Wyczyść",
-  "steps": "Kroki"
+  "steps": "Kroki",
+  "stepSubstitute": "Podstaw",
+  "stepSplitSum": "Podziel sumę",
+  "stepIntegrateByParts": "Całkuj przez części",
+  "stepSolveIntegral": "Rozwiąż całkę",
+  "stepBringOutConstant": "Wyciągnij stałą",
+  "stepSimplify": "Uprość",
+  "stepIntegral": "całka",
+  "stepStSuffix": "sza",
+  "stepNdSuffix": "ga",
+  "stepRdSuffix": "cia",
+  "stepThSuffix": "ta"
 };
 static const Map<String, Map<String,dynamic>> mapLocales = {"en": en, "pl": pl};
 }

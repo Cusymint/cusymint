@@ -34,5 +34,16 @@
    "history": "History",
    "historyEmpty": "History is empty",
    "clearHistory": "Clear history",
-   "steps": "Steps"
+   "steps": "Steps",
+   "stepSubstitute": "Substitute",
+   "stepSplitSum": "Split sum",
+   "stepIntegrateByParts": "Integrate by parts",
+   "stepSolveIntegral": "Solve integral",
+   "stepBringOutConstant": "Bring out constant",
+   "stepSimplify": "Simplify",
+   "stepIntegral": "integral",
+   "stepStSuffix": "st",
+   "stepNdSuffix": "nd",
+   "stepRdSuffix": "rd",
+   "stepThSuffix": "th"
 }

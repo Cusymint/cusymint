@@ -12,6 +12,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../utils/steps_translator.dart';
+
 class HomePage extends StatelessWidget {
   const HomePage({
     super.key,
@@ -105,6 +107,7 @@ class _HomeBodyState extends State<HomeBody> {
                   isLoading: state.isLoading,
                   hasCriticalErrors: state.errors.isNotEmpty,
                   errors: ClientErrorTranslator.translateList(state.errors),
+                  steps: StepsTranslator.translate(state.steps),
                   buttonRowCallbacks: state.hasOutput
                       ? CuButtonRowCallbacks(
                           onCopyTex: () async => _copyTexToClipboard(
@@ -119,6 +122,11 @@ class _HomeBodyState extends State<HomeBody> {
                             state.inputInUtf!,
                             state.outputInUtf!,
                           ),
+                          onStepsTap: () {
+                            widget.mainPageBloc.add(
+                              StepsRequested(state.userInput),
+                            );
+                          },
                         )
                       : null,
                 );

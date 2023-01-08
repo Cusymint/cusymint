@@ -37,5 +37,16 @@ abstract class  LocaleKeys {
   static const historyEmpty = 'historyEmpty';
   static const clearHistory = 'clearHistory';
   static const steps = 'steps';
+  static const stepSubstitute = 'stepSubstitute';
+  static const stepSplitSum = 'stepSplitSum';
+  static const stepIntegrateByParts = 'stepIntegrateByParts';
+  static const stepSolveIntegral = 'stepSolveIntegral';
+  static const stepBringOutConstant = 'stepBringOutConstant';
+  static const stepSimplify = 'stepSimplify';
+  static const stepIntegral = 'stepIntegral';
+  static const stepStSuffix = 'stepStSuffix';
+  static const stepNdSuffix = 'stepNdSuffix';
+  static const stepRdSuffix = 'stepRdSuffix';
+  static const stepThSuffix = 'stepThSuffix';
 
 }
