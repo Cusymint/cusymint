@@ -16,6 +16,30 @@ namespace Test {
     ADVANCED_INTEGRAL_TEST(RootRational, "(x^(2/3)-sqrt(x))/x^(1/3)", "3/4x^(4/3)-6/7x^(7/6)")
     ADVANCED_INTEGRAL_TEST(ExponentialsSum, "2e^x+3*5^x", "2e^x+3*5^x/ln(5)")
 
+    ADVANCED_INTEGRAL_TEST(CosineByParts, "x cos(x)", "x sin(x)+cos(x)")
+    ADVANCED_INTEGRAL_TEST(ExponentByParts, "x e^x", "x e^x-e^x")
+    ADVANCED_INTEGRAL_TEST(ExponentByParts2, "x^2e^x", "e^x(x^2-2x+2)")
+    //ADVANCED_INTEGRAL_TEST(NegativeExponentByParts, "x e^(-x)", "-e^(-x)(x+1)") // linear substitution for nested-vars-only required
+    ADVANCED_INTEGRAL_TEST(CosineByParts2, "x^2cos(x)", "x^2sin(x)+2x cos(x)-2sin(x)")
+    ADVANCED_INTEGRAL_TEST(LogarithmTimesRoot, "sqrt(x)ln(x)", "2/3x^(3/2)(ln(x)-2/3)")
+    ADVANCED_INTEGRAL_TEST(LogarithmDividedByPower, "ln(x)/x^4", "-1/(3x^3)(ln(x)+1/3)")
+
+    ADVANCED_INTEGRAL_TEST(VeryLongPolynomial, "(2x-1)^20", "1/42(2x-1)^21+1/42")
+    ADVANCED_INTEGRAL_TEST(CosineOfLinearFunction, "cos(3x-1)", "sin(3x-1)/3")
+    //ADVANCED_INTEGRAL_TEST(RationalWithSubstitution, "2x/(5x^2+1)", "1/5ln(5x^2+1)") // substitution t=x^2+a required
+    ADVANCED_INTEGRAL_TEST(SimpleRationalWithExponent, "e^x/(3+e^x)", "ln(3+e^x)")
+    //ADVANCED_INTEGRAL_TEST(ExponentWithSquare, "x*e^(-x^2)", "-1/2e^(-x^2)") // substitution t=x^2+a required
+    //ADVANCED_INTEGRAL_TEST(ExponentOfInverse, "e^(1/x)/x^2", "-e^(1/x)") // substitution t=ax^b+c required (dx = 1/b((t-c)/a)^((1-b)/b))
+    ADVANCED_INTEGRAL_TEST(Tangent, "tg(x)", "-ln(cos(x))")
+    ADVANCED_INTEGRAL_TEST(TangentDividedByCosSquared, "tg(x)/cos^2(x)", "tg^2(x)/2")
+    ADVANCED_INTEGRAL_TEST(CosTimesExpSine, "cos(x)e^sin(x)", "e^sin(x)")
+    ADVANCED_INTEGRAL_TEST(CosineDividedByRootOfLinSine, "cos(x)/sqrt(1+sin(x))", "2sqrt(1+sin(x))")
+    //ADVANCED_INTEGRAL_TEST(TangentDerivativeWithSubstitution, "x^3/cos^2(x^4)", "tg(x^4)/4") // substitution t=ax^b+c required (dx = 1/b((t-c)/a)^((1-b)/b))
+    ADVANCED_INTEGRAL_TEST(ExponentOfLinear, "6^(1-x)", "-6^(1-x)/ln(6)")
+    //ADVANCED_INTEGRAL_TEST(ArctanSubtitution, "1/(1+x^2)/arctan(x)", "ln(arctan(x))") // substitution t=arctan(x) required
+
+    // task 4 contains examples which require nested integrals (not implemeneted)
+
     // harder ones from WUT MiNI faculty
     // https://pages.mini.pw.edu.pl/~dembinskaa/www/?download=Inf_I_cw9_2022_23.pdf, tasks 1-3
     ADVANCED_INTEGRAL_TEST(SimpleRationalWithSquare, "(sqrt(x)-2)^2/x^2", "-4/x+8/sqrt(x)+ln(x)")
@@ -32,8 +56,8 @@ namespace Test {
     //ADVANCED_INTEGRAL_TEST(CotangentDividedByLogOfSine, "ctg(x)/ln(sin(x))", "ln(ln(sin(x)))") // substitution t=ln(x) required
     //ADVANCED_INTEGRAL_TEST(InvertedCosH, "1/(e^x+e^-x)", "arctg(e^x)") // extract_function required
 
-    //ADVANCED_INTEGRAL_TEST(Absolute, "abs(x)", "x*abs(x)/2") // abs required
-    //ADVANCED_INTEGRAL_TEST(MaxOfOneAndSquare, "(abs(1-x^2)+1+x^2)/2", "(sgn(1-x^2)(x-x^3/3)+x+x^3/3)/2") // abs required
+    ADVANCED_INTEGRAL_TEST(Absolute, "abs(x)", "x*abs(x)/2") // abs required
+    ADVANCED_INTEGRAL_TEST(MaxOfOneAndSquare, "(abs(1-x^2)+1+x^2)/2", "(sgn(1-x^2)(x-x^3/3)+x+x^3/3)/2") // abs required
 
     // tasks 5-7 involve rational integrals
 
