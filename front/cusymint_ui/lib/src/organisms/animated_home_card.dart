@@ -187,8 +187,19 @@ class _HomeStepsView extends StatelessWidget {
     if (steps != null) {
       final colors = CuColors.of(context);
 
+      final stepsList = steps!.split('\\newline');
+
       return CuScrollableHorizontalWrapper(
-        child: TexView(steps!, color: colors.black),
+        child: Column(
+          children: [
+            for (final step in stepsList)
+              TexView(
+                step,
+                color: colors.black,
+                fontScale: 1.5,
+              ),
+          ],
+        ),
       );
     }
 
