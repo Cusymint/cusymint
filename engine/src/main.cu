@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("tg(x)+e^e^x*e^x+ln(x)"));
+    const auto integral = Sym::integral(Parser::parse_function("ln(sin(x+1))cos(x+1)"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 

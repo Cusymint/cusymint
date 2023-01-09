@@ -430,7 +430,7 @@ namespace Sym {
     using Pi = KnownConstantOperator<KnownConstantValue::Pi>;
     using E = KnownConstantOperator<KnownConstantValue::E>;
 
-    template <class Inner> struct SolutionOfIntegral {
+    template <class Inner, bool SOLVED_BY_KNOWN_INTEGRAL> struct SolutionOperator {
         using IAdditionalArgs = typename Inner::AdditionalArgs;
         static constexpr size_t I_ADDITIONAL_ARGS_SIZE = cuda::std::tuple_size_v<IAdditionalArgs>;
 
@@ -460,6 +460,7 @@ namespace Sym {
             Inner::init(solution->expression(),
                         Util::slice_tuple<SOLUTION_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
 
+            solution->solved_by_known_integral = SOLVED_BY_KNOWN_INTEGRAL;
             solution->seal();
         }
 
@@ -479,6 +480,9 @@ namespace Sym {
                    Inner::match(dst.as<Solution>().expression(), other_same);
         }
     };
+
+    template <class I> using SolutionOfIntegral = SolutionOperator<I, true>;
+    template <class I> using IndirectSolution = SolutionOperator<I, false>;
 
     template <class Inner> struct Candidate {
         using IAdditionalArgs = typename Inner::AdditionalArgs;

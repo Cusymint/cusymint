@@ -10,6 +10,7 @@ namespace Sym {
     DECLARE_SYMBOL(Solution, false)
     size_t substitution_count;
     size_t expression_offset;
+    bool solved_by_known_integral;
 
     __host__ __device__ void seal_no_substitutions();
     __host__ __device__ void seal_single_substitution();
@@ -30,9 +31,11 @@ namespace Sym {
 
     END_DECLARE_SYMBOL(Solution)
 
-    std::vector<Symbol> solution(const std::vector<Symbol>& arg);
     std::vector<Symbol> solution(const std::vector<Symbol>& arg,
-                                 const std::vector<std::vector<Symbol>>& substitutions);
+                                 bool solved_by_known_integral = true);
+    std::vector<Symbol> solution(const std::vector<Symbol>& arg,
+                                 const std::vector<std::vector<Symbol>>& substitutions,
+                                 bool solved_by_known_integral = true);
 }
 
 #endif
