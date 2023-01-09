@@ -33,6 +33,6 @@ namespace Test {
     HEURISTIC_TEST(LinearSubstitutionNoFreeTerm, "(e^x)^2", "0.5e^(2x)")
     HEURISTIC_TEST(LinearSubstitutionNoCoefficient, "cos(x+c+pi)", "sin(x+c+pi)")
 
-    HEURISTIC_TEST(LinearSubstitutionMultipliedByX, "x*e^(-x)", "-e^x(x+1)")
+    HEURISTIC_TEST(LinearSubstitutionMultipliedByX, "x*e^(-x)", "-e^(-x)(x+1)")
     HEURISTIC_TEST(LinearSubstitutionMultipliedBySquare, "x^2sin(3x+1)", "1/27((2-9x^2)cos(3x+1)+6x*sin(3x+1))")
 };
