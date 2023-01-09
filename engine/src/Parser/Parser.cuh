@@ -20,10 +20,10 @@ namespace Parser {
     // expr -> term { addop term }					                      left-associative
     // term -> factor { mulop factor }            	              left-associative; mulop can be empty
     // factor -> '-' factor | power_arg | power_arg ^ factor		  right-associative
-    // power_arg -> num | const | var | ( expr ) | function_power ( expr )
+    // power_arg -> num | const | var | braced_expr | function_power braced_expr
     // function_power -> function | function ^ factor
-    // function -> log '_' power_arg | arcsin | arccos | arctg | arctan | arcctg |
-    //             arccot | cos | ctg | cot | cosh | ctgh | coth | sin | sinh | 
+    // function -> log '_' power_arg | abs | arcsin | arccos | arctg | arctan | arcctg |
+    //             arccot | cos | ctg | cot | cosh | ctgh | coth | sgn | sin | sinh | 
     //             sqrt | tg | tan | tgh | tanh | ln | erf | Si | Ci | Ei | li
     //
     class Parser {
@@ -34,6 +34,7 @@ namespace Parser {
 
         std::vector<Sym::Symbol> integral();
         std::vector<Sym::Symbol> expr();
+        std::vector<Sym::Symbol> braced_expr();
         std::vector<Sym::Symbol> term();
         std::vector<Sym::Symbol> factor();
         std::vector<Sym::Symbol> power_arg();

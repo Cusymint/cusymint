@@ -17,6 +17,7 @@
 #include "Polynomial.cuh"
 #include "Power.cuh"
 #include "Product.cuh"
+#include "Sign.cuh"
 #include "Solution.cuh"
 #include "SubexpressionCandidate.cuh"
 #include "SubexpressionVacancy.cuh"
@@ -58,6 +59,7 @@
             VC_CASE(Addition, _instance, _member_function, __VA_ARGS__)                    \
             VC_CASE(Product, _instance, _member_function, __VA_ARGS__)                     \
             VC_CASE(Power, _instance, _member_function, __VA_ARGS__)                       \
+            VC_CASE(Sign, _instance, _member_function, __VA_ARGS__)                        \
             VC_CASE(Sine, _instance, _member_function, __VA_ARGS__)                        \
             VC_CASE(Cosine, _instance, _member_function, __VA_ARGS__)                      \
             VC_CASE(Tangent, _instance, _member_function, __VA_ARGS__)                     \
@@ -98,6 +100,7 @@ namespace Sym {
         Addition addition;
         Product product;
         Power power;
+        Sign sign;
         Sine sine;
         Cosine cosine;
         Tangent tangent;
@@ -359,6 +362,14 @@ namespace Sym {
          * @return `true` if `this` has no variables, `false` otherwise
          */
         [[nodiscard]] __host__ __device__ bool is_constant() const;
+
+        /*
+         * @brief Checks if `this` is an expression composed only of constants or functions that are
+         * constant on all intervals
+         *
+         * @return `true` if `this` is almost constant, `false` otherwise
+         */
+        [[nodiscard]] __host__ __device__ bool is_almost_constant() const;
 
         /*
          * @brief Returns offset of first occurence of variable in this symbol sequence

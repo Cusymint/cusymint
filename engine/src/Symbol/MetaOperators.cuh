@@ -350,7 +350,21 @@ namespace Sym {
         }
     };
 
-    // In C++17, doubles can't be template parameters.
+    struct AlmostConst {
+        using AdditionalArgs = cuda::std::tuple<>;
+        using Size = Unsized;
+
+        static constexpr bool HAS_SAME = false;
+
+        __host__ __device__ static bool match(const Symbol& dst) {
+            return dst.is_almost_constant();
+        }
+        __host__ __device__ static bool match(const Symbol& dst, const Symbol& /*other_same*/) {
+            return match(dst);
+        }
+    };
+
+    // In C++17 doubles can't be template parameters.
     template <int V> struct Integer {
         using AdditionalArgs = cuda::std::tuple<>;
         using Size = SingletonSize;
@@ -416,7 +430,7 @@ namespace Sym {
     using Pi = KnownConstantOperator<KnownConstantValue::Pi>;
     using E = KnownConstantOperator<KnownConstantValue::E>;
 
-    template <class Inner> struct SolutionOfIntegral {
+    template <class Inner, bool SOLVED_BY_KNOWN_INTEGRAL> struct SolutionOperator {
         using IAdditionalArgs = typename Inner::AdditionalArgs;
         static constexpr size_t I_ADDITIONAL_ARGS_SIZE = cuda::std::tuple_size_v<IAdditionalArgs>;
 
@@ -446,6 +460,7 @@ namespace Sym {
             Inner::init(solution->expression(),
                         Util::slice_tuple<SOLUTION_ARGS_SIZE, I_ADDITIONAL_ARGS_SIZE>(args));
 
+            solution->solved_by_known_integral = SOLVED_BY_KNOWN_INTEGRAL;
             solution->seal();
         }
 
@@ -465,6 +480,9 @@ namespace Sym {
                    Inner::match(dst.as<Solution>().expression(), other_same);
         }
     };
+
+    template <class I> using SolutionOfIntegral = SolutionOperator<I, true>;
+    template <class I> using IndirectSolution = SolutionOperator<I, false>;
 
     template <class Inner> struct Candidate {
         using IAdditionalArgs = typename Inner::AdditionalArgs;
@@ -600,6 +618,8 @@ namespace Sym {
 
     template <class Head, class... Tail> struct Prod : Mul<Head, Prod<Tail...>> {};
     template <class T> struct Prod<T> : T {};
+
+    template <class I> using Sgn = OneArgOperator<Sign, I>;
 
     template <class I> using Sin = OneArgOperator<Sine, I>;
     template <class I> using Cos = OneArgOperator<Cosine, I>;

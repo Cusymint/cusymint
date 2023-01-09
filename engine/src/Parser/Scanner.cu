@@ -5,7 +5,7 @@
 namespace Parser {
     Scanner::Scanner(const std::string& text) : text(text) {}
 
-    bool isFunction(Token tok) { return tok >= Token::Asin; }
+    bool isFunction(Token tok) { return tok >= Token::Abs; }
 
     void Scanner::read_letter_sequence(std::string& read_text) {
         while (std::isalpha(text[pos])) {
@@ -13,7 +13,7 @@ namespace Parser {
         }
     }
 
-    Token Scanner::try_read_inverse_trig(std::string& read_text) {
+    Token Scanner::try_read_abs_inverse_trig(std::string& read_text) {
         read_text += 'a';
         if (text.substr(pos + 1, 5) == "rcsin") {
             read_text += "rcsin";
@@ -44,6 +44,11 @@ namespace Parser {
             read_text += "rccot";
             pos += 5;
             return Token::Acot;
+        }
+        if (text.substr(pos + 1, 2) == "bs") {
+            read_text += "bs";
+            pos += 2;
+            return Token::Abs;
         }
         return Token::SymbolicConstant;
     }
@@ -103,7 +108,7 @@ namespace Parser {
         return Token::SymbolicConstant;
     }
 
-    Token Scanner::try_read_sine_sqrt(std::string& read_text) {
+    Token Scanner::try_read_sign_sine_sqrt(std::string& read_text) {
         read_text += 's';
         if (text.substr(pos + 1, 3) == "inh") {
             read_text += "inh";
@@ -114,6 +119,11 @@ namespace Parser {
             read_text += "qrt";
             pos += 3;
             return Token::Sqrt;
+        }
+        if (text.substr(pos + 1, 2) == "gn") {
+            read_text += "gn";
+            pos += 2;
+            return Token::Sgn;
         }
         if (text.substr(pos + 1, 2) == "in") {
             read_text += "in";
@@ -244,7 +254,7 @@ namespace Parser {
             }
             break;
         case 'a':
-            state = try_read_inverse_trig(read_text);
+            state = try_read_abs_inverse_trig(read_text);
             break;
         case 'c':
             state = try_read_cosine_cotangent(read_text);
@@ -253,7 +263,7 @@ namespace Parser {
             state = try_read_log(read_text);
             break;
         case 's':
-            state = try_read_sine_sqrt(read_text);
+            state = try_read_sign_sine_sqrt(read_text);
             break;
         case 't':
             state = try_read_tangent(read_text);

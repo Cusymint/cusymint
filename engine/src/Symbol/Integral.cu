@@ -28,7 +28,9 @@ namespace Sym {
             substitution -= substitution->size();
         }
         // now `substitution` points to an integrand
-        substitution->size() += substitution->additional_required_size();
+         if (substitution->additional_required_size() > additional_required_size) {
+            substitution->size() += substitution->additional_required_size() - additional_required_size;
+        }
         substitution->additional_required_size() = 0;
 
         const size_t new_integrand_size = substitution->size();

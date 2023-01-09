@@ -63,6 +63,9 @@ namespace Test {
     SCANNER_TEST(ExpectIntegrate, "integrate", Token::Integral, "integrate")
     SCANNER_TEST_ERR(ExpectErrorOnLettersAfterIntegrate, "integrateqq", "integrateqq")
 
+    SCANNER_TEST(ExpectAbsoluteValue, "abs", Token::Abs, "abs")
+    SCANNER_TEST_ERR(ExpectErrorOnLettersAfterAbsoluteValue, "absolute(1)", "absolute")
+
     SCANNER_TEST(ExpectArcsine, "arcsin", Token::Asin, "arcsin")
     SCANNER_TEST_ERR(ExpectErrorOnLettersAfterArcsine, "arcsine(1)", "arcsine")
 
@@ -98,6 +101,9 @@ namespace Test {
 
     SCANNER_TEST(ExpectHyperbolicCtg, "ctgh", Token::Coth, "ctgh")
     SCANNER_TEST_ERR(ExpectErrorOnLettersAfterHyperbolicCtg, "ctghqw", "ctghqw")
+
+    SCANNER_TEST(ExpectSign, "sgn(x)", Token::Sgn, "sgn")
+    SCANNER_TEST_ERR(ExpectErrorOnLettersAfterSign, "sgnn-23", "sgnn")
 
     SCANNER_TEST(ExpectSine, "sin(", Token::Sin, "sin")
     SCANNER_TEST_ERR(ExpectErrorOnLettersAfterSine, "sine(", "sine")

@@ -23,7 +23,8 @@ namespace Test {
             static const size_t DERIVATIVE_SIZE = 1024;
             std::vector<Sym::Symbol> derivative(DERIVATIVE_SIZE);
 
-            auto iterator = Sym::SymbolIterator::from_at(*derivative.data(), 0, derivative.size()).good();
+            auto iterator =
+                Sym::SymbolIterator::from_at(*derivative.data(), 0, derivative.size()).good();
 
             const auto size_result = expression.data()->derivative_to(iterator);
 
@@ -31,7 +32,7 @@ namespace Test {
 
             ASSERT_EQ(size_result.good(), derivative.data()->size())
                 << "Tried to calculate derivative of:\n  " << expression.data()->to_string()
-                << "\n but calculated size does not match actual size";
+                << "\n but calculated size does not match the expected size";
 
             simplify_vector(expected_derivative);
             simplify_vector(derivative);
@@ -97,4 +98,8 @@ namespace Test {
     DERIVATIVE_TEST(RationalFunction, "(p*x^2+q*x+r)/(a*x+b)",
                     "(a*(p*x^2+q*x+r))*(-(1/(a*x+b)^2))+(2*p*x+q)/(a*x+b)")
     DERIVATIVE_TEST(DividingFunctionByFunction, "sin(x)/x", "sin(x)*(-(1/x^2))+cos(x)/x")
+
+    DERIVATIVE_TEST(Sign, "sgn(x)", "0")
+    DERIVATIVE_TEST(SignAdvanced, "sgn(e^cos(x+43))", "0")
+    DERIVATIVE_TEST(ConstantWithSign, "3+4*sgn(e^x)+sgn(x^2)^x", "0")
 }

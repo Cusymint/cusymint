@@ -20,7 +20,7 @@ namespace Sym::Heuristic {
 
             for (ConstTreeIterator<Product> iterator(&tree); iterator.is_valid();
                  iterator.advance()) {
-                if (iterator.current()->is_constant()) {
+                if (iterator.current()->is_almost_constant()) {
                     constant_count += 1;
                 }
                 else {
@@ -57,7 +57,7 @@ namespace Sym::Heuristic {
             for (ConstTreeIterator<Product> iterator(&product_tree); iterator.is_valid();
                  iterator.advance()) {
                 const size_t current_size = iterator.current()->size();
-                if (iterator.current()->is_constant()) {
+                if (iterator.current()->is_almost_constant()) {
                     TRY(constants_guard += current_size);
                     iterator.current()->copy_to(*next_constant_dst);
                     next_constant_dst += current_size;
@@ -87,7 +87,7 @@ namespace Sym::Heuristic {
         bool found_function = false;
 
         while (iterator.is_valid()) {
-            const bool is_constant = iterator.current()->is_constant();
+            const bool is_constant = iterator.current()->is_almost_constant();
             found_constant |= is_constant;
             found_function |= !is_constant;
 
