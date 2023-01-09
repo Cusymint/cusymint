@@ -1,4 +1,5 @@
 #include "Symbol/SubexpressionCandidate.cuh"
+#include "Symbol/SubexpressionVacancy.cuh"
 #include "Symbol/SymbolType.cuh"
 #include "TransformationType.cuh"
 
@@ -46,14 +47,25 @@ namespace Sym {
 
         if (candidate.arg().is(Type::Addition)) {
             const auto& addition = candidate.arg().as<Addition>();
-            if (addition.arg1().is(Type::Product) && addition.arg1().as<Product>().arg1().is(-1)) {
+            if (addition.arg2().is(Type::Product) && addition.arg2().as<Product>().arg1().is(-1)) {
                 // integration by parts happened
-                const auto& vacancy =
-                    addition.arg1().as<Product>().arg2().as<SubexpressionVacancy>();
-                const auto& child_integral =
-                    expression_tree[vacancy.solver_idx][0].as<SubexpressionCandidate>().arg().as<Integral>();
-                const auto& first_function = addition.arg2().as<Product>().arg1();
-                const auto& second_function = addition.arg2().as<Product>().arg2();
+                const auto& integral_vacancy =
+                    addition.arg2().as<Product>().arg2().as<SubexpressionVacancy>();
+                const auto& child_integral = expression_tree[integral_vacancy.solver_idx][0]
+                                                 .as<SubexpressionCandidate>()
+                                                 .arg()
+                                                 .as<Integral>();
+
+                const auto& solution_vacancy = addition.arg1().as<SubexpressionVacancy>();
+                const auto& solution_product = expression_tree[solution_vacancy.solver_idx][0]
+                                                      .as<SubexpressionCandidate>()
+                                                      .arg()
+                                                      .as<Solution>()
+                                                      .expression()
+                                                      .as<Product>();
+
+                const auto& first_function = solution_product.arg1();
+                const auto& second_function = solution_product.arg2();
                 const auto& second_function_derivative =
                     child_integral.integrand().as<Product>().arg2();
 
@@ -84,7 +96,7 @@ namespace Sym {
             }
         }
 
-        if (candidate.arg().is(Type::Solution)) {
+        if (candidate.arg().is(Type::Solution) && candidate.arg().as<Solution>().solved_by_known_integral) {
             // solution happened
             const auto& solution_arg = candidate.arg().as<Solution>().expression();
             std::vector<Symbol> integrand(previous_integral.integrand().size());

@@ -37,7 +37,8 @@ namespace Sym {
     DEFINE_ARE_EQUAL(Solution) {
         return BASE_ARE_EQUAL(Solution) &&
                symbol->as<Solution>().substitution_count == substitution_count &&
-               symbol->as<Solution>().expression_offset == expression_offset;
+               symbol->as<Solution>().expression_offset == expression_offset &&
+               symbol->as<Solution>().solved_by_known_integral == solved_by_known_integral;
     }
 
     DEFINE_IS_FUNCTION_OF(Solution) { return results[expression_offset]; } // NOLINT
@@ -127,19 +128,20 @@ namespace Sym {
         return first_substitution().substitute(this_expression);
     }
 
-    std::vector<Symbol> solution(const std::vector<Symbol>& arg) {
+    std::vector<Symbol> solution(const std::vector<Symbol>& arg, bool solved_by_known_integral) {
         std::vector<Symbol> res(arg.size() + 1);
 
         Solution* const solution = res.data() << Solution::builder();
         solution->seal_no_substitutions();
         arg.data()->copy_to(solution->expression());
+        solution->solved_by_known_integral = solved_by_known_integral;
         solution->seal();
 
         return res;
     }
 
     std::vector<Symbol> solution(const std::vector<Symbol>& arg,
-                                 const std::vector<std::vector<Symbol>>& substitutions) {
+                                 const std::vector<std::vector<Symbol>>& substitutions, bool solved_by_known_integral) {
         size_t res_size = arg.size() + 1;
         for (const auto& sub : substitutions) {
             res_size += sub.size() + 1;
@@ -153,6 +155,7 @@ namespace Sym {
         }
         solution->seal_substitutions(substitutions.size(), current_dst - &res.data()->child());
         arg.data()->copy_to(solution->expression());
+        solution->solved_by_known_integral = solved_by_known_integral;
         solution->seal();
 
         return res;
