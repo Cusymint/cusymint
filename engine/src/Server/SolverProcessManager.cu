@@ -1,6 +1,8 @@
 #include "SolverProcessManager.cuh"
 #include "Logger.cuh"
 
+#include "../Evaluation/Integrator.cuh"
+
 #include <cstdio>
 #include <iostream>
 #include <memory>
@@ -23,14 +25,37 @@ std::string exec_and_read_output(const std::string cmd) {
     return result;
 }
 
-std::string SolverProcessManager::create_command(const std::string& input) const {
+std::string SolverProcessManager::create_solve_command(const std::string& input) const {
     return fmt::format("./{} --solve-json \"{}\"", executable_name, input);
+}
+
+std::string SolverProcessManager::create_solve_with_steps_command(const std::string& input) const {
+    return fmt::format("./{} --solve-with-steps-json \"{}\"", executable_name, input);
 }
 
 std::string SolverProcessManager::try_solve(const std::string& input) const {
     try {
-        auto command = create_command(input);
-        Logger::print("[SolverProcessManager] Trying to solve with command: {}\n", create_command(input));
+        auto command = create_solve_command(input);
+        Logger::print("[SolverProcessManager] Trying to solve with command: {}\n", command);
+        auto result = exec_and_read_output(command);
+        if(result.back() == '\n') {
+            result.pop_back();
+        }
+        Logger::print("[SolverProcessManager] Solver returned: {}\n", result);
+        if(result[0] != '{' || result.back() != '}') {
+            throw std::runtime_error("Solver returned invalid JSON");
+        }
+        return result;
+    } catch (const std::exception& e) {
+        Logger::print("[SolverProcessManager] Solver failed: {}\n", e.what());
+        return R"({"errors": ["Internal runtime error."]})";
+    }
+}
+
+std::string SolverProcessManager::try_solve_with_steps(const std::string& input) const {
+    try {
+        auto command = create_solve_with_steps_command(input);
+        Logger::print("[SolverProcessManager] Trying to solve with steps with command: {}\n", command);
         auto result = exec_and_read_output(command);
         if(result.back() == '\n') {
             result.pop_back();

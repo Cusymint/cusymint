@@ -109,6 +109,50 @@ void main() {
     ],
   );
 
+  blocTest(
+    'emits loading state and state with solution and history '
+    'when StepsRequested',
+    build: () => _createBloc(clientMock),
+    act: (MainPageBloc bloc) => bloc.add(const StepsRequested('x')),
+    wait: solveDelay + solveDelay,
+    expect: () => [
+      _isMainPageStateLoadingWithInput('x')
+          .having((s) => s.errors, 'errors', isEmpty),
+      isA<MainPageState>()
+          .having(
+            (state) => state.userInput,
+            'correct input',
+            equals('x'),
+          )
+          ._havingInputInTex(correctResponse.inputInTex)
+          ._havingInputInUtf(correctResponse.inputInUtf)
+          ._havingOutputInTex(correctResponse.outputInTex)
+          ._havingOutputInUtf(correctResponse.outputInUtf)
+          ._havingSteps(correctResponse.steps)
+          ._notHavingErrors(),
+    ],
+  );
+
+  blocTest(
+    'emits loading state and error state on client exception'
+    ' when StepsRequested',
+    build: () => _createBloc(
+      ExceptionThrowingClient(waitDuration: solveDelay),
+    ),
+    act: (MainPageBloc bloc) => bloc.add(const StepsRequested('x')),
+    wait: solveDelay + solveDelay,
+    expect: () => [
+      _isMainPageStateLoadingWithInput('x'),
+      isA<MainPageState>()
+          .having(
+            (state) => state.userInput,
+            'correct user input',
+            equals('x'),
+          )
+          ._havingErrors(),
+    ],
+  );
+
   test('ClientFactoryMock returns specified client', () {
     const client1 = clientFailuresMock;
     final factory1 = ClientFactoryMock(client1);
@@ -141,6 +185,9 @@ extension on TypeMatcher<MainPageState> {
 
   TypeMatcher<MainPageState> _havingOutputInUtf(String? output) =>
       having((state) => state.outputInUtf, 'output', equals(output));
+
+  TypeMatcher<MainPageState> _havingSteps(String? steps) =>
+      having((state) => state.steps, 'history', equals(steps));
 
   TypeMatcher<MainPageState> _havingErrors() =>
       having((state) => state.errors, 'errors', isNotEmpty);

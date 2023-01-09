@@ -16,6 +16,18 @@ scripts:
       depends-on: 
         - build_runner
 
+  generate:tr:
+    description: Generate static translation files for the specified package
+    run: |
+      melos exec -- \
+        "flutter pub run easy_localization:generate -S assets/translations -O lib/generated && flutter pub run easy_localization:generate -S assets/translations -O lib/generated -f keys -o locale_keys.g.dart"
+    select-package:
+      dir-exists:
+        - assets/translations
+      depends-on: 
+        - easy_localization
+
+
   rebuild:icons:
     run: |
       melos exec -- \

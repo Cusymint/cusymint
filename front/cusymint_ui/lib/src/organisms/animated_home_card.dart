@@ -1,3 +1,4 @@
+import 'package:cusymint_l10n/cusymint_l10n.dart';
 import 'package:cusymint_ui/cusymint_ui.dart';
 
 class CuButtonRowCallbacks {
@@ -5,11 +6,13 @@ class CuButtonRowCallbacks {
     required this.onCopyTex,
     required this.onCopyUtf,
     required this.onShareUtf,
+    required this.onStepsTap,
   });
 
   final VoidCallback onCopyTex;
   final VoidCallback onCopyUtf;
   final VoidCallback onShareUtf;
+  final VoidCallback onStepsTap;
 }
 
 class CuAnimatedHomeCard extends StatefulWidget {
@@ -22,6 +25,7 @@ class CuAnimatedHomeCard extends StatefulWidget {
     this.outputInTex,
     this.isLoading = false,
     this.buttonRowCallbacks,
+    this.steps,
   });
 
   final String? title;
@@ -31,6 +35,7 @@ class CuAnimatedHomeCard extends StatefulWidget {
 
   final String? inputInTex;
   final String? outputInTex;
+  final String? steps;
   final bool isLoading;
 
   final CuButtonRowCallbacks? buttonRowCallbacks;
@@ -82,6 +87,12 @@ class _CuAnimatedHomeCardState extends State<CuAnimatedHomeCard> {
                   inputInTex: widget.inputInTex,
                   outputInTex: widget.outputInTex,
                   isLoading: widget.isLoading,
+                ),
+              ),
+              AnimatedSize(
+                duration: widget.duration,
+                child: _HomeStepsView(
+                  steps: widget.steps,
                 ),
               ),
               AnimatedSize(
@@ -163,6 +174,36 @@ class _HomeTexView extends StatelessWidget {
     }
 
     return '';
+  }
+}
+
+class _HomeStepsView extends StatelessWidget {
+  const _HomeStepsView({this.steps});
+
+  final String? steps;
+
+  @override
+  Widget build(BuildContext context) {
+    if (steps != null) {
+      final colors = CuColors.of(context);
+
+      final stepsList = steps!.split('\\newline');
+
+      return CuScrollableHorizontalWrapper(
+        child: Column(
+          children: [
+            for (final step in stepsList)
+              TexView(
+                step,
+                color: colors.black,
+                fontScale: 1.5,
+              ),
+          ],
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 }
 
@@ -255,6 +296,10 @@ class _HomeButtonRow extends StatelessWidget {
         IconButton(
           onPressed: callbacks!.onCopyUtf,
           icon: const Icon(Icons.copy),
+        ),
+        CuElevatedButton(
+          text: Strings.steps.tr(),
+          onPressed: callbacks!.onStepsTap,
         ),
       ],
     );
