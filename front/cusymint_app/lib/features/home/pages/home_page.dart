@@ -87,52 +87,54 @@ class _HomeBodyState extends State<HomeBody> {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            _MainPageInput(
-              controller: _controller,
-              mainPageBloc: widget.mainPageBloc,
-              historyCubit: widget.historyCubit,
-              isTextSelected: widget.isTextSelected,
-            ),
-            BlocBuilder<MainPageBloc, MainPageState>(
-              bloc: widget.mainPageBloc,
-              builder: (context, state) {
-                return CuAnimatedHomeCard(
-                  inputInTex: state.inputInTex ?? state.previousInputInTex,
-                  outputInTex: state.outputInTex,
-                  isLoading: state.isLoading,
-                  hasCriticalErrors: state.errors.isNotEmpty,
-                  errors: ClientErrorTranslator.translateList(state.errors),
-                  steps: StepsTranslator.translate(state.steps),
-                  buttonRowCallbacks: state.hasOutput
-                      ? CuButtonRowCallbacks(
-                          onCopyTex: () async => _copyTexToClipboard(
-                            state.inputInTex!,
-                            state.outputInTex!,
-                          ),
-                          onCopyUtf: () async => _copyUtfToClipboard(
-                            state.inputInUtf!,
-                            state.outputInUtf!,
-                          ),
-                          onShareUtf: () async => _shareUtf(
-                            state.inputInUtf!,
-                            state.outputInUtf!,
-                          ),
-                          onStepsTap: () {
-                            widget.mainPageBloc.add(
-                              StepsRequested(state.userInput),
-                            );
-                          },
-                        )
-                      : null,
-                );
-              },
-            ),
-          ],
+      body: SingleChildScrollView(
+        child: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              _MainPageInput(
+                controller: _controller,
+                mainPageBloc: widget.mainPageBloc,
+                historyCubit: widget.historyCubit,
+                isTextSelected: widget.isTextSelected,
+              ),
+              BlocBuilder<MainPageBloc, MainPageState>(
+                bloc: widget.mainPageBloc,
+                builder: (context, state) {
+                  return CuAnimatedHomeCard(
+                    inputInTex: state.inputInTex ?? state.previousInputInTex,
+                    outputInTex: state.outputInTex,
+                    isLoading: state.isLoading,
+                    hasCriticalErrors: state.errors.isNotEmpty,
+                    errors: ClientErrorTranslator.translateList(state.errors),
+                    steps: StepsTranslator.translate(state.steps),
+                    buttonRowCallbacks: state.hasOutput
+                        ? CuButtonRowCallbacks(
+                            onCopyTex: () async => _copyTexToClipboard(
+                              state.inputInTex!,
+                              state.outputInTex!,
+                            ),
+                            onCopyUtf: () async => _copyUtfToClipboard(
+                              state.inputInUtf!,
+                              state.outputInUtf!,
+                            ),
+                            onShareUtf: () async => _shareUtf(
+                              state.inputInUtf!,
+                              state.outputInUtf!,
+                            ),
+                            onStepsTap: () {
+                              widget.mainPageBloc.add(
+                                StepsRequested(state.userInput),
+                              );
+                            },
+                          )
+                        : null,
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
