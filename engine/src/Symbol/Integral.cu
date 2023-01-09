@@ -28,8 +28,9 @@ namespace Sym {
             substitution -= substitution->size();
         }
         // now `substitution` points to an integrand
-         if (substitution->additional_required_size() > additional_required_size) {
-            substitution->size() += substitution->additional_required_size() - additional_required_size;
+        if (substitution->additional_required_size() > additional_required_size) {
+            substitution->size() +=
+                substitution->additional_required_size() - additional_required_size;
         }
         substitution->additional_required_size() = 0;
 
@@ -204,18 +205,19 @@ namespace Sym {
         std::vector<Symbol> integrand_copy(integrand().size());
         integrand().copy_to(*integrand_copy.data());
 
+        const std::string integrand_template = integrand().is(Type::Addition) ? "({})" : "{}";
         std::string last_substitution_name;
 
         if (substitution_count == 0) {
-            return fmt::format("∫{}dx", integrand_copy.data()->to_string());
+            return fmt::format("∫" + integrand_template + "dx", integrand_copy.data()->to_string());
         }
 
         last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
         integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count -
                                                                               1);
 
-        return fmt::format("∫{}d{}, {}", integrand_copy.data()->to_string(), last_substitution_name,
-                           first_substitution().to_string());
+        return fmt::format("∫" + integrand_template + "d{}, {}", integrand_copy.data()->to_string(),
+                           last_substitution_name, first_substitution().to_string());
     }
 
     std::string Integral::to_tex() const {
@@ -223,17 +225,21 @@ namespace Sym {
         integrand().copy_to(*integrand_copy.data());
 
         std::string last_substitution_name;
+        const std::string integrand_template =
+            integrand().is(Type::Addition) ? R"(\left({}\right))" : "{}";
 
         if (substitution_count == 0) {
-            return fmt::format(R"(\int {}\text{{d}} x)", integrand_copy.data()->to_tex());
+            return fmt::format(R"(\int )" + integrand_template + R"(\,\text{{d}} x)",
+                               integrand_copy.data()->to_tex());
         }
 
         last_substitution_name = Substitution::nth_substitution_name(substitution_count - 1);
         integrand_copy.data()->substitute_variable_with_nth_substitution_name(substitution_count -
                                                                               1);
 
-        return fmt::format(R"(\int {}\text{{d}} {}_{{ {} }})", integrand_copy.data()->to_tex(),
-                           last_substitution_name, first_substitution().to_tex());
+        return fmt::format(R"(\int )" + integrand_template + R"(\,\text{{d}} {}_{{ {} }})",
+                           integrand_copy.data()->to_tex(), last_substitution_name,
+                           first_substitution().to_tex());
     }
 
     std::vector<Symbol> integral(const std::vector<Symbol>& arg) {

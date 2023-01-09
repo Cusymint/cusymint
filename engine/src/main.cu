@@ -1,5 +1,5 @@
 #include <cstdlib>
-#include <cstring>
+
 
 #include <iostream>
 #include <optional>
@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("ln(sin(x+1))cos(x+1)"));
+    const auto integral = Sym::integral(Parser::parse_function("x+2x^2+5x^3"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
