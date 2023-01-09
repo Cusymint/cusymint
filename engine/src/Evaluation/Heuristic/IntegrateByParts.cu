@@ -156,6 +156,9 @@ namespace Sym::Heuristic {
                     !power.arg2().is(-1)) {
                     found_expression = true;
                 }
+                else if (!is_derivative_going_to_simplify_expression(*iterator.current())) {
+                    return {0, 0};
+                }
             }
             else if (!is_derivative_going_to_simplify_expression(*iterator.current())) {
                 return {0, 0};

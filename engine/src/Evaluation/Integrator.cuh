@@ -224,6 +224,8 @@ namespace Sym {
                 check_heuristics_applicability();
                 apply_heuristics();
 
+                printf("HEUR:\n%s\n\n", integrals.to_string().c_str());
+
                 if constexpr (WITH_HISTORY) {
                     history.add_step({expressions.to_vector(), integrals.to_vector(),
                                       ComputationStepType::ApplyHeuristic});
