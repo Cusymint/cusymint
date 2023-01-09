@@ -23,6 +23,15 @@ int main(int argc, char** argv) {
         return EXIT_SUCCESS;
     }
 
+    if (argc == 3 && std::string(argv[1]) == "--solve-with-steps-json") {
+        std::string input = argv[2];
+
+        auto json_solver = JsonSolver(solver, parser);
+
+        fmt::print("{}\n", json_solver.try_solve_with_steps(input));
+        return EXIT_SUCCESS;
+    }
+
     if constexpr (Consts::DEBUG) {
         fmt::print("Running in debug mode\n");
     }

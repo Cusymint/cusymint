@@ -67,6 +67,27 @@ static void solve(struct mg_rpc_req* r) {
     free(input);
 }
 
+static void solve_with_steps(struct mg_rpc_req* r) {
+    auto input = mg_json_get_str(r->frame, "$.params.input");
+
+    if (input == NULL) {
+        Logger::print("[Server] Solve with steps couldn't find input\n", input);
+        mg_rpc_err(r, 400, "Missing input");
+        return;
+    }
+
+    Logger::print("[Server] Solve with steps input {}\n", input);
+
+    auto solver_process_manager = SolverProcessManager();
+    auto result = solver_process_manager.try_solve_with_steps(input);
+
+    Logger::print("[Server] Solve with steps result {}\n", result);
+
+    mg_rpc_ok(r, "%s", result.c_str());
+
+    free(input);
+}
+
 // This RESTful server implements the following endpoints:
 //   /websocket - upgrade to Websocket, and implement websocket echo server
 void handler(struct mg_connection* c, int ev, void* ev_data, void* fn_data) {
@@ -110,6 +131,7 @@ Server::Server(std::string listen_on, CachedParser cached_parser) :
 
     mg_rpc_add(&s_rpc_head, mg_str("interpret"), interpret, NULL);
     mg_rpc_add(&s_rpc_head, mg_str("solve"), solve, NULL);
+    mg_rpc_add(&s_rpc_head, mg_str("solve_with_steps"), solve_with_steps, NULL);
     mg_rpc_add(&s_rpc_head, mg_str("rpc.list"), mg_rpc_list, &s_rpc_head);
 
     global_cached_parser = &cached_parser;

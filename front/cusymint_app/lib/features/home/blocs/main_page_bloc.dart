@@ -22,6 +22,10 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
       _onClearRequested,
       transformer: restartable(),
     );
+    on<StepsRequested>(
+      _onStepsRequested,
+      transformer: restartable(),
+    );
 
     if (initialExpression != null) {
       add(SolveRequested(initialExpression!));
@@ -48,6 +52,7 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
         inputInUtf: Wrapped(response.inputInUtf),
         outputInTex: Wrapped(response.outputInTex),
         outputInUtf: Wrapped(response.outputInUtf),
+        steps: Wrapped(response.steps),
       ));
     } catch (e) {
       emit(MainPageState(
@@ -65,6 +70,7 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
         userInput: event.input,
         errors: [],
         isLoading: false,
+        steps: const Wrapped(null),
       ));
     }
 
@@ -74,6 +80,7 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
       errors: [],
       outputInTex: const Wrapped(null),
       outputInUtf: const Wrapped(null),
+      steps: const Wrapped(null),
     ));
 
     final request = Request(event.input);
@@ -88,6 +95,36 @@ class MainPageBloc extends Bloc<MainPageEvent, MainPageState> {
         inputInUtf: Wrapped(response.inputInUtf),
         outputInTex: Wrapped(response.outputInTex),
         outputInUtf: Wrapped(response.outputInUtf),
+        steps: Wrapped(response.steps),
+      ));
+    } catch (e) {
+      emit(MainPageState(
+        errors: [ResponseError(e.toString())],
+        isLoading: false,
+        userInput: event.input,
+      ));
+    }
+  }
+
+  FutureOr<void> _onStepsRequested(
+    StepsRequested event,
+    Emitter<MainPageState> emit,
+  ) async {
+    emit(state.copyWith(isLoading: true, errors: [], userInput: event.input));
+
+    final request = Request(event.input);
+
+    try {
+      final response = await _client.solveIntegralWithSteps(request);
+
+      emit(state.copyWith(
+        isLoading: false,
+        errors: response.errors,
+        inputInTex: Wrapped(response.inputInTex),
+        inputInUtf: Wrapped(response.inputInUtf),
+        outputInTex: Wrapped(response.outputInTex),
+        outputInUtf: Wrapped(response.outputInUtf),
+        steps: Wrapped(response.steps),
       ));
     } catch (e) {
       emit(MainPageState(
@@ -120,6 +157,11 @@ class SolveRequested extends MainPageEvent {
   final String input;
 }
 
+class StepsRequested extends MainPageEvent {
+  const StepsRequested(this.input);
+  final String input;
+}
+
 class ClearRequested extends MainPageEvent {
   const ClearRequested();
 }
@@ -133,6 +175,7 @@ class MainPageState {
     this.outputInUtf,
     this.previousInputInTex,
     this.previousInputInUtf,
+    this.steps,
     this.errors = const [],
     this.userInput = '',
   });
@@ -147,6 +190,8 @@ class MainPageState {
 
   final String? outputInTex;
   final String? outputInUtf;
+
+  final String? steps;
 
   final String? previousInputInTex;
   final String? previousInputInUtf;
@@ -163,6 +208,7 @@ class MainPageState {
     Wrapped<String?>? inputInUtf,
     Wrapped<String?>? outputInTex,
     Wrapped<String?>? outputInUtf,
+    Wrapped<String?>? steps,
   }) {
     return MainPageState(
       isLoading: isLoading ?? this.isLoading,
@@ -176,6 +222,7 @@ class MainPageState {
           inputInUtf != null ? this.inputInUtf : previousInputInUtf,
       errors: errors ?? this.errors,
       userInput: userInput ?? this.userInput,
+      steps: steps != null ? steps.value : this.steps,
     );
   }
 }

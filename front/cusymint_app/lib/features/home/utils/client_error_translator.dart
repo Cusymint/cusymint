@@ -1,7 +1,7 @@
 import 'package:cusymint_client/cusymint_client.dart';
 import 'package:cusymint_l10n/cusymint_l10n.dart';
 
-class ClientErrorTranslator {
+abstract class ClientErrorTranslator {
   static String translate(ResponseError error) {
     if (error is UnexpectedEndOfInputError) {
       return Strings.errorUnexpectedEndOfInput.tr();
