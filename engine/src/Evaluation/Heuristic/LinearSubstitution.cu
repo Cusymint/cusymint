@@ -34,8 +34,7 @@ namespace Sym::Heuristic {
                 }
                 if (iterator.current()->is(Type::Power)) {
                     const auto& power = iterator.current()->as<Power>();
-                    if (power.arg1().is(Type::Variable) && power.arg2().is_integer() &&
-                        power.arg2().as<NumericConstant>().value > 0) {
+                    if (power.arg1().is(Type::Variable) && power.arg2().is_integer()) {
                         continue;
                     }
                 }
