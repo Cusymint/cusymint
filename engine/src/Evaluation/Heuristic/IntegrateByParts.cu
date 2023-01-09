@@ -98,7 +98,7 @@ namespace Sym::Heuristic {
 
     __device__ CheckResult is_simple_function(const Integral& integral, Symbol& /*help_space*/) {
         if (integral.integrand().size() == 2) {
-            return {1, 1};
+            return {1, 2};
         }
 
         return {0, 0};
@@ -169,7 +169,7 @@ namespace Sym::Heuristic {
             iterator.advance();
         }
         if (found_expression) {
-            return {1, 1};
+            return {1, 2};
         }
         return {0, 0};
     }
@@ -242,7 +242,7 @@ namespace Sym::Heuristic {
             iterator.advance();
         }
         if (found_expression) {
-            return {1, 1};
+            return {1, 2};
         }
         return {0, 0};
     }
@@ -254,8 +254,9 @@ namespace Sym::Heuristic {
         const ExpressionArray<>::Iterator& help_space) {
         const auto& integrand = integral.arg().as<Integral>().integrand();
 
-        using ExpressionType = Candidate<Add<Neg<SingleIntegralVacancy>, Mul<Copy, Skip>>>;
+        using ExpressionType = Candidate<Sub<Vacancy, SingleIntegralVacancy>>;
         using IntegralType = Candidate<Int<Mul<Copy, Copy>>>;
+        using SolutionType = Candidate<IndirectSolution<Mul<Copy, Skip>>>;
 
         size_t second_factor_size;
         if (first_function_derivative.is(1)) {
@@ -273,6 +274,16 @@ namespace Sym::Heuristic {
 
         const typename ExpressionType::AdditionalArgs expression_args = {
             {integral.vacancy_expression_idx, integral.vacancy_idx, 1},
+            1,
+            0,
+            1,
+        };
+
+        const auto& original_integral = integral.arg().as<Integral>();
+
+        const typename SolutionType::AdditionalArgs solution_args = {
+            {expression_dst.index(), 2, 0},
+            original_integral,
             first_function,
             second_factor_size,
         };
@@ -280,12 +291,23 @@ namespace Sym::Heuristic {
         ENSURE_ENOUGH_SPACE(ExpressionType::size_with(expression_args), expression_dst);
 
         ExpressionType::init(*expression_dst, expression_args);
+        (*expression_dst)
+            .as<SubexpressionCandidate>()
+            .arg()
+            .as<Addition>()
+            .arg1()
+            .as<SubexpressionVacancy>()
+            .solver_idx = (expression_dst + 1).index();
 
-        auto& second_factor_product = (*expression_dst)
+        ENSURE_ENOUGH_SPACE(SolutionType::size_with(solution_args), expression_dst + 1);
+
+        SolutionType::init(*(expression_dst + 1), solution_args);
+
+        auto& second_factor_product = (*(expression_dst + 1))
                                           .as<SubexpressionCandidate>()
                                           .arg()
-                                          .as<Addition>()
-                                          .arg2()
+                                          .as<Solution>()
+                                          .expression()
                                           .as<Product>();
 
         Symbol& second_factor_dst = second_factor_product.arg2();
@@ -308,10 +330,8 @@ namespace Sym::Heuristic {
             TRY_EVALUATE_RESULT(SymbolIterator::from_at(*help_space, 0, help_space.capacity()));
         TRY_EVALUATE_RESULT(second_factor_dst.derivative_to(help_iterator));
 
-        const auto& original_integral = integral.arg().as<Integral>();
-
         const typename IntegralType::AdditionalArgs integral_args = {
-            {expression_dst.index(), 4, 0},
+            {expression_dst.index(), 5, 0},
             original_integral,
             first_function_copy,
             *help_iterator,
