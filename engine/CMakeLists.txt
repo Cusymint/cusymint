@@ -85,6 +85,7 @@ add_executable(
   ${TEST_DIR}/Simplify.cu
   ${TEST_DIR}/Symbol.cu
   ${TEST_DIR}/Derivatives.cu
+  ${TEST_DIR}/AdvancedIntegral.cu
   ${TEST_SYMBOL_DIR}/MetaOperators.cu
   ${TEST_MATH_DIR}/PascalTriangle.cu
   ${TEST_EVALUATION_DIR}/IntegratorUtils.cu

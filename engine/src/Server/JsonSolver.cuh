@@ -14,4 +14,5 @@ class JsonSolver {
     public:
         explicit JsonSolver(const Solver& solver, CachedParser parser) : solver(solver), parser(std::move(parser)) {};
         std::string try_solve(const std::string& input);
+        std::string try_solve_with_steps(const std::string& input);
 };

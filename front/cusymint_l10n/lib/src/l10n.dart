@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
+import '../generated/codegen_loader.g.dart';
+
 class CuL10n extends StatelessWidget {
   const CuL10n({super.key, required this.child});
 
@@ -25,6 +27,7 @@ class CuL10n extends StatelessWidget {
     return EasyLocalization(
       supportedLocales: supportedLocales,
       fallbackLocale: fallbackLocale,
+      assetLoader: const CodegenLoader(),
       path: path,
       child: child,
     );
