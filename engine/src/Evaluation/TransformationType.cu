@@ -90,6 +90,9 @@ namespace Sym {
                 first_derivative.data()->simplify(help_space_iterator).unwrap();
                 first_derivative.resize(first_derivative.data()->size());
 
+                second_derivative.data()->simplify(help_space_iterator).unwrap();
+                second_derivative.resize(second_derivative.data()->size());
+
                 return std::make_shared<IntegrateByParts>(first, second, first_derivative,
                                                           second_derivative,
                                                           child_integral.substitution_count);

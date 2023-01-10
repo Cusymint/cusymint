@@ -8,6 +8,7 @@
 #include "Symbol/Symbol.cuh"
 #include "Symbol/TreeIterator.cuh"
 #include "Utils/CompileConstants.cuh"
+#include "Utils/Cuda.cuh"
 #include "Utils/Order.cuh"
 
 namespace Sym::Heuristic {
@@ -84,6 +85,15 @@ namespace Sym::Heuristic {
             }
             return true;
         }
+
+        __host__ __device__ bool is_non_log_power_function(const Symbol& expression) {
+            if (!expression.is(Type::Power)) {
+                return false;
+            }
+            const auto& power = expression.as<Power>();
+            return power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
+                   power.arg2().as<NumericConstant>().value != -1.0;
+        }
     }
 
     __device__ CheckResult is_simple_function(const Integral& integral, Symbol& /*help_space*/) {
@@ -150,15 +160,8 @@ namespace Sym::Heuristic {
             if (!found_expression && iterator.current()->is(Type::Variable)) {
                 found_expression = true;
             }
-            else if (!found_expression && iterator.current()->is(Type::Power)) {
-                const auto& power = iterator.current()->as<Power>();
-                if (power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
-                    !power.arg2().is(-1)) {
-                    found_expression = true;
-                }
-                else if (!is_derivative_going_to_simplify_expression(*iterator.current())) {
-                    return {0, 0};
-                }
+            else if (!found_expression && is_non_log_power_function(*iterator.current())) {
+                found_expression = true;
             }
             else if (!is_derivative_going_to_simplify_expression(*iterator.current())) {
                 return {0, 0};
@@ -180,7 +183,7 @@ namespace Sym::Heuristic {
         ConstTreeIterator<Product> iterator(integrand.as_ptr<Product>());
 
         double exponent;
-        const Symbol* power_symbol;
+        const Symbol* power_symbol = nullptr;
 
         while (iterator.is_valid()) {
             if (iterator.current()->is(Type::Variable)) {
@@ -190,13 +193,20 @@ namespace Sym::Heuristic {
             }
             if (iterator.current()->is(Type::Power)) {
                 const auto& power = iterator.current()->as<Power>();
-                if (power.arg1().is(Type::Variable) && power.arg2().is_integer()) {
+                if (power.arg1().is(Type::Variable) && power.arg2().is(Type::NumericConstant) &&
+                    !power.arg2().is(-1)) {
                     power_symbol = iterator.current();
                     exponent = power.arg2().as<NumericConstant>().value;
                     break;
                 }
             }
             iterator.advance();
+        }
+
+        if constexpr (Consts::DEBUG) {
+            if (power_symbol == nullptr) {
+                Util::crash("Couldn't find power factor in product");
+            }
         }
 
         using PowerAntiDerivativeType = Mul<Num, Pow<Var, Num>>;

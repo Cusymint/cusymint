@@ -35,7 +35,10 @@ namespace Sym {
     DEFINE_SIMPLE_SEAL_WHOLE(UnknownConstant)
 
     DEFINE_ARE_EQUAL(NumericConstant) {
-        return BASE_ARE_EQUAL(NumericConstant) && symbol->as<NumericConstant>().value == value;
+        return BASE_ARE_EQUAL(NumericConstant) &&
+               ::abs(symbol->as<NumericConstant>().value - value) <=
+                   Util::min(::abs(symbol->as<NumericConstant>().value), ::abs(value)) *
+                       Consts::EPS;
     }
 
     DEFINE_COMPARE_TO(NumericConstant) {
@@ -138,9 +141,7 @@ namespace Sym {
 
     std::string NumericConstant::to_string() const { return fmt::format("{:g}", value); }
 
-    std::string NumericConstant::to_tex() const {
-        return fmt::format("{:g}", value);
-    }
+    std::string NumericConstant::to_tex() const { return fmt::format("{:g}", value); }
 
     UnknownConstant UnknownConstant::create(const char* const name) {
         UnknownConstant unknown_constant = UnknownConstant::create();

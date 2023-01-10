@@ -166,8 +166,14 @@ namespace Sym {
             return;
         }
 
+        const size_t tree_size = expr.as<Product>().tree_size();
+        if (coeff_count == tree_size) {
+            dst.init_from(NumericConstant::with_value(1.0));
+            return;
+        }
+
         ConstTreeIterator<Product> iter(&expr);
-        const size_t new_product_symbol_count = expr.as<Product>().tree_size() - 1 - coeff_count;
+        const size_t new_product_symbol_count = tree_size - 1 - coeff_count;
 
         for (size_t i = 0; i < new_product_symbol_count; ++i) {
             dst.at_unchecked(i)->init_from(Product::builder());
