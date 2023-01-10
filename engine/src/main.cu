@@ -50,7 +50,7 @@ int main() {
 
     Sym::Static::init_functions();
 
-    const auto integral = Sym::integral(Parser::parse_function("x+2x^2+5x^3"));
+    const auto integral = Sym::integral(Parser::parse_function("e^(2x)/x"));
 
     fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
