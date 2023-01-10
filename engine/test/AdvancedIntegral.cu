@@ -62,8 +62,8 @@ namespace Test {
     // tasks 5-7 involve rational integrals
 
     // https://pages.mini.pw.edu.pl/~dembinskaa/www/?download=Inf_I_PowtKol3_2022-2023.pdf, task 11
-    ADVANCED_INTEGRAL_TEST(TangentSquared, "tg^2(x)", "tg(x)-x") // xd
-    ADVANCED_INTEGRAL_TEST(LongPolynomial, "(2x-3)^10", "1/22(2x-3)^11+3^11/22") // wtf
+    ADVANCED_INTEGRAL_TEST(TangentSquared, "tg^2(x)", "tg(x)-arctg(tg(x))") // may sometimes fail
+    ADVANCED_INTEGRAL_TEST(LongPolynomial, "(2x-3)^10", "1/22(2x-3)^11+3^11/22")
     //ADVANCED_INTEGRAL_TEST(SquareRootInDenominator, "1/(2+sqrt(x))", "2sqrt(x)-4ln(sqrt(x)+2)") // substitution t=sqrt(x)+a required
     //ADVANCED_INTEGRAL_TEST(InvertedCosH2, "1/cosh(x)", "2arctg(e^x)") // extract_funcion required
     ADVANCED_INTEGRAL_TEST(Sine5Cosine, "sin^5(x)cos(x)", "sin^6(x)/6")
