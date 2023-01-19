@@ -72,7 +72,9 @@ add_library(
   ${PARSER_DIR}/Scanner.cu
   ${PARSER_DIR}/Parser.cu)
 
-add_executable(cusymint ${SRC_DIR}/main.cu)
+add_executable(cusymint 
+  ${SRC_DIR}/Performance.cu
+  ${SRC_DIR}/main.cu)
 
 add_executable(
   testcusymint
