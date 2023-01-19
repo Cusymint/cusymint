@@ -127,7 +127,8 @@ namespace Performance {
                 replace(expression, "sgn", "sign");
                 replace(expression, "ln", "log");
 
-                result += fmt::format(R"(f=@()int({},x);fprintf("%f\n",timeit(f));)", expression);
+                //result += fmt::format(R"(f=@()int({},x);fprintf("%f\n",timeit(f));)", expression);
+                result += fmt::format(R"(tic;int({},x);t=toc;fprintf("%f\n",t);)", expression);
             }
 
             return result + "\'";
@@ -190,9 +191,10 @@ namespace Performance {
 
         for (int i = 0; i < integrals.size(); ++i) {
             Sym::Integrator integrator;
+            const auto integral = Sym::integral(Parser::parse_function(integrals[i]));
             const clock_t start = clock();
             const auto result =
-                integrator.solve_integral(Sym::integral(Parser::parse_function(integrals[i])));
+                integrator.solve_integral(integral);
             const clock_t end = clock();
 
             cusymint_seconds_vector[i] = static_cast<double>(end - start) / CLOCKS_PER_SEC;
@@ -202,7 +204,7 @@ namespace Performance {
         printf("Computing on Mathematica...\n");
         auto mathematica_result = exec_and_read_output(make_mathematica_command_batch(integrals));
         printf("Computing on SymPy...\n");
-        auto sympy_result = exec_and_read_output(make_sympy_command_batch(integrals));
+        auto sympy_result = std::string("");//exec_and_read_output(make_sympy_command_batch(integrals));
         printf("Computing on MATLAB...\n");
         auto matlab_result = exec_and_read_output(make_matlab_command_batch(integrals));
 

@@ -1,7 +1,9 @@
 #include <cstdlib>
 
+#include <fmt/format.h>
 #include <iostream>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include <fmt/core.h>
@@ -52,7 +54,7 @@ int main() {
 
     fmt::print("First two integrals are for warmup!\n");
 
-    Performance::test_performance({
+    std::vector<std::string> integrals = {
         "x+sin(x)",
         "e^x",
         "x^4-5*x+3",
@@ -92,16 +94,21 @@ int main() {
         "sin(x)^4*cos(x)^3",
         "e^x*e^e^x*e^e^e^x*e^e^e^e^x*e^e^e^e^e^x*e^e^e^e^e^e^x",
         "e^x*(x+1)*ln(x)",
-    });
+    };
 
-    // const auto integral = Sym::integral(Parser::parse_function("tg(x)^2"));
+    // add huge sum
+    // integrals.push_back(fmt::format("{}", fmt::join(integrals, "+")));
+
+    Performance::test_performance(integrals);
+
+    // const auto integral = Sym::integral(Parser::parse_function(integrals.back()));
 
     // fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
 
     // Sym::Integrator integrator;
     // Sym::ComputationHistory history;
-    // const auto solution = integrator.solve_integral_with_history(integral, history);
-
+    // const auto solution = integrator.solve_integral(integral);//integrator.solve_integral_with_history(integral, history);
+    
     // if (solution.has_value()) {
     //     fmt::print("Success! Solution:\n{} + C\n", solution.value().data()->to_tex());
 
