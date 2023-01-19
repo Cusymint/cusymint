@@ -49,7 +49,7 @@ namespace Performance {
             capitalize_substring(expression, "sqrt");
 
             return fmt::format(
-                R"(wolframscript -code 'expr=ToExpression["{}",TraditionalForm];{{t,b}}=AbsoluteTiming[Integrate[expr,x]];t')",
+                R"(wolframscript -code 'expr=ToExpression["{}",TraditionalForm];Integrate[expr,x];{{t,b}}=AbsoluteTiming[Integrate[expr,x]];t')",
                 expression);
         }
 
@@ -63,32 +63,47 @@ namespace Performance {
             replace(expression, "sgn", "sign");
 
             return fmt::format(
-                R"(python3 -c 'from sympy import *;x=Symbol("x");t=Symbol("t");print(utilities.timeutils.timed(lambda:integrate({},x))[1])')",
+                R"(python3 -c 'from sympy import *;x=Symbol("x");t=Symbol("t");integrate({},x);print(utilities.timeutils.timed(lambda:integrate({},x))[1])')",
+                expression, expression);
+        }
+
+        std::string make_matlab_command(const std::string& integral) {
+            std::string expression = integral;
+            capitalize_substring(expression, "e");
+            replace(expression, "E", "exp(sym(1))");
+            replace(expression, "arctan", "atan");
+            replace(expression, "arccos", "acos");
+            replace(expression, "arcsin", "asin");
+            replace(expression, "sgn", "sign");
+
+            return fmt::format(
+                R"(matlab -batch 'syms x z;f=@()int({},x);f();fprintf("%f\n",timeit(f));')",
                 expression);
         }
     }
 
     void do_not_print_results(const std::string& integral_str, const double& cusymint_seconds,
                               bool cusymint_success, const std::string& mathematica_result,
-                              const std::string& sympy_result) {}
+                              const std::string& sympy_result, const std::string& matlab_result) {}
 
     void print_human_readable_results(const std::string& integral_str,
                                       const double& cusymint_seconds, bool cusymint_success,
                                       const std::string& mathematica_result,
-                                      const std::string& sympy_result) {
+                                      const std::string& sympy_result, const std::string& matlab_result) {
         printf("%s:\n"
                "  Cusymint time:    %f%s\n"
-               "  Mathematica time: %s\n"
-               "  Sympy time:       %s\n",
+               "  Mathematica time: %s"
+               "  Sympy time:       %s"
+               "  Matlab time:      %s\n",
                integral_str.c_str(), cusymint_seconds, cusymint_success ? "" : " (failure)",
-               mathematica_result.c_str(), sympy_result.c_str());
+               mathematica_result.c_str(), sympy_result.c_str(), matlab_result.c_str());
     }
 
     void print_csv_results(const std::string& integral_str, const double& cusymint_seconds,
                            bool cusymint_success, const std::string& mathematica_result,
-                           const std::string& sympy_result) {
-        printf("%s;%s;%f;%s;%s\n", integral_str.c_str(), cusymint_success ? "TRUE" : "FALSE",
-               cusymint_seconds, mathematica_result.c_str(), sympy_result.c_str());
+                           const std::string& sympy_result, const std::string& matlab_result) {
+        printf("%s;%s;%f;%s;%s;%s\n", integral_str.c_str(), cusymint_success ? "TRUE" : "FALSE",
+               cusymint_seconds, mathematica_result.c_str(), sympy_result.c_str(), matlab_result.c_str());
     }
 
     void test_with_other_solutions(const std::string& integral_str, PrintRoutine print_results) {
@@ -104,7 +119,8 @@ namespace Performance {
 
         auto mathematica_result = exec_and_read_output(make_mathematica_command(integral_str));
         auto sympy_result = exec_and_read_output(make_sympy_command(integral[1].to_string()));
+        auto matlab_result = exec_and_read_output(make_matlab_command(integral[1].to_string()));
 
-        print_results(integral_str, cusymint_seconds, result.has_value(), mathematica_result, sympy_result);
+        print_results(integral_str, cusymint_seconds, result.has_value(), mathematica_result, sympy_result, matlab_result);
     }
 }
