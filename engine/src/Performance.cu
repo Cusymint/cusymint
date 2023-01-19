@@ -1,9 +1,13 @@
 #include "Performance.cuh"
+#include "Symbol/Integral.cuh"
+#include <fmt/core.h>
+#include <string>
+#include <vector>
 
 namespace Performance {
     namespace {
         std::string exec_and_read_output(const std::string cmd) {
-            // sciagniete z SolverProcessManager.cu
+            // stolen from SolverProcessManager.cu
             std::array<char, 4096> buffer{};
             std::string result;
             std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
@@ -41,8 +45,6 @@ namespace Performance {
         }
 
         std::string make_mathematica_command(const std::string& integral) {
-            // /media/cmonbrug/DATA/mathematica/Executables/wolframscript -code
-            // 'expr=ToExpression["sin(Pi)+x",TraditionalForm];{t,b}=AbsoluteTiming[Integrate[expr,x]];t'
             std::string expression = integral;
             capitalize_substring(expression, "e");
             capitalize_substring(expression, "pi");
@@ -80,6 +82,56 @@ namespace Performance {
                 R"(matlab -batch 'syms x z;f=@()int({},x);f();fprintf("%f\n",timeit(f));')",
                 expression);
         }
+
+        std::string make_mathematica_command_batch(const std::vector<std::string>& integrals) {
+            std::string result = "wolframscript -code \'";
+            for (const auto& integral : integrals) {
+                std::string expression = integral;
+                capitalize_substring(expression, "e");
+                capitalize_substring(expression, "pi");
+                capitalize_substring(expression, "sqrt");
+                result += fmt::format("{{t,b}}=AbsoluteTiming[Integrate[ToExpression[\"{}\","
+                                      "TraditionalForm],x]];Print[t];",
+                                      expression);
+            }
+
+            return result + "\'";
+        }
+
+        std::string make_sympy_command_batch(const std::vector<std::string>& integrals) {
+            std::string result = R"(python3 -c 'from sympy import *;x=Symbol("x");t=Symbol("t");)";
+            for (const auto& integral : integrals) {
+                std::string expression = integral;
+                capitalize_substring(expression, "e");
+                replace(expression, "^", "**");
+                replace(expression, "arctan", "atan");
+                replace(expression, "arccos", "acos");
+                replace(expression, "arcsin", "asin");
+                replace(expression, "sgn", "sign");
+                result += fmt::format(
+                    "print(utilities.timeutils.timed(lambda:integrate({},x))[1]);", expression);
+            }
+
+            return result + "\'";
+        }
+
+        std::string make_matlab_command_batch(const std::vector<std::string>& integrals) {
+            std::string result = R"(matlab -batch 'syms x t;)";
+            for (const auto& integral : integrals) {
+                std::string expression = integral;
+                capitalize_substring(expression, "e");
+                replace(expression, "E", "exp(sym(1))");
+                replace(expression, "arctan", "atan");
+                replace(expression, "arccos", "acos");
+                replace(expression, "arcsin", "asin");
+                replace(expression, "sgn", "sign");
+                replace(expression, "ln", "log");
+
+                result += fmt::format(R"(f=@()int({},x);fprintf("%f\n",timeit(f));)", expression);
+            }
+
+            return result + "\'";
+        }
     }
 
     void do_not_print_results(const std::string& integral_str, const double& cusymint_seconds,
@@ -89,12 +141,13 @@ namespace Performance {
     void print_human_readable_results(const std::string& integral_str,
                                       const double& cusymint_seconds, bool cusymint_success,
                                       const std::string& mathematica_result,
-                                      const std::string& sympy_result, const std::string& matlab_result) {
+                                      const std::string& sympy_result,
+                                      const std::string& matlab_result) {
         printf("%s:\n"
                "  Cusymint time:    %f%s\n"
-               "  Mathematica time: %s"
-               "  Sympy time:       %s"
-               "  Matlab time:      %s\n",
+               "  Mathematica time: %s\n"
+               "  Sympy time:       %s\n"
+               "  Matlab time:      %s\n\n",
                integral_str.c_str(), cusymint_seconds, cusymint_success ? "" : " (failure)",
                mathematica_result.c_str(), sympy_result.c_str(), matlab_result.c_str());
     }
@@ -103,7 +156,8 @@ namespace Performance {
                            bool cusymint_success, const std::string& mathematica_result,
                            const std::string& sympy_result, const std::string& matlab_result) {
         printf("%s;%s;%f;%s;%s;%s\n", integral_str.c_str(), cusymint_success ? "TRUE" : "FALSE",
-               cusymint_seconds, mathematica_result.c_str(), sympy_result.c_str(), matlab_result.c_str());
+               cusymint_seconds, mathematica_result.c_str(), sympy_result.c_str(),
+               matlab_result.c_str());
     }
 
     void test_with_other_solutions(const std::string& integral_str, PrintRoutine print_results) {
@@ -121,6 +175,65 @@ namespace Performance {
         auto sympy_result = exec_and_read_output(make_sympy_command(integral[1].to_string()));
         auto matlab_result = exec_and_read_output(make_matlab_command(integral[1].to_string()));
 
-        print_results(integral_str, cusymint_seconds, result.has_value(), mathematica_result, sympy_result, matlab_result);
+        print_results(integral_str, cusymint_seconds, result.has_value(), mathematica_result,
+                      sympy_result, matlab_result);
     }
+
+    void test_performance(const std::vector<std::string>& integrals, PrintRoutine print_results) {
+        std::vector<double> cusymint_seconds_vector(integrals.size());
+        std::vector<bool> cusymint_results_vector(integrals.size());
+        std::vector<std::string> mathematica_results_vector(integrals.size());
+        std::vector<std::string> sympy_results_vector(integrals.size());
+        std::vector<std::string> matlab_results_vector(integrals.size());
+
+        printf("Computing on CUDA...\n");
+
+        for (int i = 0; i < integrals.size(); ++i) {
+            Sym::Integrator integrator;
+            const clock_t start = clock();
+            const auto result =
+                integrator.solve_integral(Sym::integral(Parser::parse_function(integrals[i])));
+            const clock_t end = clock();
+
+            cusymint_seconds_vector[i] = static_cast<double>(end - start) / CLOCKS_PER_SEC;
+            cusymint_results_vector[i] = result.has_value();
+        }
+
+        printf("Computing on Mathematica...\n");
+        auto mathematica_result = exec_and_read_output(make_mathematica_command_batch(integrals));
+        printf("Computing on SymPy...\n");
+        auto sympy_result = exec_and_read_output(make_sympy_command_batch(integrals));
+        printf("Computing on MATLAB...\n");
+        auto matlab_result = exec_and_read_output(make_matlab_command_batch(integrals));
+
+        size_t mc_idx = 0;
+        size_t sp_idx = 0;
+        size_t ml_idx = 0;
+        for (int i = 0; i < integrals.size(); ++i) {
+            const auto mc_inc = mathematica_result.find('\n', mc_idx);
+            if (mc_inc != std::string::npos) {
+                mathematica_results_vector[i] = mathematica_result.substr(mc_idx, mc_inc - mc_idx);
+                mc_idx = mc_inc + 1;
+            }
+
+            const auto sp_inc = sympy_result.find('\n', sp_idx);
+            if (sp_inc != std::string::npos) {
+                sympy_results_vector[i] = sympy_result.substr(sp_idx, sp_inc - sp_idx);
+                sp_idx = sp_inc + 1;
+            }
+
+            const auto ml_inc = matlab_result.find('\n', ml_idx);
+            if (ml_inc != std::string::npos) {
+                matlab_results_vector[i] = matlab_result.substr(ml_idx, ml_inc - ml_idx);
+                ml_idx = ml_inc + 1;
+            }
+        }
+
+        for (int i = 0; i < integrals.size(); ++i) {
+            print_results(integrals[i], cusymint_seconds_vector[i], cusymint_results_vector[i],
+                          mathematica_results_vector[i], sympy_results_vector[i],
+                          matlab_results_vector[i]);
+        }
+    }
+
 }
