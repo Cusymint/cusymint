@@ -225,6 +225,7 @@ namespace Performance {
 
         printf("Computing on Mathematica...\n");
         auto mathematica_result = exec_and_read_output(make_mathematica_command_batch(integrals));
+        // Warning: computing na integral which requires many substitutions on SymPy may hang your computer and is extremely slow!
         printf("Computing on SymPy...\n");
         auto sympy_result = exec_and_read_output(make_sympy_command_batch(integrals));
         printf("Computing on MATLAB...\n");
