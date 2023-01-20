@@ -296,11 +296,15 @@ namespace Sym {
                         ++trans_idx;
                     }
                 }
-                result.push_back(fmt::format(R"(=\qquad {})", expression.data()->to_tex()));
+                result.push_back(fmt::format(R"(=\qquad {})", expression_str));
             }
 
             prev_str = expression_str;
             prev_step = &step;
+        }
+        
+        if (!result.empty()) {
+            result[result.size() - 1] += " + C";    
         }
 
         return result;
