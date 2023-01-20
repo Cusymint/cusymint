@@ -127,7 +127,8 @@ namespace Performance {
                 replace(expression, "sgn", "sign");
                 replace(expression, "ln", "log");
 
-                //result += fmt::format(R"(f=@()int({},x);fprintf("%f\n",timeit(f));)", expression);
+                // result += fmt::format(R"(f=@()int({},x);fprintf("%f\n",timeit(f));)",
+                // expression);
                 result += fmt::format(R"(tic;int({},x);t=toc;fprintf("%f\n",t);)", expression);
             }
 
@@ -161,6 +162,10 @@ namespace Performance {
                matlab_result.c_str());
     }
 
+    void print_csv_headers() {
+        printf("integral;solved_by_cusymint;cusymint_time[s];mathematica_time[s];sympy_time[s];matlab_time[s]\n");
+    }
+
     void test_with_other_solutions(const std::string& integral_str, PrintRoutine print_results) {
         const auto integral = Sym::integral(Parser::parse_function(integral_str));
 
@@ -180,6 +185,24 @@ namespace Performance {
                       sympy_result, matlab_result);
     }
 
+    void test_cuda_and_print_commands(const std::vector<std::string>& integrals) {
+        printf("Computing on CUDA...\n");
+
+        for (int i = 0; i < integrals.size(); ++i) {
+            Sym::Integrator integrator;
+            const auto integral = Sym::integral(Parser::parse_function(integrals[i]));
+            const clock_t start = clock();
+            const auto result = integrator.solve_integral(integral);
+            const clock_t end = clock();
+
+            fmt::print("{}{}\n", static_cast<double>(end - start) / CLOCKS_PER_SEC, result.has_value() ? "" : " (failure)");
+        }
+
+        printf("%s\n", make_mathematica_command_batch(integrals).c_str());
+        printf("%s\n", make_sympy_command_batch(integrals).c_str());
+        printf("%s\n", make_matlab_command_batch(integrals).c_str());
+    }
+
     void test_performance(const std::vector<std::string>& integrals, PrintRoutine print_results) {
         std::vector<double> cusymint_seconds_vector(integrals.size());
         std::vector<bool> cusymint_results_vector(integrals.size());
@@ -193,8 +216,7 @@ namespace Performance {
             Sym::Integrator integrator;
             const auto integral = Sym::integral(Parser::parse_function(integrals[i]));
             const clock_t start = clock();
-            const auto result =
-                integrator.solve_integral(integral);
+            const auto result = integrator.solve_integral(integral);
             const clock_t end = clock();
 
             cusymint_seconds_vector[i] = static_cast<double>(end - start) / CLOCKS_PER_SEC;
@@ -204,7 +226,7 @@ namespace Performance {
         printf("Computing on Mathematica...\n");
         auto mathematica_result = exec_and_read_output(make_mathematica_command_batch(integrals));
         printf("Computing on SymPy...\n");
-        auto sympy_result = std::string("");//exec_and_read_output(make_sympy_command_batch(integrals));
+        auto sympy_result = exec_and_read_output(make_sympy_command_batch(integrals));
         printf("Computing on MATLAB...\n");
         auto matlab_result = exec_and_read_output(make_matlab_command_batch(integrals));
 
@@ -229,6 +251,10 @@ namespace Performance {
                 matlab_results_vector[i] = matlab_result.substr(ml_idx, ml_inc - ml_idx);
                 ml_idx = ml_inc + 1;
             }
+        }
+
+        if (print_results == print_csv_results) {
+            print_csv_headers();
         }
 
         for (int i = 0; i < integrals.size(); ++i) {
