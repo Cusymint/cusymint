@@ -91,7 +91,7 @@ namespace Performance {
                 capitalize_substring(expression, "pi");
                 capitalize_substring(expression, "sqrt");
                 result += fmt::format("{{t,b}}=AbsoluteTiming[Integrate[ToExpression[\"{}\","
-                                      "TraditionalForm],x]];Print[t];",
+                                      "TraditionalForm],x]];Print[t];ClearSystemCache[];",
                                       expression);
             }
 
