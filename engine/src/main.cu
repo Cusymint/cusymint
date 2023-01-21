@@ -192,10 +192,11 @@ int main() {
 
     // add random polynomials
     const auto polynomials = generate_random_trig_polynomials(0, 5, 100, 2137);
-    integrals.insert(integrals.end(), polynomials.begin(), polynomials.end());
+    //integrals.insert(integrals.end(), polynomials.begin(), polynomials.end());
 
     // Performance::test_performance(integrals, Performance::print_csv_results);
-    Performance::test_memory_occupance(integrals);
+    // Performance::test_memory_occupance(integrals);
+    Performance::test_history_cpu_memory_occupance(integrals);
     // const auto integral = Sym::integral(Parser::parse_function(integrals.back()));
 
     // fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());

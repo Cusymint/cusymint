@@ -33,6 +33,7 @@ namespace Sym {
         std::vector<Symbol> get_expression() const;
         TransformationList get_operations(const ComputationStep& previous_step) const;
         void print_step() const;
+        size_t get_memory_occupance_in_bytes() const;
     };
 
     using ComputationStepCollection = std::list<ComputationStep>;
@@ -58,6 +59,8 @@ namespace Sym {
         void print_history() const;
 
         const ComputationStepCollection& get_steps() const { return computation_steps; } 
+
+        size_t get_memory_occupance_in_bytes() const;
     };
 }
 

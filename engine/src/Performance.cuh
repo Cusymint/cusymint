@@ -40,6 +40,8 @@ namespace Performance {
 
     void test_memory_occupance(const std::vector<std::string>& integrals);
 
+    void test_history_cpu_memory_occupance(const std::vector<std::string>& integrals);
+
     void test_cuda_and_print_commands(const std::vector<std::string>& integrals);
 
     void test_performance(const std::vector<std::string>& integrals,

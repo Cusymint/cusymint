@@ -232,6 +232,21 @@ namespace Performance {
         }
     }
 
+    void test_history_cpu_memory_occupance(const std::vector<std::string>& integrals) {
+        printf("Memory occupance for history:\n");
+        for (int i = 0; i < integrals.size(); ++i) {
+            printf("  Integral %s:\n", integrals[i].c_str());
+
+            Sym::Integrator integrator;
+            Sym::ComputationHistory history;
+            const auto integral = Sym::integral(Parser::parse_function(integrals[i]));
+
+            const auto result = integrator.solve_integral_with_history(integral, history);
+
+            printf("    %10luB used%s\n", history.get_memory_occupance_in_bytes(), result.has_value() ? "" : " (failure)");
+        }
+    }
+
     void test_performance(const std::vector<std::string>& integrals, PrintRoutine print_results) {
         std::vector<double> cusymint_seconds_vector(integrals.size());
         std::vector<bool> cusymint_results_vector(integrals.size());

@@ -234,6 +234,22 @@ namespace Sym {
         fmt::print("}}\n");
     }
 
+    size_t ComputationStep::get_memory_occupance_in_bytes() const {
+        size_t size = 0;
+        for (const auto& expr : expression_tree) {
+            size += expr.size();
+        }
+        return sizeof(ComputationStep) + size * sizeof(Symbol);
+    }
+
+    size_t ComputationHistory::get_memory_occupance_in_bytes() const {
+        size_t size = 0;
+        for (const auto& step : computation_steps) {
+            size += step.get_memory_occupance_in_bytes();
+        }
+        return sizeof(ComputationHistory) + size;
+    }
+
     void ComputationHistory::complete() {
         if (!is_solution_at_end_of_steps()) {
             Util::crash("ComputationHistory must have solution at the end to complete");
