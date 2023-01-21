@@ -19,7 +19,7 @@ namespace Test {
     ADVANCED_INTEGRAL_TEST(CosineByParts, "x cos(x)", "x sin(x)+cos(x)")
     ADVANCED_INTEGRAL_TEST(ExponentByParts, "x e^x", "x e^x-e^x")
     ADVANCED_INTEGRAL_TEST(ExponentByParts2, "x^2e^x", "e^x(x^2-2x+2)")
-    //ADVANCED_INTEGRAL_TEST(NegativeExponentByParts, "x e^(-x)", "-e^(-x)(x+1)") // linear substitution for nested-vars-only required
+    ADVANCED_INTEGRAL_TEST(NegativeExponentByParts, "x e^(-x)", "-e^(-x)(x+1)")
     ADVANCED_INTEGRAL_TEST(CosineByParts2, "x^2cos(x)", "x^2sin(x)+2x cos(x)-2sin(x)")
     ADVANCED_INTEGRAL_TEST(LogarithmTimesRoot, "sqrt(x)ln(x)", "2/3x^(3/2)(ln(x)-2/3)")
     ADVANCED_INTEGRAL_TEST(LogarithmDividedByPower, "ln(x)/x^4", "-1/(3x^3)(ln(x)+1/3)")
@@ -72,7 +72,7 @@ namespace Test {
     //ADVANCED_INTEGRAL_TEST(RootInDenominator, "1/(x^(1/3)+1)", "3/2*x^(2/3)-3x^(1/3)+3ln(x^(1/3)+1)") // substitution t=ax^b+c required (dx = 1/b((t-c)/a)^((1-b)/b))
     ADVANCED_INTEGRAL_TEST(Logarithm, "ln(x)", "x ln(x) - x")
     ADVANCED_INTEGRAL_TEST(XTimesCosine, "x*cos(x)", "x*sin(x)+cos(x)")
-    //ADVANCED_INTEGRAL_TEST(XTimesExponential, "x^2e^(1-x)", "-(x^2+2x+2)e^(1-x)") // linear substitution for nested-vars-only required
+    ADVANCED_INTEGRAL_TEST(XTimesExponential, "x^2e^(1-x)", "-(x^2+2x+2)e^(1-x)")
     //ADVANCED_INTEGRAL_TEST(SquareTimesExponential, "8x^2e^(4-x^3)", "-8/3e^(4-x^3)") // substitution t=x^2+a required
 
     //ADVANCED_INTEGRAL_TEST(SineSquared, "sin^2(x)", "x/2-sin(2x)/4") // rational integrals required
