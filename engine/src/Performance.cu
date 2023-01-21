@@ -1,5 +1,7 @@
 #include "Performance.cuh"
 #include "Symbol/Integral.cuh"
+#include "Symbol/SymbolType.cuh"
+#include <cstddef>
 #include <fmt/core.h>
 #include <string>
 #include <vector>
@@ -163,7 +165,8 @@ namespace Performance {
     }
 
     void print_csv_headers() {
-        printf("integral;solved_by_cusymint;cusymint_time[s];mathematica_time[s];sympy_time[s];matlab_time[s]\n");
+        printf("integral;solved_by_cusymint;cusymint_time[s];mathematica_time[s];sympy_time[s];"
+               "matlab_time[s]\n");
     }
 
     void test_with_other_solutions(const std::string& integral_str, PrintRoutine print_results) {
@@ -195,12 +198,38 @@ namespace Performance {
             const auto result = integrator.solve_integral(integral);
             const clock_t end = clock();
 
-            fmt::print("{}{}\n", static_cast<double>(end - start) / CLOCKS_PER_SEC, result.has_value() ? "" : " (failure)");
+            fmt::print("{}{}\n", static_cast<double>(end - start) / CLOCKS_PER_SEC,
+                       result.has_value() ? "" : " (failure)");
         }
 
         printf("%s\n", make_mathematica_command_batch(integrals).c_str());
         printf("%s\n", make_sympy_command_batch(integrals).c_str());
         printf("%s\n", make_matlab_command_batch(integrals).c_str());
+    }
+
+    void test_memory_occupance(const std::vector<std::string>& integrals) {
+        printf("Memory occupance:\n");
+        for (int i = 0; i < integrals.size(); ++i) {
+            printf("  Integral %s:\n", integrals[i].c_str());
+
+            size_t initial_mem;
+            size_t after_init;
+
+            cudaMemGetInfo(&initial_mem, nullptr);
+
+            Sym::Integrator integrator;
+
+            cudaMemGetInfo(&after_init, nullptr);
+            initial_mem -= after_init;
+
+            size_t total;
+            const auto integral = Sym::integral(Parser::parse_function(integrals[i]));
+
+            const size_t usage = integrator.memory_usage_for_integral(integral, total);
+
+            printf("    %10lu/%10lu B used (%f%%)\n", usage + initial_mem, total,
+                   static_cast<double>(usage + initial_mem) / total * 100);
+        }
     }
 
     void test_performance(const std::vector<std::string>& integrals, PrintRoutine print_results) {
@@ -225,7 +254,8 @@ namespace Performance {
 
         printf("Computing on Mathematica...\n");
         auto mathematica_result = exec_and_read_output(make_mathematica_command_batch(integrals));
-        // Warning: computing na integral which requires many substitutions on SymPy may hang your computer and is extremely slow!
+        // Warning: computing na integral which requires many substitutions on SymPy may hang your
+        // computer and is extremely slow!
         printf("Computing on SymPy...\n");
         auto sympy_result = exec_and_read_output(make_sympy_command_batch(integrals));
         printf("Computing on MATLAB...\n");

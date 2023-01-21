@@ -238,6 +238,131 @@ namespace Sym {
 
             return std::nullopt;
         }
+
+        size_t memory_usage_for_integral(const std::vector<Symbol>& integral,
+                                         size_t& total_memory) {
+            size_t initial_usage;
+            size_t max_usage;
+            size_t usage;
+
+            size_t initial_size =
+                sizeof(Symbol) *
+                    (expressions.symbols_capacity() + integrals.symbols_capacity() +
+                     expressions_swap.symbols_capacity() + integrals_swap.symbols_capacity() +
+                     help_space.symbols_capacity()) +
+                sizeof(size_t) * (scan_array_1.size() + scan_array_2.size()) +
+                sizeof(EvaluationStatus) *
+                    (evaluation_statuses_1.size() + evaluation_statuses_2.size());
+            size_t max_shown_size = initial_size;
+
+            cudaMemGetInfo(&initial_usage, &total_memory);
+            max_usage = initial_usage;
+
+            expressions.load_from_vector({single_integral_vacancy()});
+            integrals.load_from_vector({first_expression_candidate(integral)});
+
+            max_shown_size = std::max(
+                max_shown_size,
+                sizeof(Symbol) *
+                        (expressions.symbols_capacity() + integrals.symbols_capacity() +
+                         expressions_swap.symbols_capacity() + integrals_swap.symbols_capacity() +
+                         help_space.symbols_capacity()) +
+                    sizeof(size_t) * (scan_array_1.size() + scan_array_2.size()) +
+                    sizeof(EvaluationStatus) *
+                        (evaluation_statuses_1.size() + evaluation_statuses_2.size()));
+
+            cudaMemGetInfo(&usage, nullptr);
+            max_usage = std::min(usage, max_usage);
+
+            for (size_t i = 0;; ++i) {
+                simplify_integrals();
+
+                cudaMemGetInfo(&usage, nullptr);
+                max_usage = std::min(usage, max_usage);
+
+                max_shown_size = std::max(
+                    max_shown_size,
+                    sizeof(Symbol) *
+                            (expressions.symbols_capacity() + integrals.symbols_capacity() +
+                             expressions_swap.symbols_capacity() +
+                             integrals_swap.symbols_capacity() + help_space.symbols_capacity()) +
+                        sizeof(size_t) * (scan_array_1.size() + scan_array_2.size()) +
+                        sizeof(EvaluationStatus) *
+                            (evaluation_statuses_1.size() + evaluation_statuses_2.size()));
+
+                check_for_known_integrals();
+                apply_known_integrals();
+
+                cudaMemGetInfo(&usage, nullptr);
+                max_usage = std::min(usage, max_usage);
+
+                max_shown_size = std::max(
+                    max_shown_size,
+                    sizeof(Symbol) *
+                            (expressions.symbols_capacity() + integrals.symbols_capacity() +
+                             expressions_swap.symbols_capacity() +
+                             integrals_swap.symbols_capacity() + help_space.symbols_capacity()) +
+                        sizeof(size_t) * (scan_array_1.size() + scan_array_2.size()) +
+                        sizeof(EvaluationStatus) *
+                            (evaluation_statuses_1.size() + evaluation_statuses_2.size()));
+
+                if (is_original_expression_solved()) {
+                    break;
+                }
+
+                remove_unnecessary_candidates();
+
+                cudaMemGetInfo(&usage, nullptr);
+                max_usage = std::min(usage, max_usage);
+
+                max_shown_size = std::max(
+                    max_shown_size,
+                    sizeof(Symbol) *
+                            (expressions.symbols_capacity() + integrals.symbols_capacity() +
+                             expressions_swap.symbols_capacity() +
+                             integrals_swap.symbols_capacity() + help_space.symbols_capacity()) +
+                        sizeof(size_t) * (scan_array_1.size() + scan_array_2.size()) +
+                        sizeof(EvaluationStatus) *
+                            (evaluation_statuses_1.size() + evaluation_statuses_2.size()));
+
+                check_heuristics_applicability();
+                apply_heuristics();
+
+                cudaMemGetInfo(&usage, nullptr);
+                max_usage = std::min(usage, max_usage);
+
+                max_shown_size = std::max(
+                    max_shown_size,
+                    sizeof(Symbol) *
+                            (expressions.symbols_capacity() + integrals.symbols_capacity() +
+                             expressions_swap.symbols_capacity() +
+                             integrals_swap.symbols_capacity() + help_space.symbols_capacity()) +
+                        sizeof(size_t) * (scan_array_1.size() + scan_array_2.size()) +
+                        sizeof(EvaluationStatus) *
+                            (evaluation_statuses_1.size() + evaluation_statuses_2.size()));
+
+                if (has_original_expression_failed()) {
+                    break;
+                }
+
+                remove_failed_candidates();
+
+                cudaMemGetInfo(&usage, nullptr);
+                max_usage = std::min(usage, max_usage);
+
+                max_shown_size = std::max(
+                    max_shown_size,
+                    sizeof(Symbol) *
+                            (expressions.symbols_capacity() + integrals.symbols_capacity() +
+                             expressions_swap.symbols_capacity() +
+                             integrals_swap.symbols_capacity() + help_space.symbols_capacity()) +
+                        sizeof(size_t) * (scan_array_1.size() + scan_array_2.size()) +
+                        sizeof(EvaluationStatus) *
+                            (evaluation_statuses_1.size() + evaluation_statuses_2.size()));
+            }
+            printf("Declared bytes:%lu\n", max_shown_size);
+            return initial_usage - max_usage;
+        }
     };
 }
 

@@ -38,6 +38,8 @@ namespace Performance {
     void test_with_other_solutions(const std::string& integral_str,
                                    PrintRoutine print_results = print_human_readable_results);
 
+    void test_memory_occupance(const std::vector<std::string>& integrals);
+
     void test_cuda_and_print_commands(const std::vector<std::string>& integrals);
 
     void test_performance(const std::vector<std::string>& integrals,

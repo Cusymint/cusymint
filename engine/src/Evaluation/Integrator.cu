@@ -4,9 +4,9 @@
 #include <thrust/execution_policy.h>
 #include <thrust/scan.h>
 
+#include "ComputationHistory.cuh"
 #include "IntegratorKernels.cuh"
 #include "StaticFunctions.cuh"
-#include "ComputationHistory.cuh"
 
 #include "Evaluation/Heuristic/Heuristic.cuh"
 #include "Symbol/SubexpressionCandidate.cuh"
@@ -188,7 +188,8 @@ namespace Sym {
         scan_array_2.zero_mem();
         cudaDeviceSynchronize();
 
-        help_space.reoffset_like<SubexpressionCandidate>(integrals.iterator(), HELP_SPACE_MULTIPLIER, Heuristic::COUNT);
+        help_space.reoffset_like<SubexpressionCandidate>(integrals.iterator(),
+                                                         HELP_SPACE_MULTIPLIER, Heuristic::COUNT);
 
         Kernel::check_heuristics_applicability<<<BLOCK_COUNT, BLOCK_SIZE>>>(
             integrals, expressions, help_space, scan_array_1, scan_array_2);
