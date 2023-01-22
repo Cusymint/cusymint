@@ -104,16 +104,12 @@ std::vector<std::string> generate_random_polynomials(size_t min_rank, size_t max
     return result;
 }
 
-std::vector<std::string> generate_random_trig_polynomials(size_t start, size_t end, size_t step,
-                                                          size_t seed) {
-    constexpr size_t MAX_COEFF = 50;
+std::vector<std::string> generate_trig_polynomials(size_t start, size_t end, size_t step) {
     std::vector<std::string> result;
-    srand(seed);
     for (size_t rank = start; rank <= end; rank += step) {
-        std::string str = fmt::format("{}", rand() % (MAX_COEFF + 1));
+        std::string str = "1";
         for (size_t j = 1; j <= rank; ++j) {
-            str += fmt::format("{}{}*sin(x)^{}*cos(x)", (rand() % 2 == 0) ? "+" : "-",
-                               rand() % (MAX_COEFF + 1), j);
+            str += fmt::format("+sin(x)^{}*cos(x)", j);
         }
         result.push_back(str);
     }
@@ -188,15 +184,15 @@ int main() {
 
     // add geometric sums
     const auto geo_sums = generate_geometric_sums(0, 200, 5);
-    integrals.insert(integrals.end(), geo_sums.begin(), geo_sums.end());
+    //integrals.insert(integrals.end(), geo_sums.begin(), geo_sums.end());
 
     // add random polynomials
-    const auto polynomials = generate_random_trig_polynomials(0, 5, 100, 2137);
-    //integrals.insert(integrals.end(), polynomials.begin(), polynomials.end());
+    const auto polynomials = generate_trig_polynomials(0, 100, 5);
+    integrals.insert(integrals.end(), polynomials.begin(), polynomials.end());
 
     // Performance::test_performance(integrals, Performance::print_csv_results);
-    // Performance::test_memory_occupance(integrals);
-    Performance::test_history_cpu_memory_occupance(integrals);
+    Performance::test_memory_occupance(integrals);
+    // Performance::test_history_cpu_memory_occupance(integrals);
     // const auto integral = Sym::integral(Parser::parse_function(integrals.back()));
 
     // fmt::print("Trying to solve an integral: {}\n", integral.data()->to_tex());
