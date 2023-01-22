@@ -107,7 +107,7 @@ std::vector<std::string> generate_random_polynomials(size_t min_rank, size_t max
 std::vector<std::string> generate_trig_polynomials(size_t start, size_t end, size_t step) {
     std::vector<std::string> result;
     for (size_t rank = start; rank <= end; rank += step) {
-        std::string str = "1";
+        std::string str = "cos(x)";
         for (size_t j = 1; j <= rank; ++j) {
             str += fmt::format("+sin(x)^{}*cos(x)", j);
         }
