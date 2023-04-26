@@ -2,6 +2,19 @@
 
 Symbolic integration run in parallel on Nvidia GPUs. Alternative to Wolfram|Alpha or Mathematica.
 
+# Features
+The app solves integrals and provides a helpful list of integral examples for learning syntax.
+
+https://user-images.githubusercontent.com/62249621/234692468-6d0bc7c8-ee2b-4c03-8430-e4a4ea55c232.mov
+
+Outline the steps by which the engine arrived at a solution
+
+https://user-images.githubusercontent.com/62249621/234692818-b9db86fd-fc32-41e6-bae9-fc6277370635.mov
+
+User can browse local history and modify it.
+
+https://user-images.githubusercontent.com/62249621/234693011-e67da68f-6289-4039-91a4-bb04c582353d.mov
+
 # Installation
 There are many ways in which cusymint can be installed and run. It consists of two parts:
 - engine (or backend) which needs to be run on a computer with Nvidia GPU,
