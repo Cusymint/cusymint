@@ -29,9 +29,9 @@ You can change default IP address in the client settings.
 The easiest way to get started is to use the Docker image. You can find the Docker images on [Github packages](https://github.com/orgs/Cusymint/packages?repo_name=cusymint).
 ```bash
 # Pull the engine image
-docker pull ghcr.io/cusymint/engine:latest
+docker pull ghcr.io/cusymint/cusymint/engine:latest
 # Pull the client image
-docker pull ghcr.io/cusymint/client:latest
+docker pull ghcr.io/cusymint/cusymint/client:latest
 ```
 To run cusymint, you need to have Docker installed. You can find instructions on how to install Docker [here](https://docs.docker.com/get-docker/).
 Depending on your OS you may also need to install Nvidia Container Toolkit. You can find instructions on how to install Nvidia Container Toolkit [here](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker).
@@ -41,9 +41,9 @@ Once you have Docker installed, you can run cusymint with the following command:
 ```bash
 # Run the engine, which will listen on port 8000
 # You need to have Nvidia GPU and latest Nvidia drivers installed
-docker run -d --gpus=all -p 8000:8000 ghcr.io/cusymint/engine:latest
+docker run -d --gpus=all -p 8000:8000 ghcr.io/cusymint/cusymint/engine:latest
 # Run the client, which will run on port 80
-docker run -d -p 80:80 ghcr.io/cusymint/client:latest
+docker run -d -p 80:80 ghcr.io/cusymint/cusymint/client:latest
 ```
 After that you should be able to access cusymint at http://localhost:80.
 
