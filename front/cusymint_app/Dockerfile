@@ -7,6 +7,7 @@ RUN flutter config --enable-web
 # Requires to have context set to the root of the project
 COPY ../../front /app/front
 COPY ../../melos.yaml /app/melos.yaml
+COPY ../../pubspec.yaml /app/pubspec.yaml
 
 RUN sudo chown -R flutter:flutter /app
 # RUN sudo chown -R flutter:flutter /opt/flutter
