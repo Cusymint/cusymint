@@ -12,8 +12,8 @@ scripts:
     run: |
       melos exec -- \
         "flutter packages pub run build_runner build --delete-conflicting-outputs"
-    select-package:
-      depends-on: 
+    packageFilters:
+      dependsOn: 
         - build_runner
 
   generate:tr:
@@ -21,10 +21,10 @@ scripts:
     run: |
       melos exec -- \
         "flutter pub run easy_localization:generate -S assets/translations -O lib/generated && flutter pub run easy_localization:generate -S assets/translations -O lib/generated -f keys -o locale_keys.g.dart"
-    select-package:
-      dir-exists:
+    packageFilters:
+      dirExists:
         - assets/translations
-      depends-on: 
+      dependsOn: 
         - easy_localization
 
 
@@ -32,16 +32,16 @@ scripts:
     run: |
       melos exec -- \
         "flutter pub run flutter_launcher_icons:main"
-    select-package:
-      depends-on: 
+    packageFilters:
+      dependsOn: 
         - flutter_launcher_icons
   
   rebuild:splash:
     run: |
       melos exec -- \
         "flutter pub run flutter_native_splash:create"
-    select-package:
-      depends-on: 
+    packageFilters:
+      dependsOn: 
         - flutter_native_splash
 
   analyze:
@@ -54,16 +54,16 @@ scripts:
     run: |
       melos exec -c 6 --fail-fast -- \
         "flutter test --no-pub"
-    select-package:
-      dir-exists:
+    packageFilters:
+      dirExists:
         - test
   
   test:integration:
     run: |
       melos exec -c 6 --fail-fast -- \
         "dart test integration_test"
-    select-package:
-      dir-exists:
+    packageFilters:
+      dirExists:
         - integration_test
 
   format-check:
@@ -72,24 +72,24 @@ scripts:
   build:web:
     run: melos exec --fail-fast -- \
       "flutter build web"
-    select-package:
-      dir-exists:
+    packageFilters:
+      dirExists:
         - web
       scope: 'cusymint_app'
 
   build:linux:
     run: melos exec --fail-fast -- \
       "flutter build linux"
-    select-package:
-      dir-exists:
+    packageFilters:
+      dirExists:
         - linux
       scope: 'cusymint_app'
 
   build:windows:
     run: melos exec --fail-fast -- \
       "flutter build windows"
-    select-package:
-      dir-exists:
+    packageFilters:
+      dirExists:
         - windows
       scope: 'cusymint_app'
 
@@ -97,21 +97,17 @@ scripts:
   build:windows:msix:
     run: melos exec --fail-fast -- \
       "flutter pub run msix:create"
-    select-package:
-      depends-on: 
+    packageFilters:
+      dependsOn: 
         - msix
-      dir-exists:
+      dirExists:
         - windows
       scope: 'cusymint_app'
 
   build:android:
     run: melos exec --fail-fast -- \
       "flutter build apk --split-per-abi"
-    select-package:
-      dir-exists:
+    packageFilters:
+      dirExists:
         - android
       scope: 'cusymint_app'
-
-command:
-  bootstrap:
-    usePubspecOverrides: true
