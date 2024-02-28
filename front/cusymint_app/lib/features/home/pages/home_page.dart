@@ -77,7 +77,6 @@ class _HomeBodyState extends State<HomeBody> {
   @override
   Widget build(BuildContext context) {
     return CuScaffold(
-      drawer: WiredDrawer(context: context),
       appBar: CuAppBar(
         actions: [
           _HistoryIconButton(
